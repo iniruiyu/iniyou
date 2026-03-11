@@ -19,6 +19,7 @@
 - 建立健康检查接口
 - 建立日志与基础中间件方案
 - 明确 MySQL 与 PostgreSQL 的兼容策略
+- 确保后端模块结构可直接映射 `docs/API_SPEC.md` 与 `docs/DATA_MODEL.md`
 - 审核依赖，避免引入需要 CGO 的方案
 
 ## 4. 完成标准

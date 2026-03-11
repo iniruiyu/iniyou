@@ -6,6 +6,8 @@
 
 - `docs/PROJECT_PLAN.md`: 项目规划与阶段目标
 - `docs/REQUIREMENTS.md`: 需求文档与功能范围记录
+- `docs/API_SPEC.md`: RESTful API 清单
+- `docs/DATA_MODEL.md`: 数据实体与关系草案
 - `docs/design/FRONTEND_DESIGN.md`: 前端设计图与交互草案
 - `docs/ARCHITECTURE_DECISIONS.md`: 架构选型与第三方依赖记录
 - `docs/development-outline/`: 开发大纲与项目任务拆分
@@ -26,6 +28,8 @@
 
 - `docs/PROJECT_PLAN.md` 记录项目规划与架构方向变化
 - `docs/REQUIREMENTS.md` 记录功能需求、业务范围与需求变更
+- `docs/API_SPEC.md` 记录接口清单与联调基线
+- `docs/DATA_MODEL.md` 记录核心实体与数据关系
 - `docs/design/FRONTEND_DESIGN.md` 记录界面、交互与跨端设计变化
 - `docs/ARCHITECTURE_DECISIONS.md` 记录技术选型、约束与第三方依赖变化
 - `docs/development-outline/` 记录项目实施任务，按序号推进

@@ -17,6 +17,7 @@
 - `02_FRONTEND_ARCHITECTURE.md`: 前端架构与工程初始化
 - `03_BACKEND_ARCHITECTURE.md`: 后端架构与工程初始化
 - `04_DATA_MODEL_AND_DATABASE.md`: 数据模型与数据库设计
+- `04A_API_CONTRACT.md`: RESTful API 契约整理与维护
 - `05_ACCOUNT_AND_IDENTITY.md`: 用户、账号、登录注册体系
 - `06_WALLET_MEMBERSHIP_BENEFITS.md`: 钱包、会员、权益体系
 - `07_SOCIAL_CONTENT.md`: 社交内容与互动体系
@@ -28,6 +29,7 @@
 
 - 本目录中的所有任务都已完成
 - 各任务产出与当前需求文档保持一致
+- 各任务产出与 API 文档、数据模型文档保持一致
 - 若新增需求影响项目范围，需先更新需求文档，再补充本目录任务
 
 ## 5. 当前状态
