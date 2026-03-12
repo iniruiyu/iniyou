@@ -111,14 +111,6 @@ func (h *MessageHandler) ListMessages(c *gin.Context) {
 	}
 
 	var messages []models.Message
-	query := h.DB.Where("sender_id = ? OR receiver_id = ?", uid, uid)
-	if peerID != "" {
-		query = h.DB.Where("(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)", uid, peerID, peerID, uid)
-	}
-	if err := query.Order("created_at asc").Limit(limit).Offset(offset).Find(&messages).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
-		return
-	}
 	if peerID != "" {
 		// Mark messages from this peer as read when opening the conversation.
 		// 打开会话时将来自该好友的消息标记为已读。
@@ -126,6 +118,14 @@ func (h *MessageHandler) ListMessages(c *gin.Context) {
 		_ = h.DB.Model(&models.Message{}).
 			Where("sender_id = ? AND receiver_id = ? AND read_at IS NULL", peerID, uid).
 			Update("read_at", &now).Error
+	}
+	query := h.DB.Where("sender_id = ? OR receiver_id = ?", uid, uid)
+	if peerID != "" {
+		query = h.DB.Where("(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)", uid, peerID, peerID, uid)
+	}
+	if err := query.Order("created_at asc").Limit(limit).Offset(offset).Find(&messages).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"items": messages})
 }

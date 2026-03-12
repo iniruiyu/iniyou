@@ -692,9 +692,22 @@ createApp({
           unreadCount: summary?.unreadCount || 0,
         };
       }).sort((a, b) => {
+        const aHasMessage = Boolean(a.lastAt);
+        const bHasMessage = Boolean(b.lastAt);
+        if (aHasMessage !== bHasMessage) {
+          return aHasMessage ? -1 : 1;
+        }
         const aTime = a.lastAt ? new Date(a.lastAt).getTime() : 0;
         const bTime = b.lastAt ? new Date(b.lastAt).getTime() : 0;
-        return bTime - aTime;
+        if (aTime !== bTime) {
+          return bTime - aTime;
+        }
+        const aFriendAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bFriendAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (aFriendAt !== bFriendAt) {
+          return bFriendAt - aFriendAt;
+        }
+        return a.name.localeCompare(b.name);
       });
     },
     privateSpaces() {
@@ -1924,6 +1937,7 @@ createApp({
           secondary: item.email || item.phone || item.friend_id,
           status: item.status || 'offline',
           direction: item.direction || 'outgoing',
+          createdAt: item.created_at || '',
         }));
         if (!this.activeChat || !this.acceptedFriends.find((friend) => friend.id === this.activeChat.id)) {
           this.activeChat = this.acceptedFriends[0] || null;
