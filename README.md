@@ -68,6 +68,7 @@ make test
 make test-backend
 make test-frontend
 make build
+make smoke
 ```
 
 构建产物输出到 `build/`：
@@ -80,6 +81,7 @@ make build
 - [`docs/REQUIREMENTS.md`](/root/new-project/docs/REQUIREMENTS.md): 需求范围与变更
 - [`docs/API_SPEC.md`](/root/new-project/docs/API_SPEC.md): RESTful API 清单
 - [`docs/DATA_MODEL.md`](/root/new-project/docs/DATA_MODEL.md): 数据模型基线
+- [`docs/LOCAL_DEV_AND_SMOKE.md`](/root/new-project/docs/LOCAL_DEV_AND_SMOKE.md): 本地联调、数据库初始化与冒烟流程
 - [`docs/design/FRONTEND_DESIGN.md`](/root/new-project/docs/design/FRONTEND_DESIGN.md): 前端设计说明
 - [`docs/development-outline/`](/root/new-project/docs/development-outline): 开发阶段与任务拆分
 

@@ -3,7 +3,7 @@ SHELL := /bin/bash
 BACKEND_DIR := backend
 FRONTEND_DIR := frontend
 
-.PHONY: help test test-backend test-frontend build build-backend run-account run-message check
+.PHONY: help test test-backend test-frontend build build-backend run-account run-message smoke check
 
 help:
 	@echo "Available targets / 可用目标:"
@@ -13,6 +13,7 @@ help:
 	@echo "  make build          - Build backend binaries / 构建后端二进制"
 	@echo "  make run-account    - Run account service / 启动账号服务"
 	@echo "  make run-message    - Run message service / 启动消息服务"
+	@echo "  make smoke          - Run local API smoke script / 运行本地接口冒烟脚本"
 	@echo "  make check          - Alias of test / test 的别名"
 
 test: test-backend test-frontend
@@ -37,3 +38,7 @@ run-account:
 
 run-message:
 	cd $(BACKEND_DIR) && SERVICE_PORT=8081 go run ./cmd/message-service
+
+smoke:
+	chmod +x scripts/local-smoke.sh
+	./scripts/local-smoke.sh
