@@ -27,12 +27,16 @@ func main() {
 	if err := database.AutoMigrate(&models.User{}, &models.Space{}, &models.Subscription{}, &models.Friend{}); err != nil {
 		log.Fatalf("db migrate error: %v", err)
 	}
+	if err := database.AutoMigrate(&models.Post{}, &models.Comment{}, &models.PostLike{}, &models.PostShare{}); err != nil {
+		log.Fatalf("db migrate error: %v", err)
+	}
 
 	h := &handler.AccountHandler{
 		DB:        database,
 		JWTSecret: cfg.JWTSecret,
 		TokenTTL:  int64(cfg.TokenTTL / time.Minute),
 	}
+	postHandler := &handler.PostHandler{DB: database}
 
 	// HTTP router.
 	// HTTP 路由。
@@ -66,6 +70,12 @@ func main() {
 	authGroup.GET("/users/search", h.SearchUsers)
 	authGroup.GET("/spaces", h.ListSpaces)
 	authGroup.POST("/spaces", h.CreateSpace)
+	authGroup.GET("/posts", postHandler.ListPosts)
+	authGroup.GET("/posts/:id", postHandler.GetPost)
+	authGroup.POST("/posts", postHandler.CreatePost)
+	authGroup.POST("/posts/:id/likes", postHandler.ToggleLike)
+	authGroup.POST("/posts/:id/comments", postHandler.AddComment)
+	authGroup.POST("/posts/:id/shares", postHandler.Share)
 	authGroup.GET("/friends", h.ListFriends)
 	authGroup.POST("/friends", h.AddFriend)
 	authGroup.POST("/friends/accept", h.AcceptFriend)

@@ -59,3 +59,50 @@ type Message struct {
 	CreatedAt  time.Time
 	ReadAt     *time.Time
 }
+
+type Post struct {
+	// Social post content.
+	// 社交文章内容。
+	ID         string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID     string    `gorm:"index"`
+	Title      string    `gorm:"type:varchar(160)"`
+	Content    string    `gorm:"type:text"`
+	Status     string    `gorm:"type:varchar(20);default:published"`
+	Visibility string    `gorm:"type:varchar(20);default:public"`
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type Comment struct {
+	// Post comment.
+	// 文章评论。
+	ID              string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	PostID          string    `gorm:"index"`
+	UserID          string    `gorm:"index"`
+	ParentCommentID *string   `gorm:"index"`
+	Content         string    `gorm:"type:text"`
+	Status          string    `gorm:"type:varchar(20);default:published"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type PostLike struct {
+	// Like relation between user and post.
+	// 用户与文章的点赞关系。
+	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	PostID    string    `gorm:"index:idx_post_like_user,unique"`
+	UserID    string    `gorm:"index:idx_post_like_user,unique"`
+	Status    string    `gorm:"type:varchar(20);default:active"`
+	CreatedAt time.Time
+}
+
+type PostShare struct {
+	// Share record of a post.
+	// 文章转发记录。
+	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	PostID    string    `gorm:"index"`
+	UserID    string    `gorm:"index"`
+	ShareType string    `gorm:"type:varchar(20);default:repost"`
+	Status    string    `gorm:"type:varchar(20);default:active"`
+	CreatedAt time.Time
+}

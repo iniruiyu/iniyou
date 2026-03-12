@@ -31,6 +31,11 @@
         <div class="lang-add-title">{{ t('i18n.addTitle') }}</div>
         <input class="lang-input" type="text" :placeholder="t('i18n.codePlaceholder')" v-model="newLanguage.code" />
         <input class="lang-input" type="text" :placeholder="t('i18n.namePlaceholder')" v-model="newLanguage.name" />
+        <label class="lang-label">{{ t('i18n.dirLabel') }}</label>
+        <select class="lang-select" v-model="newLanguage.dir">
+          <option value="ltr">{{ t('i18n.dirLtr') }}</option>
+          <option value="rtl">{{ t('i18n.dirRtl') }}</option>
+        </select>
         <textarea class="lang-textarea" :placeholder="t('i18n.jsonPlaceholder')" v-model="newLanguage.json"></textarea>
         <button class="ghost" @click="addLanguage">{{ t('i18n.addButton') }}</button>
       </section>
@@ -187,6 +192,47 @@
             <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
             <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
           </div>
+        </div>
+        <div class="post-feed">
+          <div class="post-composer">
+            <h3>{{ t('posts.feedTitle') }}</h3>
+            <p>{{ t('posts.feedSub') }}</p>
+            <form class="form">
+              <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="postDraft.title" />
+              <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="postDraft.content"></textarea>
+              <select v-model="postDraft.visibility">
+                <option value="public">{{ t('posts.publicLabel') }}</option>
+                <option value="private">{{ t('posts.privateLabel') }}</option>
+              </select>
+              <button class="primary" type="button" @click="createPost">{{ t('posts.publishAction') }}</button>
+            </form>
+          </div>
+          <div v-if="posts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
+          <article class="post-card" v-for="post in posts" :key="post.id">
+            <div class="post-header">
+              <div>
+                <div class="post-author">{{ post.authorName }}</div>
+                <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
+              </div>
+            </div>
+            <div class="post-title">{{ post.title }}</div>
+            <div class="post-content">{{ post.content }}</div>
+            <div class="post-actions">
+              <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
+              <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
+              <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
+            </div>
+            <div class="post-comments" v-if="post.comments.length > 0">
+              <div class="post-comment" v-for="comment in post.comments" :key="comment.id">
+                <div class="post-comment-author">{{ comment.authorName }}</div>
+                <div class="post-comment-text">{{ comment.content }}</div>
+              </div>
+            </div>
+            <div class="post-comment-form">
+              <input type="text" :placeholder="t('posts.commentPlaceholder')" v-model="commentDrafts[post.id]" @keyup.enter="submitComment(post)" />
+              <button class="ghost compact" @click="submitComment(post)">{{ t('posts.commentAction') }}</button>
+            </div>
+          </article>
         </div>
       </section>
 

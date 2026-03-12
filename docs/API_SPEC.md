@@ -51,10 +51,11 @@
 
 ### 5.2 认证与账号
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/logout`
-- `GET /api/v1/auth/me`
+- `POST /api/v1/register`
+- `POST /api/v1/login`
+- `POST /api/v1/logout`
+- `GET /api/v1/me`
+- `PUT /api/v1/me`
 - `GET /api/v1/users/search`
 - `PATCH /api/v1/users/{id}`
 - `GET /api/v1/users/{id}`
@@ -103,13 +104,13 @@
 
 ### 6.1 注册
 
-- `POST /api/v1/auth/register`
+- `POST /api/v1/register`
 - 用途：创建本地账号
-- 请求字段建议：`account`, `password`, `display_name`
+- 请求字段建议：`email`, `phone`, `password`
 
 ### 6.2 登录
 
-- `POST /api/v1/auth/login`
+- `POST /api/v1/login`
 - 用途：用户登录并获取认证态
 - 请求字段建议：`account`, `password`
 
@@ -123,21 +124,33 @@
 
 - `POST /api/v1/posts`
 - 用途：创建文章
-- 请求字段建议：`title`, `content`, `status`
+- 请求字段建议：`title`, `content`, `visibility`
 
 ### 6.5 评论文章
 
 - `POST /api/v1/posts/{id}/comments`
 - 用途：创建评论
-- 请求字段建议：`content`, `parent_comment_id`
+- 请求字段建议：`content`
 
-### 6.6 发送消息
+### 6.6 点赞文章
+
+- `POST /api/v1/posts/{id}/likes`
+- 用途：切换文章点赞状态
+- 返回字段建议：文章对象 + `liked_by_me` + 聚合计数
+
+### 6.7 转发文章
+
+- `POST /api/v1/posts/{id}/shares`
+- 用途：记录一次文章转发
+- 返回字段建议：文章对象 + 聚合计数
+
+### 6.8 发送消息
 
 - `POST /api/v1/chats/{id}/messages`
 - 用途：发送聊天消息
 - 请求字段建议：`content`, `message_type`
 
-### 6.7 绑定外部账号
+### 6.9 绑定外部账号
 
 - `POST /api/v1/external-accounts`
 - 用途：绑定区块链账号或其他外部身份
@@ -167,6 +180,12 @@
 - 数据模型或权限规则变化影响接口时，必须同步更新本文件
 
 ## 10. 变更日志
+
+### 2026-03-12
+
+- 同步当前已实现的认证接口路径
+- 补充 `PUT /api/v1/me`、文章点赞和转发接口说明
+- 更新文章发布与评论请求字段说明
 
 ### 2026-03-11
 

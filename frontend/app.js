@@ -21,8 +21,10 @@ createApp({
       // Language display names.
       // 语言显示名称。
       languageMeta: {
-        'zh-CN': '中文',
-        'en-US': 'English',
+        'zh-CN': { name: '简体中文', dir: 'ltr' },
+        'zh-TW': { name: '繁體中文', dir: 'ltr' },
+        'en-US': { name: 'English', dir: 'ltr' },
+        he: { name: 'עברית', dir: 'rtl' },
       },
       // i18n dictionaries. New languages can be appended at runtime.
       // 国际化字典，可在运行时追加新语言。
@@ -123,6 +125,26 @@ createApp({
               public: '公共',
             },
           },
+          posts: {
+            feedTitle: '公共内容流',
+            feedSub: '发布你的近况、想法和项目更新。',
+            titlePlaceholder: '文章标题',
+            contentPlaceholder: '写点什么，分享给大家...',
+            publishAction: '发布文章',
+            publishSuccess: '文章已发布。',
+            publishError: '文章发布失败，请稍后重试。',
+            empty: '公共内容流还没有文章，先发布第一篇吧。',
+            like: '点赞',
+            unlike: '取消点赞',
+            comment: '评论',
+            commentPlaceholder: '写下你的评论...',
+            commentAction: '发送评论',
+            commentError: '评论失败，请稍后重试。',
+            share: '转发',
+            shareError: '转发失败，请稍后重试。',
+            privateLabel: '仅自己可见',
+            publicLabel: '公开',
+          },
           levels: {
             title: '会员等级',
             upgrade: '升级',
@@ -192,6 +214,9 @@ createApp({
             addTitle: '新增语言',
             codePlaceholder: '语言代码（如：ja-JP）',
             namePlaceholder: '显示名称（如：日本語）',
+            dirLabel: '文字方向',
+            dirLtr: '从左到右',
+            dirRtl: '从右到左',
             jsonPlaceholder: '可选：覆盖翻译 JSON（结构按 zh-CN）',
             addButton: '添加语言',
           },
@@ -292,6 +317,26 @@ createApp({
               public: 'Public',
             },
           },
+          posts: {
+            feedTitle: 'Public Feed',
+            feedSub: 'Share updates, ideas, and project progress.',
+            titlePlaceholder: 'Post title',
+            contentPlaceholder: 'Write something to share...',
+            publishAction: 'Publish Post',
+            publishSuccess: 'Post published.',
+            publishError: 'Publishing failed. Try again later.',
+            empty: 'The public feed is empty. Publish the first post.',
+            like: 'Like',
+            unlike: 'Unlike',
+            comment: 'Comment',
+            commentPlaceholder: 'Write a comment...',
+            commentAction: 'Send Comment',
+            commentError: 'Comment failed. Try again later.',
+            share: 'Share',
+            shareError: 'Sharing failed. Try again later.',
+            privateLabel: 'Private',
+            publicLabel: 'Public',
+          },
           levels: {
             title: 'Membership Levels',
             upgrade: 'Upgrade',
@@ -361,6 +406,9 @@ createApp({
             addTitle: 'Add Language',
             codePlaceholder: 'Language code (e.g. ja-JP)',
             namePlaceholder: 'Display name (e.g. Japanese)',
+            dirLabel: 'Text Direction',
+            dirLtr: 'Left to Right',
+            dirRtl: 'Right to Left',
             jsonPlaceholder: 'Optional: override JSON (same shape as zh-CN)',
             addButton: 'Add Language',
           },
@@ -414,6 +462,7 @@ createApp({
       newLanguage: {
         code: '',
         name: '',
+        dir: 'ltr',
         json: '',
       },
       // Space cards.
@@ -432,6 +481,19 @@ createApp({
           desc: { 'zh-CN': '公开更新项目进度与成果。', 'en-US': 'Post public progress updates and results.' },
         },
       ],
+      // Social posts list.
+      // 社交文章列表。
+      posts: [],
+      // Post composer form.
+      // 文章发布表单。
+      postDraft: {
+        title: '',
+        content: '',
+        visibility: 'public',
+      },
+      // Per-post comment drafts.
+      // 每篇文章的评论草稿。
+      commentDrafts: {},
       // Membership levels.
       // 会员等级数据。
       levels: [
@@ -495,8 +557,11 @@ createApp({
     languageOptions() {
       return Object.keys(this.translations).map((code) => ({
         code,
-        name: this.languageMeta[code] || code,
+        name: this.getLanguageMeta(code).name,
       }));
+    },
+    localeDirection() {
+      return this.getLanguageMeta(this.locale).dir || 'ltr';
     },
     pageTitle() {
       return this.t(`pageTitle.${this.view}`) || this.t('pageTitle.dashboard');
@@ -533,10 +598,26 @@ createApp({
       // 保持语言偏好与 HTML lang 同步。
       localStorage.setItem('locale', nextLocale);
       document.documentElement.lang = nextLocale;
+      document.documentElement.dir = this.localeDirection;
       document.title = this.t('htmlTitle');
     },
   },
   methods: {
+    getLanguageMeta(code) {
+      // Normalize language metadata for built-in and runtime locales.
+      // 统一处理内建语言与运行时语言的元数据。
+      const meta = this.languageMeta[code];
+      if (typeof meta === 'string') {
+        return { name: meta, dir: 'ltr' };
+      }
+      if (meta && typeof meta === 'object') {
+        return {
+          name: meta.name || code,
+          dir: meta.dir || 'ltr',
+        };
+      }
+      return { name: code, dir: 'ltr' };
+    },
     t(key) {
       // Resolve translation path with zh-CN fallback.
       // 读取翻译路径并回退到 zh-CN。
@@ -574,6 +655,377 @@ createApp({
         output[key] = patchValue;
       });
       return output;
+    },
+    installBuiltinLocales() {
+      // Build built-in locales from base dictionaries plus minimal overrides.
+      // 通过基础字典和补丁组装内建语言。
+      if (!this.translations['zh-TW']) {
+        this.translations['zh-TW'] = this.deepMerge(
+          JSON.parse(JSON.stringify(this.translations['zh-CN'])),
+          {
+            htmlTitle: '帳號服務 · 私人空間與公共空間',
+            common: { guest: '訪客' },
+            nav: {
+              auth: '登入 / 註冊',
+              dashboard: '帳號主頁',
+              private: '私人空間',
+              public: '公共空間',
+              levels: '會員等級',
+              subscription: '訂閱',
+              friends: '好友',
+              chat: '即時聊天',
+            },
+            ws: {
+              statusLabel: '連線狀態',
+              unreadLabel: '未讀訊息',
+              connect: '連線聊天',
+              disconnect: '中斷聊天',
+              disconnected: '未連線',
+              connecting: '連線中...',
+              connected: '已連線',
+              closed: '已中斷',
+              needLogin: '需要登入',
+            },
+            pageTitle: {
+              auth: '登入 / 註冊',
+              dashboard: '帳號主頁',
+              private: '私人空間',
+              public: '公共空間',
+              levels: '會員等級',
+              subscription: '訂閱管理',
+              friends: '好友',
+              chat: '即時聊天',
+            },
+            pageSub: {
+              auth: '快速進入你的私人空間與公共空間',
+              dashboard: '帳戶摘要與空間資訊',
+              private: '沉澱個人內容',
+              public: '展示公共內容與連結',
+              levels: '選擇適合你的會員等級',
+              subscription: '管理訂閱與權益',
+              friends: '建立聯繫與私聊',
+              chat: '即時溝通與回饋',
+            },
+            auth: {
+              welcomeTitle: '歡迎回來',
+              welcomeSub: '登入後進入你的私人空間與公共空間。',
+              createTitle: '建立新帳號',
+              createSub: '加入會員體系，解鎖更大空間與更多互動。',
+              accountPlaceholder: '信箱 / 手機',
+              passwordPlaceholder: '密碼',
+              emailPlaceholder: '信箱',
+              phonePlaceholder: '手機號碼',
+              login: '登入',
+              register: '註冊',
+              logout: '登出',
+              logoutSuccess: '已登出。',
+              loginError: '登入失敗，請檢查帳號和密碼。',
+              registerError: '註冊失敗，請檢查輸入資訊。',
+            },
+            dashboard: {
+              overviewTitle: '帳號概覽',
+              overviewSub: '清楚掌握你的會員等級、訂閱狀態與空間使用情況。',
+              levelStat: '會員等級',
+              planStat: '訂閱狀態',
+              friendStat: '好友數量',
+              spaceSummaryTitle: '空間摘要',
+              spaceSummarySub: '私人空間用於沉澱，公共空間用於分享。',
+              profileTitle: '資料設定',
+              profileSub: '更新顯示名稱，主頁與聊天視窗會同步顯示。',
+              displayNamePlaceholder: '輸入顯示名稱',
+              saveProfile: '儲存資料',
+              saveSuccess: '資料已更新',
+              saveError: '資料更新失敗，請稍後重試。',
+            },
+            spaces: {
+              privateSub: '用於自我整理、草稿與私密記錄。',
+              publicSub: '分享內容、展示專案、連結更多人。',
+              createTitle: '建立空間',
+              createSub: '新增一個私人空間或公共空間。',
+              namePlaceholder: '空間名稱',
+              descPlaceholder: '空間描述',
+              createAction: '建立空間',
+              createSuccess: '空間已建立',
+              createError: '空間建立失敗，請檢查名稱後重試。',
+              type: { private: '私人', public: '公共' },
+            },
+            posts: {
+              feedTitle: '公共內容流',
+              feedSub: '發布你的近況、想法與專案更新。',
+              titlePlaceholder: '文章標題',
+              contentPlaceholder: '寫點什麼，分享給大家...',
+              publishAction: '發布文章',
+              publishSuccess: '文章已發布。',
+              publishError: '文章發布失敗，請稍後重試。',
+              empty: '公共內容流還沒有文章，先發布第一篇吧。',
+              unlike: '取消按讚',
+              commentPlaceholder: '寫下你的評論...',
+              commentAction: '送出評論',
+              commentError: '評論失敗，請稍後重試。',
+              share: '轉發',
+              shareError: '轉發失敗，請稍後重試。',
+              privateLabel: '僅自己可見',
+              publicLabel: '公開',
+            },
+            subscription: {
+              title: '訂閱管理',
+              currentPlan: '目前方案',
+              status: '訂閱狀態',
+              startedAt: '開始時間',
+              expiresAt: '到期時間',
+              renew: '續訂',
+              activate: '立即開通',
+              empty: '目前還沒有有效訂閱。',
+              actionSuccess: '訂閱已生效。',
+              actionError: '訂閱操作失敗，請稍後重試。',
+            },
+            friends: {
+              searchPlaceholder: '輸入顯示名稱、信箱、手機號碼或使用者 ID',
+              searchAction: '搜尋使用者',
+              addAction: '送出請求',
+              acceptAction: '接受',
+              directionIncoming: '收到的請求',
+              directionOutgoing: '我發出的請求',
+              empty: '還沒有好友關係，先新增一個吧。',
+              searchEmpty: '沒有找到符合的使用者。',
+              searchHint: '先搜尋使用者，再發起好友請求。',
+              searchError: '使用者搜尋失敗，請稍後重試。',
+              addError: '好友請求送出失敗。',
+              addSuccess: '好友請求已送出。',
+              acceptError: '接受好友請求失敗。',
+            },
+            chat: {
+              title: '會話',
+              pickFriend: '選擇好友開始聊天',
+              onlineNow: '即時在線',
+              inputPlaceholder: '輸入訊息...',
+              send: '送出',
+              loadError: '聊天記錄載入失敗。',
+              emptyConversation: '目前會話還沒有訊息。',
+              sendError: '聊天服務尚未連線，請先建立連線。',
+            },
+            plans: {
+              basic: '基礎會員',
+              premium: '高級會員',
+              vip: 'VIP 會員',
+              monthly: '月度訂閱',
+            },
+            statuses: {
+              busy: '忙碌中',
+              inactive: '未開通',
+              active: '生效中',
+              expired: '已過期',
+              canceled: '已取消',
+              pending: '待確認',
+              accepted: '已通過',
+              blocked: '已封鎖',
+            },
+            i18n: {
+              title: '語言設定',
+              choose: '目前語言',
+              addTitle: '新增語言',
+              codePlaceholder: '語言代碼（例如：ja-JP）',
+              namePlaceholder: '顯示名稱（例如：日本語）',
+              dirLabel: '文字方向',
+              dirLtr: '由左至右',
+              dirRtl: '由右至左',
+              jsonPlaceholder: '可選：覆蓋翻譯 JSON（結構比照 zh-CN）',
+              addButton: '新增語言',
+            },
+          },
+        );
+      }
+      if (!this.translations.he) {
+        this.translations.he = this.deepMerge(
+          JSON.parse(JSON.stringify(this.translations['en-US'])),
+          {
+            htmlTitle: 'שירות חשבון · מרחב פרטי וציבורי',
+            brandSub: 'מרחב פרטי + ציבורי',
+            common: { guest: 'אורח' },
+            nav: {
+              auth: 'כניסה / הרשמה',
+              dashboard: 'לוח בקרה',
+              private: 'מרחב פרטי',
+              public: 'מרחב ציבורי',
+              levels: 'חברות',
+              subscription: 'מנוי',
+              friends: 'חברים',
+              chat: 'צ׳אט חי',
+            },
+            ws: {
+              statusLabel: 'מצב חיבור',
+              unreadLabel: 'לא נקראו',
+              connect: 'התחבר לצ׳אט',
+              disconnect: 'התנתק מהצ׳אט',
+              disconnected: 'מנותק',
+              connecting: 'מתחבר...',
+              connected: 'מחובר',
+              closed: 'נסגר',
+              needLogin: 'נדרשת כניסה',
+            },
+            pageTitle: {
+              auth: 'כניסה / הרשמה',
+              dashboard: 'לוח בקרה',
+              private: 'מרחב פרטי',
+              public: 'מרחב ציבורי',
+              levels: 'חברות',
+              subscription: 'מנוי',
+              friends: 'חברים',
+              chat: 'צ׳אט חי',
+            },
+            pageSub: {
+              auth: 'גישה מהירה למרחב הפרטי והציבורי שלך',
+              dashboard: 'סיכום חשבון ותובנות על המרחב',
+              private: 'ארגון תוכן אישי',
+              public: 'שיתוף תוכן ויצירת קשרים',
+              levels: 'בחירת רמת החברות המתאימה',
+              subscription: 'ניהול תכנית והטבות',
+              friends: 'בניית קשרים ושיחה פרטית',
+              chat: 'תקשורת בזמן אמת',
+            },
+            auth: {
+              welcomeTitle: 'ברוך הבא בחזרה',
+              welcomeSub: 'התחבר כדי לגשת למרחבים הפרטי והציבורי שלך.',
+              createTitle: 'יצירת חשבון',
+              createSub: 'הצטרף לתכניות החברות ופתח יותר אפשרויות.',
+              accountPlaceholder: 'אימייל / טלפון',
+              passwordPlaceholder: 'סיסמה',
+              emailPlaceholder: 'אימייל',
+              phonePlaceholder: 'טלפון',
+              login: 'כניסה',
+              register: 'הרשמה',
+              logout: 'התנתקות',
+              logoutSuccess: 'התנתקת.',
+              loginError: 'הכניסה נכשלה. בדוק את החשבון והסיסמה.',
+              registerError: 'ההרשמה נכשלה. בדוק את הפרטים ונסה שוב.',
+            },
+            dashboard: {
+              overviewTitle: 'סקירת חשבון',
+              overviewSub: 'עקוב בקלות אחרי הרמה, המנוי והשימוש במרחבים.',
+              levelStat: 'רמת חברות',
+              planStat: 'מנוי',
+              friendStat: 'חברים',
+              spaceSummaryTitle: 'סיכום מרחבים',
+              spaceSummarySub: 'מרחבים פרטיים להתמקדות, מרחבים ציבוריים לשיתוף.',
+              profileTitle: 'הגדרות פרופיל',
+              profileSub: 'עדכן את שם התצוגה עבור הלוח והצ׳אט.',
+              displayNamePlaceholder: 'הכנס שם תצוגה',
+              saveProfile: 'שמור פרופיל',
+              saveSuccess: 'הפרופיל עודכן',
+              saveError: 'עדכון הפרופיל נכשל. נסה שוב מאוחר יותר.',
+            },
+            spaces: {
+              privateTitle: 'מרחב פרטי',
+              privateSub: 'להערות אישיות, טיוטות ורשומות פרטיות.',
+              publicTitle: 'מרחב ציבורי',
+              publicSub: 'שתף עדכונים, הצג פרויקטים וצור קשרים.',
+              createTitle: 'יצירת מרחב',
+              createSub: 'הוסף מרחב פרטי או ציבורי חדש.',
+              namePlaceholder: 'שם המרחב',
+              descPlaceholder: 'תיאור המרחב',
+              createAction: 'צור מרחב',
+              createSuccess: 'המרחב נוצר',
+              createError: 'יצירת המרחב נכשלה. בדוק את השם ונסה שוב.',
+              type: { private: 'פרטי', public: 'ציבורי' },
+            },
+            posts: {
+              feedTitle: 'פיד ציבורי',
+              feedSub: 'שתף עדכונים, רעיונות והתקדמות בפרויקט.',
+              titlePlaceholder: 'כותרת הפוסט',
+              contentPlaceholder: 'כתוב משהו לשתף...',
+              publishAction: 'פרסם פוסט',
+              publishSuccess: 'הפוסט פורסם.',
+              publishError: 'הפרסום נכשל. נסה שוב מאוחר יותר.',
+              empty: 'הפיד הציבורי ריק. פרסם את הפוסט הראשון.',
+              like: 'לייק',
+              unlike: 'בטל לייק',
+              comment: 'תגובה',
+              commentPlaceholder: 'כתוב תגובה...',
+              commentAction: 'שלח תגובה',
+              commentError: 'שליחת התגובה נכשלה. נסה שוב מאוחר יותר.',
+              share: 'שיתוף',
+              shareError: 'השיתוף נכשל. נסה שוב מאוחר יותר.',
+              privateLabel: 'פרטי',
+              publicLabel: 'ציבורי',
+            },
+            levels: {
+              title: 'רמות חברות',
+              upgrade: 'שדרג',
+              current: 'הרמה הנוכחית',
+            },
+            subscription: {
+              title: 'מנוי',
+              currentPlan: 'תכנית נוכחית',
+              status: 'סטטוס',
+              startedAt: 'התחיל ב',
+              expiresAt: 'פג תוקף ב',
+              renew: 'חדש',
+              activate: 'הפעל',
+              empty: 'עדיין אין מנוי פעיל.',
+              actionSuccess: 'המנוי פעיל כעת.',
+              actionError: 'פעולת המנוי נכשלה. נסה שוב מאוחר יותר.',
+            },
+            friends: {
+              title: 'חברים',
+              chat: 'צ׳אט',
+              searchPlaceholder: 'הכנס שם תצוגה, אימייל, טלפון או מזהה משתמש',
+              searchAction: 'חפש משתמשים',
+              addAction: 'שלח בקשה',
+              acceptAction: 'אשר',
+              directionIncoming: 'בקשה נכנסת',
+              directionOutgoing: 'בקשה יוצאת',
+              contactSeparator: ' · ',
+              empty: 'עדיין אין חברים. הוסף אחד כדי להתחיל.',
+              searchEmpty: 'לא נמצאו משתמשים מתאימים.',
+              searchHint: 'חפש משתמש תחילה ואז שלח בקשת חברות.',
+              searchError: 'חיפוש המשתמש נכשל. נסה שוב מאוחר יותר.',
+              addError: 'שליחת בקשת החברות נכשלה.',
+              addSuccess: 'בקשת החברות נשלחה.',
+              acceptError: 'אישור בקשת החברות נכשל.',
+            },
+            chat: {
+              title: 'שיחות',
+              pickFriend: 'בחר חבר כדי להתחיל צ׳אט',
+              onlineNow: 'מחובר כעת',
+              inputPlaceholder: 'הקלד הודעה...',
+              send: 'שלח',
+              loadError: 'טעינת היסטוריית הצ׳אט נכשלה.',
+              emptyConversation: 'עדיין אין הודעות בשיחה הזו.',
+              sendError: 'שירות הצ׳אט אינו מחובר עדיין.',
+            },
+            plans: {
+              basic: 'בסיסי',
+              premium: 'פרימיום',
+              vip: 'VIP',
+              monthly: 'תכנית חודשית',
+            },
+            statuses: {
+              online: 'מחובר',
+              busy: 'עסוק',
+              offline: 'לא מחובר',
+              inactive: 'לא פעיל',
+              active: 'פעיל',
+              expired: 'פג תוקף',
+              canceled: 'בוטל',
+              pending: 'ממתין',
+              accepted: 'אושר',
+              blocked: 'נחסם',
+            },
+            i18n: {
+              title: 'הגדרות שפה',
+              choose: 'שפה נוכחית',
+              addTitle: 'הוסף שפה',
+              codePlaceholder: 'קוד שפה (למשל: ar)',
+              namePlaceholder: 'שם תצוגה',
+              dirLabel: 'כיוון טקסט',
+              dirLtr: 'משמאל לימין',
+              dirRtl: 'מימין לשמאל',
+              jsonPlaceholder: 'אופציונלי: JSON לעדיפות תרגום, לפי מבנה zh-CN',
+              addButton: 'הוסף שפה',
+            },
+          },
+        );
+      }
     },
     clearFeedback() {
       // Reset transient success/error messages before a new action.
@@ -620,6 +1072,11 @@ createApp({
         startedAt: '',
         endedAt: '',
       };
+      this.posts = [];
+      this.postDraft.title = '';
+      this.postDraft.content = '';
+      this.postDraft.visibility = 'public';
+      this.commentDrafts = {};
       this.friends = [];
       this.newFriendQuery = '';
       this.friendSearchResults = [];
@@ -682,6 +1139,9 @@ createApp({
     localizedLevelFeatures(level) {
       return level.features[this.locale] || level.features['zh-CN'] || [];
     },
+    visibilityLabel(visibility) {
+      return visibility === 'private' ? this.t('posts.privateLabel') : this.t('posts.publicLabel');
+    },
     isCurrentLevel(level) {
       // Check whether the level card matches the current user tier.
       // 判断当前等级卡片是否对应用户当前等级。
@@ -713,10 +1173,11 @@ createApp({
 
       const base = JSON.parse(JSON.stringify(this.translations['zh-CN']));
       this.translations[code] = this.deepMerge(base, customPatch);
-      this.languageMeta[code] = name;
+      this.languageMeta[code] = { name, dir: this.newLanguage.dir || 'ltr' };
 
       this.newLanguage.code = '';
       this.newLanguage.name = '';
+      this.newLanguage.dir = 'ltr';
       this.newLanguage.json = '';
       this.locale = code;
     },
@@ -746,6 +1207,7 @@ createApp({
         await this.loadMe();
         await this.loadSpaces();
         await this.loadSubscription();
+        await this.loadPosts();
         await this.loadFriends();
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
@@ -782,6 +1244,7 @@ createApp({
         await this.loadMe();
         await this.loadSpaces();
         await this.loadSubscription();
+        await this.loadPosts();
         await this.loadFriends();
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
@@ -858,6 +1321,130 @@ createApp({
         startedAt: data.started_at || '',
         endedAt: data.ended_at || '',
       };
+    },
+    async loadPosts() {
+      // Load the public content feed.
+      // 加载公共内容流。
+      if (!this.token) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts?visibility=public&limit=50`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        this.posts = data.items.map((item) => ({
+          id: item.id,
+          userId: item.user_id,
+          authorName: item.author_name,
+          title: item.title,
+          content: item.content,
+          visibility: item.visibility,
+          likesCount: Number(item.likes_count || 0),
+          commentsCount: Number(item.comments_count || 0),
+          sharesCount: Number(item.shares_count || 0),
+          likedByMe: Boolean(item.liked_by_me),
+          createdAt: item.created_at,
+          comments: Array.isArray(item.comments)
+            ? item.comments.map((comment) => ({
+                id: comment.id,
+                authorName: comment.author_name,
+                content: comment.content,
+                createdAt: comment.created_at,
+              }))
+            : [],
+        }));
+      }
+    },
+    async createPost() {
+      // Create a new social post.
+      // 创建新的社交文章。
+      this.clearFeedback();
+      if (!this.token || !this.postDraft.title.trim() || !this.postDraft.content.trim()) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: this.postDraft.title.trim(),
+          content: this.postDraft.content.trim(),
+          visibility: this.postDraft.visibility,
+        }),
+      });
+      if (!res.ok) {
+        this.setError(this.t('posts.publishError'));
+        return;
+      }
+      this.postDraft.title = '';
+      this.postDraft.content = '';
+      this.postDraft.visibility = 'public';
+      await this.loadPosts();
+      this.setFlash(this.t('posts.publishSuccess'));
+    },
+    async togglePostLike(post) {
+      // Toggle like state for a post.
+      // 切换文章点赞状态。
+      this.clearFeedback();
+      if (!this.token || !post) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts/${post.id}/likes`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      await this.loadPosts();
+    },
+    async submitComment(post) {
+      // Submit a comment to a post.
+      // 向文章提交评论。
+      this.clearFeedback();
+      const content = this.commentDrafts[post.id] || '';
+      if (!this.token || !post || !content.trim()) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: content.trim(),
+        }),
+      });
+      if (!res.ok) {
+        this.setError(this.t('posts.commentError'));
+        return;
+      }
+      this.commentDrafts[post.id] = '';
+      await this.loadPosts();
+    },
+    async sharePost(post) {
+      // Share a post in the social feed.
+      // 在内容流中转发文章。
+      this.clearFeedback();
+      if (!this.token || !post) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts/${post.id}/shares`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        this.setError(this.t('posts.shareError'));
+        return;
+      }
+      await this.loadPosts();
     },
     async saveProfile() {
       // Persist display name changes to the account service.
@@ -1187,11 +1774,13 @@ createApp({
 
     // Restore language from local storage.
     // 从本地存储恢复语言。
+    this.installBuiltinLocales();
     const savedLocale = localStorage.getItem('locale');
     if (savedLocale && this.translations[savedLocale]) {
       this.locale = savedLocale;
     }
     document.documentElement.lang = this.locale;
+    document.documentElement.dir = this.localeDirection;
     document.title = this.t('htmlTitle');
 
     // Load token from storage.
@@ -1202,6 +1791,7 @@ createApp({
       this.loadMe();
       this.loadSpaces();
       this.loadSubscription();
+      this.loadPosts();
       this.loadFriends().then(() => {
         if (this.activeChat) {
           this.loadConversation(this.activeChat.id);
