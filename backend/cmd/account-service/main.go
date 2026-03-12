@@ -63,6 +63,7 @@ func main() {
 	authGroup.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	authGroup.GET("/me", h.Me)
 	authGroup.PUT("/me", h.UpdateMe)
+	authGroup.GET("/users/search", h.SearchUsers)
 	authGroup.GET("/spaces", h.ListSpaces)
 	authGroup.POST("/spaces", h.CreateSpace)
 	authGroup.GET("/friends", h.ListFriends)

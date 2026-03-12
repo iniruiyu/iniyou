@@ -36,6 +36,7 @@ type spaceRequest struct {
 
 type friendRequest struct {
 	FriendID string `json:"friend_id"`
+	Account  string `json:"account"`
 }
 
 type subscriptionRequest struct {
@@ -183,12 +184,25 @@ func (h *AccountHandler) AddFriend(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	friend, err := service.AddFriend(h.DB, uid, req.FriendID)
+	friend, err := service.AddFriend(h.DB, uid, req.FriendID, req.Account)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, friend)
+}
+
+func (h *AccountHandler) SearchUsers(c *gin.Context) {
+	// Search users for friend requests.
+	// 搜索可添加的用户。
+	uid := c.GetString("user_id")
+	query := c.Query("q")
+	items, err := service.SearchUsers(h.DB, uid, query, 10)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
 func (h *AccountHandler) AcceptFriend(c *gin.Context) {

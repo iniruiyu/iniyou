@@ -143,14 +143,19 @@ createApp({
           friends: {
             title: '好友',
             chat: '聊天',
-            addPlaceholder: '输入好友 ID',
+            searchPlaceholder: '输入展示名、邮箱、手机号或用户 ID',
+            searchAction: '搜索用户',
             addAction: '发送请求',
             acceptAction: '接受',
             directionIncoming: '收到的请求',
             directionOutgoing: '我发出的请求',
             contactSeparator: ' · ',
             empty: '还没有好友关系，先添加一个吧。',
+            searchEmpty: '没有找到匹配用户。',
+            searchHint: '先搜索用户，再发起好友请求。',
+            searchError: '用户搜索失败，请稍后重试。',
             addError: '好友请求发送失败。',
+            addSuccess: '好友请求已发送。',
             acceptError: '接受好友请求失败。',
           },
           chat: {
@@ -307,14 +312,19 @@ createApp({
           friends: {
             title: 'Friends',
             chat: 'Chat',
-            addPlaceholder: 'Enter friend ID',
+            searchPlaceholder: 'Enter display name, email, phone, or user ID',
+            searchAction: 'Search Users',
             addAction: 'Send Request',
             acceptAction: 'Accept',
             directionIncoming: 'Incoming request',
             directionOutgoing: 'Outgoing request',
             contactSeparator: ' · ',
             empty: 'No friend relations yet. Add one to get started.',
+            searchEmpty: 'No matching users found.',
+            searchHint: 'Search for a user first, then send a friend request.',
+            searchError: 'User search failed. Try again later.',
             addError: 'Sending friend request failed.',
+            addSuccess: 'Friend request sent.',
             acceptError: 'Accepting friend request failed.',
           },
           chat: {
@@ -460,9 +470,13 @@ createApp({
         { id: 'f2', name: 'Ethan', secondary: '+1 202-555-0189', status: 'accepted', direction: 'outgoing' },
         { id: 'f3', name: 'Kai', secondary: 'kai@example.com', status: 'pending', direction: 'incoming' },
       ],
-      // Friend request input.
-      // 好友请求输入框。
-      newFriendId: '',
+      // Friend search input.
+      // 好友搜索输入框。
+      newFriendQuery: '',
+      // Friend search results.
+      // 好友搜索结果。
+      friendSearchResults: [],
+      friendSearchPerformed: false,
       // Active chat target.
       // 当前聊天对象。
       activeChat: null,
@@ -607,6 +621,9 @@ createApp({
         endedAt: '',
       };
       this.friends = [];
+      this.newFriendQuery = '';
+      this.friendSearchResults = [];
+      this.friendSearchPerformed = false;
       this.chatMessages = [];
       this.activeChat = null;
       this.profileDraft.displayName = '';
@@ -624,6 +641,19 @@ createApp({
       // Render the best available secondary contact text.
       // 渲染可用的次级联系信息。
       return friend.secondary || friend.id;
+    },
+    searchResultActionLabel(result) {
+      // Render the action label for a user search result.
+      // 渲染用户搜索结果对应的操作文案。
+      if (!result.relationStatus) {
+        return this.t('friends.addAction');
+      }
+      return this.statusLabel(result.relationStatus);
+    },
+    searchResultDisabled(result) {
+      // Only allow adding users without an existing relation.
+      // 仅允许对尚未建立关系的用户发起添加。
+      return Boolean(result.relationStatus);
     },
     formatDateTime(value) {
       // Format backend timestamps into locale-aware display text.
@@ -935,6 +965,35 @@ createApp({
         }
       }
     },
+    async searchUsers() {
+      // Search users that can be added as friends.
+      // 搜索可添加为好友的用户。
+      this.clearFeedback();
+      if (!this.token || !this.newFriendQuery.trim()) {
+        this.friendSearchResults = [];
+        this.friendSearchPerformed = false;
+        return;
+      }
+      const query = encodeURIComponent(this.newFriendQuery.trim());
+      const res = await fetch(`${this.apiBase}/users/search?q=${query}`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        this.setError(this.t('friends.searchError'));
+        return;
+      }
+      const data = await res.json();
+      this.friendSearchResults = Array.isArray(data.items)
+        ? data.items.map((item) => ({
+            id: item.user_id,
+            name: item.display_name || item.email || item.phone || item.user_id,
+            secondary: item.email || item.phone || item.user_id,
+            relationStatus: item.relation_status || '',
+            direction: item.direction || '',
+          }))
+        : [];
+      this.friendSearchPerformed = true;
+    },
     async loadConversation(friendID) {
       // Load chat history for the selected friend.
       // 加载当前好友的历史会话。
@@ -981,11 +1040,11 @@ createApp({
       const data = await res.json();
       this.unreadCount = Number(data.unread || 0);
     },
-    async addFriend() {
-      // Send a new friend request.
-      // 发送新的好友请求。
+    async addFriend(result) {
+      // Send a new friend request to the selected user.
+      // 向选中的用户发送好友请求。
       this.clearFeedback();
-      if (!this.token || !this.newFriendId.trim()) {
+      if (!this.token || !result || !result.id) {
         return;
       }
       const res = await fetch(`${this.apiBase}/friends`, {
@@ -995,15 +1054,20 @@ createApp({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          friend_id: this.newFriendId.trim(),
+          friend_id: result.id,
         }),
       });
       if (!res.ok) {
         this.setError(this.t('friends.addError'));
         return;
       }
-      this.newFriendId = '';
+      this.friendSearchResults = this.friendSearchResults.map((item) => (
+        item.id === result.id
+          ? { ...item, relationStatus: 'pending', direction: 'outgoing' }
+          : item
+      ));
       await this.loadFriends();
+      this.setFlash(this.t('friends.addSuccess'));
     },
     async acceptFriend(friend) {
       // Accept an incoming friend request.
@@ -1027,6 +1091,9 @@ createApp({
         return;
       }
       await this.loadFriends();
+      if (this.friendSearchPerformed && this.newFriendQuery.trim()) {
+        await this.searchUsers();
+      }
     },
     async startChat(friend) {
       // Switch to chat view and set active friend.

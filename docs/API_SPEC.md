@@ -55,6 +55,7 @@
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
+- `GET /api/v1/users/search`
 - `PATCH /api/v1/users/{id}`
 - `GET /api/v1/users/{id}`
 - `GET /api/v1/users/{id}/profile`
@@ -112,25 +113,31 @@
 - 用途：用户登录并获取认证态
 - 请求字段建议：`account`, `password`
 
-### 6.3 发布文章
+### 6.3 搜索用户
+
+- `GET /api/v1/users/search?q=keyword`
+- 用途：按展示名、邮箱、手机号或用户 ID 搜索用户
+- 返回字段建议：`user_id`, `display_name`, `email`, `phone`, `relation_status`, `direction`
+
+### 6.4 发布文章
 
 - `POST /api/v1/posts`
 - 用途：创建文章
 - 请求字段建议：`title`, `content`, `status`
 
-### 6.4 评论文章
+### 6.5 评论文章
 
 - `POST /api/v1/posts/{id}/comments`
 - 用途：创建评论
 - 请求字段建议：`content`, `parent_comment_id`
 
-### 6.5 发送消息
+### 6.6 发送消息
 
 - `POST /api/v1/chats/{id}/messages`
 - 用途：发送聊天消息
 - 请求字段建议：`content`, `message_type`
 
-### 6.6 绑定外部账号
+### 6.7 绑定外部账号
 
 - `POST /api/v1/external-accounts`
 - 用途：绑定区块链账号或其他外部身份

@@ -222,9 +222,23 @@
       <section v-if="view === 'friends'" class="panel">
         <h2>{{ t('friends.title') }}</h2>
         <div class="friend-toolbar">
-          <input type="text" :placeholder="t('friends.addPlaceholder')" v-model="newFriendId" @keyup.enter="addFriend" />
-          <button class="primary" @click="addFriend">{{ t('friends.addAction') }}</button>
+          <input type="text" :placeholder="t('friends.searchPlaceholder')" v-model="newFriendQuery" @keyup.enter="searchUsers" />
+          <button class="primary" @click="searchUsers">{{ t('friends.searchAction') }}</button>
         </div>
+        <div class="search-hint">{{ t('friends.searchHint') }}</div>
+        <div v-if="friendSearchResults.length > 0" class="friends-grid search-results">
+          <div class="friend-card" v-for="result in friendSearchResults" :key="result.id">
+            <div class="avatar small"></div>
+            <div>
+              <div class="friend-name">{{ result.name }}</div>
+              <div class="friend-secondary">{{ friendSecondary(result) }}</div>
+              <div v-if="result.direction" class="friend-direction">{{ directionLabel(result.direction) }}</div>
+              <div v-if="result.relationStatus" class="friend-status">{{ statusLabel(result.relationStatus) }}</div>
+            </div>
+            <button class="ghost" :disabled="searchResultDisabled(result)" @click="addFriend(result)">{{ searchResultActionLabel(result) }}</button>
+          </div>
+        </div>
+        <div v-else-if="friendSearchPerformed" class="empty-state">{{ t('friends.searchEmpty') }}</div>
         <div class="friends-grid">
           <div class="friend-card" v-for="friend in friends" :key="friend.id">
             <div class="avatar small"></div>

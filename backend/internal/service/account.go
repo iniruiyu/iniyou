@@ -25,6 +25,17 @@ type FriendView struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
+type UserSearchView struct {
+	// User search result for adding friends.
+	// 用于添加好友的用户搜索结果。
+	UserID         string  `json:"user_id"`
+	DisplayName    string  `json:"display_name"`
+	Email          *string `json:"email"`
+	Phone          *string `json:"phone"`
+	RelationStatus string  `json:"relation_status,omitempty"`
+	Direction      string  `json:"direction,omitempty"`
+}
+
 type SubscriptionView struct {
 	// Subscription view returned to clients.
 	// 返回给客户端的订阅视图。
@@ -143,10 +154,85 @@ func ListSpaces(db *gorm.DB, userID string) ([]models.Space, error) {
 	return spaces, nil
 }
 
-func AddFriend(db *gorm.DB, userID string, friendID string) (models.Friend, error) {
+func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSearchView, error) {
+	// Search users by display name, email, phone, or user id.
+	// 按展示名、邮箱、手机号或用户 ID 搜索用户。
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return []UserSearchView{}, nil
+	}
+	if limit < 1 {
+		limit = 1
+	}
+	if limit > 20 {
+		limit = 20
+	}
+
+	likeQuery := "%" + strings.ToLower(query) + "%"
+	var users []models.User
+	if err := db.Select("id", "display_name", "email", "phone").
+		Where("id <> ?", userID).
+		Where(
+			"LOWER(display_name) LIKE ? OR LOWER(COALESCE(email, '')) LIKE ? OR LOWER(COALESCE(phone, '')) LIKE ? OR CAST(id AS TEXT) LIKE ?",
+			likeQuery, likeQuery, likeQuery, "%"+query+"%",
+		).
+		Order("created_at desc").
+		Limit(limit).
+		Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	peerIDs := make([]string, 0, len(users))
+	for _, user := range users {
+		peerIDs = append(peerIDs, user.ID)
+	}
+
+	relationsByPeer := map[string]models.Friend{}
+	if len(peerIDs) > 0 {
+		var relations []models.Friend
+		if err := db.Where(
+			"(user_id = ? AND friend_id IN ?) OR (friend_id = ? AND user_id IN ?)",
+			userID, peerIDs, userID, peerIDs,
+		).Find(&relations).Error; err != nil {
+			return nil, err
+		}
+		for _, relation := range relations {
+			peerID := relation.FriendID
+			if relation.FriendID == userID {
+				peerID = relation.UserID
+			}
+			relationsByPeer[peerID] = relation
+		}
+	}
+
+	items := make([]UserSearchView, 0, len(users))
+	for _, user := range users {
+		item := UserSearchView{
+			UserID:      user.ID,
+			DisplayName: user.DisplayName,
+			Email:       user.Email,
+			Phone:       user.Phone,
+		}
+		if relation, ok := relationsByPeer[user.ID]; ok {
+			item.RelationStatus = relation.Status
+			if relation.UserID == userID {
+				item.Direction = "outgoing"
+			} else {
+				item.Direction = "incoming"
+			}
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func AddFriend(db *gorm.DB, userID string, friendID string, account string) (models.Friend, error) {
 	// Send a friend request.
 	// 发送好友请求。
-	friendID = strings.TrimSpace(friendID)
+	friendID, err := resolveFriendID(db, userID, friendID, account)
+	if err != nil {
+		return models.Friend{}, err
+	}
 	if friendID == "" {
 		return models.Friend{}, errors.New("friend id required")
 	}
@@ -167,6 +253,33 @@ func AddFriend(db *gorm.DB, userID string, friendID string) (models.Friend, erro
 		return models.Friend{}, err
 	}
 	return friend, nil
+}
+
+func resolveFriendID(db *gorm.DB, userID string, friendID string, account string) (string, error) {
+	// Resolve a target user from explicit id or account identifier.
+	// 从显式 ID 或账号标识解析目标用户。
+	friendID = strings.TrimSpace(friendID)
+	account = strings.TrimSpace(account)
+	if friendID == "" && account == "" {
+		return "", errors.New("friend id or account required")
+	}
+
+	lookup := friendID
+	if lookup == "" {
+		lookup = account
+	}
+
+	var user models.User
+	if err := db.Select("id").Where("id = ? OR email = ? OR phone = ?", lookup, lookup, lookup).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errors.New("friend account not found")
+		}
+		return "", err
+	}
+	if user.ID == userID {
+		return "", errors.New("cannot add yourself")
+	}
+	return user.ID, nil
 }
 
 func ListFriends(db *gorm.DB, userID string) ([]FriendView, error) {
