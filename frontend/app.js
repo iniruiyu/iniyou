@@ -42,6 +42,7 @@ createApp({
             private: '私人空间',
             public: '公共空间',
             profile: '用户主页',
+            postDetail: '文章详情',
             levels: '会员等级',
             subscription: '订阅',
             friends: '好友',
@@ -64,6 +65,7 @@ createApp({
             private: '私人空间',
             public: '公共空间',
             profile: '用户主页',
+            postDetail: '文章详情',
             levels: '会员等级',
             subscription: '订阅管理',
             friends: '好友',
@@ -75,6 +77,7 @@ createApp({
             private: '沉淀个人内容',
             public: '展示公共内容与连接',
             profile: '查看作者的公开内容与互动记录',
+            postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
             subscription: '管理订阅与权益',
             friends: '建立联系与私聊',
@@ -157,6 +160,7 @@ createApp({
             openChat: '发起聊天',
             addFriend: '添加好友',
             acceptFriend: '接受好友',
+            openDetail: '查看详情',
           },
           levels: {
             title: '会员等级',
@@ -247,6 +251,7 @@ createApp({
             private: 'Private Space',
             public: 'Public Space',
             profile: 'Profile',
+            postDetail: 'Post Detail',
             levels: 'Membership',
             subscription: 'Subscription',
             friends: 'Friends',
@@ -269,6 +274,7 @@ createApp({
             private: 'Private Space',
             public: 'Public Space',
             profile: 'Profile',
+            postDetail: 'Post Detail',
             levels: 'Membership',
             subscription: 'Subscription',
             friends: 'Friends',
@@ -280,6 +286,7 @@ createApp({
             private: 'Keep personal content organized',
             public: 'Showcase content and connect',
             profile: 'Browse this author\'s public posts and activity',
+            postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
             subscription: 'Manage plan and benefits',
             friends: 'Build connections and chat privately',
@@ -362,6 +369,7 @@ createApp({
             openChat: 'Open Chat',
             addFriend: 'Add Friend',
             acceptFriend: 'Accept Friend',
+            openDetail: 'Open Detail',
           },
           levels: {
             title: 'Membership Levels',
@@ -525,6 +533,9 @@ createApp({
       // Selected profile post list.
       // 当前查看的用户主页文章列表。
       profilePosts: [],
+      // Current post detail.
+      // 当前文章详情。
+      currentPost: null,
       // Post composer form.
       // 文章发布表单。
       postDraft: {
@@ -605,12 +616,18 @@ createApp({
       return this.getLanguageMeta(this.locale).dir || 'ltr';
     },
     pageTitle() {
+      if (this.view === 'postDetail' && this.currentPost?.title) {
+        return this.currentPost.title;
+      }
       if (this.view === 'profile' && this.profileUser.name) {
         return this.profileUser.name;
       }
       return this.t(`pageTitle.${this.view}`) || this.t('pageTitle.dashboard');
     },
     pageSub() {
+      if (this.view === 'postDetail' && this.currentPost) {
+        return this.t('pageSub.postDetail');
+      }
       if (this.view === 'profile' && this.profileUser.name) {
         return this.t('posts.profileFeedSub');
       }
@@ -1123,6 +1140,7 @@ createApp({
       this.privatePosts = [];
       this.profileUser = { id: '', name: '', secondary: '', relationStatus: '', direction: '' };
       this.profilePosts = [];
+      this.currentPost = null;
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
@@ -1515,6 +1533,47 @@ createApp({
       }
       this.view = 'profile';
     },
+    async openPostDetail(postID) {
+      // Open a single post detail page.
+      // 打开单篇文章详情页。
+      if (!this.token || !postID) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts/${postID}`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const item = await res.json();
+      this.currentPost = {
+        id: item.id,
+        userId: item.user_id,
+        authorName: item.author_name,
+        title: item.title,
+        content: item.content,
+        visibility: item.visibility,
+        likesCount: Number(item.likes_count || 0),
+        commentsCount: Number(item.comments_count || 0),
+        sharesCount: Number(item.shares_count || 0),
+        likedByMe: Boolean(item.liked_by_me),
+        createdAt: item.created_at,
+        comments: Array.isArray(item.comments)
+          ? item.comments.map((comment) => ({
+              id: comment.id,
+              authorName: comment.author_name,
+              content: comment.content,
+              createdAt: comment.created_at,
+            }))
+          : [],
+      };
+      this.view = 'postDetail';
+    },
+    backFromPostDetail() {
+      // Return from detail view to public feed.
+      // 从详情页返回公共内容流。
+      this.view = 'public';
+    },
     backToPublicFeed() {
       // Return from profile view to public feed.
       // 从用户主页返回公共内容流。
@@ -1579,6 +1638,9 @@ createApp({
       this.postDraft.visibility = 'public';
       await this.loadPosts();
       await this.loadPrivatePosts();
+      if (this.currentPost?.id) {
+        await this.openPostDetail(this.currentPost.id);
+      }
       this.setFlash(this.t('posts.publishSuccess'));
     },
     async togglePostLike(post) {
@@ -1597,6 +1659,9 @@ createApp({
       }
       await this.loadPosts();
       await this.loadPrivatePosts();
+      if (this.currentPost?.id === post.id) {
+        await this.openPostDetail(post.id);
+      }
     },
     async submitComment(post) {
       // Submit a comment to a post.
@@ -1623,6 +1688,9 @@ createApp({
       this.commentDrafts[post.id] = '';
       await this.loadPosts();
       await this.loadPrivatePosts();
+      if (this.currentPost?.id === post.id) {
+        await this.openPostDetail(post.id);
+      }
     },
     async sharePost(post) {
       // Share a post in the social feed.
@@ -1641,6 +1709,9 @@ createApp({
       }
       await this.loadPosts();
       await this.loadPrivatePosts();
+      if (this.currentPost?.id === post.id) {
+        await this.openPostDetail(post.id);
+      }
     },
     async saveProfile() {
       // Persist display name changes to the account service.

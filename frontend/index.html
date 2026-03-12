@@ -184,6 +184,7 @@
               </div>
             </div>
             <div class="post-title">{{ post.title }}</div>
+            <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
               <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
@@ -240,6 +241,7 @@
               <button class="ghost compact" @click="openProfile(post.userId, post.authorName)">{{ t('posts.viewAuthor') }}</button>
             </div>
             <div class="post-title">{{ post.title }}</div>
+            <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
               <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
@@ -288,11 +290,47 @@
               </div>
             </div>
             <div class="post-title">{{ post.title }}</div>
+            <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
               <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
               <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section v-if="view === 'levels'" class="panel">
+      <section v-if="view === 'postDetail'" class="panel">
+        <div v-if="currentPost" class="post-feed">
+          <article class="post-card">
+            <div class="post-header">
+              <div>
+                <div class="post-author">{{ currentPost.authorName }}</div>
+                <div class="post-meta">{{ visibilityLabel(currentPost.visibility) }} · {{ formatDateTime(currentPost.createdAt) }}</div>
+              </div>
+              <div class="profile-actions">
+                <button class="ghost compact" @click="backFromPostDetail">{{ t('posts.backToFeed') }}</button>
+                <button class="ghost compact" @click="openProfile(currentPost.userId, currentPost.authorName)">{{ t('posts.viewAuthor') }}</button>
+              </div>
+            </div>
+            <div class="post-title">{{ currentPost.title }}</div>
+            <div class="post-content">{{ currentPost.content }}</div>
+            <div class="post-actions">
+              <button class="ghost compact" @click="togglePostLike(currentPost)">{{ currentPost.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ currentPost.likesCount }}</button>
+              <button class="ghost compact" @click="sharePost(currentPost)">{{ t('posts.share') }} · {{ currentPost.sharesCount }}</button>
+              <div class="post-comment-count">{{ t('posts.comment') }} · {{ currentPost.commentsCount }}</div>
+            </div>
+            <div class="post-comments" v-if="currentPost.comments.length > 0">
+              <div class="post-comment" v-for="comment in currentPost.comments" :key="comment.id">
+                <div class="post-comment-author">{{ comment.authorName }}</div>
+                <div class="post-comment-text">{{ comment.content }}</div>
+              </div>
+            </div>
+            <div class="post-comment-form">
+              <input type="text" :placeholder="t('posts.commentPlaceholder')" v-model="commentDrafts[currentPost.id]" @keyup.enter="submitComment(currentPost)" />
+              <button class="ghost compact" @click="submitComment(currentPost)">{{ t('posts.commentAction') }}</button>
             </div>
           </article>
         </div>
