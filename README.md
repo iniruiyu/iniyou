@@ -1,50 +1,91 @@
 # iniyou
 
-这是 `iniyou` 项目仓库。当前仓库同时包含项目规划文档，以及已经落地的前后端实现代码。
+`iniyou` 是一个包含账号、社交内容、聊天和链上账号扩展能力的项目仓库。当前仓库同时保存规划文档和已落地实现，后续开发以本仓库为唯一主线。
 
-## 仓库结构
+## 项目结构
 
-- `backend/`: Golang 后端服务实现，包含账号服务与通讯服务
-- `frontend/`: 前端页面与静态资源
-- `docs/`: 项目规划、需求、接口与设计文档
-- `DESIGN.md`: 现阶段设计说明
+- `backend/`: Golang 后端，包含 `account-service` 和 `message-service`
+- `frontend/`: 原生 HTML、CSS、JavaScript 前端页面
+- `docs/`: 需求、设计、接口和开发大纲
+- `DESIGN.md`: 当前阶段设计说明
+- `Makefile`: 本地测试、构建和启动命令
 
-## 文档结构
+## 运行依赖
 
-- `docs/PROJECT_PLAN.md`: 项目规划与阶段目标
-- `docs/REQUIREMENTS.md`: 需求文档与功能范围记录
-- `docs/API_SPEC.md`: RESTful API 清单
-- `docs/DATA_MODEL.md`: 数据实体与关系草案
-- `docs/design/FRONTEND_DESIGN.md`: 前端设计图与交互草案
-- `docs/ARCHITECTURE_DECISIONS.md`: 架构选型与第三方依赖记录
-- `docs/development-outline/`: 开发大纲与项目任务拆分
+- Go 1.22 或更高版本
+- Node.js 18 或更高版本
+- PostgreSQL 14 或更高版本
 
-## 当前约束
+## 环境变量
 
-- 需要同时支持网页端、Windows 桌面端和移动端
-- 后端接口遵循 RESTful 规范
-- 前端设计文档单独维护，便于后续持续迭代
-- 前端技术栈采用 Flutter、HTML5、CSS3、JavaScript，可使用 Vue 3
-- 后端技术栈采用 Golang、Gin、Gorm，数据库适配 MySQL 与 PostgreSQL
-- 尽量不使用第三方库，如确需引入，必须补充到 `docs/ARCHITECTURE_DECISIONS.md`
-- 前后端必须分离，架构边界保持清晰
-- 后端尽量避免使用 CGO，优先采用纯 Go 方案
-- 代码注释要求清晰，关键注释采用英文中文双语
+复制一份环境变量模板：
 
-## 当前代码现状
+```bash
+cp .env.example .env
+```
 
-- 后端技术栈为 Golang、Gin、Gorm
-- 前端当前为原生 HTML、CSS、JavaScript 页面
-- 代码目录已并入当前仓库，后续开发以本仓库为主
+当前主要变量：
 
-## 文档维护规则
+- `DB_DSN`: PostgreSQL 连接串
+- `JWT_SECRET`: 登录签名密钥
+- `TOKEN_TTL_MIN`: 登录态有效时间（分钟）
+- `SERVICE_PORT`: 可选；账号服务默认 `8080`，通讯服务默认 `8081`
 
-- `docs/PROJECT_PLAN.md` 记录项目规划与架构方向变化
-- `docs/REQUIREMENTS.md` 记录功能需求、业务范围与需求变更
-- `docs/API_SPEC.md` 记录接口清单与联调基线
-- `docs/DATA_MODEL.md` 记录核心实体与数据关系
-- `docs/design/FRONTEND_DESIGN.md` 记录界面、交互与跨端设计变化
-- `docs/ARCHITECTURE_DECISIONS.md` 记录技术选型、约束与第三方依赖变化
-- `docs/development-outline/` 记录项目实施任务，按序号推进
-- 需求变化时，至少同步更新 `docs/REQUIREMENTS.md`，若影响规划、设计或技术实现，也要同步更新其他相关文档
-- 当任务被拆分、调整、新增或合并时，要同步更新 `docs/development-outline/`
+## 本地启动
+
+1. 启动 PostgreSQL，并确保 `DB_DSN` 指向可用数据库。
+2. 在一个终端运行账号服务：
+
+```bash
+make run-account
+```
+
+3. 在另一个终端运行通讯服务：
+
+```bash
+make run-message
+```
+
+4. 直接打开 [`frontend/index.html`](/root/new-project/frontend/index.html) 进行本地页面联调。
+
+说明：
+
+- 账号服务默认监听 `http://localhost:8080`
+- 通讯服务默认监听 `http://localhost:8081`
+- 前端默认直接请求上述两个本地服务
+
+## 测试与构建
+
+运行基础检查：
+
+```bash
+make test
+```
+
+单独运行：
+
+```bash
+make test-backend
+make test-frontend
+make build
+```
+
+构建产物输出到 `build/`：
+
+- `build/account-service`
+- `build/message-service`
+
+## 关键文档
+
+- [`docs/REQUIREMENTS.md`](/root/new-project/docs/REQUIREMENTS.md): 需求范围与变更
+- [`docs/API_SPEC.md`](/root/new-project/docs/API_SPEC.md): RESTful API 清单
+- [`docs/DATA_MODEL.md`](/root/new-project/docs/DATA_MODEL.md): 数据模型基线
+- [`docs/design/FRONTEND_DESIGN.md`](/root/new-project/docs/design/FRONTEND_DESIGN.md): 前端设计说明
+- [`docs/development-outline/`](/root/new-project/docs/development-outline): 开发阶段与任务拆分
+
+## 开发规则
+
+- 新需求先写入相关 `md`，再开始评估或开发
+- 当前任务未完成时，优先收口并提交，再拆下一步
+- 关键代码注释保持英文中文双语
+- 新增接口、数据模型或页面变更时，同步更新相关文档
