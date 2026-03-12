@@ -176,6 +176,7 @@
 - `id`
 - `user_id`
 - `provider`
+- `chain`
 - `account_identifier`
 - `account_address`
 - `binding_status`
@@ -256,3 +257,7 @@
 
 - 新增数据实体与关系草案
 - 建立用户、资产、内容、聊天和外部身份五大领域实体基线
+
+### 2026-03-12
+
+- 细化 `external_accounts` 字段，补充 `chain` 与绑定状态表达

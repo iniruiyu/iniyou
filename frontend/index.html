@@ -49,6 +49,7 @@
         <button class="nav-item" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">{{ t('nav.profile') }}</button>
         <button class="nav-item" :class="{active: view === 'levels'}" :disabled="!isLoggedIn" @click="view = 'levels'">{{ t('nav.levels') }}</button>
         <button class="nav-item" :class="{active: view === 'subscription'}" :disabled="!isLoggedIn" @click="view = 'subscription'">{{ t('nav.subscription') }}</button>
+        <button class="nav-item" :class="{active: view === 'blockchain'}" :disabled="!isLoggedIn" @click="view = 'blockchain'">{{ t('nav.blockchain') }}</button>
         <button class="nav-item" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">{{ t('nav.friends') }}</button>
         <button class="nav-item" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">{{ t('nav.chat') }}</button>
       </nav>
@@ -386,6 +387,37 @@
           <button class="primary" @click="createSubscription(subscription.planID || 'premium')">{{ subscription.planID ? t('subscription.renew') : t('subscription.activate') }}</button>
         </div>
         <div v-if="!subscription.planID" class="empty-state">{{ t('subscription.empty') }}</div>
+      </section>
+
+      <section v-if="view === 'blockchain'" class="panel">
+        <h2>{{ t('blockchain.title') }}</h2>
+        <p>{{ t('blockchain.sub') }}</p>
+        <form class="form">
+          <label>{{ t('blockchain.providerLabel') }}</label>
+          <select v-model="externalAccountDraft.provider">
+            <option value="evm">EVM</option>
+            <option value="solana">Solana</option>
+            <option value="tron">Tron</option>
+          </select>
+          <label>{{ t('blockchain.chainLabel') }}</label>
+          <input type="text" v-model="externalAccountDraft.chain" />
+          <input type="text" :placeholder="t('blockchain.addressPlaceholder')" v-model="externalAccountDraft.accountAddress" />
+          <textarea class="post-textarea" :placeholder="t('blockchain.signaturePlaceholder')" v-model="externalAccountDraft.signaturePayload"></textarea>
+          <button class="primary" type="button" @click="bindExternalAccount">{{ t('blockchain.bindAction') }}</button>
+        </form>
+        <div class="friends-grid">
+          <div class="friend-card" v-for="account in externalAccounts" :key="account.id">
+            <div class="avatar small"></div>
+            <div>
+              <div class="friend-name">{{ account.provider.toUpperCase() }} <span v-if="account.chain">· {{ account.chain }}</span></div>
+              <div class="friend-secondary">{{ account.accountAddress }}</div>
+              <div class="friend-status">{{ statusLabel(account.bindingStatus) }}</div>
+              <div class="friend-direction">{{ t('blockchain.boundAt') }}: {{ formatDateTime(account.createdAt) }}</div>
+            </div>
+            <button class="ghost" @click="removeExternalAccount(account)">{{ t('blockchain.removeAction') }}</button>
+          </div>
+        </div>
+        <div v-if="externalAccounts.length === 0" class="empty-state">{{ t('blockchain.empty') }}</div>
       </section>
 
       <section v-if="view === 'friends'" class="panel">

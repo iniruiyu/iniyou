@@ -43,6 +43,13 @@ type subscriptionRequest struct {
 	PlanID string `json:"plan_id"`
 }
 
+type externalAccountRequest struct {
+	Provider         string `json:"provider"`
+	Chain            string `json:"chain"`
+	AccountAddress   string `json:"account_address"`
+	SignaturePayload string `json:"signature_payload"`
+}
+
 type updateProfileRequest struct {
 	DisplayName string `json:"display_name"`
 }
@@ -261,6 +268,46 @@ func (h *AccountHandler) CurrentSubscription(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, sub)
+}
+
+func (h *AccountHandler) ListExternalAccounts(c *gin.Context) {
+	// Return current user's external account bindings.
+	// 返回当前用户的外部账号绑定列表。
+	uid := c.GetString("user_id")
+	items, err := service.ListExternalAccounts(h.DB, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
+func (h *AccountHandler) BindExternalAccount(c *gin.Context) {
+	// Bind a new external account for the current user.
+	// 为当前用户绑定新的外部账号。
+	uid := c.GetString("user_id")
+	var req externalAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+	account, err := service.BindExternalAccount(h.DB, uid, req.Provider, req.Chain, req.AccountAddress, req.SignaturePayload)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, account)
+}
+
+func (h *AccountHandler) DeleteExternalAccount(c *gin.Context) {
+	// Delete an existing external account binding.
+	// 删除已有的外部账号绑定。
+	uid := c.GetString("user_id")
+	if err := service.RemoveExternalAccount(h.DB, uid, c.Param("id")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 
 func serviceTokenTTL(ttl int64) time.Duration {

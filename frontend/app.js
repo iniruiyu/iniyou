@@ -45,6 +45,7 @@ createApp({
             postDetail: '文章详情',
             levels: '会员等级',
             subscription: '订阅',
+            blockchain: '链上账号',
             friends: '好友',
             chat: '实时聊天',
           },
@@ -68,6 +69,7 @@ createApp({
             postDetail: '文章详情',
             levels: '会员等级',
             subscription: '订阅管理',
+            blockchain: '链上账号',
             friends: '好友',
             chat: '实时聊天',
           },
@@ -80,6 +82,7 @@ createApp({
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
             subscription: '管理订阅与权益',
+            blockchain: '管理外部区块链账号绑定',
             friends: '建立联系与私聊',
             chat: '实时沟通与反馈',
           },
@@ -188,6 +191,22 @@ createApp({
             actionSuccess: '订阅已生效。',
             actionError: '订阅操作失败，请稍后重试。',
           },
+          blockchain: {
+            title: '链上账号绑定',
+            sub: '绑定外部区块链地址，为后续链上身份和资产能力预留入口。',
+            providerLabel: '提供方',
+            chainLabel: '链网络',
+            addressPlaceholder: '钱包地址 / 账号地址',
+            signaturePlaceholder: '签名载荷（当前为预留字段，可选）',
+            bindAction: '绑定账号',
+            removeAction: '解绑',
+            empty: '当前还没有绑定任何链上账号。',
+            bindSuccess: '链上账号已绑定。',
+            bindError: '链上账号绑定失败，请检查输入后重试。',
+            removeSuccess: '链上账号已解绑。',
+            removeError: '链上账号解绑失败，请稍后重试。',
+            boundAt: '绑定时间',
+          },
           friends: {
             title: '好友',
             chat: '聊天',
@@ -264,6 +283,7 @@ createApp({
             postDetail: 'Post Detail',
             levels: 'Membership',
             subscription: 'Subscription',
+            blockchain: 'Blockchain',
             friends: 'Friends',
             chat: 'Live Chat',
           },
@@ -287,6 +307,7 @@ createApp({
             postDetail: 'Post Detail',
             levels: 'Membership',
             subscription: 'Subscription',
+            blockchain: 'Blockchain Accounts',
             friends: 'Friends',
             chat: 'Live Chat',
           },
@@ -299,6 +320,7 @@ createApp({
             postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
             subscription: 'Manage plan and benefits',
+            blockchain: 'Manage external blockchain account bindings',
             friends: 'Build connections and chat privately',
             chat: 'Real-time communication and feedback',
           },
@@ -407,6 +429,22 @@ createApp({
             actionSuccess: 'Subscription is active now.',
             actionError: 'Subscription action failed. Try again later.',
           },
+          blockchain: {
+            title: 'Blockchain Accounts',
+            sub: 'Bind external wallet addresses now and reserve room for future on-chain identity features.',
+            providerLabel: 'Provider',
+            chainLabel: 'Chain',
+            addressPlaceholder: 'Wallet address / account address',
+            signaturePlaceholder: 'Signature payload (optional for now)',
+            bindAction: 'Bind Account',
+            removeAction: 'Unbind',
+            empty: 'There are no blockchain accounts bound yet.',
+            bindSuccess: 'Blockchain account bound.',
+            bindError: 'Blockchain account binding failed. Check the input and try again.',
+            removeSuccess: 'Blockchain account unbound.',
+            removeError: 'Blockchain account removal failed. Try again later.',
+            boundAt: 'Bound At',
+          },
           friends: {
             title: 'Friends',
             chat: 'Chat',
@@ -486,6 +524,17 @@ createApp({
         status: 'inactive',
         startedAt: '',
         endedAt: '',
+      },
+      // External blockchain account bindings.
+      // 外部区块链账号绑定数据。
+      externalAccounts: [],
+      // External account binding form.
+      // 外部账号绑定表单。
+      externalAccountDraft: {
+        provider: 'evm',
+        chain: 'ethereum',
+        accountAddress: '',
+        signaturePayload: '',
       },
       // Auth form data.
       // 登录注册表单数据。
@@ -1197,6 +1246,13 @@ createApp({
         startedAt: '',
         endedAt: '',
       };
+      this.externalAccounts = [];
+      this.externalAccountDraft = {
+        provider: 'evm',
+        chain: 'ethereum',
+        accountAddress: '',
+        signaturePayload: '',
+      };
       this.posts = [];
       this.privatePosts = [];
       this.profileUser = { id: '', name: '', secondary: '', relationStatus: '', direction: '' };
@@ -1352,6 +1408,7 @@ createApp({
         await this.loadMe();
         await this.loadSpaces();
         await this.loadSubscription();
+        await this.loadExternalAccounts();
         await this.loadPosts();
         await this.loadPrivatePosts();
         await this.loadFriends();
@@ -1391,6 +1448,7 @@ createApp({
         await this.loadMe();
         await this.loadSpaces();
         await this.loadSubscription();
+        await this.loadExternalAccounts();
         await this.loadPosts();
         await this.loadPrivatePosts();
         await this.loadFriends();
@@ -1470,6 +1528,32 @@ createApp({
         startedAt: data.started_at || '',
         endedAt: data.ended_at || '',
       };
+    },
+    async loadExternalAccounts() {
+      // Load current user's blockchain account bindings.
+      // 加载当前用户的链上账号绑定。
+      if (!this.token) {
+        this.externalAccounts = [];
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/external-accounts`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      this.externalAccounts = Array.isArray(data.items)
+        ? data.items.map((item) => ({
+            id: item.id,
+            provider: item.provider || '',
+            chain: item.chain || '',
+            accountAddress: item.account_address || '',
+            bindingStatus: item.binding_status || 'inactive',
+            metadata: item.metadata || '',
+            createdAt: item.created_at || '',
+          }))
+        : [];
     },
     async loadPosts() {
       // Load the public content feed.
@@ -1889,6 +1973,54 @@ createApp({
       await this.loadMe();
       this.setFlash(this.t('subscription.actionSuccess'));
     },
+    async bindExternalAccount() {
+      // Create a new blockchain account binding for the current user.
+      // 为当前用户创建新的链上账号绑定。
+      this.clearFeedback();
+      if (!this.token || !this.externalAccountDraft.accountAddress.trim()) {
+        this.setError(this.t('blockchain.bindError'));
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/external-accounts`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: this.externalAccountDraft.provider,
+          chain: this.externalAccountDraft.chain,
+          account_address: this.externalAccountDraft.accountAddress.trim(),
+          signature_payload: this.externalAccountDraft.signaturePayload.trim(),
+        }),
+      });
+      if (!res.ok) {
+        this.setError(this.t('blockchain.bindError'));
+        return;
+      }
+      this.externalAccountDraft.accountAddress = '';
+      this.externalAccountDraft.signaturePayload = '';
+      await this.loadExternalAccounts();
+      this.setFlash(this.t('blockchain.bindSuccess'));
+    },
+    async removeExternalAccount(account) {
+      // Remove a blockchain account binding from the current user.
+      // 删除当前用户的链上账号绑定。
+      this.clearFeedback();
+      if (!this.token || !account || !account.id) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/external-accounts/${account.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        this.setError(this.t('blockchain.removeError'));
+        return;
+      }
+      await this.loadExternalAccounts();
+      this.setFlash(this.t('blockchain.removeSuccess'));
+    },
     async createSpace() {
       // Create a new private/public space from the current form.
       // 根据当前表单创建新的私人/公共空间。
@@ -2218,6 +2350,7 @@ createApp({
       this.loadMe().then(() => {
         this.loadSpaces();
         this.loadSubscription();
+        this.loadExternalAccounts();
         this.loadPosts();
         this.loadPrivatePosts();
         return this.loadFriends();

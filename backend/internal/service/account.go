@@ -57,6 +57,18 @@ type SubscriptionView struct {
 	EndedAt   *time.Time `json:"ended_at"`
 }
 
+type ExternalAccountView struct {
+	// External account view returned to clients.
+	// 返回给客户端的外部账号视图。
+	ID             string    `json:"id"`
+	Provider       string    `json:"provider"`
+	Chain          string    `json:"chain"`
+	AccountAddress string    `json:"account_address"`
+	BindingStatus  string    `json:"binding_status"`
+	Metadata       string    `json:"metadata"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
 func GetUser(db *gorm.DB, userID string) (models.User, error) {
 	// Fetch user by ID.
 	// 根据用户 ID 获取用户信息。
@@ -456,4 +468,84 @@ func GetCurrentSubscription(db *gorm.DB, userID string) (SubscriptionView, error
 		StartedAt: sub.StartedAt,
 		EndedAt:   sub.EndedAt,
 	}, nil
+}
+
+func ListExternalAccounts(db *gorm.DB, userID string) ([]ExternalAccountView, error) {
+	// List the current user's external account bindings.
+	// 列出当前用户的外部账号绑定。
+	var accounts []models.ExternalAccount
+	if err := db.Where("user_id = ?", userID).Order("created_at desc").Find(&accounts).Error; err != nil {
+		return nil, err
+	}
+
+	items := make([]ExternalAccountView, 0, len(accounts))
+	for _, account := range accounts {
+		items = append(items, ExternalAccountView{
+			ID:             account.ID,
+			Provider:       account.Provider,
+			Chain:          account.Chain,
+			AccountAddress: account.AccountAddress,
+			BindingStatus:  account.BindingStatus,
+			Metadata:       account.Metadata,
+			CreatedAt:      account.CreatedAt,
+		})
+	}
+	return items, nil
+}
+
+func BindExternalAccount(db *gorm.DB, userID string, provider string, chain string, accountAddress string, signaturePayload string) (models.ExternalAccount, error) {
+	// Bind an external account to the current user.
+	// 将外部账号绑定到当前用户。
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	chain = strings.ToLower(strings.TrimSpace(chain))
+	accountAddress = strings.TrimSpace(accountAddress)
+	signaturePayload = strings.TrimSpace(signaturePayload)
+	if provider == "" {
+		return models.ExternalAccount{}, errors.New("provider required")
+	}
+	if accountAddress == "" {
+		return models.ExternalAccount{}, errors.New("account address required")
+	}
+
+	identifier := strings.ToLower(accountAddress)
+	var existing models.ExternalAccount
+	if err := db.Where("provider = ? AND account_identifier = ?", provider, identifier).First(&existing).Error; err == nil {
+		if existing.UserID == userID {
+			return models.ExternalAccount{}, errors.New("external account already bound")
+		}
+		return models.ExternalAccount{}, errors.New("external account already in use")
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return models.ExternalAccount{}, err
+	}
+
+	account := models.ExternalAccount{
+		UserID:            userID,
+		Provider:          provider,
+		Chain:             chain,
+		AccountIdentifier: identifier,
+		AccountAddress:    accountAddress,
+		BindingStatus:     "active",
+		Metadata:          signaturePayload,
+	}
+	if err := db.Create(&account).Error; err != nil {
+		return models.ExternalAccount{}, err
+	}
+	return account, nil
+}
+
+func RemoveExternalAccount(db *gorm.DB, userID string, externalAccountID string) error {
+	// Remove a bound external account from the current user.
+	// 删除当前用户已绑定的外部账号。
+	externalAccountID = strings.TrimSpace(externalAccountID)
+	if externalAccountID == "" {
+		return errors.New("external account id required")
+	}
+	result := db.Where("id = ? AND user_id = ?", externalAccountID, userID).Delete(&models.ExternalAccount{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("external account not found")
+	}
+	return nil
 }

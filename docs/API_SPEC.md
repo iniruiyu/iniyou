@@ -189,11 +189,22 @@
 - `GET /api/v1/unread`
 - 用途：获取当前用户未读消息总数
 
-### 6.15 绑定外部账号
+### 6.15 外部账号列表
+
+- `GET /api/v1/external-accounts`
+- 用途：获取当前用户已绑定的外部账号列表
+- 返回字段建议：`id`, `provider`, `chain`, `account_address`, `binding_status`, `metadata`, `created_at`
+
+### 6.16 绑定外部账号
 
 - `POST /api/v1/external-accounts`
 - 用途：绑定区块链账号或其他外部身份
-- 请求字段建议：`provider`, `account_address`, `signature_payload`
+- 请求字段建议：`provider`, `chain`, `account_address`, `signature_payload`
+
+### 6.17 解绑外部账号
+
+- `DELETE /api/v1/external-accounts/{id}`
+- 用途：解除当前用户自己的外部账号绑定
 
 ## 7. 分页与筛选规则
 
@@ -229,6 +240,7 @@
 - 补充文章更新接口与文章状态字段说明
 - 将聊天接口清单同步为 `conversations`、`messages`、`unread` 的实际实现
 - 明确聊天会话排序与打开会话已读规则
+- 新增外部账号列表、绑定、解绑接口的当前实现说明
 
 ### 2026-03-11
 

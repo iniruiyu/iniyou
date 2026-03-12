@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	if err := database.AutoMigrate(&models.User{}, &models.Space{}, &models.Subscription{}, &models.Friend{}); err != nil {
+	if err := database.AutoMigrate(&models.User{}, &models.Space{}, &models.Subscription{}, &models.ExternalAccount{}, &models.Friend{}); err != nil {
 		log.Fatalf("db migrate error: %v", err)
 	}
 	if err := database.AutoMigrate(&models.Post{}, &models.Comment{}, &models.PostLike{}, &models.PostShare{}); err != nil {
@@ -46,7 +46,7 @@ func main() {
 		// 为本地 SPA 开发提供基础 CORS 支持。
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
@@ -84,6 +84,9 @@ func main() {
 	authGroup.POST("/friends/accept", h.AcceptFriend)
 	authGroup.GET("/subscriptions/current", h.CurrentSubscription)
 	authGroup.POST("/subscriptions", h.CreateSubscription)
+	authGroup.GET("/external-accounts", h.ListExternalAccounts)
+	authGroup.POST("/external-accounts", h.BindExternalAccount)
+	authGroup.DELETE("/external-accounts/:id", h.DeleteExternalAccount)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)
