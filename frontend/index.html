@@ -46,6 +46,7 @@
         <button class="nav-item" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">{{ t('nav.dashboard') }}</button>
         <button class="nav-item" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">{{ t('nav.private') }}</button>
         <button class="nav-item" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">{{ t('nav.public') }}</button>
+        <button class="nav-item" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">{{ t('nav.profile') }}</button>
         <button class="nav-item" :class="{active: view === 'levels'}" :disabled="!isLoggedIn" @click="view = 'levels'">{{ t('nav.levels') }}</button>
         <button class="nav-item" :class="{active: view === 'subscription'}" :disabled="!isLoggedIn" @click="view = 'subscription'">{{ t('nav.subscription') }}</button>
         <button class="nav-item" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">{{ t('nav.friends') }}</button>
@@ -236,6 +237,7 @@
                 <div class="post-author">{{ post.authorName }}</div>
                 <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
               </div>
+              <button class="ghost compact" @click="openProfile(post.userId, post.authorName)">{{ t('posts.viewAuthor') }}</button>
             </div>
             <div class="post-title">{{ post.title }}</div>
             <div class="post-content">{{ post.content }}</div>
@@ -253,6 +255,36 @@
             <div class="post-comment-form">
               <input type="text" :placeholder="t('posts.commentPlaceholder')" v-model="commentDrafts[post.id]" @keyup.enter="submitComment(post)" />
               <button class="ghost compact" @click="submitComment(post)">{{ t('posts.commentAction') }}</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section v-if="view === 'profile'" class="panel">
+        <div class="post-feed">
+          <div class="post-composer">
+            <div class="post-header">
+              <div>
+                <h3>{{ profileUser.name || t('posts.profileFeedTitle') }}</h3>
+                <p>{{ t('posts.profileFeedSub') }}</p>
+              </div>
+              <button class="ghost compact" @click="backToPublicFeed">{{ t('posts.backToFeed') }}</button>
+            </div>
+          </div>
+          <div v-if="profilePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
+          <article class="post-card" v-for="post in profilePosts" :key="post.id">
+            <div class="post-header">
+              <div>
+                <div class="post-author">{{ post.authorName }}</div>
+                <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
+              </div>
+            </div>
+            <div class="post-title">{{ post.title }}</div>
+            <div class="post-content">{{ post.content }}</div>
+            <div class="post-actions">
+              <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
+              <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
+              <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
             </div>
           </article>
         </div>

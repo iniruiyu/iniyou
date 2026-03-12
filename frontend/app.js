@@ -41,6 +41,7 @@ createApp({
             dashboard: '账号主页',
             private: '私人空间',
             public: '公共空间',
+            profile: '用户主页',
             levels: '会员等级',
             subscription: '订阅',
             friends: '好友',
@@ -62,6 +63,7 @@ createApp({
             dashboard: '账号主页',
             private: '私人空间',
             public: '公共空间',
+            profile: '用户主页',
             levels: '会员等级',
             subscription: '订阅管理',
             friends: '好友',
@@ -72,6 +74,7 @@ createApp({
             dashboard: '账户摘要与空间信息',
             private: '沉淀个人内容',
             public: '展示公共内容与连接',
+            profile: '查看作者的公开内容与互动记录',
             levels: '选择适合你的会员等级',
             subscription: '管理订阅与权益',
             friends: '建立联系与私聊',
@@ -130,6 +133,8 @@ createApp({
             feedSub: '发布你的近况、想法和项目更新。',
             privateFeedTitle: '我的内容',
             privateFeedSub: '查看你发布的私人和公开文章。',
+            profileFeedTitle: '作者内容',
+            profileFeedSub: '浏览该作者公开发布的文章。',
             titlePlaceholder: '文章标题',
             contentPlaceholder: '写点什么，分享给大家...',
             publishAction: '发布文章',
@@ -146,6 +151,8 @@ createApp({
             shareError: '转发失败，请稍后重试。',
             privateLabel: '仅自己可见',
             publicLabel: '公开',
+            viewAuthor: '查看作者主页',
+            backToFeed: '返回公共内容流',
           },
           levels: {
             title: '会员等级',
@@ -235,6 +242,7 @@ createApp({
             dashboard: 'Dashboard',
             private: 'Private Space',
             public: 'Public Space',
+            profile: 'Profile',
             levels: 'Membership',
             subscription: 'Subscription',
             friends: 'Friends',
@@ -256,6 +264,7 @@ createApp({
             dashboard: 'Dashboard',
             private: 'Private Space',
             public: 'Public Space',
+            profile: 'Profile',
             levels: 'Membership',
             subscription: 'Subscription',
             friends: 'Friends',
@@ -266,6 +275,7 @@ createApp({
             dashboard: 'Account summary and space insights',
             private: 'Keep personal content organized',
             public: 'Showcase content and connect',
+            profile: 'Browse this author\'s public posts and activity',
             levels: 'Choose the right membership tier',
             subscription: 'Manage plan and benefits',
             friends: 'Build connections and chat privately',
@@ -324,6 +334,8 @@ createApp({
             feedSub: 'Share updates, ideas, and project progress.',
             privateFeedTitle: 'My Posts',
             privateFeedSub: 'Review your private and public posts.',
+            profileFeedTitle: 'Author Feed',
+            profileFeedSub: 'Browse posts published by this author.',
             titlePlaceholder: 'Post title',
             contentPlaceholder: 'Write something to share...',
             publishAction: 'Publish Post',
@@ -340,6 +352,8 @@ createApp({
             shareError: 'Sharing failed. Try again later.',
             privateLabel: 'Private',
             publicLabel: 'Public',
+            viewAuthor: 'View Profile',
+            backToFeed: 'Back to Feed',
           },
           levels: {
             title: 'Membership Levels',
@@ -491,6 +505,15 @@ createApp({
       // Current user's post list.
       // 当前用户文章列表。
       privatePosts: [],
+      // Selected profile summary.
+      // 当前查看的用户主页摘要。
+      profileUser: {
+        id: '',
+        name: '',
+      },
+      // Selected profile post list.
+      // 当前查看的用户主页文章列表。
+      profilePosts: [],
       // Post composer form.
       // 文章发布表单。
       postDraft: {
@@ -571,9 +594,15 @@ createApp({
       return this.getLanguageMeta(this.locale).dir || 'ltr';
     },
     pageTitle() {
+      if (this.view === 'profile' && this.profileUser.name) {
+        return this.profileUser.name;
+      }
       return this.t(`pageTitle.${this.view}`) || this.t('pageTitle.dashboard');
     },
     pageSub() {
+      if (this.view === 'profile' && this.profileUser.name) {
+        return this.t('posts.profileFeedSub');
+      }
       return this.t(`pageSub.${this.view}`) || '';
     },
     isLoggedIn() {
@@ -1081,6 +1110,8 @@ createApp({
       };
       this.posts = [];
       this.privatePosts = [];
+      this.profileUser = { id: '', name: '' };
+      this.profilePosts = [];
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
@@ -1405,6 +1436,56 @@ createApp({
             : [],
         }));
       }
+    },
+    async openProfile(userID, fallbackName = '') {
+      // Open another user's public profile feed.
+      // 打开其他用户的公开内容主页。
+      if (!this.token || !userID) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/users/${userID}/posts?visibility=public&limit=50`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      this.profileUser = {
+        id: userID,
+        name: fallbackName || userID,
+      };
+      this.profilePosts = Array.isArray(data.items)
+        ? data.items.map((item) => ({
+            id: item.id,
+            userId: item.user_id,
+            authorName: item.author_name,
+            title: item.title,
+            content: item.content,
+            visibility: item.visibility,
+            likesCount: Number(item.likes_count || 0),
+            commentsCount: Number(item.comments_count || 0),
+            sharesCount: Number(item.shares_count || 0),
+            likedByMe: Boolean(item.liked_by_me),
+            createdAt: item.created_at,
+            comments: Array.isArray(item.comments)
+              ? item.comments.map((comment) => ({
+                  id: comment.id,
+                  authorName: comment.author_name,
+                  content: comment.content,
+                  createdAt: comment.created_at,
+                }))
+              : [],
+          }))
+        : [];
+      if (this.profilePosts[0]?.authorName) {
+        this.profileUser.name = this.profilePosts[0].authorName;
+      }
+      this.view = 'profile';
+    },
+    backToPublicFeed() {
+      // Return from profile view to public feed.
+      // 从用户主页返回公共内容流。
+      this.view = 'public';
     },
     async createPost() {
       // Create a new social post.
