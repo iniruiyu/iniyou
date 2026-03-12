@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <!-- Vue root / Vue 根节点 -->
+  <div id="app" class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">AS</div>
+        <div>
+          <div class="brand-title">Account Space</div>
+          <div class="brand-sub">{{ t('brandSub') }}</div>
+        </div>
+      </div>
+
+      <!-- Language controls / 语言控制 -->
+      <section class="lang-panel">
+        <div class="lang-title">{{ t('i18n.title') }}</div>
+        <label class="lang-label">{{ t('i18n.choose') }}</label>
+        <select class="lang-select" v-model="locale">
+          <option v-for="option in languageOptions" :key="option.code" :value="option.code">{{ option.name }} ({{ option.code }})</option>
+        </select>
+        <div class="lang-add-title">{{ t('i18n.addTitle') }}</div>
+        <input class="lang-input" type="text" :placeholder="t('i18n.codePlaceholder')" v-model="newLanguage.code" />
+        <input class="lang-input" type="text" :placeholder="t('i18n.namePlaceholder')" v-model="newLanguage.name" />
+        <textarea class="lang-textarea" :placeholder="t('i18n.jsonPlaceholder')" v-model="newLanguage.json"></textarea>
+        <button class="ghost" @click="addLanguage">{{ t('i18n.addButton') }}</button>
+      </section>
+
+      <nav class="nav">
+        <!-- Navigation / 侧边导航 -->
+        <button class="nav-item" :class="{active: view === 'auth'}" @click="view = 'auth'">{{ t('nav.auth') }}</button>
+        <button class="nav-item" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">{{ t('nav.dashboard') }}</button>
+        <button class="nav-item" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">{{ t('nav.private') }}</button>
+        <button class="nav-item" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">{{ t('nav.public') }}</button>
+        <button class="nav-item" :class="{active: view === 'levels'}" :disabled="!isLoggedIn" @click="view = 'levels'">{{ t('nav.levels') }}</button>
+        <button class="nav-item" :class="{active: view === 'subscription'}" :disabled="!isLoggedIn" @click="view = 'subscription'">{{ t('nav.subscription') }}</button>
+        <button class="nav-item" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">{{ t('nav.friends') }}</button>
+        <button class="nav-item" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">{{ t('nav.chat') }}</button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="status">
+          <span class="dot"></span>
+          <span>{{ t('ws.statusLabel') }}: {{ wsStatusText }}</span>
+        </div>
+        <div class="status">
+          <span>{{ t('ws.unreadLabel') }}: {{ unreadCount }}</span>
+        </div>
+        <button class="primary" @click="ws ? disconnectWs() : connectWs()">{{ ws ? t('ws.disconnect') : t('ws.connect') }}</button>
+      </div>
+    </aside>
+
+    <!-- Main content / 主内容 -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="page-title">{{ pageTitle }}</div>
+          <div class="page-sub">{{ pageSub }}</div>
+        </div>
+        <div class="profile">
+          <div class="avatar"></div>
+          <div>
+            <div class="profile-name">{{ user.name }}</div>
+            <div class="profile-level">{{ localizedLevelName }} · {{ localizedPlan }}</div>
+          </div>
+          <button v-if="isLoggedIn" class="ghost compact" @click="logout">{{ t('auth.logout') }}</button>
+        </div>
+      </header>
+
+      <div v-if="flashMessage" class="banner banner-success">{{ flashMessage }}</div>
+      <div v-if="errorMessage" class="banner banner-error">{{ errorMessage }}</div>
+
+      <!-- Auth view / 登录注册视图 -->
+      <section v-if="view === 'auth'" class="panel-grid">
+        <div class="panel">
+          <h2>{{ t('auth.welcomeTitle') }}</h2>
+          <p>{{ t('auth.welcomeSub') }}</p>
+          <form class="form">
+            <input type="text" :placeholder="t('auth.accountPlaceholder')" v-model="auth.account" />
+            <input type="password" :placeholder="t('auth.passwordPlaceholder')" v-model="auth.password" />
+            <button class="primary" type="button" @click="login">{{ t('auth.login') }}</button>
+          </form>
+        </div>
+        <div class="panel accent">
+          <h2>{{ t('auth.createTitle') }}</h2>
+          <p>{{ t('auth.createSub') }}</p>
+          <form class="form">
+            <input type="text" :placeholder="t('auth.emailPlaceholder')" v-model="auth.email" />
+            <input type="text" :placeholder="t('auth.phonePlaceholder')" v-model="auth.phone" />
+            <input type="password" :placeholder="t('auth.passwordPlaceholder')" v-model="auth.password" />
+            <button class="primary" type="button" @click="register">{{ t('auth.register') }}</button>
+          </form>
+        </div>
+      </section>
+
+      <section v-if="view === 'dashboard'" class="panel-grid">
+        <div class="panel">
+          <h2>{{ t('dashboard.overviewTitle') }}</h2>
+          <p>{{ t('dashboard.overviewSub') }}</p>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-title">{{ t('dashboard.levelStat') }}</div>
+              <div class="stat-value">{{ localizedLevelName }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">{{ t('dashboard.planStat') }}</div>
+              <div class="stat-value">{{ localizedPlan }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">{{ t('dashboard.friendStat') }}</div>
+              <div class="stat-value">{{ acceptedFriends.length }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>{{ t('dashboard.spaceSummaryTitle') }}</h2>
+          <p>{{ t('dashboard.spaceSummarySub') }}</p>
+          <div class="space-cards">
+            <div class="space-card" v-for="space in spaces" :key="space.id">
+              <div class="space-tag" :class="space.type">{{ t(`spaces.type.${space.type}`) }}</div>
+              <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+              <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>{{ t('dashboard.profileTitle') }}</h2>
+          <p>{{ t('dashboard.profileSub') }}</p>
+          <form class="form">
+            <input type="text" :placeholder="t('dashboard.displayNamePlaceholder')" v-model="profileDraft.displayName" />
+            <button class="primary" type="button" @click="saveProfile">{{ t('dashboard.saveProfile') }}</button>
+          </form>
+        </div>
+      </section>
+
+      <section v-if="view === 'private'" class="panel">
+        <h2>{{ t('spaces.privateTitle') }}</h2>
+        <p>{{ t('spaces.privateSub') }}</p>
+        <div class="space-create">
+          <h3>{{ t('spaces.createTitle') }}</h3>
+          <p>{{ t('spaces.createSub') }}</p>
+          <form class="form">
+            <select v-model="spaceDraft.type">
+              <option value="private">{{ t('spaces.type.private') }}</option>
+              <option value="public">{{ t('spaces.type.public') }}</option>
+            </select>
+            <input type="text" :placeholder="t('spaces.namePlaceholder')" v-model="spaceDraft.name" />
+            <input type="text" :placeholder="t('spaces.descPlaceholder')" v-model="spaceDraft.description" />
+            <button class="primary" type="button" @click="createSpace">{{ t('spaces.createAction') }}</button>
+          </form>
+        </div>
+        <div class="space-cards">
+          <div class="space-card" v-for="space in privateSpaces" :key="space.id">
+            <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+            <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="view === 'public'" class="panel">
+        <h2>{{ t('spaces.publicTitle') }}</h2>
+        <p>{{ t('spaces.publicSub') }}</p>
+        <div class="space-create">
+          <h3>{{ t('spaces.createTitle') }}</h3>
+          <p>{{ t('spaces.createSub') }}</p>
+          <form class="form">
+            <select v-model="spaceDraft.type">
+              <option value="private">{{ t('spaces.type.private') }}</option>
+              <option value="public">{{ t('spaces.type.public') }}</option>
+            </select>
+            <input type="text" :placeholder="t('spaces.namePlaceholder')" v-model="spaceDraft.name" />
+            <input type="text" :placeholder="t('spaces.descPlaceholder')" v-model="spaceDraft.description" />
+            <button class="primary" type="button" @click="createSpace">{{ t('spaces.createAction') }}</button>
+          </form>
+        </div>
+        <div class="space-cards">
+          <div class="space-card" v-for="space in publicSpaces" :key="space.id">
+            <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+            <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="view === 'levels'" class="panel">
+        <h2>{{ t('levels.title') }}</h2>
+        <div class="level-grid">
+          <div class="level-card" v-for="level in levels" :key="level.name">
+            <div class="level-title">{{ level.name }}</div>
+            <div class="level-price">{{ localizedLevelPrice(level) }}</div>
+            <ul class="level-features">
+              <li v-for="item in localizedLevelFeatures(level)" :key="item">{{ item }}</li>
+            </ul>
+            <button v-if="isCurrentLevel(level)" class="ghost" disabled>{{ t('levels.current') }}</button>
+            <button v-else class="ghost" @click="createSubscription(level.planID)">{{ t('levels.upgrade') }}</button>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="view === 'subscription'" class="panel">
+        <h2>{{ t('subscription.title') }}</h2>
+        <div class="subscription">
+          <div>
+            <div class="subscription-title">{{ t('subscription.currentPlan') }}: {{ localizedPlan }}</div>
+            <div class="subscription-sub">{{ t('subscription.status') }}: {{ statusLabel(subscription.status) }}</div>
+            <div class="subscription-sub">{{ t('subscription.startedAt') }}: {{ formatDateTime(subscription.startedAt) }}</div>
+            <div class="subscription-sub">{{ t('subscription.expiresAt') }}: {{ formatDateTime(subscription.endedAt) }}</div>
+          </div>
+          <button class="primary" @click="createSubscription(subscription.planID || 'premium')">{{ subscription.planID ? t('subscription.renew') : t('subscription.activate') }}</button>
+        </div>
+        <div v-if="!subscription.planID" class="empty-state">{{ t('subscription.empty') }}</div>
+      </section>
+
+      <section v-if="view === 'friends'" class="panel">
+        <h2>{{ t('friends.title') }}</h2>
+        <div class="friend-toolbar">
+          <input type="text" :placeholder="t('friends.addPlaceholder')" v-model="newFriendId" @keyup.enter="addFriend" />
+          <button class="primary" @click="addFriend">{{ t('friends.addAction') }}</button>
+        </div>
+        <div class="friends-grid">
+          <div class="friend-card" v-for="friend in friends" :key="friend.id">
+            <div class="avatar small"></div>
+            <div>
+              <div class="friend-name">{{ friend.name }}</div>
+              <div class="friend-secondary">{{ friendSecondary(friend) }}</div>
+              <div class="friend-direction">{{ directionLabel(friend.direction) }}</div>
+              <div class="friend-status">{{ statusLabel(friend.status) }}</div>
+            </div>
+            <button v-if="friend.direction === 'incoming' && friend.status === 'pending'" class="ghost" @click="acceptFriend(friend)">{{ t('friends.acceptAction') }}</button>
+            <button v-else class="ghost" :disabled="friend.status !== 'accepted'" @click="startChat(friend)">{{ t('friends.chat') }}</button>
+          </div>
+        </div>
+        <div v-if="friends.length === 0" class="empty-state">{{ t('friends.empty') }}</div>
+      </section>
+
+      <section v-if="view === 'chat'" class="chat">
+        <div class="chat-list">
+          <h3>{{ t('chat.title') }}</h3>
+          <div class="chat-item" v-for="friend in acceptedFriends" :key="friend.id" :class="{active: activeChat && activeChat.id === friend.id}" @click="startChat(friend)">
+            <div class="avatar small"></div>
+            <div>
+              <div class="friend-name">{{ friend.name }}</div>
+              <div class="friend-secondary">{{ friendSecondary(friend) }}</div>
+              <div class="friend-status">{{ statusLabel(friend.status) }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-window">
+          <div class="chat-header">
+            <div>
+              <div class="friend-name">{{ activeChat ? activeChat.name : t('chat.pickFriend') }}</div>
+              <div class="friend-status">{{ activeChat ? friendSecondary(activeChat) : t('chat.onlineNow') }}</div>
+            </div>
+          </div>
+          <div class="chat-body">
+            <div class="chat-bubble" v-for="msg in chatMessages" :key="msg.id" :class="msg.from === user.id ? 'me' : 'them'">
+              <div class="chat-text">{{ localizedMessageContent(msg) }}</div>
+              <div class="chat-time">{{ msg.time }}</div>
+            </div>
+            <div v-if="activeChat && chatMessages.length === 0" class="empty-state">{{ t('chat.emptyConversation') }}</div>
+            <div v-if="!activeChat" class="empty-state">{{ t('chat.pickFriend') }}</div>
+          </div>
+          <div class="chat-input">
+            <input type="text" :placeholder="t('chat.inputPlaceholder')" v-model="chatInput" @keyup.enter="sendMessage" />
+            <button class="primary" @click="sendMessage">{{ t('chat.send') }}</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,4 +1,7 @@
 .DS_Store
+backend/data/
+*.log
+*.pid
 node_modules/
 dist/
 build/
