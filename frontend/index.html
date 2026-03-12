@@ -307,7 +307,6 @@
         </div>
       </section>
 
-      <section v-if="view === 'levels'" class="panel">
       <section v-if="view === 'postDetail'" class="panel">
         <div v-if="currentPost" class="post-feed">
           <article class="post-card">
@@ -428,11 +427,13 @@
       <section v-if="view === 'chat'" class="chat">
         <div class="chat-list">
           <h3>{{ t('chat.title') }}</h3>
-          <div class="chat-item" v-for="friend in acceptedFriends" :key="friend.id" :class="{active: activeChat && activeChat.id === friend.id}" @click="startChat(friend)">
+          <div class="chat-item" v-for="friend in chatEntries" :key="friend.id" :class="{active: activeChat && activeChat.id === friend.id}" @click="startChat(friend)">
             <div class="avatar small"></div>
             <div>
               <div class="friend-name">{{ friend.name }}</div>
-              <div class="friend-secondary">{{ friendSecondary(friend) }}</div>
+              <div class="friend-secondary">{{ friend.lastMessage || friendSecondary(friend) }}</div>
+              <div class="friend-status">{{ friend.lastAt ? formatDateTime(friend.lastAt) : t('chat.latest') }}</div>
+              <div v-if="friend.unreadCount" class="friend-direction">{{ t('ws.unreadLabel') }}: {{ friend.unreadCount }}</div>
               <div class="friend-status">{{ statusLabel(friend.status) }}</div>
             </div>
           </div>

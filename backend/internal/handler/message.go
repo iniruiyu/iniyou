@@ -37,6 +37,55 @@ type outboundMessage struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type conversationSummary struct {
+	PeerID       string    `json:"peer_id"`
+	LastMessage  string    `json:"last_message"`
+	LastAt       time.Time `json:"last_at"`
+	UnreadCount  int64     `json:"unread_count"`
+}
+
+func (h *MessageHandler) ListConversations(c *gin.Context) {
+	// List conversation summaries for the current user.
+	// 列出当前用户的会话摘要。
+	uid := c.GetString("user_id")
+	var messages []models.Message
+	if err := h.DB.
+		Where("sender_id = ? OR receiver_id = ?", uid, uid).
+		Order("created_at desc").
+		Find(&messages).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
+	}
+
+	summaries := make([]conversationSummary, 0)
+	seen := make(map[string]int)
+	for _, msg := range messages {
+		peerID := msg.SenderID
+		if msg.SenderID == uid {
+			peerID = msg.ReceiverID
+		}
+		if idx, ok := seen[peerID]; ok {
+			if msg.ReceiverID == uid && msg.ReadAt == nil {
+				summaries[idx].UnreadCount++
+			}
+			continue
+		}
+
+		item := conversationSummary{
+			PeerID:      peerID,
+			LastMessage: msg.Content,
+			LastAt:      msg.CreatedAt,
+			UnreadCount: 0,
+		}
+		if msg.ReceiverID == uid && msg.ReadAt == nil {
+			item.UnreadCount = 1
+		}
+		seen[peerID] = len(summaries)
+		summaries = append(summaries, item)
+	}
+	c.JSON(http.StatusOK, gin.H{"items": summaries})
+}
+
 func (h *MessageHandler) ListMessages(c *gin.Context) {
 	// List messages for current user.
 	// 列出当前用户的消息。

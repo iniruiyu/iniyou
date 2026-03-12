@@ -49,6 +49,7 @@ func main() {
 	r.GET("/ws", h.WS)
 	api := r.Group("/api/v1")
 	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	api.GET("/conversations", h.ListConversations)
 	api.GET("/messages", h.ListMessages)
 	api.GET("/unread", h.UnreadCount)
 

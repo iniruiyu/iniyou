@@ -210,6 +210,7 @@ createApp({
             title: '会话',
             pickFriend: '选择好友开始聊天',
             onlineNow: '实时在线',
+            latest: '最近消息',
             inputPlaceholder: '输入消息...',
             send: '发送',
             loadError: '聊天记录加载失败。',
@@ -428,6 +429,7 @@ createApp({
             title: 'Conversations',
             pickFriend: 'Select a friend to start chatting',
             onlineNow: 'Live',
+            latest: 'Latest',
             inputPlaceholder: 'Type a message...',
             send: 'Send',
             loadError: 'Failed to load chat history.',
@@ -631,6 +633,9 @@ createApp({
       // Message input.
       // 输入消息。
       chatInput: '',
+      // Conversation list summaries.
+      // 会话列表摘要。
+      chatSummaries: [],
     };
   },
   computed: {
@@ -676,6 +681,21 @@ createApp({
     },
     acceptedFriends() {
       return this.friends.filter((friend) => friend.status === 'accepted');
+    },
+    chatEntries() {
+      return this.acceptedFriends.map((friend) => {
+        const summary = this.chatSummaries.find((item) => item.peerId === friend.id);
+        return {
+          ...friend,
+          lastMessage: summary?.lastMessage || '',
+          lastAt: summary?.lastAt || '',
+          unreadCount: summary?.unreadCount || 0,
+        };
+      }).sort((a, b) => {
+        const aTime = a.lastAt ? new Date(a.lastAt).getTime() : 0;
+        const bTime = b.lastAt ? new Date(b.lastAt).getTime() : 0;
+        return bTime - aTime;
+      });
     },
     privateSpaces() {
       return this.spaces.filter((s) => s.type === 'private');
@@ -1180,6 +1200,7 @@ createApp({
       this.friendSearchResults = [];
       this.friendSearchPerformed = false;
       this.chatMessages = [];
+      this.chatSummaries = [];
       this.activeChat = null;
       this.profileDraft.displayName = '';
       this.auth.account = '';
@@ -1321,6 +1342,7 @@ createApp({
         await this.loadPosts();
         await this.loadPrivatePosts();
         await this.loadFriends();
+        await this.loadConversationSummaries();
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
         } else {
@@ -1359,6 +1381,7 @@ createApp({
         await this.loadPosts();
         await this.loadPrivatePosts();
         await this.loadFriends();
+        await this.loadConversationSummaries();
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
         } else {
@@ -1969,6 +1992,29 @@ createApp({
       }
       await this.loadUnread();
     },
+    async loadConversationSummaries() {
+      // Load conversation previews for the current user.
+      // 加载当前用户的会话预览列表。
+      if (!this.token) {
+        this.chatSummaries = [];
+        return;
+      }
+      const res = await fetch(`${this.messageApiBase}/conversations`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      this.chatSummaries = Array.isArray(data.items)
+        ? data.items.map((item) => ({
+            peerId: item.peer_id,
+            lastMessage: item.last_message,
+            lastAt: item.last_at,
+            unreadCount: Number(item.unread_count || 0),
+          }))
+        : [];
+    },
     async loadUnread() {
       // Load aggregate unread count.
       // 加载未读消息总数。
@@ -1984,6 +2030,7 @@ createApp({
       }
       const data = await res.json();
       this.unreadCount = Number(data.unread || 0);
+      await this.loadConversationSummaries();
     },
     async addFriend(result) {
       // Send a new friend request to the selected user.
@@ -2090,6 +2137,7 @@ createApp({
           });
         }
         this.loadUnread();
+        this.loadConversationSummaries();
       };
     },
     async logout() {
@@ -2154,6 +2202,7 @@ createApp({
         this.loadPrivatePosts();
         return this.loadFriends();
       }).then(() => {
+        this.loadConversationSummaries();
         if (this.activeChat) {
           this.loadConversation(this.activeChat.id);
         } else {
