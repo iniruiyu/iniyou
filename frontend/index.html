@@ -267,8 +267,15 @@
               <div>
                 <h3>{{ profileUser.name || t('posts.profileFeedTitle') }}</h3>
                 <p>{{ t('posts.profileFeedSub') }}</p>
+                <div v-if="profileUser.secondary" class="post-meta">{{ profileUser.secondary }}</div>
+                <div class="post-meta">{{ t('posts.articleCount') }} · {{ profilePosts.length }}</div>
+                <div v-if="profileUser.relationStatus" class="post-meta">{{ statusLabel(profileUser.relationStatus) }}</div>
               </div>
-              <button class="ghost compact" @click="backToPublicFeed">{{ t('posts.backToFeed') }}</button>
+              <div class="profile-actions">
+                <button class="ghost compact" @click="backToPublicFeed">{{ t('posts.backToFeed') }}</button>
+                <button v-if="activeProfileFriend()" class="ghost compact" @click="startChat(activeProfileFriend())">{{ t('posts.openChat') }}</button>
+                <button v-else-if="profileUser.id && profileUser.id !== user.id && !profileUser.relationStatus" class="ghost compact" @click="addProfileFriend">{{ t('posts.addFriend') }}</button>
+              </div>
             </div>
           </div>
           <div v-if="profilePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>

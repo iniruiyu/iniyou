@@ -68,6 +68,7 @@ func main() {
 	authGroup.GET("/me", h.Me)
 	authGroup.PUT("/me", h.UpdateMe)
 	authGroup.GET("/users/search", h.SearchUsers)
+	authGroup.GET("/users/:id/profile", h.UserProfile)
 	authGroup.GET("/spaces", h.ListSpaces)
 	authGroup.POST("/spaces", h.CreateSpace)
 	authGroup.GET("/posts", postHandler.ListPosts)

@@ -153,6 +153,9 @@ createApp({
             publicLabel: '公开',
             viewAuthor: '查看作者主页',
             backToFeed: '返回公共内容流',
+            articleCount: '文章数',
+            openChat: '发起聊天',
+            addFriend: '添加好友',
           },
           levels: {
             title: '会员等级',
@@ -354,6 +357,9 @@ createApp({
             publicLabel: 'Public',
             viewAuthor: 'View Profile',
             backToFeed: 'Back to Feed',
+            articleCount: 'Posts',
+            openChat: 'Open Chat',
+            addFriend: 'Add Friend',
           },
           levels: {
             title: 'Membership Levels',
@@ -510,6 +516,9 @@ createApp({
       profileUser: {
         id: '',
         name: '',
+        secondary: '',
+        relationStatus: '',
+        direction: '',
       },
       // Selected profile post list.
       // 当前查看的用户主页文章列表。
@@ -1110,7 +1119,7 @@ createApp({
       };
       this.posts = [];
       this.privatePosts = [];
-      this.profileUser = { id: '', name: '' };
+      this.profileUser = { id: '', name: '', secondary: '', relationStatus: '', direction: '' };
       this.profilePosts = [];
       this.postDraft.title = '';
       this.postDraft.content = '';
@@ -1150,6 +1159,11 @@ createApp({
       // Only allow adding users without an existing relation.
       // 仅允许对尚未建立关系的用户发起添加。
       return Boolean(result.relationStatus);
+    },
+    activeProfileFriend() {
+      // Resolve profile user into an accepted friend entry when available.
+      // 在可用时将当前主页用户映射为已接受好友。
+      return this.friends.find((friend) => friend.id === this.profileUser.id && friend.status === 'accepted') || null;
     },
     formatDateTime(value) {
       // Format backend timestamps into locale-aware display text.
@@ -1443,6 +1457,27 @@ createApp({
       if (!this.token || !userID) {
         return;
       }
+      const profileRes = await fetch(`${this.apiBase}/users/${userID}/profile`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        this.profileUser = {
+          id: profile.user_id || userID,
+          name: profile.display_name || fallbackName || userID,
+          secondary: profile.email || profile.phone || profile.user_id || userID,
+          relationStatus: profile.relation_status || '',
+          direction: profile.direction || '',
+        };
+      } else {
+        this.profileUser = {
+          id: userID,
+          name: fallbackName || userID,
+          secondary: userID,
+          relationStatus: '',
+          direction: '',
+        };
+      }
       const res = await fetch(`${this.apiBase}/users/${userID}/posts?visibility=public&limit=50`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
@@ -1450,10 +1485,6 @@ createApp({
         return;
       }
       const data = await res.json();
-      this.profileUser = {
-        id: userID,
-        name: fallbackName || userID,
-      };
       this.profilePosts = Array.isArray(data.items)
         ? data.items.map((item) => ({
             id: item.id,
@@ -1486,6 +1517,17 @@ createApp({
       // Return from profile view to public feed.
       // 从用户主页返回公共内容流。
       this.view = 'public';
+    },
+    async addProfileFriend() {
+      // Send a friend request from the profile header.
+      // 从用户主页头部发送好友请求。
+      if (!this.profileUser.id || this.profileUser.id === this.user.id) {
+        return;
+      }
+      await this.addFriend({
+        id: this.profileUser.id,
+      });
+      await this.openProfile(this.profileUser.id, this.profileUser.name);
     },
     async createPost() {
       // Create a new social post.

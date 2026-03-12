@@ -205,6 +205,18 @@ func (h *AccountHandler) SearchUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
+func (h *AccountHandler) UserProfile(c *gin.Context) {
+	// Return public profile information for a specific user.
+	// 返回指定用户的公开资料信息。
+	uid := c.GetString("user_id")
+	item, err := service.GetPublicUserProfile(h.DB, uid, c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, item)
+}
+
 func (h *AccountHandler) AcceptFriend(c *gin.Context) {
 	// Accept an incoming friend request.
 	// 接受收到的好友请求。

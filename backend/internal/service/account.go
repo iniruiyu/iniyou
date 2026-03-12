@@ -36,6 +36,18 @@ type UserSearchView struct {
 	Direction      string  `json:"direction,omitempty"`
 }
 
+type PublicUserProfileView struct {
+	// Public-facing user profile for author pages.
+	// 面向作者主页的公开用户资料。
+	UserID         string  `json:"user_id"`
+	DisplayName    string  `json:"display_name"`
+	Email          *string `json:"email"`
+	Phone          *string `json:"phone"`
+	Status         string  `json:"status"`
+	RelationStatus string  `json:"relation_status,omitempty"`
+	Direction      string  `json:"direction,omitempty"`
+}
+
 type SubscriptionView struct {
 	// Subscription view returned to clients.
 	// 返回给客户端的订阅视图。
@@ -224,6 +236,41 @@ func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSea
 		items = append(items, item)
 	}
 	return items, nil
+}
+
+func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (PublicUserProfileView, error) {
+	// Load a user's public profile with relation metadata.
+	// 加载用户公开资料，并补充关系元数据。
+	user, err := GetUser(db, targetUserID)
+	if err != nil {
+		return PublicUserProfileView{}, err
+	}
+	view := PublicUserProfileView{
+		UserID:      user.ID,
+		DisplayName: fallbackDisplayName(user),
+		Email:       user.Email,
+		Phone:       user.Phone,
+		Status:      user.Status,
+	}
+	if viewerID == "" || viewerID == targetUserID {
+		return view, nil
+	}
+
+	var relation models.Friend
+	if err := db.Where(
+		"(user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
+		viewerID, targetUserID, targetUserID, viewerID,
+	).First(&relation).Error; err == nil {
+		view.RelationStatus = relation.Status
+		if relation.UserID == viewerID {
+			view.Direction = "outgoing"
+		} else {
+			view.Direction = "incoming"
+		}
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return PublicUserProfileView{}, err
+	}
+	return view, nil
 }
 
 func AddFriend(db *gorm.DB, userID string, friendID string, account string) (models.Friend, error) {

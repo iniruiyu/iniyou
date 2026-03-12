@@ -448,6 +448,12 @@ body {
   gap: 12px;
 }
 
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .post-title {
   font-size: 18px;
   margin-top: 14px;
@@ -747,6 +753,7 @@ html[dir='rtl'] .friend-toolbar,
 html[dir='rtl'] .friend-card,
 html[dir='rtl'] .post-header,
 html[dir='rtl'] .post-actions,
+html[dir='rtl'] .profile-actions,
 html[dir='rtl'] .post-comment-form,
 html[dir='rtl'] .chat-item,
 html[dir='rtl'] .chat-input {
@@ -788,6 +795,7 @@ button:disabled {
 
   .post-header,
   .post-actions,
+  .profile-actions,
   .post-comment-form,
   .subscription {
     flex-direction: column;
