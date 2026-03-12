@@ -2,10 +2,16 @@
 
 `iniyou` 是一个包含账号、社交内容、聊天和链上账号扩展能力的项目仓库。当前仓库同时保存规划文档和已落地实现，后续开发以本仓库为唯一主线。
 
+当前前端采取双实现并存策略：
+
+- `frontend/`: 现有静态 Web 前端，适合快速本地联调和接口验证
+- `flutter_frontend/`: 新增 Flutter 前端，作为后续跨端主方向
+
 ## 项目结构
 
 - `backend/`: Golang 后端，包含 `account-service` 和 `message-service`
-- `frontend/`: 原生 HTML、CSS、JavaScript 前端页面
+- `frontend/`: 原生 HTML、CSS、JavaScript 前端页面（Legacy Web）
+- `flutter_frontend/`: Flutter 前端工程（Web 优先，可继续扩展桌面/移动端）
 - `docs/`: 需求、设计、接口和开发大纲
 - `DESIGN.md`: 当前阶段设计说明
 - `Makefile`: 本地测试、构建和启动命令
@@ -46,13 +52,26 @@ make run-account
 make run-message
 ```
 
-4. 直接打开 [`frontend/index.html`](/root/new-project/frontend/index.html) 进行本地页面联调。
+4. 选择一套前端启动方式：
+
+Legacy Web：
+
+```bash
+open frontend/index.html
+```
+
+Flutter Web：
+
+```bash
+make run-flutter-web
+```
 
 说明：
 
 - 账号服务默认监听 `http://localhost:8080`
 - 通讯服务默认监听 `http://localhost:8081`
-- 前端默认直接请求上述两个本地服务
+- 两套前端默认直接请求上述两个本地服务
+- Flutter 前端默认入口为 [`flutter_frontend/lib/main.dart`](/root/new-project/flutter_frontend/lib/main.dart)
 
 ## 测试与构建
 
@@ -67,6 +86,8 @@ make test
 ```bash
 make test-backend
 make test-frontend
+make test-flutter
+make build-flutter-web
 make build
 make smoke
 ```
@@ -93,3 +114,4 @@ make smoke
 - 当前任务未完成时，优先收口并提交，再拆下一步
 - 关键代码注释保持英文中文双语
 - 新增接口、数据模型或页面变更时，同步更新相关文档
+- Flutter 前端与 Legacy Web 前端在信息架构上需保持一致，差异优先体现在技术实现和布局适配层
