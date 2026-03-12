@@ -120,37 +120,51 @@
 - 用途：按展示名、邮箱、手机号或用户 ID 搜索用户
 - 返回字段建议：`user_id`, `display_name`, `email`, `phone`, `relation_status`, `direction`
 
-### 6.4 发布文章
+### 6.4 用户公开资料
+
+- `GET /api/v1/users/{id}/profile`
+- 用途：获取作者主页所需的公开资料与当前关系状态
+- 返回字段建议：`user_id`, `display_name`, `email`, `phone`, `status`, `relation_status`, `direction`
+
+### 6.5 用户文章列表
+
+- `GET /api/v1/users/{id}/posts?visibility=public|private|all&limit=50`
+- 用途：获取指定用户的文章列表
+- 说明：
+  - 公开主页使用 `visibility=public`
+  - 当前用户自己的内容列表可使用 `visibility=all`
+
+### 6.6 发布文章
 
 - `POST /api/v1/posts`
 - 用途：创建文章
 - 请求字段建议：`title`, `content`, `visibility`
 
-### 6.5 评论文章
+### 6.7 评论文章
 
 - `POST /api/v1/posts/{id}/comments`
 - 用途：创建评论
 - 请求字段建议：`content`
 
-### 6.6 点赞文章
+### 6.8 点赞文章
 
 - `POST /api/v1/posts/{id}/likes`
 - 用途：切换文章点赞状态
 - 返回字段建议：文章对象 + `liked_by_me` + 聚合计数
 
-### 6.7 转发文章
+### 6.9 转发文章
 
 - `POST /api/v1/posts/{id}/shares`
 - 用途：记录一次文章转发
 - 返回字段建议：文章对象 + 聚合计数
 
-### 6.8 发送消息
+### 6.10 发送消息
 
 - `POST /api/v1/chats/{id}/messages`
 - 用途：发送聊天消息
 - 请求字段建议：`content`, `message_type`
 
-### 6.9 绑定外部账号
+### 6.11 绑定外部账号
 
 - `POST /api/v1/external-accounts`
 - 用途：绑定区块链账号或其他外部身份
@@ -186,6 +200,7 @@
 - 同步当前已实现的认证接口路径
 - 补充 `PUT /api/v1/me`、文章点赞和转发接口说明
 - 更新文章发布与评论请求字段说明
+- 补充作者主页使用的公开资料接口与用户文章列表接口
 
 ### 2026-03-11
 
