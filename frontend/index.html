@@ -274,6 +274,7 @@
               <div class="profile-actions">
                 <button class="ghost compact" @click="backToPublicFeed">{{ t('posts.backToFeed') }}</button>
                 <button v-if="activeProfileFriend()" class="ghost compact" @click="startChat(activeProfileFriend())">{{ t('posts.openChat') }}</button>
+                <button v-else-if="profileUser.relationStatus === 'pending' && profileUser.direction === 'incoming'" class="ghost compact" @click="acceptProfileFriend">{{ t('posts.acceptFriend') }}</button>
                 <button v-else-if="profileUser.id && profileUser.id !== user.id && !profileUser.relationStatus" class="ghost compact" @click="addProfileFriend">{{ t('posts.addFriend') }}</button>
               </div>
             </div>

@@ -156,6 +156,7 @@ createApp({
             articleCount: '文章数',
             openChat: '发起聊天',
             addFriend: '添加好友',
+            acceptFriend: '接受好友',
           },
           levels: {
             title: '会员等级',
@@ -360,6 +361,7 @@ createApp({
             articleCount: 'Posts',
             openChat: 'Open Chat',
             addFriend: 'Add Friend',
+            acceptFriend: 'Accept Friend',
           },
           levels: {
             title: 'Membership Levels',
@@ -1518,6 +1520,13 @@ createApp({
       // 从用户主页返回公共内容流。
       this.view = 'public';
     },
+    async refreshActiveProfile() {
+      // Refresh profile data when the profile page is open.
+      // 当用户主页打开时刷新主页数据。
+      if (this.view === 'profile' && this.profileUser.id) {
+        await this.openProfile(this.profileUser.id, this.profileUser.name);
+      }
+    },
     async addProfileFriend() {
       // Send a friend request from the profile header.
       // 从用户主页头部发送好友请求。
@@ -1527,7 +1536,20 @@ createApp({
       await this.addFriend({
         id: this.profileUser.id,
       });
-      await this.openProfile(this.profileUser.id, this.profileUser.name);
+      await this.refreshActiveProfile();
+    },
+    async acceptProfileFriend() {
+      // Accept an incoming friend request from the profile header.
+      // 在用户主页头部接受收到的好友请求。
+      if (!this.profileUser.id) {
+        return;
+      }
+      await this.acceptFriend({
+        id: this.profileUser.id,
+        direction: 'incoming',
+        status: 'pending',
+      });
+      await this.refreshActiveProfile();
     },
     async createPost() {
       // Create a new social post.
@@ -1855,6 +1877,7 @@ createApp({
       if (this.friendSearchPerformed && this.newFriendQuery.trim()) {
         await this.searchUsers();
       }
+      await this.refreshActiveProfile();
     },
     async startChat(friend) {
       // Switch to chat view and set active friend.
