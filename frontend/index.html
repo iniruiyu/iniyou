@@ -126,6 +126,10 @@
               <div class="stat-title">{{ t('dashboard.friendStat') }}</div>
               <div class="stat-value">{{ acceptedFriends.length }}</div>
             </div>
+            <div class="stat">
+              <div class="stat-title">{{ t('dashboard.blockchainStat') }}</div>
+              <div class="stat-value">{{ activeExternalAccounts.length }}</div>
+            </div>
           </div>
         </div>
         <div class="panel">
@@ -146,6 +150,17 @@
             <input type="text" :placeholder="t('dashboard.displayNamePlaceholder')" v-model="profileDraft.displayName" />
             <button class="primary" type="button" @click="saveProfile">{{ t('dashboard.saveProfile') }}</button>
           </form>
+        </div>
+        <div class="panel">
+          <h2>{{ t('dashboard.blockchainTitle') }}</h2>
+          <p>{{ t('dashboard.blockchainSub') }}</p>
+          <div class="subscription">
+            <div>
+              <div class="subscription-title">{{ t('dashboard.blockchainStat') }}: {{ activeExternalAccounts.length }}</div>
+              <div class="subscription-sub">{{ t('blockchain.connectedChains') }}: {{ connectedChainText }}</div>
+            </div>
+            <button class="primary" type="button" @click="view = 'blockchain'">{{ t('blockchain.openManager') }}</button>
+          </div>
         </div>
       </section>
 
@@ -279,6 +294,8 @@
                 <div v-if="profileUser.secondary" class="post-meta">{{ profileUser.secondary }}</div>
                 <div class="post-meta">{{ t('posts.articleCount') }} · {{ profilePosts.length }}</div>
                 <div v-if="profileUser.relationStatus" class="post-meta">{{ statusLabel(profileUser.relationStatus) }}</div>
+                <div v-if="profileUser.id === user.id" class="post-meta">{{ t('dashboard.blockchainStat') }} · {{ activeExternalAccounts.length }}</div>
+                <div v-if="profileUser.id === user.id" class="post-meta">{{ t('blockchain.connectedChains') }} · {{ connectedChainText }}</div>
               </div>
               <div class="profile-actions">
                 <button class="ghost compact" @click="backToPublicFeed">{{ t('posts.backToFeed') }}</button>
@@ -396,12 +413,12 @@
         <form class="form">
           <label>{{ t('blockchain.providerLabel') }}</label>
           <select v-model="externalAccountDraft.provider">
-            <option value="evm">EVM</option>
-            <option value="solana">Solana</option>
-            <option value="tron">Tron</option>
+            <option v-for="provider in blockchainProviderOptions" :key="provider" :value="provider">{{ provider.toUpperCase() }}</option>
           </select>
           <label>{{ t('blockchain.chainLabel') }}</label>
-          <input type="text" v-model="externalAccountDraft.chain" />
+          <select v-model="externalAccountDraft.chain">
+            <option v-for="chain in blockchainChainOptions" :key="chain" :value="chain">{{ chain }}</option>
+          </select>
           <input type="text" :placeholder="t('blockchain.addressPlaceholder')" v-model="externalAccountDraft.accountAddress" />
           <textarea class="post-textarea" :placeholder="t('blockchain.signaturePlaceholder')" v-model="externalAccountDraft.signaturePayload"></textarea>
           <button class="primary" type="button" @click="bindExternalAccount">{{ t('blockchain.bindAction') }}</button>

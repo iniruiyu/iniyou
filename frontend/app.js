@@ -108,10 +108,13 @@ createApp({
             levelStat: '会员等级',
             planStat: '订阅状态',
             friendStat: '好友数量',
+            blockchainStat: '链上账号',
             spaceSummaryTitle: '空间摘要',
             spaceSummarySub: '私人空间用于沉淀，公共空间用于分享。',
             profileTitle: '资料设置',
             profileSub: '更新展示名称，主页与聊天窗口会同步显示。',
+            blockchainTitle: '链上扩展',
+            blockchainSub: '已绑定链上账号会在这里汇总，便于后续资产与身份联动。',
             displayNamePlaceholder: '输入展示名称',
             saveProfile: '保存资料',
             saveSuccess: '资料已更新',
@@ -207,6 +210,8 @@ createApp({
             removeSuccess: '链上账号已解绑。',
             removeError: '链上账号解绑失败，请稍后重试。',
             boundAt: '绑定时间',
+            openManager: '管理绑定',
+            connectedChains: '已连接链',
           },
           friends: {
             title: '好友',
@@ -347,10 +352,13 @@ createApp({
             levelStat: 'Membership',
             planStat: 'Subscription',
             friendStat: 'Friends',
+            blockchainStat: 'Blockchain',
             spaceSummaryTitle: 'Space Summary',
             spaceSummarySub: 'Private spaces for focus, public spaces for sharing.',
             profileTitle: 'Profile Settings',
             profileSub: 'Update your display name for the dashboard and chat header.',
+            blockchainTitle: 'Blockchain Extension',
+            blockchainSub: 'Bound blockchain accounts are summarized here for future identity and asset linkage.',
             displayNamePlaceholder: 'Enter display name',
             saveProfile: 'Save Profile',
             saveSuccess: 'Profile updated',
@@ -446,6 +454,8 @@ createApp({
             removeSuccess: 'Blockchain account unbound.',
             removeError: 'Blockchain account removal failed. Try again later.',
             boundAt: 'Bound At',
+            openManager: 'Manage Bindings',
+            connectedChains: 'Connected Chains',
           },
           friends: {
             title: 'Friends',
@@ -537,6 +547,13 @@ createApp({
         chain: 'ethereum',
         accountAddress: '',
         signaturePayload: '',
+      },
+      // Supported blockchain providers and chain options.
+      // 支持的链上提供方与链选项。
+      blockchainProviders: {
+        evm: ['ethereum', 'base', 'bsc', 'polygon'],
+        solana: ['solana'],
+        tron: ['tron'],
       },
       // Auth form data.
       // 登录注册表单数据。
@@ -730,6 +747,21 @@ createApp({
     localizedLevelName() {
       return this.t(`plans.${String(this.user.level || '').toLowerCase()}`) || this.user.level;
     },
+    blockchainProviderOptions() {
+      return Object.keys(this.blockchainProviders);
+    },
+    blockchainChainOptions() {
+      return this.blockchainProviders[this.externalAccountDraft.provider] || [];
+    },
+    activeExternalAccounts() {
+      return this.externalAccounts.filter((account) => account.bindingStatus === 'active');
+    },
+    connectedChainList() {
+      return Array.from(new Set(this.activeExternalAccounts.map((account) => account.chain).filter(Boolean)));
+    },
+    connectedChainText() {
+      return this.connectedChainList.join(', ') || this.t('common.notAvailable');
+    },
     acceptedFriends() {
       return this.friends.filter((friend) => friend.status === 'accepted');
     },
@@ -776,6 +808,14 @@ createApp({
       document.documentElement.lang = nextLocale;
       document.documentElement.dir = this.localeDirection;
       document.title = this.t('htmlTitle');
+    },
+    'externalAccountDraft.provider'(nextProvider) {
+      // Keep the selected chain aligned with the selected provider.
+      // 让选中的链始终与当前提供方保持一致。
+      const chains = this.blockchainProviders[nextProvider] || [];
+      if (!chains.includes(this.externalAccountDraft.chain)) {
+        this.externalAccountDraft.chain = chains[0] || '';
+      }
     },
   },
   methods: {
@@ -907,10 +947,13 @@ createApp({
               levelStat: '會員等級',
               planStat: '訂閱狀態',
               friendStat: '好友數量',
+              blockchainStat: '鏈上帳號',
               spaceSummaryTitle: '空間摘要',
               spaceSummarySub: '私人空間用於沉澱，公共空間用於分享。',
               profileTitle: '資料設定',
               profileSub: '更新顯示名稱，主頁與聊天視窗會同步顯示。',
+              blockchainTitle: '鏈上擴展',
+              blockchainSub: '已綁定的鏈上帳號會在此彙總，便於後續資產與身份聯動。',
               displayNamePlaceholder: '輸入顯示名稱',
               saveProfile: '儲存資料',
               saveSuccess: '資料已更新',
@@ -974,6 +1017,8 @@ createApp({
               removeSuccess: '鏈上帳號已解除綁定。',
               removeError: '鏈上帳號解除綁定失敗，請稍後重試。',
               boundAt: '綁定時間',
+              openManager: '管理綁定',
+              connectedChains: '已連接鏈',
             },
             friends: {
               searchPlaceholder: '輸入顯示名稱、信箱、手機號碼或使用者 ID',
@@ -1104,10 +1149,13 @@ createApp({
               levelStat: 'רמת חברות',
               planStat: 'מנוי',
               friendStat: 'חברים',
+              blockchainStat: 'בלוקצ׳יין',
               spaceSummaryTitle: 'סיכום מרחבים',
               spaceSummarySub: 'מרחבים פרטיים להתמקדות, מרחבים ציבוריים לשיתוף.',
               profileTitle: 'הגדרות פרופיל',
               profileSub: 'עדכן את שם התצוגה עבור הלוח והצ׳אט.',
+              blockchainTitle: 'הרחבת בלוקצ׳יין',
+              blockchainSub: 'חשבונות בלוקצ׳יין מחוברים מסוכמים כאן כהכנה לחיבורי זהות ונכסים בהמשך.',
               displayNamePlaceholder: 'הכנס שם תצוגה',
               saveProfile: 'שמור פרופיל',
               saveSuccess: 'הפרופיל עודכן',
@@ -1180,6 +1228,8 @@ createApp({
               removeSuccess: 'חשבון הבלוקצ׳יין נותק.',
               removeError: 'ניתוק חשבון הבלוקצ׳יין נכשל. נסה שוב מאוחר יותר.',
               boundAt: 'חובר בתאריך',
+              openManager: 'נהל חיבורים',
+              connectedChains: 'רשתות מחוברות',
             },
             friends: {
               title: 'חברים',
@@ -1294,6 +1344,11 @@ createApp({
         chain: 'ethereum',
         accountAddress: '',
         signaturePayload: '',
+      };
+      this.blockchainProviders = {
+        evm: ['ethereum', 'base', 'bsc', 'polygon'],
+        solana: ['solana'],
+        tron: ['tron'],
       };
       this.posts = [];
       this.privatePosts = [];
