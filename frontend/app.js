@@ -128,6 +128,8 @@ createApp({
           posts: {
             feedTitle: '公共内容流',
             feedSub: '发布你的近况、想法和项目更新。',
+            privateFeedTitle: '我的内容',
+            privateFeedSub: '查看你发布的私人和公开文章。',
             titlePlaceholder: '文章标题',
             contentPlaceholder: '写点什么，分享给大家...',
             publishAction: '发布文章',
@@ -320,6 +322,8 @@ createApp({
           posts: {
             feedTitle: 'Public Feed',
             feedSub: 'Share updates, ideas, and project progress.',
+            privateFeedTitle: 'My Posts',
+            privateFeedSub: 'Review your private and public posts.',
             titlePlaceholder: 'Post title',
             contentPlaceholder: 'Write something to share...',
             publishAction: 'Publish Post',
@@ -484,6 +488,9 @@ createApp({
       // Social posts list.
       // 社交文章列表。
       posts: [],
+      // Current user's post list.
+      // 当前用户文章列表。
+      privatePosts: [],
       // Post composer form.
       // 文章发布表单。
       postDraft: {
@@ -1073,6 +1080,7 @@ createApp({
         endedAt: '',
       };
       this.posts = [];
+      this.privatePosts = [];
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
@@ -1208,6 +1216,7 @@ createApp({
         await this.loadSpaces();
         await this.loadSubscription();
         await this.loadPosts();
+        await this.loadPrivatePosts();
         await this.loadFriends();
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
@@ -1245,6 +1254,7 @@ createApp({
         await this.loadSpaces();
         await this.loadSubscription();
         await this.loadPosts();
+        await this.loadPrivatePosts();
         await this.loadFriends();
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
@@ -1359,6 +1369,43 @@ createApp({
         }));
       }
     },
+    async loadPrivatePosts() {
+      // Load posts created by the current user.
+      // 加载当前用户发布的文章。
+      if (!this.token || !this.user.id) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/users/${this.user.id}/posts?visibility=all&limit=50`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        this.privatePosts = data.items.map((item) => ({
+          id: item.id,
+          userId: item.user_id,
+          authorName: item.author_name,
+          title: item.title,
+          content: item.content,
+          visibility: item.visibility,
+          likesCount: Number(item.likes_count || 0),
+          commentsCount: Number(item.comments_count || 0),
+          sharesCount: Number(item.shares_count || 0),
+          likedByMe: Boolean(item.liked_by_me),
+          createdAt: item.created_at,
+          comments: Array.isArray(item.comments)
+            ? item.comments.map((comment) => ({
+                id: comment.id,
+                authorName: comment.author_name,
+                content: comment.content,
+                createdAt: comment.created_at,
+              }))
+            : [],
+        }));
+      }
+    },
     async createPost() {
       // Create a new social post.
       // 创建新的社交文章。
@@ -1386,6 +1433,7 @@ createApp({
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
       await this.loadPosts();
+      await this.loadPrivatePosts();
       this.setFlash(this.t('posts.publishSuccess'));
     },
     async togglePostLike(post) {
@@ -1403,6 +1451,7 @@ createApp({
         return;
       }
       await this.loadPosts();
+      await this.loadPrivatePosts();
     },
     async submitComment(post) {
       // Submit a comment to a post.
@@ -1428,6 +1477,7 @@ createApp({
       }
       this.commentDrafts[post.id] = '';
       await this.loadPosts();
+      await this.loadPrivatePosts();
     },
     async sharePost(post) {
       // Share a post in the social feed.
@@ -1445,6 +1495,7 @@ createApp({
         return;
       }
       await this.loadPosts();
+      await this.loadPrivatePosts();
     },
     async saveProfile() {
       // Persist display name changes to the account service.
@@ -1788,11 +1839,13 @@ createApp({
     const stored = localStorage.getItem('token');
     if (stored) {
       this.token = stored;
-      this.loadMe();
-      this.loadSpaces();
-      this.loadSubscription();
-      this.loadPosts();
-      this.loadFriends().then(() => {
+      this.loadMe().then(() => {
+        this.loadSpaces();
+        this.loadSubscription();
+        this.loadPosts();
+        this.loadPrivatePosts();
+        return this.loadFriends();
+      }).then(() => {
         if (this.activeChat) {
           this.loadConversation(this.activeChat.id);
         } else {

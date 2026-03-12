@@ -54,6 +54,24 @@ func (h *PostHandler) GetPost(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
+func (h *PostHandler) ListUserPosts(c *gin.Context) {
+	// List posts for a given user.
+	// 列出指定用户的文章。
+	uid := c.GetString("user_id")
+	limit := 20
+	if raw := c.Query("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			limit = parsed
+		}
+	}
+	items, err := service.ListPostsByUser(h.DB, uid, c.Param("id"), c.Query("visibility"), limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
 func (h *PostHandler) CreatePost(c *gin.Context) {
 	// Create a social post.
 	// 创建社交文章。

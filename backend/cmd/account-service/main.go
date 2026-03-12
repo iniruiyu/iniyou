@@ -72,6 +72,7 @@ func main() {
 	authGroup.POST("/spaces", h.CreateSpace)
 	authGroup.GET("/posts", postHandler.ListPosts)
 	authGroup.GET("/posts/:id", postHandler.GetPost)
+	authGroup.GET("/users/:id/posts", postHandler.ListUserPosts)
 	authGroup.POST("/posts", postHandler.CreatePost)
 	authGroup.POST("/posts/:id/likes", postHandler.ToggleLike)
 	authGroup.POST("/posts/:id/comments", postHandler.AddComment)

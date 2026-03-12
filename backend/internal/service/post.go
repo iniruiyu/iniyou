@@ -96,6 +96,37 @@ func ListPosts(db *gorm.DB, viewerID string, visibility string, limit int) ([]Po
 	return buildPostViews(db, viewerID, posts)
 }
 
+func ListPostsByUser(db *gorm.DB, viewerID string, ownerID string, visibility string, limit int) ([]PostView, error) {
+	// List posts for a specific user with visibility checks.
+	// 按指定用户列出文章，并执行可见性校验。
+	if limit < 1 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	visibility = strings.ToLower(strings.TrimSpace(visibility))
+
+	query := db.Model(&models.Post{}).Where("user_id = ?", ownerID).Order("created_at desc").Limit(limit)
+	if visibility == "private" {
+		if viewerID != ownerID {
+			return []PostView{}, nil
+		}
+		query = query.Where("visibility = ?", "private")
+	} else if visibility == "all" && viewerID == ownerID {
+		// Owners can see both public and private posts.
+		// 作者本人可以同时看到公开和私密文章。
+	} else {
+		query = query.Where("visibility = ?", "public")
+	}
+
+	var posts []models.Post
+	if err := query.Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	return buildPostViews(db, viewerID, posts)
+}
+
 func GetPost(db *gorm.DB, viewerID string, postID string) (PostView, error) {
 	// Get one post with aggregate counters and comments.
 	// 获取单篇文章及聚合计数和评论。
