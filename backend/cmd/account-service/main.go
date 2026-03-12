@@ -75,6 +75,7 @@ func main() {
 	authGroup.GET("/posts/:id", postHandler.GetPost)
 	authGroup.GET("/users/:id/posts", postHandler.ListUserPosts)
 	authGroup.POST("/posts", postHandler.CreatePost)
+	authGroup.PATCH("/posts/:id", postHandler.UpdatePost)
 	authGroup.POST("/posts/:id/likes", postHandler.ToggleLike)
 	authGroup.POST("/posts/:id/comments", postHandler.AddComment)
 	authGroup.POST("/posts/:id/shares", postHandler.Share)

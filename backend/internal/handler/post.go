@@ -18,6 +18,7 @@ type createPostRequest struct {
 	Title      string `json:"title"`
 	Content    string `json:"content"`
 	Visibility string `json:"visibility"`
+	Status     string `json:"status"`
 }
 
 type commentRequest struct {
@@ -81,7 +82,24 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	item, err := service.CreatePost(h.DB, uid, req.Title, req.Content, req.Visibility)
+	item, err := service.CreatePostWithStatus(h.DB, uid, req.Title, req.Content, req.Visibility, req.Status)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, item)
+}
+
+func (h *PostHandler) UpdatePost(c *gin.Context) {
+	// Update a social post owned by the current user.
+	// 更新当前用户拥有的社交文章。
+	uid := c.GetString("user_id")
+	var req createPostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+	item, err := service.UpdatePost(h.DB, uid, c.Param("id"), req.Title, req.Content, req.Visibility, req.Status)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

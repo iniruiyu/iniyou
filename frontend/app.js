@@ -161,6 +161,15 @@ createApp({
             addFriend: '添加好友',
             acceptFriend: '接受好友',
             openDetail: '查看详情',
+            edit: '编辑文章',
+            editTitle: '编辑文章',
+            editAction: '保存修改',
+            editSuccess: '文章已更新。',
+            editError: '文章更新失败，请稍后重试。',
+            statusLabel: '发布状态',
+            statusDraft: '草稿',
+            statusPublished: '已发布',
+            statusHidden: '已隐藏',
           },
           levels: {
             title: '会员等级',
@@ -370,6 +379,15 @@ createApp({
             addFriend: 'Add Friend',
             acceptFriend: 'Accept Friend',
             openDetail: 'Open Detail',
+            edit: 'Edit Post',
+            editTitle: 'Edit Post',
+            editAction: 'Save Changes',
+            editSuccess: 'Post updated.',
+            editError: 'Updating post failed. Try again later.',
+            statusLabel: 'Publish Status',
+            statusDraft: 'Draft',
+            statusPublished: 'Published',
+            statusHidden: 'Hidden',
           },
           levels: {
             title: 'Membership Levels',
@@ -542,6 +560,16 @@ createApp({
         title: '',
         content: '',
         visibility: 'public',
+        status: 'published',
+      },
+      // Post edit form.
+      // 文章编辑表单。
+      editPostDraft: {
+        id: '',
+        title: '',
+        content: '',
+        visibility: 'public',
+        status: 'published',
       },
       // Per-post comment drafts.
       // 每篇文章的评论草稿。
@@ -1144,6 +1172,8 @@ createApp({
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
+      this.postDraft.status = 'published';
+      this.editPostDraft = { id: '', title: '', content: '', visibility: 'public', status: 'published' };
       this.commentDrafts = {};
       this.friends = [];
       this.newFriendQuery = '';
@@ -1214,6 +1244,14 @@ createApp({
     },
     visibilityLabel(visibility) {
       return visibility === 'private' ? this.t('posts.privateLabel') : this.t('posts.publicLabel');
+    },
+    postStatusLabel(status) {
+      return this.t(`posts.status${String(status).charAt(0).toUpperCase()}${String(status).slice(1)}`) || status;
+    },
+    canEditPost(post) {
+      // Allow editing only for the current user's own posts.
+      // 仅允许编辑当前用户自己的文章。
+      return Boolean(post && post.userId === this.user.id);
     },
     isCurrentLevel(level) {
       // Check whether the level card matches the current user tier.
@@ -1567,6 +1605,13 @@ createApp({
             }))
           : [],
       };
+      this.editPostDraft = {
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        visibility: item.visibility,
+        status: item.status || 'published',
+      };
       this.view = 'postDetail';
     },
     backFromPostDetail() {
@@ -1627,6 +1672,7 @@ createApp({
           title: this.postDraft.title.trim(),
           content: this.postDraft.content.trim(),
           visibility: this.postDraft.visibility,
+          status: this.postDraft.status,
         }),
       });
       if (!res.ok) {
@@ -1636,12 +1682,57 @@ createApp({
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
+      this.postDraft.status = 'published';
       await this.loadPosts();
       await this.loadPrivatePosts();
       if (this.currentPost?.id) {
         await this.openPostDetail(this.currentPost.id);
       }
       this.setFlash(this.t('posts.publishSuccess'));
+    },
+    startEditPost(post) {
+      // Load an existing post into the edit form.
+      // 将已有文章载入编辑表单。
+      if (!this.canEditPost(post)) {
+        return;
+      }
+      this.editPostDraft = {
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        visibility: post.visibility,
+        status: post.status || 'published',
+      };
+      this.view = 'postDetail';
+    },
+    async savePostEdit() {
+      // Persist the current post edit form.
+      // 保存当前文章编辑表单。
+      this.clearFeedback();
+      if (!this.token || !this.editPostDraft.id || !this.editPostDraft.title.trim() || !this.editPostDraft.content.trim()) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts/${this.editPostDraft.id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: this.editPostDraft.title.trim(),
+          content: this.editPostDraft.content.trim(),
+          visibility: this.editPostDraft.visibility,
+          status: this.editPostDraft.status,
+        }),
+      });
+      if (!res.ok) {
+        this.setError(this.t('posts.editError'));
+        return;
+      }
+      await this.loadPosts();
+      await this.loadPrivatePosts();
+      await this.openPostDetail(this.editPostDraft.id);
+      this.setFlash(this.t('posts.editSuccess'));
     },
     async togglePostLike(post) {
       // Toggle like state for a post.

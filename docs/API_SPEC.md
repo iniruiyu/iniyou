@@ -138,33 +138,40 @@
 
 - `POST /api/v1/posts`
 - 用途：创建文章
-- 请求字段建议：`title`, `content`, `visibility`
+- 请求字段建议：`title`, `content`, `visibility`, `status`
 
-### 6.7 评论文章
+### 6.7 更新文章
+
+- `PATCH /api/v1/posts/{id}`
+- 用途：更新当前用户自己的文章
+- 请求字段建议：`title`, `content`, `visibility`, `status`
+- 状态建议：`draft`, `published`, `hidden`
+
+### 6.8 评论文章
 
 - `POST /api/v1/posts/{id}/comments`
 - 用途：创建评论
 - 请求字段建议：`content`
 
-### 6.8 点赞文章
+### 6.9 点赞文章
 
 - `POST /api/v1/posts/{id}/likes`
 - 用途：切换文章点赞状态
 - 返回字段建议：文章对象 + `liked_by_me` + 聚合计数
 
-### 6.9 转发文章
+### 6.10 转发文章
 
 - `POST /api/v1/posts/{id}/shares`
 - 用途：记录一次文章转发
 - 返回字段建议：文章对象 + 聚合计数
 
-### 6.10 发送消息
+### 6.11 发送消息
 
 - `POST /api/v1/chats/{id}/messages`
 - 用途：发送聊天消息
 - 请求字段建议：`content`, `message_type`
 
-### 6.11 绑定外部账号
+### 6.12 绑定外部账号
 
 - `POST /api/v1/external-accounts`
 - 用途：绑定区块链账号或其他外部身份
@@ -201,6 +208,7 @@
 - 补充 `PUT /api/v1/me`、文章点赞和转发接口说明
 - 更新文章发布与评论请求字段说明
 - 补充作者主页使用的公开资料接口与用户文章列表接口
+- 补充文章更新接口与文章状态字段说明
 
 ### 2026-03-11
 

@@ -42,9 +42,16 @@ type CommentView struct {
 func CreatePost(db *gorm.DB, userID string, title string, content string, visibility string) (PostView, error) {
 	// Create a post for the current user.
 	// 为当前用户创建文章。
+	return CreatePostWithStatus(db, userID, title, content, visibility, "published")
+}
+
+func CreatePostWithStatus(db *gorm.DB, userID string, title string, content string, visibility string, status string) (PostView, error) {
+	// Create a post for the current user with an explicit status.
+	// 为当前用户创建带状态的文章。
 	title = strings.TrimSpace(title)
 	content = strings.TrimSpace(content)
 	visibility = strings.ToLower(strings.TrimSpace(visibility))
+	status = normalizePostStatus(status)
 	if title == "" {
 		return PostView{}, errors.New("title required")
 	}
@@ -62,7 +69,7 @@ func CreatePost(db *gorm.DB, userID string, title string, content string, visibi
 		UserID:     userID,
 		Title:      title,
 		Content:    content,
-		Status:     "published",
+		Status:     status,
 		Visibility: visibility,
 	}
 	if err := db.Create(&post).Error; err != nil {
@@ -83,6 +90,7 @@ func ListPosts(db *gorm.DB, viewerID string, visibility string, limit int) ([]Po
 	visibility = strings.ToLower(strings.TrimSpace(visibility))
 
 	query := db.Model(&models.Post{}).Order("created_at desc").Limit(limit)
+	query = query.Where("status = ?", "published")
 	if visibility == "private" {
 		query = query.Where("visibility = ? AND user_id = ?", "private", viewerID)
 	} else {
@@ -112,12 +120,13 @@ func ListPostsByUser(db *gorm.DB, viewerID string, ownerID string, visibility st
 		if viewerID != ownerID {
 			return []PostView{}, nil
 		}
-		query = query.Where("visibility = ?", "private")
+		query = query.Where("visibility = ? AND status <> ?", "private", "hidden")
 	} else if visibility == "all" && viewerID == ownerID {
 		// Owners can see both public and private posts.
 		// 作者本人可以同时看到公开和私密文章。
+		query = query.Where("status <> ?", "hidden")
 	} else {
-		query = query.Where("visibility = ?", "public")
+		query = query.Where("visibility = ? AND status = ?", "public", "published")
 	}
 
 	var posts []models.Post
@@ -133,6 +142,12 @@ func GetPost(db *gorm.DB, viewerID string, postID string) (PostView, error) {
 	var post models.Post
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
 		return PostView{}, err
+	}
+	if post.Status == "hidden" && post.UserID != viewerID {
+		return PostView{}, gorm.ErrRecordNotFound
+	}
+	if post.Status == "draft" && post.UserID != viewerID {
+		return PostView{}, gorm.ErrRecordNotFound
 	}
 	if post.Visibility == "private" && post.UserID != viewerID {
 		return PostView{}, gorm.ErrRecordNotFound
@@ -168,6 +183,44 @@ func ToggleLikePost(db *gorm.DB, userID string, postID string) (PostView, error)
 		}
 	}
 	return GetPost(db, userID, post.ID)
+}
+
+func UpdatePost(db *gorm.DB, userID string, postID string, title string, content string, visibility string, status string) (PostView, error) {
+	// Update an existing post owned by the current user.
+	// 更新当前用户拥有的文章。
+	title = strings.TrimSpace(title)
+	content = strings.TrimSpace(content)
+	visibility = strings.ToLower(strings.TrimSpace(visibility))
+	status = normalizePostStatus(status)
+	if title == "" {
+		return PostView{}, errors.New("title required")
+	}
+	if content == "" {
+		return PostView{}, errors.New("content required")
+	}
+	if visibility != "public" && visibility != "private" {
+		return PostView{}, errors.New("visibility must be public or private")
+	}
+
+	var post models.Post
+	if err := db.First(&post, "id = ?", postID).Error; err != nil {
+		return PostView{}, err
+	}
+	if post.UserID != userID {
+		return PostView{}, errors.New("cannot edit another user's post")
+	}
+
+	updates := map[string]any{
+		"title":      title,
+		"content":    content,
+		"visibility": visibility,
+		"status":     status,
+		"updated_at": time.Now(),
+	}
+	if err := db.Model(&post).Updates(updates).Error; err != nil {
+		return PostView{}, err
+	}
+	return GetPost(db, userID, postID)
 }
 
 func AddComment(db *gorm.DB, userID string, postID string, content string) (PostView, error) {
@@ -275,6 +328,19 @@ func hydratePostView(db *gorm.DB, viewerID string, post models.Post) (PostView, 
 		})
 	}
 	return view, nil
+}
+
+func normalizePostStatus(status string) string {
+	// Normalize and validate post status values.
+	// 规范化并校验文章状态值。
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "draft":
+		return "draft"
+	case "hidden":
+		return "hidden"
+	default:
+		return "published"
+	}
 }
 
 func fallbackDisplayName(user models.User) string {
