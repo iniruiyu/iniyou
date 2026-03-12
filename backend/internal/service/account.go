@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,6 +14,12 @@ import (
 )
 
 var ErrInvalidCredentials = errors.New("invalid credentials")
+
+var (
+	evmAddressPattern    = regexp.MustCompile(`^0x[0-9a-fA-F]{40}$`)
+	solanaAddressPattern = regexp.MustCompile(`^[1-9A-HJ-NP-Za-km-z]{32,44}$`)
+	tronAddressPattern   = regexp.MustCompile(`^T[1-9A-HJ-NP-Za-km-z]{33}$`)
+)
 
 type FriendView struct {
 	// Friend relation view for API consumption.
@@ -474,7 +482,7 @@ func ListExternalAccounts(db *gorm.DB, userID string) ([]ExternalAccountView, er
 	// List the current user's external account bindings.
 	// 列出当前用户的外部账号绑定。
 	var accounts []models.ExternalAccount
-	if err := db.Where("user_id = ?", userID).Order("created_at desc").Find(&accounts).Error; err != nil {
+	if err := db.Where("user_id = ? AND binding_status <> ?", userID, "revoked").Order("created_at desc").Find(&accounts).Error; err != nil {
 		return nil, err
 	}
 
@@ -496,20 +504,29 @@ func ListExternalAccounts(db *gorm.DB, userID string) ([]ExternalAccountView, er
 func BindExternalAccount(db *gorm.DB, userID string, provider string, chain string, accountAddress string, signaturePayload string) (models.ExternalAccount, error) {
 	// Bind an external account to the current user.
 	// 将外部账号绑定到当前用户。
-	provider = strings.ToLower(strings.TrimSpace(provider))
-	chain = strings.ToLower(strings.TrimSpace(chain))
-	accountAddress = strings.TrimSpace(accountAddress)
-	signaturePayload = strings.TrimSpace(signaturePayload)
-	if provider == "" {
-		return models.ExternalAccount{}, errors.New("provider required")
+	provider, chain, accountAddress, identifier, metadata, err := normalizeExternalAccountBinding(provider, chain, accountAddress, signaturePayload)
+	if err != nil {
+		return models.ExternalAccount{}, err
 	}
-	if accountAddress == "" {
-		return models.ExternalAccount{}, errors.New("account address required")
-	}
-
-	identifier := strings.ToLower(accountAddress)
 	var existing models.ExternalAccount
 	if err := db.Where("provider = ? AND account_identifier = ?", provider, identifier).First(&existing).Error; err == nil {
+		if existing.UserID == userID && existing.BindingStatus == "revoked" {
+			updates := map[string]any{
+				"chain":           chain,
+				"account_address": accountAddress,
+				"binding_status":  "active",
+				"metadata":        metadata,
+				"updated_at":      time.Now(),
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return models.ExternalAccount{}, err
+			}
+			existing.Chain = chain
+			existing.AccountAddress = accountAddress
+			existing.BindingStatus = "active"
+			existing.Metadata = metadata
+			return existing, nil
+		}
 		if existing.UserID == userID {
 			return models.ExternalAccount{}, errors.New("external account already bound")
 		}
@@ -525,7 +542,7 @@ func BindExternalAccount(db *gorm.DB, userID string, provider string, chain stri
 		AccountIdentifier: identifier,
 		AccountAddress:    accountAddress,
 		BindingStatus:     "active",
-		Metadata:          signaturePayload,
+		Metadata:          metadata,
 	}
 	if err := db.Create(&account).Error; err != nil {
 		return models.ExternalAccount{}, err
@@ -540,12 +557,97 @@ func RemoveExternalAccount(db *gorm.DB, userID string, externalAccountID string)
 	if externalAccountID == "" {
 		return errors.New("external account id required")
 	}
-	result := db.Where("id = ? AND user_id = ?", externalAccountID, userID).Delete(&models.ExternalAccount{})
-	if result.Error != nil {
-		return result.Error
+	var account models.ExternalAccount
+	if err := db.Where("id = ? AND user_id = ?", externalAccountID, userID).First(&account).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("external account not found")
+		}
+		return err
 	}
-	if result.RowsAffected == 0 {
-		return errors.New("external account not found")
+	if account.BindingStatus == "revoked" {
+		return errors.New("external account already removed")
+	}
+	return db.Model(&account).Updates(map[string]any{
+		"binding_status": "revoked",
+		"updated_at":     time.Now(),
+	}).Error
+}
+
+func normalizeExternalAccountBinding(provider string, chain string, accountAddress string, signaturePayload string) (string, string, string, string, string, error) {
+	// Normalize provider, chain, address, and signature payload before binding.
+	// 在绑定前统一规范化提供方、链、地址和签名载荷。
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	chain = strings.ToLower(strings.TrimSpace(chain))
+	accountAddress = strings.TrimSpace(accountAddress)
+	signaturePayload = strings.TrimSpace(signaturePayload)
+
+	if provider == "" {
+		return "", "", "", "", "", errors.New("provider required")
+	}
+	if chain == "" {
+		return "", "", "", "", "", errors.New("chain required")
+	}
+	if accountAddress == "" {
+		return "", "", "", "", "", errors.New("account address required")
+	}
+	if len(signaturePayload) < 16 {
+		return "", "", "", "", "", errors.New("signature payload required")
+	}
+	if !isSupportedChain(provider, chain) {
+		return "", "", "", "", "", errors.New("unsupported provider or chain")
+	}
+	if err := validateExternalAccountAddress(provider, accountAddress); err != nil {
+		return "", "", "", "", "", err
+	}
+
+	identifier := strings.ToLower(accountAddress)
+	metadata := fmt.Sprintf("verification=client_signature_payload;payload_length=%d", len(signaturePayload))
+	return provider, chain, accountAddress, identifier, metadata, nil
+}
+
+func isSupportedChain(provider string, chain string) bool {
+	// Validate the provider-chain combination against the current allowlist.
+	// 按当前允许列表校验提供方与链的组合。
+	allowed := map[string]map[string]struct{}{
+		"evm": {
+			"ethereum": {},
+			"base":     {},
+			"bsc":      {},
+			"polygon":  {},
+		},
+		"solana": {
+			"solana": {},
+		},
+		"tron": {
+			"tron": {},
+		},
+	}
+	chains, ok := allowed[provider]
+	if !ok {
+		return false
+	}
+	_, ok = chains[chain]
+	return ok
+}
+
+func validateExternalAccountAddress(provider string, accountAddress string) error {
+	// Apply basic address format validation per provider.
+	// 按提供方应用基础地址格式校验。
+	switch provider {
+	case "evm":
+		if !evmAddressPattern.MatchString(accountAddress) {
+			return errors.New("invalid evm address")
+		}
+	case "solana":
+		if !solanaAddressPattern.MatchString(accountAddress) {
+			return errors.New("invalid solana address")
+		}
+	case "tron":
+		if !tronAddressPattern.MatchString(accountAddress) {
+			return errors.New("invalid tron address")
+		}
+	default:
+		return errors.New("unsupported provider or chain")
 	}
 	return nil
 }

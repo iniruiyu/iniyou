@@ -197,7 +197,8 @@ createApp({
             providerLabel: '提供方',
             chainLabel: '链网络',
             addressPlaceholder: '钱包地址 / 账号地址',
-            signaturePlaceholder: '签名载荷（当前为预留字段，可选）',
+            signaturePlaceholder: '签名载荷（必填，用于基础校验）',
+            securityHint: '当前版本会校验提供方、链类型、地址格式和签名载荷长度。',
             bindAction: '绑定账号',
             removeAction: '解绑',
             empty: '当前还没有绑定任何链上账号。',
@@ -435,7 +436,8 @@ createApp({
             providerLabel: 'Provider',
             chainLabel: 'Chain',
             addressPlaceholder: 'Wallet address / account address',
-            signaturePlaceholder: 'Signature payload (optional for now)',
+            signaturePlaceholder: 'Signature payload (required for baseline checks)',
+            securityHint: 'This version validates provider, chain, address format, and signature payload length.',
             bindAction: 'Bind Account',
             removeAction: 'Unbind',
             empty: 'There are no blockchain accounts bound yet.',
@@ -846,6 +848,7 @@ createApp({
               public: '公共空間',
               levels: '會員等級',
               subscription: '訂閱',
+              blockchain: '鏈上帳號',
               friends: '好友',
               chat: '即時聊天',
             },
@@ -867,6 +870,7 @@ createApp({
               public: '公共空間',
               levels: '會員等級',
               subscription: '訂閱管理',
+              blockchain: '鏈上帳號',
               friends: '好友',
               chat: '即時聊天',
             },
@@ -877,6 +881,7 @@ createApp({
               public: '展示公共內容與連結',
               levels: '選擇適合你的會員等級',
               subscription: '管理訂閱與權益',
+              blockchain: '管理外部鏈上帳號綁定',
               friends: '建立聯繫與私聊',
               chat: '即時溝通與回饋',
             },
@@ -953,6 +958,23 @@ createApp({
               actionSuccess: '訂閱已生效。',
               actionError: '訂閱操作失敗，請稍後重試。',
             },
+            blockchain: {
+              title: '鏈上帳號綁定',
+              sub: '綁定外部區塊鏈地址，為後續鏈上身份與資產能力預留入口。',
+              providerLabel: '提供方',
+              chainLabel: '鏈網路',
+              addressPlaceholder: '錢包地址 / 帳號地址',
+              signaturePlaceholder: '簽名載荷（必填，用於基礎校驗）',
+              securityHint: '目前版本會校驗提供方、鏈類型、地址格式與簽名載荷長度。',
+              bindAction: '綁定帳號',
+              removeAction: '解除綁定',
+              empty: '目前還沒有綁定任何鏈上帳號。',
+              bindSuccess: '鏈上帳號已綁定。',
+              bindError: '鏈上帳號綁定失敗，請檢查輸入後重試。',
+              removeSuccess: '鏈上帳號已解除綁定。',
+              removeError: '鏈上帳號解除綁定失敗，請稍後重試。',
+              boundAt: '綁定時間',
+            },
             friends: {
               searchPlaceholder: '輸入顯示名稱、信箱、手機號碼或使用者 ID',
               searchAction: '搜尋使用者',
@@ -1023,6 +1045,7 @@ createApp({
               public: 'מרחב ציבורי',
               levels: 'חברות',
               subscription: 'מנוי',
+              blockchain: 'חשבונות בלוקצ׳יין',
               friends: 'חברים',
               chat: 'צ׳אט חי',
             },
@@ -1044,6 +1067,7 @@ createApp({
               public: 'מרחב ציבורי',
               levels: 'חברות',
               subscription: 'מנוי',
+              blockchain: 'חשבונות בלוקצ׳יין',
               friends: 'חברים',
               chat: 'צ׳אט חי',
             },
@@ -1054,6 +1078,7 @@ createApp({
               public: 'שיתוף תוכן ויצירת קשרים',
               levels: 'בחירת רמת החברות המתאימה',
               subscription: 'ניהול תכנית והטבות',
+              blockchain: 'ניהול חיבורי חשבונות בלוקצ׳יין חיצוניים',
               friends: 'בניית קשרים ושיחה פרטית',
               chat: 'תקשורת בזמן אמת',
             },
@@ -1138,6 +1163,23 @@ createApp({
               empty: 'עדיין אין מנוי פעיל.',
               actionSuccess: 'המנוי פעיל כעת.',
               actionError: 'פעולת המנוי נכשלה. נסה שוב מאוחר יותר.',
+            },
+            blockchain: {
+              title: 'חשבונות בלוקצ׳יין',
+              sub: 'חבר כעת כתובות ארנק חיצוניות והשאר מקום ליכולות זהות on-chain בהמשך.',
+              providerLabel: 'ספק',
+              chainLabel: 'רשת',
+              addressPlaceholder: 'כתובת ארנק / כתובת חשבון',
+              signaturePlaceholder: 'מטען חתימה (חובה עבור בדיקות בסיס)',
+              securityHint: 'בגרסה זו מתבצעת בדיקת ספק, רשת, פורמט כתובת ואורך מטען החתימה.',
+              bindAction: 'חבר חשבון',
+              removeAction: 'נתק',
+              empty: 'עדיין אין חשבונות בלוקצ׳יין מחוברים.',
+              bindSuccess: 'חשבון הבלוקצ׳יין חובר.',
+              bindError: 'חיבור חשבון הבלוקצ׳יין נכשל. בדוק את הקלט ונסה שוב.',
+              removeSuccess: 'חשבון הבלוקצ׳יין נותק.',
+              removeError: 'ניתוק חשבון הבלוקצ׳יין נכשל. נסה שוב מאוחר יותר.',
+              boundAt: 'חובר בתאריך',
             },
             friends: {
               title: 'חברים',
@@ -1977,7 +2019,11 @@ createApp({
       // Create a new blockchain account binding for the current user.
       // 为当前用户创建新的链上账号绑定。
       this.clearFeedback();
-      if (!this.token || !this.externalAccountDraft.accountAddress.trim()) {
+      if (
+        !this.token ||
+        !this.externalAccountDraft.accountAddress.trim() ||
+        !this.externalAccountDraft.signaturePayload.trim()
+      ) {
         this.setError(this.t('blockchain.bindError'));
         return;
       }

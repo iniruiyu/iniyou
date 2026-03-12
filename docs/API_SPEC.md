@@ -200,6 +200,11 @@
 - `POST /api/v1/external-accounts`
 - 用途：绑定区块链账号或其他外部身份
 - 请求字段建议：`provider`, `chain`, `account_address`, `signature_payload`
+- 当前校验规则：
+  - `provider` 与 `chain` 必须命中当前允许列表
+  - `account_address` 按不同链做基础格式校验
+  - `signature_payload` 为必填，当前按最小长度做基础校验
+  - 重复绑定同一活跃账号会返回错误，已解绑账号可由原用户重新激活
 
 ### 6.17 解绑外部账号
 
@@ -241,6 +246,7 @@
 - 将聊天接口清单同步为 `conversations`、`messages`、`unread` 的实际实现
 - 明确聊天会话排序与打开会话已读规则
 - 新增外部账号列表、绑定、解绑接口的当前实现说明
+- 补充外部账号绑定的基础安全校验和解绑状态规则
 
 ### 2026-03-11
 

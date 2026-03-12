@@ -392,6 +392,7 @@
       <section v-if="view === 'blockchain'" class="panel">
         <h2>{{ t('blockchain.title') }}</h2>
         <p>{{ t('blockchain.sub') }}</p>
+        <div class="search-hint">{{ t('blockchain.securityHint') }}</div>
         <form class="form">
           <label>{{ t('blockchain.providerLabel') }}</label>
           <select v-model="externalAccountDraft.provider">
