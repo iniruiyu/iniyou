@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -38,10 +40,15 @@ type outboundMessage struct {
 }
 
 type conversationSummary struct {
-	PeerID       string    `json:"peer_id"`
-	LastMessage  string    `json:"last_message"`
-	LastAt       time.Time `json:"last_at"`
-	UnreadCount  int64     `json:"unread_count"`
+	PeerID      string    `json:"peer_id"`
+	LastMessage string    `json:"last_message"`
+	LastAt      time.Time `json:"last_at"`
+	UnreadCount int64     `json:"unread_count"`
+}
+
+type createMessageRequest struct {
+	PeerID  string `json:"peer_id"`
+	Content string `json:"content"`
 }
 
 func (h *MessageHandler) ListConversations(c *gin.Context) {
@@ -135,6 +142,33 @@ func (h *MessageHandler) UnreadCount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"unread": count})
 }
 
+func (h *MessageHandler) CreateMessage(c *gin.Context) {
+	// Create a message with REST to keep conversation refresh consistent.
+	// 通过 REST 创建消息，保证会话刷新链路一致。
+	uid := c.GetString("user_id")
+	var req createMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	msg, err := h.persistMessage(uid, req.PeerID, req.Content)
+	if err != nil {
+		status := http.StatusBadRequest
+		if !errors.Is(err, gorm.ErrInvalidData) &&
+			err.Error() != "peer id required" &&
+			err.Error() != "content required" &&
+			err.Error() != "cannot send to yourself" {
+			status = http.StatusInternalServerError
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	h.pushMessage(msg, false)
+	c.JSON(http.StatusCreated, gin.H{"item": msg})
+}
+
 func (h *MessageHandler) WS(c *gin.Context) {
 	// WebSocket endpoint for realtime chat.
 	// 实时聊天的 WebSocket 入口。
@@ -171,22 +205,54 @@ func (h *MessageHandler) WS(c *gin.Context) {
 		if err := json.Unmarshal(data, &in); err != nil {
 			continue
 		}
-		if in.To == "" || in.Content == "" {
+		msg, err := h.persistMessage(claims.UserID, in.To, in.Content)
+		if err != nil {
 			continue
 		}
-		// Persist message.
-		// 持久化消息。
-		msg := models.Message{SenderID: claims.UserID, ReceiverID: in.To, Content: in.Content, CreatedAt: time.Now()}
-		if err := h.DB.Create(&msg).Error; err != nil {
-			continue
-		}
+		h.pushMessage(msg, true)
+	}
+}
 
-		// Push to receiver and echo to sender.
-		// 推送给接收者并回显给发送者。
-		out := outboundMessage{From: claims.UserID, To: in.To, Content: in.Content, CreatedAt: msg.CreatedAt}
-		payload, _ := json.Marshal(out)
-		h.Hub.SendTo(in.To, payload)
-		client.Send(payload)
+func (h *MessageHandler) persistMessage(senderID string, receiverID string, content string) (models.Message, error) {
+	// Validate and persist a single chat message.
+	// 校验并持久化单条聊天消息。
+	receiverID = strings.TrimSpace(receiverID)
+	content = strings.TrimSpace(content)
+	if receiverID == "" {
+		return models.Message{}, errors.New("peer id required")
+	}
+	if content == "" {
+		return models.Message{}, errors.New("content required")
+	}
+	if senderID == receiverID {
+		return models.Message{}, errors.New("cannot send to yourself")
+	}
+
+	msg := models.Message{
+		SenderID:   senderID,
+		ReceiverID: receiverID,
+		Content:    content,
+		CreatedAt:  time.Now(),
+	}
+	if err := h.DB.Create(&msg).Error; err != nil {
+		return models.Message{}, err
+	}
+	return msg, nil
+}
+
+func (h *MessageHandler) pushMessage(msg models.Message, echoSender bool) {
+	// Push a chat message to online users.
+	// 将聊天消息推送给在线用户。
+	out := outboundMessage{
+		From:      msg.SenderID,
+		To:        msg.ReceiverID,
+		Content:   msg.Content,
+		CreatedAt: msg.CreatedAt,
+	}
+	payload, _ := json.Marshal(out)
+	h.Hub.SendTo(msg.ReceiverID, payload)
+	if echoSender {
+		h.Hub.SendTo(msg.SenderID, payload)
 	}
 }
 

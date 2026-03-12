@@ -2032,6 +2032,15 @@ createApp({
       this.unreadCount = Number(data.unread || 0);
       await this.loadConversationSummaries();
     },
+    async refreshActiveConversation() {
+      // Refresh the open conversation after send/receive events.
+      // 在发送或接收后刷新当前打开的会话。
+      if (this.activeChat) {
+        await this.loadConversation(this.activeChat.id);
+        return;
+      }
+      await this.loadUnread();
+    },
     async addFriend(result) {
       // Send a new friend request to the selected user.
       // 向选中的用户发送好友请求。
@@ -2119,25 +2128,15 @@ createApp({
         this.wsStatusKey = 'closed';
       };
       this.ws.onmessage = (event) => {
-        // Append incoming message.
-        // 追加接收消息。
         const payload = JSON.parse(event.data);
         const relatesToActiveChat =
           this.activeChat &&
           (payload.from === this.activeChat.id || payload.to === this.activeChat.id);
         if (relatesToActiveChat) {
-          this.chatMessages.push({
-            id: `m-${Date.now()}`,
-            from: payload.from,
-            content: {
-              'zh-CN': payload.content,
-              'en-US': payload.content,
-            },
-            time: new Date(payload.created_at || Date.now()).toLocaleTimeString(this.locale, { hour: '2-digit', minute: '2-digit' }),
-          });
+          this.refreshActiveConversation();
+          return;
         }
         this.loadUnread();
-        this.loadConversationSummaries();
       };
     },
     async logout() {
@@ -2154,7 +2153,7 @@ createApp({
       this.view = 'auth';
       this.setFlash(this.t('auth.logoutSuccess'));
     },
-    sendMessage() {
+    async sendMessage() {
       // Send message to active friend.
       // 发送消息给当前好友。
       this.clearFeedback();
@@ -2162,16 +2161,23 @@ createApp({
         return;
       }
       const message = {
-        to: this.activeChat.id,
+        peer_id: this.activeChat.id,
         content: this.chatInput.trim(),
       };
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify(message));
-      } else {
+      const res = await fetch(`${this.messageApiBase}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
+      });
+      if (!res.ok) {
         this.setError(this.t('chat.sendError'));
         return;
       }
       this.chatInput = '';
+      await this.refreshActiveConversation();
     },
   },
   mounted() {

@@ -87,12 +87,10 @@
 
 ### 5.5 聊天
 
-- `GET /api/v1/chats`
-- `POST /api/v1/chats`
-- `GET /api/v1/chats/{id}`
-- `GET /api/v1/chats/{id}/messages`
-- `POST /api/v1/chats/{id}/messages`
-- `PATCH /api/v1/messages/{id}/read`
+- `GET /api/v1/conversations`
+- `GET /api/v1/messages`
+- `POST /api/v1/messages`
+- `GET /api/v1/unread`
 
 ### 5.6 区块链账号扩展
 
@@ -165,13 +163,32 @@
 - 用途：记录一次文章转发
 - 返回字段建议：文章对象 + 聚合计数
 
-### 6.11 发送消息
+### 6.11 会话列表
 
-- `POST /api/v1/chats/{id}/messages`
-- 用途：发送聊天消息
-- 请求字段建议：`content`, `message_type`
+- `GET /api/v1/conversations`
+- 用途：获取当前用户的聊天会话摘要
+- 返回字段建议：`peer_id`, `last_message`, `last_at`, `unread_count`
 
-### 6.12 绑定外部账号
+### 6.12 会话消息列表
+
+- `GET /api/v1/messages?peer_id={user_id}&limit=100&offset=0`
+- 用途：获取与指定用户的历史消息
+- 说明：
+  - 指定 `peer_id` 时按当前会话查询
+  - 打开会话时可同步将来自对方的未读消息标记为已读
+
+### 6.13 发送消息
+
+- `POST /api/v1/messages`
+- 用途：发送聊天消息并写入会话历史
+- 请求字段建议：`peer_id`, `content`
+
+### 6.14 未读统计
+
+- `GET /api/v1/unread`
+- 用途：获取当前用户未读消息总数
+
+### 6.15 绑定外部账号
 
 - `POST /api/v1/external-accounts`
 - 用途：绑定区块链账号或其他外部身份
@@ -209,6 +226,7 @@
 - 更新文章发布与评论请求字段说明
 - 补充作者主页使用的公开资料接口与用户文章列表接口
 - 补充文章更新接口与文章状态字段说明
+- 将聊天接口清单同步为 `conversations`、`messages`、`unread` 的实际实现
 
 ### 2026-03-11
 

@@ -51,6 +51,7 @@ func main() {
 	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	api.GET("/conversations", h.ListConversations)
 	api.GET("/messages", h.ListMessages)
+	api.POST("/messages", h.CreateMessage)
 	api.GET("/unread", h.UnreadCount)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
