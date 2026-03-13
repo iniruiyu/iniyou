@@ -12,6 +12,7 @@
 - `backend/`: Golang 后端，包含 `account-service` 和 `message-service`
 - `frontend/`: 原生 HTML、CSS、JavaScript 前端页面（Legacy Web）
 - `flutter_frontend/`: Flutter 前端工程（Web 优先，可继续扩展桌面/移动端）
+  - 当前已按 `api/`、`models/`、`widgets/`、`views/` 分层
 - `docs/`: 需求、设计、接口和开发大纲
 - `DESIGN.md`: 当前阶段设计说明
 - `Makefile`: 本地测试、构建和启动命令
@@ -72,6 +73,20 @@ make run-flutter-web
 - 通讯服务默认监听 `http://localhost:8081`
 - 两套前端默认直接请求上述两个本地服务
 - Flutter 前端默认入口为 [`flutter_frontend/lib/main.dart`](/root/new-project/flutter_frontend/lib/main.dart)
+- Flutter 当前主要视图文件位于 [`flutter_frontend/lib/views`](/root/new-project/flutter_frontend/lib/views)
+
+## Flutter 前端结构
+
+- `flutter_frontend/lib/main.dart`: 应用入口、状态与视图分发
+- `flutter_frontend/lib/api/api_client.dart`: 接口访问层
+- `flutter_frontend/lib/models/app_models.dart`: 前端数据模型与格式化辅助
+- `flutter_frontend/lib/widgets/app_cards.dart`: 通用卡片与基础展示组件
+- `flutter_frontend/lib/views/guest_landing_view.dart`: 未登录落地页
+- `flutter_frontend/lib/views/content_sections.dart`: 工作台摘要、空间与内容流区块
+- `flutter_frontend/lib/views/social_views.dart`: 个人主页、文章详情、好友、聊天
+- `flutter_frontend/lib/views/settings_views.dart`: 等级、订阅、区块链接入
+- `flutter_frontend/lib/views/shell_widgets.dart`: 侧边栏与反馈横幅
+- `flutter_frontend/lib/views/authenticated_shell_view.dart`: 登录后主壳层
 
 ## 测试与构建
 

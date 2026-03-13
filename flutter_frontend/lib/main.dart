@@ -7,6 +7,12 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'api/api_client.dart';
 import 'models/app_models.dart';
+import 'views/authenticated_shell_view.dart';
+import 'views/content_sections.dart';
+import 'views/guest_landing_view.dart';
+import 'views/settings_views.dart';
+import 'views/shell_widgets.dart';
+import 'views/social_views.dart';
 import 'widgets/app_cards.dart';
 
 void main() {
@@ -825,87 +831,71 @@ class _IniyouHomeState extends State<IniyouHome> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_user == null) {
-      return _buildGuestLanding(context);
+      return GuestLandingView(
+        loginMode: _loginMode,
+        loading: _loading,
+        error: _error,
+        loginAccountController: _loginAccountController,
+        loginPasswordController: _loginPasswordController,
+        registerEmailController: _registerEmailController,
+        registerPhoneController: _registerPhoneController,
+        registerPasswordController: _registerPasswordController,
+        onToggleMode: (value) => setState(() => _loginMode = value),
+        onLogin: _login,
+        onRegister: _register,
+      );
     }
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 1120;
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            titleSpacing: 20,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_pageTitle),
-                Text(
-                  _pageSubtitle,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Center(
-                  child: Text(
-                    _user!.displayName.isEmpty ? _user!.id : _user!.displayName,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: '刷新',
-                onPressed: _loading ? null : () => _runBusy(_refreshAll),
-                icon: const Icon(Icons.refresh),
-              ),
-              IconButton(
-                tooltip: '退出',
-                onPressed: _loading ? null : () => _logout(),
-                icon: const Icon(Icons.logout),
-              ),
-            ],
-          ),
-          drawer: wide ? null : Drawer(child: SafeArea(child: _buildSidebar())),
-          body: Row(
+        return AuthenticatedShellView(
+          userLabel: _user!.displayName.isEmpty
+              ? _user!.id
+              : _user!.displayName,
+          pageTitle: _pageTitle,
+          pageSubtitle: _pageSubtitle,
+          loading: _loading,
+          wide: wide,
+          sidebar: _buildSidebar(),
+          onRefresh: () => _runBusy(_refreshAll),
+          onLogout: _logout,
+          body: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              if (wide) SizedBox(width: 260, child: _buildSidebar()),
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF08111D), Color(0xFF0E1A2A)],
-                    ),
+              _buildBanner(),
+              const SizedBox(height: 16),
+              TopSummaryRow(
+                width: constraints.maxWidth,
+                cards: [
+                  SummaryCardData(
+                    '空间',
+                    '${_spaces.length}',
+                    '私人 ${_privateSpaces.length} / 公共 ${_publicSpaces.length}',
                   ),
-                  child: Stack(
-                    children: [
-                      ListView(
-                        padding: const EdgeInsets.all(20),
-                        children: [
-                          _buildBanner(),
-                          const SizedBox(height: 16),
-                          _buildTopSummaryRow(constraints.maxWidth),
-                          const SizedBox(height: 16),
-                          _buildSectionBody(constraints.maxWidth),
-                        ],
-                      ),
-                      if (_loading)
-                        const Positioned(
-                          top: 16,
-                          right: 16,
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                    ],
+                  SummaryCardData(
+                    '好友',
+                    '${_acceptedFriends.length}',
+                    '总关系 ${_friends.length}',
                   ),
-                ),
+                  SummaryCardData(
+                    '订阅',
+                    _subscription?.planId.isNotEmpty == true
+                        ? _subscription!.planId
+                        : 'basic',
+                    '状态 ${_subscription?.status ?? 'inactive'}',
+                  ),
+                  SummaryCardData(
+                    '链上账号',
+                    '${_externalAccounts.length}',
+                    _connectedChains.isEmpty
+                        ? '尚未连接链'
+                        : _connectedChains.join(', '),
+                  ),
+                ],
               ),
+              const SizedBox(height: 16),
+              _buildSectionBody(constraints.maxWidth),
             ],
           ),
         );
@@ -913,354 +903,61 @@ class _IniyouHomeState extends State<IniyouHome> {
     );
   }
 
-  Widget _buildGuestLanding(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF07111B), Color(0xFF13324A)],
-          ),
+  Widget _buildSidebar() {
+    return ShellSidebar(
+      user: _user!,
+      subscription: _subscription,
+      conversations: _conversations,
+      selectedViewKey: _sidebarViewKey(_view),
+      items: const [
+        ShellSidebarItem(
+          viewKey: 'dashboard',
+          label: '工作台',
+          icon: Icons.dashboard_outlined,
         ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 1080;
-              final hero = _buildLandingHero(context);
-              final auth = _buildAuthCard(context);
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1380),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: wide
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 6, child: hero),
-                              const SizedBox(width: 20),
-                              SizedBox(width: 420, child: auth),
-                            ],
-                          )
-                        : ListView(
-                            shrinkWrap: true,
-                            children: [hero, const SizedBox(height: 20), auth],
-                          ),
-                  ),
-                ),
-              );
-            },
-          ),
+        ShellSidebarItem(
+          viewKey: 'private',
+          label: '私人空间',
+          icon: Icons.lock_outline,
         ),
-      ),
-    );
-  }
-
-  Widget _buildLandingHero(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'iniyou',
-          style: Theme.of(
-            context,
-          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700),
+        ShellSidebarItem(viewKey: 'public', label: '公共空间', icon: Icons.public),
+        ShellSidebarItem(
+          viewKey: 'profile',
+          label: '个人主页',
+          icon: Icons.person_outline,
         ),
-        const SizedBox(height: 12),
-        Text(
-          '先完成账号流程，再进入工作台。',
-          style: Theme.of(context).textTheme.headlineMedium,
+        ShellSidebarItem(
+          viewKey: 'levels',
+          label: '等级',
+          icon: Icons.stars_outlined,
         ),
-        const SizedBox(height: 12),
-        Text(
-          '普通 Web 前端和 Flutter 前端现在保持同一套信息架构。未登录时先进入登录或注册，登录后再进入私人空间、公共空间、好友、聊天和区块链接入页面。',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(color: Colors.white70),
+        ShellSidebarItem(
+          viewKey: 'subscription',
+          label: '订阅',
+          icon: Icons.workspace_premium_outlined,
         ),
-        const SizedBox(height: 28),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: const [
-            HeroStatCard(
-              index: '01',
-              label: '登录或注册',
-              text: '统一入口，减少未登录状态下的分叉页面。',
-            ),
-            HeroStatCard(
-              index: '02',
-              label: '进入工作台',
-              text: '登录后可查看仪表盘、空间、关系和聊天。',
-            ),
-            HeroStatCard(
-              index: '03',
-              label: '双前端并存',
-              text: 'Legacy Web 与 Flutter 前端保持一致的页面结构。',
-            ),
-          ],
+        ShellSidebarItem(
+          viewKey: 'blockchain',
+          label: '区块链',
+          icon: Icons.hub_outlined,
         ),
-        const SizedBox(height: 28),
-        Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Auth Flow',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: const Color(0xFF6EE7FF),
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '未登录态聚焦在账号流程',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '将账号入口、工作台预览和功能说明拆开，避免在未登录时提前暴露完整业务模块。',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: Colors.white70),
-                ),
-                const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: const [
-                    FeatureChipCard(title: '私人空间', text: '沉淀草稿、笔记和仅自己可见的记录。'),
-                    FeatureChipCard(title: '公共空间', text: '展示项目、发布内容并建立公开连接。'),
-                    FeatureChipCard(title: '实时互动', text: '登录后进入聊天、好友和资料工作台。'),
-                  ],
-                ),
-              ],
-            ),
-          ),
+        ShellSidebarItem(
+          viewKey: 'friends',
+          label: '好友',
+          icon: Icons.people_alt_outlined,
+        ),
+        ShellSidebarItem(
+          viewKey: 'chat',
+          label: '聊天',
+          icon: Icons.chat_bubble_outline,
         ),
       ],
-    );
-  }
-
-  Widget _buildAuthCard(BuildContext context) {
-    final title = _loginMode ? '回到 iniyou' : '创建你的 iniyou 账户';
-    final subtitle = _loginMode ? '输入账号后直接进入工作台。' : '创建账号后自动进入你的空间。';
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('账号入口', style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 8),
-            Text(title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(subtitle),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, style: const TextStyle(color: Colors.redAccent)),
-            ],
-            const SizedBox(height: 20),
-            Wrap(
-              spacing: 12,
-              children: [
-                ChoiceChip(
-                  label: const Text('登录'),
-                  selected: _loginMode,
-                  onSelected: (_) => setState(() => _loginMode = true),
-                ),
-                ChoiceChip(
-                  label: const Text('注册'),
-                  selected: !_loginMode,
-                  onSelected: (_) => setState(() => _loginMode = false),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            if (_loginMode) ...[
-              TextField(
-                controller: _loginAccountController,
-                decoration: const InputDecoration(labelText: '邮箱 / 手机号'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _loginPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: '密码'),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _loading ? null : _login,
-                child: const Text('登录'),
-              ),
-            ] else ...[
-              TextField(
-                controller: _registerEmailController,
-                decoration: const InputDecoration(labelText: '邮箱'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _registerPhoneController,
-                decoration: const InputDecoration(labelText: '手机号'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _registerPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: '密码，至少 8 位'),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _loading ? null : _register,
-                child: const Text('创建账号'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSidebar() {
-    final items = <_NavItem>[
-      _NavItem(AppView.dashboard, '工作台', Icons.dashboard_outlined),
-      _NavItem(AppView.privateSpace, '私人空间', Icons.lock_outline),
-      _NavItem(AppView.publicSpace, '公共空间', Icons.public),
-      _NavItem(AppView.profile, '个人主页', Icons.person_outline),
-      _NavItem(AppView.levels, '等级', Icons.stars_outlined),
-      _NavItem(AppView.subscription, '订阅', Icons.workspace_premium_outlined),
-      _NavItem(AppView.blockchain, '区块链', Icons.hub_outlined),
-      _NavItem(AppView.friends, '好友', Icons.people_alt_outlined),
-      _NavItem(AppView.chat, '聊天', Icons.chat_bubble_outline),
-    ];
-
-    return Container(
-      color: const Color(0xFF0D1623),
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text(
-            'iniyou',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Private + Public Spaces',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
-          ),
-          const SizedBox(height: 18),
-          InfoCard(
-            title: _user!.displayName.isEmpty ? _user!.id : _user!.displayName,
-            lines: [
-              '等级: ${_user!.level}',
-              '计划: ${_subscription?.planId.isNotEmpty == true ? _subscription!.planId : 'basic'}',
-              '未读会话: ${_conversations.fold<int>(0, (sum, item) => sum + item.unreadCount)}',
-            ],
-          ),
-          const SizedBox(height: 18),
-          ...items.map((item) {
-            final selected =
-                _view == item.view ||
-                (_view == AppView.postDetail &&
-                    item.view == AppView.publicSpace);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: FilledButton.tonal(
-                style: FilledButton.styleFrom(
-                  alignment: Alignment.centerLeft,
-                  backgroundColor: selected
-                      ? const Color(0xFF1D6F87)
-                      : const Color(0xFF152131),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-                onPressed: () => _navigateTo(item.view),
-                child: Row(
-                  children: [
-                    Icon(item.icon, size: 18),
-                    const SizedBox(width: 10),
-                    Text(item.label),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
+      onNavigate: (viewKey) => _navigateTo(_appViewFromKey(viewKey)),
     );
   }
 
   Widget _buildBanner() {
-    if (_error == null && _flash == null) {
-      return const SizedBox.shrink();
-    }
-    final color = _error != null ? Colors.redAccent : const Color(0xFF6EE7FF);
-    final message = _error ?? _flash!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Text(message, style: TextStyle(color: color)),
-      ),
-    );
-  }
-
-  Widget _buildTopSummaryRow(double width) {
-    final cards = [
-      SummaryCardData(
-        '空间',
-        '${_spaces.length}',
-        '私人 ${_privateSpaces.length} / 公共 ${_publicSpaces.length}',
-      ),
-      SummaryCardData(
-        '好友',
-        '${_acceptedFriends.length}',
-        '总关系 ${_friends.length}',
-      ),
-      SummaryCardData(
-        '订阅',
-        _subscription?.planId.isNotEmpty == true
-            ? _subscription!.planId
-            : 'basic',
-        '状态 ${_subscription?.status ?? 'inactive'}',
-      ),
-      SummaryCardData(
-        '链上账号',
-        '${_externalAccounts.length}',
-        _connectedChains.isEmpty ? '尚未连接链' : _connectedChains.join(', '),
-      ),
-    ];
-    if (width < 920) {
-      return Column(
-        children: [
-          for (final item in cards) ...[
-            SummaryCard(item: item),
-            const SizedBox(height: 12),
-          ],
-        ],
-      );
-    }
-    return Row(
-      children: [
-        for (var index = 0; index < cards.length; index++) ...[
-          Expanded(child: SummaryCard(item: cards[index])),
-          if (index < cards.length - 1) const SizedBox(width: 12),
-        ],
-      ],
-    );
+    return BannerCard(error: _error, flash: _flash);
   }
 
   Widget _buildSectionBody(double width) {
@@ -1289,75 +986,13 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Widget _buildDashboardView(double width) {
-    final compact = width < 980;
-    final left = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InfoCard(
-          title: '账号概览',
-          lines: [
-            '用户 ID: ${_user!.id}',
-            if (_user!.email.isNotEmpty) '邮箱: ${_user!.email}',
-            if (_user!.phone.isNotEmpty) '手机号: ${_user!.phone}',
-            '等级: ${_user!.level}',
-            '状态: ${_user!.status}',
-          ],
-        ),
-        const SizedBox(height: 16),
-        InfoCard(
-          title: '快捷入口',
-          lines: const [
-            '进入私人空间沉淀草稿和私人内容',
-            '进入公共空间发布文章和打开作者主页',
-            '好友和聊天页面保持关系与实时消息联动',
-          ],
-          trailing: FilledButton.tonal(
-            onPressed: () => _navigateTo(AppView.publicSpace),
-            child: const Text('打开公共空间'),
-          ),
-        ),
-      ],
-    );
-
-    final right = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InfoCard(
-          title: '空间摘要',
-          lines: [
-            for (final space in _spaces.take(4))
-              '${space.type.toUpperCase()} · ${space.name}',
-            if (_spaces.isEmpty) '当前还没有空间，注册后会自动创建默认空间。',
-          ],
-        ),
-        const SizedBox(height: 16),
-        InfoCard(
-          title: '最近公共内容',
-          lines: [
-            for (final post in _publicPosts.take(3))
-              '${post.authorName}: ${post.title}',
-            if (_publicPosts.isEmpty) '公共空间里还没有内容。',
-          ],
-          trailing: FilledButton.tonal(
-            onPressed: _publicPosts.isEmpty
-                ? null
-                : () => _openPostDetail(_publicPosts.first.id),
-            child: const Text('查看详情'),
-          ),
-        ),
-      ],
-    );
-
-    if (compact) {
-      return Column(children: [left, const SizedBox(height: 16), right]);
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: left),
-        const SizedBox(width: 16),
-        Expanded(child: right),
-      ],
+    return DashboardOverviewView(
+      width: width,
+      user: _user!,
+      spaces: _spaces,
+      publicPosts: _publicPosts,
+      onOpenPublicSpace: () => _navigateTo(AppView.publicSpace),
+      onOpenPostDetail: _openPostDetail,
     );
   }
 
@@ -1365,9 +1000,16 @@ class _IniyouHomeState extends State<IniyouHome> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSpaceComposer(type: 'private'),
+        SpaceComposerCard(
+          type: 'private',
+          loading: _loading,
+          nameController: _spaceNameController,
+          descriptionController: _spaceDescriptionController,
+          onSubmit: () => _createSpace('private'),
+        ),
         const SizedBox(height: 16),
-        _buildPostComposer(
+        PostComposerCard(
+          loading: _loading,
           title: '发布私人内容',
           subtitle: '私人内容仅自己可见，适合草稿、笔记和内部记录。',
           titleController: _privatePostTitleController,
@@ -1383,9 +1025,22 @@ class _IniyouHomeState extends State<IniyouHome> {
           ),
         ),
         const SizedBox(height: 16),
-        _buildSpaceList('私人空间列表', _privateSpaces),
+        SpaceListSection(title: '私人空间列表', spaces: _privateSpaces),
         const SizedBox(height: 16),
-        _buildPostStream(_privatePosts, emptyText: '还没有私人内容。'),
+        PostStreamSection(
+          posts: _privatePosts,
+          emptyText: '还没有私人内容。',
+          commentControllerFor: (postId) => _commentControllers.putIfAbsent(
+            postId,
+            TextEditingController.new,
+          ),
+          onLike: _toggleLike,
+          onShare: _sharePost,
+          onComment: _comment,
+          onOpenAuthor: _openProfile,
+          onOpenDetail: _openPostDetail,
+          canEditPost: (post) => _user != null && post.userId == _user!.id,
+        ),
       ],
     );
   }
@@ -1394,9 +1049,16 @@ class _IniyouHomeState extends State<IniyouHome> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSpaceComposer(type: 'public'),
+        SpaceComposerCard(
+          type: 'public',
+          loading: _loading,
+          nameController: _spaceNameController,
+          descriptionController: _spaceDescriptionController,
+          onSubmit: () => _createSpace('public'),
+        ),
         const SizedBox(height: 16),
-        _buildPostComposer(
+        PostComposerCard(
+          loading: _loading,
           title: '发布公共内容',
           subtitle: '公开文章会出现在公共空间和作者主页。',
           titleController: _publicPostTitleController,
@@ -1411,313 +1073,114 @@ class _IniyouHomeState extends State<IniyouHome> {
           ),
         ),
         const SizedBox(height: 16),
-        _buildSpaceList('公共空间列表', _publicSpaces),
+        SpaceListSection(title: '公共空间列表', spaces: _publicSpaces),
         const SizedBox(height: 16),
-        _buildPostStream(_publicPosts, emptyText: '公共空间里还没有内容。'),
+        PostStreamSection(
+          posts: _publicPosts,
+          emptyText: '公共空间里还没有内容。',
+          commentControllerFor: (postId) => _commentControllers.putIfAbsent(
+            postId,
+            TextEditingController.new,
+          ),
+          onLike: _toggleLike,
+          onShare: _sharePost,
+          onComment: _comment,
+          onOpenAuthor: _openProfile,
+          onOpenDetail: _openPostDetail,
+          canEditPost: (post) => _user != null && post.userId == _user!.id,
+        ),
       ],
     );
   }
 
   Widget _buildProfileView() {
-    final profile = _profileUser;
-    if (profile == null) {
-      return InfoCard(title: '个人主页', lines: const ['尚未加载资料，点击左侧个人主页重新进入。']);
-    }
-
-    final isOwnProfile = _user != null && profile.id == _user!.id;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InfoCard(
-          title: profile.displayName,
-          lines: [
-            '用户 ID: ${profile.id}',
-            if (profile.email.isNotEmpty) '邮箱: ${profile.email}',
-            if (profile.phone.isNotEmpty) '手机号: ${profile.phone}',
-            '状态: ${profile.status}',
-            if (!isOwnProfile && profile.relationStatus.isNotEmpty)
-              '关系: ${profile.relationStatus} / ${profile.direction}',
-            if (isOwnProfile)
-              '已连接链: ${_connectedChains.isEmpty ? '暂无' : _connectedChains.join(', ')}',
-          ],
-          trailing: isOwnProfile
-              ? FilledButton.tonal(
-                  onPressed: () => _navigateTo(AppView.blockchain),
-                  child: const Text('链上账号'),
-                )
-              : null,
-        ),
-        const SizedBox(height: 16),
-        if (isOwnProfile)
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('更新展示名', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _displayNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Display name',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _loading ? null : _saveProfile,
-                    child: const Text('保存'),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              if (profile.relationStatus.isEmpty)
-                FilledButton.tonal(
-                  onPressed: () => _addFriend(profile.id),
-                  child: const Text('添加好友'),
-                ),
-              if (profile.relationStatus == 'pending' &&
-                  profile.direction == 'incoming')
-                FilledButton.tonal(
-                  onPressed: () => _acceptFriend(profile.id),
-                  child: const Text('接受好友'),
-                ),
-              if (profile.relationStatus == 'accepted')
-                FilledButton.tonal(
-                  onPressed: () {
-                    final friend = _findFriend(profile.id, _friends);
-                    if (friend != null) {
-                      _startChat(friend);
-                    }
-                  },
-                  child: const Text('发起聊天'),
-                ),
-            ],
-          ),
-        const SizedBox(height: 16),
-        _buildPostStream(
-          _profilePosts,
-          emptyText: isOwnProfile ? '你还没有发布内容。' : '这个用户还没有公开内容。',
-        ),
-      ],
+    return ProfileView(
+      user: _user,
+      profileUser: _profileUser,
+      profilePosts: _profilePosts,
+      connectedChains: _connectedChains,
+      displayNameController: _displayNameController,
+      loading: _loading,
+      commentControllerFor: (postId) =>
+          _commentControllers.putIfAbsent(postId, TextEditingController.new),
+      onSaveProfile: _saveProfile,
+      onAddFriend: _addFriend,
+      onAcceptFriend: _acceptFriend,
+      onStartChat: () {
+        final profile = _profileUser;
+        if (profile == null) {
+          return;
+        }
+        final friend = _findFriend(profile.id, _friends);
+        if (friend != null) {
+          _startChat(friend);
+        }
+      },
+      onToggleLike: _toggleLike,
+      onSharePost: _sharePost,
+      onCommentPost: _comment,
+      onOpenProfile: _openProfile,
+      onOpenPostDetail: _openPostDetail,
     );
   }
 
   Widget _buildPostDetailView() {
     final post = _currentPost;
-    if (post == null) {
-      return InfoCard(title: '文章详情', lines: const ['先从公共空间或个人主页打开一篇文章。']);
-    }
-
-    final isOwnPost = _user != null && post.userId == _user!.id;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        PostCard(
-          post: post,
-          commentController: _commentControllers.putIfAbsent(
-            post.id,
-            TextEditingController.new,
-          ),
-          onLike: () => _toggleLike(post),
-          onShare: () => _sharePost(post),
-          onComment: () => _comment(post),
-          onOpenAuthor: () => _openProfile(post.userId),
-          onOpenDetail: null,
-          onEdit: isOwnPost ? () {} : null,
-        ),
-        const SizedBox(height: 16),
-        if (isOwnPost)
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('编辑文章', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _editPostTitleController,
-                    decoration: const InputDecoration(labelText: '标题'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _editPostContentController,
-                    minLines: 4,
-                    maxLines: 8,
-                    decoration: const InputDecoration(labelText: '内容'),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _editPostVisibility,
-                          decoration: const InputDecoration(labelText: '可见性'),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'public',
-                              child: Text('公开'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'private',
-                              child: Text('私密'),
-                            ),
-                          ],
-                          onChanged: (value) => setState(
-                            () => _editPostVisibility =
-                                value ?? _editPostVisibility,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _editPostStatus,
-                          decoration: const InputDecoration(labelText: '状态'),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'published',
-                              child: Text('已发布'),
-                            ),
-                            DropdownMenuItem(value: 'draft', child: Text('草稿')),
-                            DropdownMenuItem(
-                              value: 'hidden',
-                              child: Text('隐藏'),
-                            ),
-                          ],
-                          onChanged: (value) => setState(
-                            () => _editPostStatus = value ?? _editPostStatus,
-                          ),
-                        ),
-                      ),
-                      FilledButton(
-                        onPressed: _loading ? null : _savePostEdits,
-                        child: const Text('保存修改'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
+    return PostDetailView(
+      user: _user,
+      currentPost: post,
+      loading: _loading,
+      commentController: _commentControllers.putIfAbsent(
+        post?.id ?? '__missing__',
+        TextEditingController.new,
+      ),
+      editTitleController: _editPostTitleController,
+      editContentController: _editPostContentController,
+      editVisibility: _editPostVisibility,
+      editStatus: _editPostStatus,
+      onEditVisibilityChanged: (value) =>
+          setState(() => _editPostVisibility = value),
+      onEditStatusChanged: (value) => setState(() => _editPostStatus = value),
+      onLike: () {
+        final current = _currentPost;
+        if (current != null) {
+          _toggleLike(current);
+        }
+      },
+      onShare: () {
+        final current = _currentPost;
+        if (current != null) {
+          _sharePost(current);
+        }
+      },
+      onComment: () {
+        final current = _currentPost;
+        if (current != null) {
+          _comment(current);
+        }
+      },
+      onOpenAuthor: () {
+        final current = _currentPost;
+        if (current != null) {
+          _openProfile(current.userId);
+        }
+      },
+      onSaveEdits: _savePostEdits,
     );
   }
 
   Widget _buildLevelsView() {
-    final currentLevel = _user?.level ?? 'basic';
-    final cards = [
-      LevelCardData(
-        level: 'basic',
-        title: 'Basic',
-        text: '默认身份，可访问工作台、公共空间和基础资料。',
-      ),
-      LevelCardData(
-        level: 'premium',
-        title: 'Premium',
-        text: '解锁私密内容、好友互动和更完整的工作流。',
-      ),
-      LevelCardData(level: 'vip', title: 'VIP', text: '强化身份层级和长期会员展示，适合高活跃用户。'),
-    ];
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: cards.map((item) {
-        final active = currentLevel == item.level;
-        return SizedBox(
-          width: 320,
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(item.text),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: active ? null : () => _activatePlan(item.level),
-                    child: Text(active ? '当前等级' : '切换到 ${item.level}'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+    return LevelsView(
+      currentLevel: _user?.level ?? 'basic',
+      onActivateLevel: _activatePlan,
     );
   }
 
   Widget _buildSubscriptionView() {
-    final currentPlan = _subscription?.planId.isNotEmpty == true
-        ? _subscription!.planId
-        : 'basic';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InfoCard(
-          title: '当前订阅',
-          lines: [
-            '计划: $currentPlan',
-            '状态: ${_subscription?.status ?? 'inactive'}',
-            if (_subscription?.startedAt != null)
-              '开始时间: ${_subscription!.startedAtLabel}',
-            if (_subscription?.endedAt != null)
-              '到期时间: ${_subscription!.endedAtLabel}',
-          ],
-        ),
-        const SizedBox(height: 20),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            PlanCard(
-              planId: 'basic',
-              title: 'Basic',
-              features: ['公共内容流', '基础资料', '默认空间'],
-              isLoading: _loading,
-              onActivate: _activatePlan,
-            ),
-            PlanCard(
-              planId: 'premium',
-              title: 'Premium',
-              features: ['私密内容', '聊天能力', '扩展社交功能'],
-              isLoading: _loading,
-              onActivate: _activatePlan,
-            ),
-            PlanCard(
-              planId: 'vip',
-              title: 'VIP',
-              features: ['高级身份层级', '长期会员', '更强展示能力'],
-              isLoading: _loading,
-              onActivate: _activatePlan,
-            ),
-          ].map((card) => SizedBox(width: 300, child: card)).toList(),
-        ),
-      ],
+    return SubscriptionView(
+      subscription: _subscription,
+      loading: _loading,
+      onActivatePlan: _activatePlan,
     );
   }
 
@@ -1727,539 +1190,106 @@ class _IniyouHomeState extends State<IniyouHome> {
       'solana': ['solana'],
       'tron': ['tron'],
     };
-    final chainOptions = chainsByProvider[_externalProvider]!;
-    if (!chainOptions.contains(_externalChain)) {
-      _externalChain = chainOptions.first;
+    if (!chainsByProvider[_externalProvider]!.contains(_externalChain)) {
+      _externalChain = chainsByProvider[_externalProvider]!.first;
     }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('绑定外部账号', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    SizedBox(
-                      width: 160,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _externalProvider,
-                        decoration: const InputDecoration(
-                          labelText: 'Provider',
-                        ),
-                        items: chainsByProvider.keys
-                            .map(
-                              (item) => DropdownMenuItem(
-                                value: item,
-                                child: Text(item.toUpperCase()),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() {
-                            _externalProvider = value;
-                            _externalChain = chainsByProvider[value]!.first;
-                          });
-                        },
-                      ),
-                    ),
-                    SizedBox(
-                      width: 180,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _externalChain,
-                        decoration: const InputDecoration(labelText: 'Chain'),
-                        items: chainOptions
-                            .map(
-                              (item) => DropdownMenuItem(
-                                value: item,
-                                child: Text(item),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) => setState(
-                          () => _externalChain = value ?? chainOptions.first,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _externalAddressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Account address',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _externalSignatureController,
-                  minLines: 3,
-                  maxLines: 5,
-                  decoration: const InputDecoration(
-                    labelText: 'Signature payload',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _loading ? null : _bindExternalAccount,
-                  child: const Text('绑定'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: _externalAccounts
-              .map(
-                (item) => SizedBox(
-                  width: 320,
-                  child: InfoCard(
-                    title: '${item.provider.toUpperCase()} · ${item.chain}',
-                    lines: [
-                      item.address,
-                      '状态: ${item.bindingStatus}',
-                      item.createdAtLabel,
-                    ],
-                    trailing: FilledButton.tonal(
-                      onPressed: () => _removeExternalAccount(item.id),
-                      child: const Text('移除'),
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+    return BlockchainView(
+      loading: _loading,
+      externalProvider: _externalProvider,
+      externalChain: _externalChain,
+      externalAccounts: _externalAccounts,
+      addressController: _externalAddressController,
+      signatureController: _externalSignatureController,
+      onProviderChanged: (value) => setState(() {
+        _externalProvider = value;
+        _externalChain = chainsByProvider[value]!.first;
+      }),
+      onChainChanged: (value) => setState(() => _externalChain = value),
+      onBind: _bindExternalAccount,
+      onRemove: _removeExternalAccount,
     );
   }
 
   Widget _buildFriendsView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('搜索用户', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _friendSearchController,
-                        decoration: const InputDecoration(
-                          labelText: '搜索 display name / 邮箱 / 手机号 / 用户 ID',
-                        ),
-                        onSubmitted: (_) => _searchUsers(),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed: _loading ? null : _searchUsers,
-                      child: const Text('搜索'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: _searchResults
-                      .map(
-                        (item) => SizedBox(
-                          width: 300,
-                          child: InfoCard(
-                            title: item.displayName,
-                            lines: [
-                              item.secondary,
-                              if (item.relationStatus.isNotEmpty)
-                                '关系: ${item.relationStatus} / ${item.direction}',
-                            ],
-                            trailing: FilledButton.tonal(
-                              onPressed: item.relationStatus.isEmpty
-                                  ? () => _addFriend(item.id)
-                                  : null,
-                              child: Text(
-                                item.relationStatus.isEmpty ? '添加好友' : '已存在关系',
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: _friends
-              .map(
-                (friend) => SizedBox(
-                  width: 320,
-                  child: InfoCard(
-                    title: friend.displayName,
-                    lines: [
-                      friend.secondary,
-                      '状态: ${friend.status}',
-                      '方向: ${friend.direction}',
-                    ],
-                    trailing: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        FilledButton.tonal(
-                          onPressed: () => _openProfile(friend.id),
-                          child: const Text('主页'),
-                        ),
-                        if (friend.direction == 'incoming' &&
-                            friend.status == 'pending')
-                          FilledButton.tonal(
-                            onPressed: () => _acceptFriend(friend.id),
-                            child: const Text('接受'),
-                          )
-                        else
-                          FilledButton.tonal(
-                            onPressed: friend.status == 'accepted'
-                                ? () => _startChat(friend)
-                                : null,
-                            child: const Text('聊天'),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+    return FriendsView(
+      loading: _loading,
+      searchController: _friendSearchController,
+      searchResults: _searchResults,
+      friends: _friends,
+      onSearch: _searchUsers,
+      onAddFriend: _addFriend,
+      onAcceptFriend: _acceptFriend,
+      onOpenProfile: _openProfile,
+      onStartChat: _startChat,
     );
   }
 
   Widget _buildChatView(double width) {
-    final compact = width < 1100;
-    final listPane = Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('最近会话', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            if (_conversations.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: Text('还没有会话记录。'),
-              ),
-            ..._conversations.map((item) {
-              final friend = _findFriend(item.peerId, _friends);
-              if (friend == null) {
-                return const SizedBox.shrink();
-              }
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(friend.displayName),
-                subtitle: Text(item.lastMessage),
-                trailing: item.unreadCount > 0
-                    ? CircleAvatar(
-                        radius: 12,
-                        child: Text('${item.unreadCount}'),
-                      )
-                    : null,
-                onTap: () => _startChat(friend),
-              );
-            }),
-            const Divider(height: 24),
-            Text('好友', style: Theme.of(context).textTheme.titleMedium),
-            ..._acceptedFriends.map(
-              (friend) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(friend.displayName),
-                subtitle: Text(friend.secondary),
-                selected: _activeChat?.id == friend.id,
-                onTap: () => _startChat(friend),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return ChatView(
+      width: width,
+      user: _user!,
+      activeChat: _activeChat,
+      acceptedFriends: _acceptedFriends,
+      conversations: _conversations,
+      messages: _messages,
+      chatComposerController: _chatComposerController,
+      loading: _loading,
+      findFriend: (id) => _findFriend(id, _friends),
+      onStartChat: _startChat,
+      onSendMessage: _sendMessage,
     );
+  }
 
-    final chatPane = Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _activeChat?.displayName ?? '选择一个好友开始聊天',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 460,
-              child: _activeChat == null
-                  ? const Center(child: Text('选择左侧好友后会加载历史消息并接入 WebSocket。'))
-                  : ListView.separated(
-                      itemCount: _messages.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final item = _messages[index];
-                        final mine = item.from == _user!.id;
-                        return Align(
-                          alignment: mine
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 420),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: mine
-                                  ? const Color(0xFF1D6F87)
-                                  : const Color(0xFF192535),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item.content),
-                                const SizedBox(height: 6),
-                                Text(
-                                  item.createdAtLabel,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _chatComposerController,
-                    decoration: const InputDecoration(labelText: '输入消息'),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: _loading ? null : _sendMessage,
-                  child: const Text('发送'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (compact) {
-      return Column(children: [listPane, const SizedBox(height: 16), chatPane]);
+  String _sidebarViewKey(AppView view) {
+    if (view == AppView.postDetail) {
+      return 'public';
     }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(width: 360, child: listPane),
-        const SizedBox(width: 16),
-        Expanded(child: chatPane),
-      ],
-    );
-  }
-
-  Widget _buildSpaceComposer({required String type}) {
-    final title = type == 'private' ? '创建私人空间' : '创建公共空间';
-    final subtitle = type == 'private'
-        ? '私人空间适合沉淀草稿和只对自己可见的内容。'
-        : '公共空间适合对外展示项目和发布公开内容。';
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(subtitle),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _spaceNameController,
-              decoration: const InputDecoration(labelText: '空间名称'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _spaceDescriptionController,
-              decoration: const InputDecoration(labelText: '空间描述'),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _loading ? null : () => _createSpace(type),
-              child: const Text('创建空间'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPostComposer({
-    required String title,
-    required String subtitle,
-    required TextEditingController titleController,
-    required TextEditingController contentController,
-    required String status,
-    required ValueChanged<String> onStatusChanged,
-    required VoidCallback onSubmit,
-  }) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(subtitle),
-            const SizedBox(height: 16),
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: '标题'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: contentController,
-              minLines: 4,
-              maxLines: 8,
-              decoration: const InputDecoration(labelText: '内容'),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: status,
-                    decoration: const InputDecoration(labelText: '状态'),
-                    items: const [
-                      DropdownMenuItem(value: 'published', child: Text('已发布')),
-                      DropdownMenuItem(value: 'draft', child: Text('草稿')),
-                      DropdownMenuItem(value: 'hidden', child: Text('隐藏')),
-                    ],
-                    onChanged: (value) => onStatusChanged(value ?? status),
-                  ),
-                ),
-                FilledButton(
-                  onPressed: _loading ? null : onSubmit,
-                  child: const Text('提交'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSpaceList(String title, List<SpaceItem> spaces) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: spaces
-              .map(
-                (space) => SizedBox(
-                  width: 320,
-                  child: InfoCard(
-                    title: space.name,
-                    lines: [space.description, '类型: ${space.type}'],
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        if (spaces.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 12),
-            child: Text('当前还没有空间。'),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildPostStream(List<PostItem> posts, {required String emptyText}) {
-    if (posts.isEmpty) {
-      return InfoCard(title: '内容流', lines: [emptyText]);
+    switch (view) {
+      case AppView.dashboard:
+        return 'dashboard';
+      case AppView.privateSpace:
+        return 'private';
+      case AppView.publicSpace:
+        return 'public';
+      case AppView.profile:
+        return 'profile';
+      case AppView.postDetail:
+        return 'public';
+      case AppView.levels:
+        return 'levels';
+      case AppView.subscription:
+        return 'subscription';
+      case AppView.blockchain:
+        return 'blockchain';
+      case AppView.friends:
+        return 'friends';
+      case AppView.chat:
+        return 'chat';
     }
-    return Column(
-      children: [
-        for (var index = 0; index < posts.length; index++) ...[
-          PostCard(
-            post: posts[index],
-            commentController: _commentControllers.putIfAbsent(
-              posts[index].id,
-              TextEditingController.new,
-            ),
-            onLike: () => _toggleLike(posts[index]),
-            onShare: () => _sharePost(posts[index]),
-            onComment: () => _comment(posts[index]),
-            onOpenAuthor: () => _openProfile(posts[index].userId),
-            onOpenDetail: () => _openPostDetail(posts[index].id),
-            onEdit: _user != null && posts[index].userId == _user!.id
-                ? () => _openPostDetail(posts[index].id)
-                : null,
-          ),
-          if (index < posts.length - 1) const SizedBox(height: 16),
-        ],
-      ],
-    );
   }
-}
 
-class _NavItem {
-  const _NavItem(this.view, this.label, this.icon);
-
-  final AppView view;
-  final String label;
-  final IconData icon;
+  AppView _appViewFromKey(String key) {
+    switch (key) {
+      case 'dashboard':
+        return AppView.dashboard;
+      case 'private':
+        return AppView.privateSpace;
+      case 'public':
+        return AppView.publicSpace;
+      case 'profile':
+        return AppView.profile;
+      case 'levels':
+        return AppView.levels;
+      case 'subscription':
+        return AppView.subscription;
+      case 'blockchain':
+        return AppView.blockchain;
+      case 'friends':
+        return AppView.friends;
+      case 'chat':
+        return AppView.chat;
+      default:
+        return AppView.dashboard;
+    }
+  }
 }
