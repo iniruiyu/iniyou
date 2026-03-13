@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/app_cards.dart';
-
 class GuestLandingView extends StatelessWidget {
   const GuestLandingView({
     super.key,
@@ -44,8 +42,6 @@ class GuestLandingView extends StatelessWidget {
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 1080;
-              final hero = _LandingHero();
               final auth = _AuthCard(
                 loginMode: loginMode,
                 loading: loading,
@@ -61,22 +57,23 @@ class GuestLandingView extends StatelessWidget {
               );
               return Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1380),
+                  constraints: const BoxConstraints(maxWidth: 520),
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: wide
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 6, child: hero),
-                              const SizedBox(width: 20),
-                              SizedBox(width: 420, child: auth),
-                            ],
-                          )
-                        : ListView(
-                            shrinkWrap: true,
-                            children: [hero, const SizedBox(height: 20), auth],
-                          ),
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        auth,
+                        const SizedBox(height: 14),
+                        Text(
+                          'Auth Flow 已保留。未登录首页当前仅提供登录和注册入口，主页展示内容后续补充。',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -84,102 +81,6 @@ class GuestLandingView extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _LandingHero extends StatelessWidget {
-  const _LandingHero();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'iniyou',
-          style: Theme.of(
-            context,
-          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '先完成账号流程，再进入工作台。',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '普通 Web 前端和 Flutter 前端现在保持同一套信息架构。未登录时先进入登录或注册，登录后再进入私人空间、公共空间、好友、聊天和区块链接入页面。',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(color: Colors.white70),
-        ),
-        const SizedBox(height: 28),
-        const Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            HeroStatCard(
-              index: '01',
-              label: '登录或注册',
-              text: '统一入口，减少未登录状态下的分叉页面。',
-            ),
-            HeroStatCard(
-              index: '02',
-              label: '进入工作台',
-              text: '登录后可查看仪表盘、空间、关系和聊天。',
-            ),
-            HeroStatCard(
-              index: '03',
-              label: '双前端并存',
-              text: 'Legacy Web 与 Flutter 前端保持一致的页面结构。',
-            ),
-          ],
-        ),
-        const SizedBox(height: 28),
-        Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Auth Flow',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: const Color(0xFF6EE7FF),
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '未登录态聚焦在账号流程',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '将账号入口、工作台预览和功能说明拆开，避免在未登录时提前暴露完整业务模块。',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: Colors.white70),
-                ),
-                const SizedBox(height: 20),
-                const Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FeatureChipCard(title: '私人空间', text: '沉淀草稿、笔记和仅自己可见的记录。'),
-                    FeatureChipCard(title: '公共空间', text: '展示项目、发布内容并建立公开连接。'),
-                    FeatureChipCard(title: '实时互动', text: '登录后进入聊天、好友和资料工作台。'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -22,58 +22,11 @@ window.LandingPage = {
       </header>
 
       <main class="landing-main auth-main">
-        <section class="landing-hero auth-hero">
-          <div class="landing-copy auth-copy">
-            <div class="hero-pill">{{ app.t('landing.heroPill') }}</div>
-            <h1>{{ app.t('landing.heroTitle') }}</h1>
-            <p class="landing-subtitle">{{ app.t('landing.heroSub') }}</p>
-
-            <div class="landing-stats auth-stats">
-              <div class="landing-stat">
-                <strong>01</strong>
-                <span>{{ app.t('landing.statStepOne') }}</span>
-              </div>
-              <div class="landing-stat">
-                <strong>02</strong>
-                <span>{{ app.t('landing.statStepTwo') }}</span>
-              </div>
-              <div class="landing-stat">
-                <strong>03</strong>
-                <span>{{ app.t('landing.statStepThree') }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="landing-showcase auth-showcase">
-            <article class="showcase-card showcase-card-main">
-              <div class="showcase-label">{{ app.t('landing.previewLabel') }}</div>
-              <h3>{{ app.t('landing.previewTitle') }}</h3>
-              <p>{{ app.t('landing.previewSub') }}</p>
-              <div class="feature-strip compact">
-                <article class="feature-card">
-                  <div class="feature-index">01</div>
-                  <h3>{{ app.t('landing.featurePrivateTitle') }}</h3>
-                  <p>{{ app.t('landing.featurePrivateSub') }}</p>
-                </article>
-                <article class="feature-card">
-                  <div class="feature-index">02</div>
-                  <h3>{{ app.t('landing.featurePublicTitle') }}</h3>
-                  <p>{{ app.t('landing.featurePublicSub') }}</p>
-                </article>
-                <article class="feature-card">
-                  <div class="feature-index">03</div>
-                  <h3>{{ app.t('landing.featureLiveTitle') }}</h3>
-                  <p>{{ app.t('landing.featureLiveSub') }}</p>
-                </article>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <div class="landing-auth-column">
+        <div class="landing-auth-column landing-auth-only">
           <div v-if="app.flashMessage" class="banner banner-success">{{ app.flashMessage }}</div>
           <div v-if="app.errorMessage" class="banner banner-error">{{ app.errorMessage }}</div>
           <auth-panel :app="app"></auth-panel>
+          <p class="landing-auth-note">Auth Flow 已保留。首页暂时仅提供登录与注册入口，其他主页展示内容后续补充。</p>
         </div>
       </main>
     </div>

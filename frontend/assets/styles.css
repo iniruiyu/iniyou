@@ -861,10 +861,27 @@ body {
   align-items: start;
 }
 
+.auth-main {
+  display: flex;
+  justify-content: center;
+}
+
 .landing-auth-column {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.landing-auth-only {
+  width: min(460px, 100%);
+}
+
+.landing-auth-note {
+  margin: 2px 6px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .landing-hero {
