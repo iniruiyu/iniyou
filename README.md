@@ -12,7 +12,7 @@
 - `backend/`: Golang 后端，包含 `account-service` 和 `message-service`
 - `frontend/`: 原生 HTML、CSS、JavaScript 前端页面（Legacy Web）
 - `flutter_frontend/`: Flutter 前端工程（Web 优先，可继续扩展桌面/移动端）
-  - 当前已按 `api/`、`models/`、`widgets/`、`views/` 分层
+  - 当前已按 `api/`、`controllers/`、`models/`、`widgets/`、`views/` 分层
 - `docs/`: 需求、设计、接口和开发大纲
 - `DESIGN.md`: 当前阶段设计说明
 - `Makefile`: 本地测试、构建和启动命令
@@ -79,6 +79,7 @@ make run-flutter-web
 
 - `flutter_frontend/lib/main.dart`: 应用入口、状态与视图分发
 - `flutter_frontend/lib/api/api_client.dart`: 接口访问层
+- `flutter_frontend/lib/controllers/app_actions.dart`: 多接口编排与动作辅助层
 - `flutter_frontend/lib/models/app_models.dart`: 前端数据模型与格式化辅助
 - `flutter_frontend/lib/widgets/app_cards.dart`: 通用卡片与基础展示组件
 - `flutter_frontend/lib/views/guest_landing_view.dart`: 未登录落地页

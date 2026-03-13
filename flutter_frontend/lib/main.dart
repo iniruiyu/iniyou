@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'api/api_client.dart';
+import 'controllers/app_actions.dart';
 import 'models/app_models.dart';
 import 'views/authenticated_shell_view.dart';
 import 'views/content_sections.dart';
@@ -214,42 +215,24 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _refreshAll() async {
-    final me = await _api.fetchMe();
-    final results = await Future.wait([
-      _api.listSpaces(),
-      _api.listPosts(visibility: 'public', limit: 50),
-      _api.listPosts(visibility: 'private', limit: 50),
-      _api.listFriends(),
-      _api.listConversations(),
-      _api.fetchSubscription(),
-      _api.listExternalAccounts(),
-    ]);
-
-    final spaces = results[0] as List<SpaceItem>;
-    final publicPosts = results[1] as List<PostItem>;
-    final privatePosts = results[2] as List<PostItem>;
-    final friends = results[3] as List<FriendItem>;
-    final conversations = results[4] as List<ConversationItem>;
-    final subscription = results[5] as SubscriptionItem?;
-    final externalAccounts = results[6] as List<ExternalAccountItem>;
-
-    _displayNameController.text = me.displayName;
+    final dashboard = await AppActions.loadDashboard(_api);
+    _displayNameController.text = dashboard.user.displayName;
 
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _user = me;
-      _spaces = spaces;
-      _publicPosts = publicPosts;
-      _privatePosts = privatePosts;
-      _friends = friends;
-      _conversations = conversations;
-      _subscription = subscription;
-      _externalAccounts = externalAccounts;
+      _user = dashboard.user;
+      _spaces = dashboard.spaces;
+      _publicPosts = dashboard.publicPosts;
+      _privatePosts = dashboard.privatePosts;
+      _friends = dashboard.friends;
+      _conversations = dashboard.conversations;
+      _subscription = dashboard.subscription;
+      _externalAccounts = dashboard.externalAccounts;
       if (_activeChat != null) {
-        _activeChat = findFriendById(_activeChat!.id, friends);
+        _activeChat = findFriendById(_activeChat!.id, dashboard.friends);
       }
     });
 
@@ -518,21 +501,17 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _loadProfile(String userId, {bool quiet = false}) async {
     Future<void> action() async {
-      final ownProfile = _user != null && userId == _user!.id;
-      final results = await Future.wait([
-        _api.fetchUserProfile(userId),
-        _api.listUserPosts(
-          userId,
-          visibility: ownProfile ? 'all' : 'public',
-          limit: 50,
-        ),
-      ]);
+      final profile = await AppActions.loadProfile(
+        _api,
+        userId: userId,
+        ownProfile: _user != null && userId == _user!.id,
+      );
       if (!mounted) {
         return;
       }
       setState(() {
-        _profileUser = results[0] as UserProfileItem;
-        _profilePosts = results[1] as List<PostItem>;
+        _profileUser = profile.profileUser;
+        _profilePosts = profile.posts;
         _view = AppView.profile;
       });
     }
@@ -552,7 +531,8 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _loadPostDetail(String postId, {bool quiet = false}) async {
     Future<void> action() async {
-      final post = await _api.getPost(postId);
+      final detail = await AppActions.loadPostDetail(_api, postId);
+      final post = detail.post;
       if (!mounted) {
         return;
       }
@@ -611,11 +591,13 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _addFriend(String friendId) async {
     await _runBusy(() async {
-      await _api.addFriend(friendId);
-      _friends = await _api.listFriends();
-      _searchResults = await _api.searchUsers(
-        _friendSearchController.text.trim(),
+      final result = await AppActions.addFriendAndReload(
+        _api,
+        friendId: friendId,
+        query: _friendSearchController.text.trim(),
       );
+      _friends = result.friends;
+      _searchResults = result.searchResults;
       if (!mounted) {
         return;
       }
@@ -625,9 +607,9 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _acceptFriend(String friendId) async {
     await _runBusy(() async {
-      await _api.acceptFriend(friendId);
-      _friends = await _api.listFriends();
-      _conversations = await _api.listConversations();
+      final result = await AppActions.acceptFriendAndReload(_api, friendId);
+      _friends = result.friends;
+      _conversations = result.conversations;
       if (_profileUser?.id == friendId) {
         await _loadProfile(friendId, quiet: true);
       }
@@ -651,7 +633,7 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _loadMessages(FriendItem friend, {bool quiet = false}) async {
     Future<void> action() async {
-      final items = await _api.listMessages(friend.id);
+      final items = await AppActions.loadMessages(_api, friend.id);
       if (!mounted) {
         return;
       }
@@ -681,10 +663,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     await _runBusy(() async {
-      await _api.sendMessage(peer.id, content);
+      final chat = await AppActions.sendMessageAndReload(
+        _api,
+        peerId: peer.id,
+        content: content,
+      );
       _chatComposerController.clear();
-      _messages = await _api.listMessages(peer.id);
-      _conversations = await _api.listConversations();
+      _messages = chat.messages;
+      _conversations = chat.conversations;
     });
   }
 
@@ -703,8 +689,9 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _activatePlan(String planId) async {
     await _runBusy(() async {
-      _subscription = await _api.activateSubscription(planId);
-      _user = await _api.fetchMe();
+      final result = await AppActions.activatePlan(_api, planId);
+      _subscription = result.subscription;
+      _user = result.user;
       if (_profileUser?.id == _user?.id) {
         _profileUser = UserProfileItem.fromCurrentUser(_user!);
       }
