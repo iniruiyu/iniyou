@@ -91,6 +91,7 @@ make run-flutter-web
 - `flutter_frontend/lib/views/social_views.dart`: 个人主页、文章详情、好友、聊天
 - `flutter_frontend/lib/views/settings_views.dart`: 等级、订阅、区块链接入
 - `flutter_frontend/lib/views/shell_widgets.dart`: 侧边栏与反馈横幅
+- `flutter_frontend/lib/views/authenticated_home_view.dart`: 登录后主内容壳层（banner、摘要、内容区）
 - `flutter_frontend/lib/views/authenticated_shell_view.dart`: 登录后主壳层
 
 ## 测试与构建

@@ -9,8 +9,8 @@ import 'controllers/app_actions.dart';
 import 'controllers/post_state_actions.dart';
 import 'controllers/session_actions.dart';
 import 'models/app_models.dart';
+import 'views/authenticated_home_view.dart';
 import 'views/authenticated_shell_view.dart';
-import 'views/content_sections.dart';
 import 'views/guest_landing_view.dart';
 import 'views/section_body_router.dart';
 import 'views/shell_widgets.dart';
@@ -757,43 +757,37 @@ class _IniyouHomeState extends State<IniyouHome> {
           sidebar: _buildSidebar(),
           onRefresh: () => _runBusy(_refreshAll),
           onLogout: _logout,
-          body: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              _buildBanner(),
-              const SizedBox(height: 16),
-              TopSummaryRow(
-                width: constraints.maxWidth,
-                cards: [
-                  SummaryCardData(
-                    '空间',
-                    '${_spaces.length}',
-                    '私人 ${privateSpaces(_spaces).length} / 公共 ${publicSpaces(_spaces).length}',
-                  ),
-                  SummaryCardData(
-                    '好友',
-                    '${acceptedFriends(_friends).length}',
-                    '总关系 ${_friends.length}',
-                  ),
-                  SummaryCardData(
-                    '订阅',
-                    _subscription?.planId.isNotEmpty == true
-                        ? _subscription!.planId
-                        : 'basic',
-                    '状态 ${_subscription?.status ?? 'inactive'}',
-                  ),
-                  SummaryCardData(
-                    '链上账号',
-                    '${_externalAccounts.length}',
-                    connectedChains(_externalAccounts).isEmpty
-                        ? '尚未连接链'
-                        : connectedChains(_externalAccounts).join(', '),
-                  ),
-                ],
+          body: AuthenticatedHomeView(
+            width: constraints.maxWidth,
+            error: _error,
+            flash: _flash,
+            summaryCards: [
+              SummaryCardData(
+                '空间',
+                '${_spaces.length}',
+                '私人 ${privateSpaces(_spaces).length} / 公共 ${publicSpaces(_spaces).length}',
               ),
-              const SizedBox(height: 16),
-              _buildSectionBody(constraints.maxWidth),
+              SummaryCardData(
+                '好友',
+                '${acceptedFriends(_friends).length}',
+                '总关系 ${_friends.length}',
+              ),
+              SummaryCardData(
+                '订阅',
+                _subscription?.planId.isNotEmpty == true
+                    ? _subscription!.planId
+                    : 'basic',
+                '状态 ${_subscription?.status ?? 'inactive'}',
+              ),
+              SummaryCardData(
+                '链上账号',
+                '${_externalAccounts.length}',
+                connectedChains(_externalAccounts).isEmpty
+                    ? '尚未连接链'
+                    : connectedChains(_externalAccounts).join(', '),
+              ),
             ],
+            sectionBody: _buildSectionBody(constraints.maxWidth),
           ),
         );
       },
@@ -809,10 +803,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       items: defaultShellSidebarItems,
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
     );
-  }
-
-  Widget _buildBanner() {
-    return BannerCard(error: _error, flash: _flash);
   }
 
   Widget _buildSectionBody(double width) {
