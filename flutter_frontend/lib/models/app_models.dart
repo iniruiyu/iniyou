@@ -296,12 +296,16 @@ class ChatMessage {
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
-      id: (json['id'] ?? '').toString(),
-      from: (json['sender_id'] ?? json['from'] ?? '').toString(),
-      to: (json['receiver_id'] ?? json['to'] ?? '').toString(),
-      content: (json['content'] ?? '').toString(),
+      id: (json['id'] ?? json['ID'] ?? '').toString(),
+      from: (json['sender_id'] ?? json['SenderID'] ?? json['from'] ?? '')
+          .toString(),
+      to: (json['receiver_id'] ?? json['ReceiverID'] ?? json['to'] ?? '')
+          .toString(),
+      content: (json['content'] ?? json['Content'] ?? '').toString(),
       createdAt:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.tryParse(
+            (json['created_at'] ?? json['CreatedAt'] ?? '').toString(),
+          ) ??
           DateTime.now(),
     );
   }
