@@ -8,6 +8,7 @@ import 'api/api_client.dart';
 import 'controllers/app_actions.dart';
 import 'controllers/post_state_actions.dart';
 import 'controllers/session_actions.dart';
+import 'i18n/app_i18n.dart';
 import 'models/app_models.dart';
 import 'views/authenticated_home_view.dart';
 import 'views/authenticated_shell_view.dart';
@@ -79,6 +80,7 @@ class IniyouHome extends StatefulWidget {
 }
 
 class _IniyouHomeState extends State<IniyouHome> {
+  static const _languageKey = 'iniyou_language';
   final ApiClient _api = ApiClient();
 
   final _loginAccountController = TextEditingController();
@@ -108,6 +110,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _booting = true;
   bool _loading = false;
   bool _loginMode = true;
+  String _languageCode = AppI18n.defaultLanguageCode;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -173,6 +176,11 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _bootstrap() async {
     _prefs = await SharedPreferences.getInstance();
+    final savedLanguage = _prefs?.getString(_languageKey);
+    if (savedLanguage != null &&
+        AppI18n.supportedLanguageCodes.contains(savedLanguage)) {
+      _languageCode = savedLanguage;
+    }
     final sessionRestored = SessionActions.restoreSession(_api, _prefs!);
     if (sessionRestored) {
       try {
@@ -185,6 +193,20 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (mounted) {
       setState(() => _booting = false);
     }
+  }
+
+  String _t(String key) => AppI18n.tr(_languageCode, key);
+
+  Future<void> _setLanguage(String languageCode) async {
+    if (!AppI18n.supportedLanguageCodes.contains(languageCode)) {
+      return;
+    }
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await prefs.setString(_languageKey, languageCode);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _languageCode = languageCode);
   }
 
   Future<void> _runBusy(Future<void> Function() action) async {
@@ -719,11 +741,16 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   @override
   Widget build(BuildContext context) {
+    final textDirection = AppI18n.isRtl(_languageCode)
+        ? TextDirection.rtl
+        : TextDirection.ltr;
+    Widget content;
     if (_booting) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    if (_user == null) {
-      return GuestLandingView(
+      content = const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    } else if (_user == null) {
+      content = GuestLandingView(
         loginMode: _loginMode,
         loading: _loading,
         error: _error,
@@ -735,42 +762,51 @@ class _IniyouHomeState extends State<IniyouHome> {
         onToggleMode: (value) => setState(() => _loginMode = value),
         onLogin: _login,
         onRegister: _register,
+        currentLanguageCode: _languageCode,
+        onLanguageChanged: _setLanguage,
+        t: _t,
+      );
+    } else {
+      content = LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 1120;
+          return AuthenticatedShellView(
+            userLabel: _user!.displayName.isEmpty
+                ? _user!.id
+                : _user!.displayName,
+            pageTitle: pageTitleForView(
+              _view,
+              profileUser: _profileUser,
+              currentPost: _currentPost,
+              t: _t,
+            ),
+            pageSubtitle: pageSubtitleForView(_view, t: _t),
+            loading: _loading,
+            wide: wide,
+            sidebar: _buildSidebar(),
+            onRefresh: () => _runBusy(_refreshAll),
+            onLogout: _logout,
+            currentLanguageCode: _languageCode,
+            onLanguageChanged: _setLanguage,
+            t: _t,
+            body: AuthenticatedHomeView(
+              width: constraints.maxWidth,
+              error: _error,
+              flash: _flash,
+              summaryCards: buildHomeSummaryCards(
+                spaces: _spaces,
+                friends: _friends,
+                subscription: _subscription,
+                externalAccounts: _externalAccounts,
+                t: _t,
+              ),
+              sectionBody: _buildSectionBody(constraints.maxWidth),
+            ),
+          );
+        },
       );
     }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 1120;
-        return AuthenticatedShellView(
-          userLabel: _user!.displayName.isEmpty
-              ? _user!.id
-              : _user!.displayName,
-          pageTitle: pageTitleForView(
-            _view,
-            profileUser: _profileUser,
-            currentPost: _currentPost,
-          ),
-          pageSubtitle: pageSubtitleForView(_view),
-          loading: _loading,
-          wide: wide,
-          sidebar: _buildSidebar(),
-          onRefresh: () => _runBusy(_refreshAll),
-          onLogout: _logout,
-          body: AuthenticatedHomeView(
-            width: constraints.maxWidth,
-            error: _error,
-            flash: _flash,
-            summaryCards: buildHomeSummaryCards(
-              spaces: _spaces,
-              friends: _friends,
-              subscription: _subscription,
-              externalAccounts: _externalAccounts,
-            ),
-            sectionBody: _buildSectionBody(constraints.maxWidth),
-          ),
-        );
-      },
-    );
+    return Directionality(textDirection: textDirection, child: content);
   }
 
   Widget _buildSidebar() {
@@ -779,8 +815,9 @@ class _IniyouHomeState extends State<IniyouHome> {
       subscription: _subscription,
       conversations: _conversations,
       selectedViewKey: sidebarViewKey(_view),
-      items: defaultShellSidebarItems,
+      items: buildShellSidebarItems(_t),
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
+      t: _t,
     );
   }
 

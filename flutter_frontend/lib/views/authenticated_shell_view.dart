@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'shell_widgets.dart';
+
 class AuthenticatedShellView extends StatelessWidget {
   const AuthenticatedShellView({
     super.key,
@@ -12,6 +14,9 @@ class AuthenticatedShellView extends StatelessWidget {
     required this.body,
     required this.onRefresh,
     required this.onLogout,
+    required this.currentLanguageCode,
+    required this.onLanguageChanged,
+    required this.t,
   });
 
   final String userLabel;
@@ -23,6 +28,9 @@ class AuthenticatedShellView extends StatelessWidget {
   final Widget body;
   final VoidCallback onRefresh;
   final VoidCallback onLogout;
+  final String currentLanguageCode;
+  final ValueChanged<String> onLanguageChanged;
+  final String Function(String key) t;
 
   @override
   Widget build(BuildContext context) {
@@ -48,12 +56,17 @@ class AuthenticatedShellView extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: '刷新',
+            tooltip: t('shell.refresh'),
             onPressed: loading ? null : onRefresh,
             icon: const Icon(Icons.refresh),
           ),
+          SettingsMenuButton(
+            currentLanguageCode: currentLanguageCode,
+            onLanguageChanged: onLanguageChanged,
+            t: t,
+          ),
           IconButton(
-            tooltip: '退出',
+            tooltip: t('shell.logout'),
             onPressed: loading ? null : onLogout,
             icon: const Icon(Icons.logout),
           ),

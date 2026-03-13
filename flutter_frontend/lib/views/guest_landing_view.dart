@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'shell_widgets.dart';
+
 class GuestLandingView extends StatelessWidget {
   const GuestLandingView({
     super.key,
@@ -14,6 +16,9 @@ class GuestLandingView extends StatelessWidget {
     required this.onToggleMode,
     required this.onLogin,
     required this.onRegister,
+    required this.currentLanguageCode,
+    required this.onLanguageChanged,
+    required this.t,
   });
 
   final bool loginMode;
@@ -27,6 +32,9 @@ class GuestLandingView extends StatelessWidget {
   final ValueChanged<bool> onToggleMode;
   final VoidCallback onLogin;
   final VoidCallback onRegister;
+  final String currentLanguageCode;
+  final ValueChanged<String> onLanguageChanged;
+  final String Function(String key) t;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +62,7 @@ class GuestLandingView extends StatelessWidget {
                 onToggleMode: onToggleMode,
                 onLogin: onLogin,
                 onRegister: onRegister,
+                t: t,
               );
               return Center(
                 child: ConstrainedBox(
@@ -63,13 +72,23 @@ class GuestLandingView extends StatelessWidget {
                     child: ListView(
                       shrinkWrap: true,
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            SettingsMenuButton(
+                              currentLanguageCode: currentLanguageCode,
+                              onLanguageChanged: onLanguageChanged,
+                              t: t,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         auth,
                         const SizedBox(height: 14),
                         Text(
-                          'Auth Flow 已保留。未登录首页当前仅提供登录和注册入口，主页展示内容后续补充。',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                          t('auth.note'),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.white70),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -98,6 +117,7 @@ class _AuthCard extends StatelessWidget {
     required this.onToggleMode,
     required this.onLogin,
     required this.onRegister,
+    required this.t,
   });
 
   final bool loginMode;
@@ -111,11 +131,12 @@ class _AuthCard extends StatelessWidget {
   final ValueChanged<bool> onToggleMode;
   final VoidCallback onLogin;
   final VoidCallback onRegister;
+  final String Function(String key) t;
 
   @override
   Widget build(BuildContext context) {
-    final title = loginMode ? '回到 iniyou' : '创建你的 iniyou 账户';
-    final subtitle = loginMode ? '输入账号后直接进入工作台。' : '创建账号后自动进入你的空间。';
+    final title = loginMode ? t('auth.loginTitle') : t('auth.registerTitle');
+    final subtitle = loginMode ? t('auth.loginSub') : t('auth.registerSub');
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Padding(
@@ -124,7 +145,10 @@ class _AuthCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('账号入口', style: Theme.of(context).textTheme.labelLarge),
+            Text(
+              t('auth.entry'),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             const SizedBox(height: 8),
             Text(title, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
@@ -138,12 +162,12 @@ class _AuthCard extends StatelessWidget {
               spacing: 12,
               children: [
                 ChoiceChip(
-                  label: const Text('登录'),
+                  label: Text(t('auth.login')),
                   selected: loginMode,
                   onSelected: (_) => onToggleMode(true),
                 ),
                 ChoiceChip(
-                  label: const Text('注册'),
+                  label: Text(t('auth.register')),
                   selected: !loginMode,
                   onSelected: (_) => onToggleMode(false),
                 ),
@@ -153,39 +177,39 @@ class _AuthCard extends StatelessWidget {
             if (loginMode) ...[
               TextField(
                 controller: loginAccountController,
-                decoration: const InputDecoration(labelText: '邮箱 / 手机号'),
+                decoration: InputDecoration(labelText: t('auth.account')),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: loginPasswordController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: '密码'),
+                decoration: InputDecoration(labelText: t('auth.password')),
               ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: loading ? null : onLogin,
-                child: const Text('登录'),
+                child: Text(t('auth.login')),
               ),
             ] else ...[
               TextField(
                 controller: registerEmailController,
-                decoration: const InputDecoration(labelText: '邮箱'),
+                decoration: InputDecoration(labelText: t('auth.email')),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: registerPhoneController,
-                decoration: const InputDecoration(labelText: '手机号'),
+                decoration: InputDecoration(labelText: t('auth.phone')),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: registerPasswordController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: '密码，至少 8 位'),
+                decoration: InputDecoration(labelText: t('auth.passwordHint')),
               ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: loading ? null : onRegister,
-                child: const Text('创建账号'),
+                child: Text(t('auth.register')),
               ),
             ],
           ],

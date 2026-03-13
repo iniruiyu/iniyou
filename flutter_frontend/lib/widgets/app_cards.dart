@@ -295,15 +295,21 @@ class SummaryCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.label, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 8),
-            Text(item.value, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(item.detail, style: Theme.of(context).textTheme.bodySmall),
-          ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 132),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(item.label, style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 8),
+              Text(
+                item.value,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(item.detail, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
       ),
     );

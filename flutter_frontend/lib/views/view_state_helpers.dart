@@ -38,28 +38,29 @@ List<SummaryCardData> buildHomeSummaryCards({
   required List<FriendItem> friends,
   required SubscriptionItem? subscription,
   required List<ExternalAccountItem> externalAccounts,
+  required String Function(String key) t,
 }) {
   final chains = connectedChains(externalAccounts);
   return [
     SummaryCardData(
-      '空间',
+      t('summary.spaces'),
       '${spaces.length}',
-      '私人 ${privateSpaces(spaces).length} / 公共 ${publicSpaces(spaces).length}',
+      '${t('summary.private')} ${privateSpaces(spaces).length} / ${t('summary.public')} ${publicSpaces(spaces).length}',
     ),
     SummaryCardData(
-      '好友',
+      t('summary.friends'),
       '${acceptedFriends(friends).length}',
-      '总关系 ${friends.length}',
+      '${t('summary.totalRelations')} ${friends.length}',
     ),
     SummaryCardData(
-      '订阅',
+      t('summary.subscription'),
       subscription?.planId.isNotEmpty == true ? subscription!.planId : 'basic',
-      '状态 ${subscription?.status ?? 'inactive'}',
+      '${t('summary.status')} ${subscription?.status ?? t('summary.inactive')}',
     ),
     SummaryCardData(
-      '链上账号',
+      t('summary.chains'),
       '${externalAccounts.length}',
-      chains.isEmpty ? '尚未连接链' : chains.join(', '),
+      chains.isEmpty ? t('summary.noChains') : chains.join(', '),
     ),
   ];
 }
@@ -68,57 +69,61 @@ String pageTitleForView(
   AppView view, {
   UserProfileItem? profileUser,
   PostItem? currentPost,
+  required String Function(String key) t,
 }) {
   switch (view) {
     case AppView.dashboard:
-      return '工作台';
+      return t('page.dashboard');
     case AppView.privateSpace:
-      return '私人空间';
+      return t('page.private');
     case AppView.publicSpace:
-      return '公共空间';
+      return t('page.public');
     case AppView.profile:
       return profileUser?.displayName.isNotEmpty == true
           ? profileUser!.displayName
-          : '个人主页';
+          : t('page.profile');
     case AppView.postDetail:
       return currentPost?.title.isNotEmpty == true
           ? currentPost!.title
-          : '文章详情';
+          : t('page.postDetail');
     case AppView.levels:
-      return '等级体系';
+      return t('page.levels');
     case AppView.subscription:
-      return '订阅计划';
+      return t('page.subscription');
     case AppView.blockchain:
-      return '区块链接入';
+      return t('page.blockchain');
     case AppView.friends:
-      return '好友关系';
+      return t('page.friends');
     case AppView.chat:
-      return '实时聊天';
+      return t('page.chat');
   }
 }
 
-String pageSubtitleForView(AppView view) {
+String pageSubtitleForView(
+  AppView view, {
+  required String Function(String key) t,
+}) {
   switch (view) {
     case AppView.dashboard:
-      return '汇总账号、空间、订阅、好友与实时互动状态。';
+      return t('subtitle.dashboard');
     case AppView.privateSpace:
-      return '管理仅自己可见的内容、草稿和私人空间。';
+      return t('subtitle.private');
     case AppView.publicSpace:
-      return '发布公开内容、查看广场动态并打开作者主页。';
+      return t('subtitle.public');
     case AppView.profile:
-      return '查看用户资料、关系状态和历史文章。';
+      return t('subtitle.profile');
     case AppView.postDetail:
-      return '查看完整正文、评论和互动统计。';
+      return t('subtitle.postDetail');
     case AppView.levels:
-      return '等级与计划联动，决定展示身份和能力范围。';
+      return t('subtitle.levels');
     case AppView.subscription:
-      return '管理当前会员计划和续费动作。';
+      return t('subtitle.subscription');
     case AppView.blockchain:
-      return '绑定链上账号并查看已连接链摘要。';
+      return t('subtitle.blockchain');
     case AppView.friends:
-      return '搜索用户、发起好友请求并处理待接受关系。';
+      return t('subtitle.friends');
     case AppView.chat:
-      return '查看会话摘要并发送实时消息。';
+      return t('subtitle.chat');
   }
 }
 

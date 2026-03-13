@@ -11,22 +11,18 @@ class TopSummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (width < 920) {
-      return Column(
-        children: [
-          for (final item in cards) ...[
-            SummaryCard(item: item),
-            const SizedBox(height: 12),
-          ],
-        ],
-      );
-    }
-    return Row(
+    final columns = width >= 1320 ? 4 : (width >= 920 ? 2 : 1);
+    const spacing = 12.0;
+    final itemWidth = (width - spacing * (columns - 1)) / columns;
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
       children: [
-        for (var index = 0; index < cards.length; index++) ...[
-          Expanded(child: SummaryCard(item: cards[index])),
-          if (index < cards.length - 1) const SizedBox(width: 12),
-        ],
+        for (final item in cards)
+          SizedBox(
+            width: itemWidth,
+            child: SummaryCard(item: item),
+          ),
       ],
     );
   }

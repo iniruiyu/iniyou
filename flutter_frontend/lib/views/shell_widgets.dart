@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/app_i18n.dart';
 import '../models/app_models.dart';
 import '../widgets/app_cards.dart';
 
@@ -15,41 +16,55 @@ class ShellSidebarItem {
   final IconData icon;
 }
 
-const defaultShellSidebarItems = [
-  ShellSidebarItem(
-    viewKey: 'dashboard',
-    label: '工作台',
-    icon: Icons.dashboard_outlined,
-  ),
-  ShellSidebarItem(viewKey: 'private', label: '私人空间', icon: Icons.lock_outline),
-  ShellSidebarItem(viewKey: 'public', label: '公共空间', icon: Icons.public),
-  ShellSidebarItem(
-    viewKey: 'profile',
-    label: '个人主页',
-    icon: Icons.person_outline,
-  ),
-  ShellSidebarItem(viewKey: 'levels', label: '等级', icon: Icons.stars_outlined),
-  ShellSidebarItem(
-    viewKey: 'subscription',
-    label: '订阅',
-    icon: Icons.workspace_premium_outlined,
-  ),
-  ShellSidebarItem(
-    viewKey: 'blockchain',
-    label: '区块链',
-    icon: Icons.hub_outlined,
-  ),
-  ShellSidebarItem(
-    viewKey: 'friends',
-    label: '好友',
-    icon: Icons.people_alt_outlined,
-  ),
-  ShellSidebarItem(
-    viewKey: 'chat',
-    label: '聊天',
-    icon: Icons.chat_bubble_outline,
-  ),
-];
+List<ShellSidebarItem> buildShellSidebarItems(String Function(String key) t) {
+  return [
+    ShellSidebarItem(
+      viewKey: 'dashboard',
+      label: t('sidebar.dashboard'),
+      icon: Icons.dashboard_outlined,
+    ),
+    ShellSidebarItem(
+      viewKey: 'private',
+      label: t('sidebar.private'),
+      icon: Icons.lock_outline,
+    ),
+    ShellSidebarItem(
+      viewKey: 'public',
+      label: t('sidebar.public'),
+      icon: Icons.public,
+    ),
+    ShellSidebarItem(
+      viewKey: 'profile',
+      label: t('sidebar.profile'),
+      icon: Icons.person_outline,
+    ),
+    ShellSidebarItem(
+      viewKey: 'levels',
+      label: t('sidebar.levels'),
+      icon: Icons.stars_outlined,
+    ),
+    ShellSidebarItem(
+      viewKey: 'subscription',
+      label: t('sidebar.subscription'),
+      icon: Icons.workspace_premium_outlined,
+    ),
+    ShellSidebarItem(
+      viewKey: 'blockchain',
+      label: t('sidebar.blockchain'),
+      icon: Icons.hub_outlined,
+    ),
+    ShellSidebarItem(
+      viewKey: 'friends',
+      label: t('sidebar.friends'),
+      icon: Icons.people_alt_outlined,
+    ),
+    ShellSidebarItem(
+      viewKey: 'chat',
+      label: t('sidebar.chat'),
+      icon: Icons.chat_bubble_outline,
+    ),
+  ];
+}
 
 class ShellSidebar extends StatelessWidget {
   const ShellSidebar({
@@ -60,6 +75,7 @@ class ShellSidebar extends StatelessWidget {
     required this.selectedViewKey,
     required this.items,
     required this.onNavigate,
+    required this.t,
   });
 
   final CurrentUser user;
@@ -68,6 +84,7 @@ class ShellSidebar extends StatelessWidget {
   final String selectedViewKey;
   final List<ShellSidebarItem> items;
   final ValueChanged<String> onNavigate;
+  final String Function(String key) t;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +101,7 @@ class ShellSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Private + Public Spaces',
+            t('shell.brandTagline'),
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
@@ -93,9 +110,9 @@ class ShellSidebar extends StatelessWidget {
           InfoCard(
             title: user.displayName.isEmpty ? user.id : user.displayName,
             lines: [
-              '等级: ${user.level}',
-              '计划: ${subscription?.planId.isNotEmpty == true ? subscription!.planId : 'basic'}',
-              '未读会话: ${conversations.fold<int>(0, (sum, item) => sum + item.unreadCount)}',
+              '${t('sidebar.level')}: ${user.level}',
+              '${t('sidebar.plan')}: ${subscription?.planId.isNotEmpty == true ? subscription!.planId : 'basic'}',
+              '${t('sidebar.unread')}: ${conversations.fold<int>(0, (sum, item) => sum + item.unreadCount)}',
             ],
           ),
           const SizedBox(height: 18),
@@ -127,6 +144,55 @@ class ShellSidebar extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+}
+
+class SettingsMenuButton extends StatelessWidget {
+  const SettingsMenuButton({
+    super.key,
+    required this.currentLanguageCode,
+    required this.onLanguageChanged,
+    required this.t,
+  });
+
+  final String currentLanguageCode;
+  final ValueChanged<String> onLanguageChanged;
+  final String Function(String key) t;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: t('settings.title'),
+      icon: const Icon(Icons.settings_outlined),
+      onSelected: onLanguageChanged,
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem<String>(
+            enabled: false,
+            child: Text(
+              t('settings.language'),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+          ),
+          for (final code in AppI18n.supportedLanguageCodes)
+            PopupMenuItem<String>(
+              value: code,
+              child: Row(
+                children: [
+                  Icon(
+                    code == currentLanguageCode
+                        ? Icons.check_circle
+                        : Icons.circle_outlined,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(AppI18n.languageLabel(code)),
+                ],
+              ),
+            ),
+        ];
+      },
     );
   }
 }
