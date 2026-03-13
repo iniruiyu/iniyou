@@ -7,6 +7,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'api/api_client.dart';
 import 'controllers/app_actions.dart';
+import 'controllers/session_actions.dart';
 import 'models/app_models.dart';
 import 'views/authenticated_shell_view.dart';
 import 'views/content_sections.dart';
@@ -173,9 +174,8 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _bootstrap() async {
     _prefs = await SharedPreferences.getInstance();
-    final token = _prefs?.getString('iniyou_token');
-    if (token != null && token.isNotEmpty) {
-      _api.token = token;
+    final sessionRestored = SessionActions.restoreSession(_api, _prefs!);
+    if (sessionRestored) {
       try {
         await _refreshAll();
         _connectSocket();
@@ -249,12 +249,13 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _login() async {
     await _runBusy(() async {
-      final response = await _api.login(
-        _loginAccountController.text.trim(),
-        _loginPasswordController.text,
+      final prefs = _prefs ??= await SharedPreferences.getInstance();
+      await SessionActions.login(
+        _api,
+        prefs,
+        account: _loginAccountController.text.trim(),
+        password: _loginPasswordController.text,
       );
-      await _prefs?.setString('iniyou_token', response.token);
-      _api.token = response.token;
       await _refreshAll();
       _connectSocket();
       if (!mounted) {
@@ -269,13 +270,14 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _register() async {
     await _runBusy(() async {
-      final response = await _api.register(
+      final prefs = _prefs ??= await SharedPreferences.getInstance();
+      await SessionActions.register(
+        _api,
+        prefs,
         email: _registerEmailController.text.trim(),
         phone: _registerPhoneController.text.trim(),
         password: _registerPasswordController.text,
       );
-      await _prefs?.setString('iniyou_token', response.token);
-      _api.token = response.token;
       await _refreshAll();
       _connectSocket();
       if (!mounted) {
@@ -293,13 +295,8 @@ class _IniyouHomeState extends State<IniyouHome> {
     _socketSubscription = null;
     _channel?.sink.close();
     _channel = null;
-    if (clearRemote && _api.token != null) {
-      try {
-        await _api.logout();
-      } catch (_) {}
-    }
-    _api.token = null;
-    await _prefs?.remove('iniyou_token');
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await SessionActions.logout(_api, prefs, clearRemote: clearRemote);
     if (!mounted) {
       return;
     }
@@ -327,11 +324,12 @@ class _IniyouHomeState extends State<IniyouHome> {
   void _connectSocket() {
     _socketSubscription?.cancel();
     _channel?.sink.close();
-    final token = _api.token;
-    if (token == null || token.isEmpty) {
+    final channel = SessionActions.connectSocket(_api);
+    if (channel == null) {
+      _channel = null;
       return;
     }
-    _channel = WebSocketChannel.connect(_api.wsUri(token));
+    _channel = channel;
     _socketSubscription = _channel!.stream.listen((event) async {
       if (_user == null) {
         return;
@@ -381,10 +379,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     await _runBusy(() async {
-      await _api.createSpace(type: type, name: name, description: description);
+      _spaces = await AppActions.createSpaceAndReload(
+        _api,
+        type: type,
+        name: name,
+        description: description,
+      );
       _spaceNameController.clear();
       _spaceDescriptionController.clear();
-      _spaces = await _api.listSpaces();
       if (!mounted) {
         return;
       }
@@ -407,7 +409,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     await _runBusy(() async {
-      final created = await _api.createPost(
+      final result = await AppActions.createPostAndReload(
+        _api,
         title: title,
         content: content,
         visibility: visibility,
@@ -415,11 +418,11 @@ class _IniyouHomeState extends State<IniyouHome> {
       );
       titleController.clear();
       contentController.clear();
-      _applyPostUpdate(created);
+      _applyPostUpdate(result.post);
       if (visibility == 'public') {
-        _publicPosts = await _api.listPosts(visibility: 'public', limit: 50);
+        _publicPosts = result.posts;
       } else {
-        _privatePosts = await _api.listPosts(visibility: 'private', limit: 50);
+        _privatePosts = result.posts;
       }
       if (!mounted) {
         return;
@@ -704,7 +707,8 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _bindExternalAccount() async {
     await _runBusy(() async {
-      await _api.bindExternalAccount(
+      _externalAccounts = await AppActions.bindExternalAccountAndReload(
+        _api,
         provider: _externalProvider,
         chain: _externalChain,
         address: _externalAddressController.text.trim(),
@@ -712,7 +716,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       );
       _externalAddressController.clear();
       _externalSignatureController.clear();
-      _externalAccounts = await _api.listExternalAccounts();
       if (!mounted) {
         return;
       }
@@ -722,8 +725,10 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _removeExternalAccount(String id) async {
     await _runBusy(() async {
-      await _api.deleteExternalAccount(id);
-      _externalAccounts = await _api.listExternalAccounts();
+      _externalAccounts = await AppActions.removeExternalAccountAndReload(
+        _api,
+        id,
+      );
       if (!mounted) {
         return;
       }

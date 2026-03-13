@@ -80,6 +80,7 @@ make run-flutter-web
 - `flutter_frontend/lib/main.dart`: 应用入口、状态与视图分发
 - `flutter_frontend/lib/api/api_client.dart`: 接口访问层
 - `flutter_frontend/lib/controllers/app_actions.dart`: 多接口编排与动作辅助层
+- `flutter_frontend/lib/controllers/session_actions.dart`: 会话管理、token 存取与 socket 辅助
 - `flutter_frontend/lib/models/app_models.dart`: 前端数据模型与格式化辅助
 - `flutter_frontend/lib/widgets/app_cards.dart`: 通用卡片与基础展示组件
 - `flutter_frontend/lib/views/guest_landing_view.dart`: 未登录落地页

@@ -60,6 +60,13 @@ class ChatBundle {
   final List<ConversationItem> conversations;
 }
 
+class PostPublishBundle {
+  const PostPublishBundle({required this.post, required this.posts});
+
+  final PostItem post;
+  final List<PostItem> posts;
+}
+
 class SubscriptionBundle {
   const SubscriptionBundle({required this.subscription, required this.user});
 
@@ -119,6 +126,35 @@ class AppActions {
     String postId,
   ) async {
     return PostDetailBundle(post: await api.getPost(postId));
+  }
+
+  static Future<List<SpaceItem>> createSpaceAndReload(
+    ApiClient api, {
+    required String type,
+    required String name,
+    required String description,
+  }) async {
+    await api.createSpace(type: type, name: name, description: description);
+    return api.listSpaces();
+  }
+
+  static Future<PostPublishBundle> createPostAndReload(
+    ApiClient api, {
+    required String title,
+    required String content,
+    required String visibility,
+    required String status,
+  }) async {
+    final post = await api.createPost(
+      title: title,
+      content: content,
+      visibility: visibility,
+      status: status,
+    );
+    return PostPublishBundle(
+      post: post,
+      posts: await api.listPosts(visibility: visibility, limit: 50),
+    );
   }
 
   static Future<FriendSearchBundle> addFriendAndReload(
@@ -187,5 +223,29 @@ class AppActions {
       subscription: results[0] as SubscriptionItem,
       user: results[1] as CurrentUser,
     );
+  }
+
+  static Future<List<ExternalAccountItem>> bindExternalAccountAndReload(
+    ApiClient api, {
+    required String provider,
+    required String chain,
+    required String address,
+    required String signature,
+  }) async {
+    await api.bindExternalAccount(
+      provider: provider,
+      chain: chain,
+      address: address,
+      signature: signature,
+    );
+    return api.listExternalAccounts();
+  }
+
+  static Future<List<ExternalAccountItem>> removeExternalAccountAndReload(
+    ApiClient api,
+    String id,
+  ) async {
+    await api.deleteExternalAccount(id);
+    return api.listExternalAccounts();
   }
 }
