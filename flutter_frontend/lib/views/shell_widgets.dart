@@ -15,6 +15,42 @@ class ShellSidebarItem {
   final IconData icon;
 }
 
+const defaultShellSidebarItems = [
+  ShellSidebarItem(
+    viewKey: 'dashboard',
+    label: '工作台',
+    icon: Icons.dashboard_outlined,
+  ),
+  ShellSidebarItem(viewKey: 'private', label: '私人空间', icon: Icons.lock_outline),
+  ShellSidebarItem(viewKey: 'public', label: '公共空间', icon: Icons.public),
+  ShellSidebarItem(
+    viewKey: 'profile',
+    label: '个人主页',
+    icon: Icons.person_outline,
+  ),
+  ShellSidebarItem(viewKey: 'levels', label: '等级', icon: Icons.stars_outlined),
+  ShellSidebarItem(
+    viewKey: 'subscription',
+    label: '订阅',
+    icon: Icons.workspace_premium_outlined,
+  ),
+  ShellSidebarItem(
+    viewKey: 'blockchain',
+    label: '区块链',
+    icon: Icons.hub_outlined,
+  ),
+  ShellSidebarItem(
+    viewKey: 'friends',
+    label: '好友',
+    icon: Icons.people_alt_outlined,
+  ),
+  ShellSidebarItem(
+    viewKey: 'chat',
+    label: '聊天',
+    icon: Icons.chat_bubble_outline,
+  ),
+];
+
 class ShellSidebar extends StatelessWidget {
   const ShellSidebar({
     super.key,

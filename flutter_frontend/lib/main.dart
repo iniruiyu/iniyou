@@ -12,6 +12,7 @@ import 'models/app_models.dart';
 import 'views/authenticated_shell_view.dart';
 import 'views/content_sections.dart';
 import 'views/guest_landing_view.dart';
+import 'views/section_body_router.dart';
 import 'views/settings_views.dart';
 import 'views/shell_widgets.dart';
 import 'views/social_views.dart';
@@ -806,49 +807,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       subscription: _subscription,
       conversations: _conversations,
       selectedViewKey: sidebarViewKey(_view),
-      items: const [
-        ShellSidebarItem(
-          viewKey: 'dashboard',
-          label: '工作台',
-          icon: Icons.dashboard_outlined,
-        ),
-        ShellSidebarItem(
-          viewKey: 'private',
-          label: '私人空间',
-          icon: Icons.lock_outline,
-        ),
-        ShellSidebarItem(viewKey: 'public', label: '公共空间', icon: Icons.public),
-        ShellSidebarItem(
-          viewKey: 'profile',
-          label: '个人主页',
-          icon: Icons.person_outline,
-        ),
-        ShellSidebarItem(
-          viewKey: 'levels',
-          label: '等级',
-          icon: Icons.stars_outlined,
-        ),
-        ShellSidebarItem(
-          viewKey: 'subscription',
-          label: '订阅',
-          icon: Icons.workspace_premium_outlined,
-        ),
-        ShellSidebarItem(
-          viewKey: 'blockchain',
-          label: '区块链',
-          icon: Icons.hub_outlined,
-        ),
-        ShellSidebarItem(
-          viewKey: 'friends',
-          label: '好友',
-          icon: Icons.people_alt_outlined,
-        ),
-        ShellSidebarItem(
-          viewKey: 'chat',
-          label: '聊天',
-          icon: Icons.chat_bubble_outline,
-        ),
-      ],
+      items: defaultShellSidebarItems,
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
     );
   }
@@ -858,28 +817,19 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Widget _buildSectionBody(double width) {
-    switch (_view) {
-      case AppView.dashboard:
-        return _buildDashboardView(width);
-      case AppView.privateSpace:
-        return _buildPrivateView();
-      case AppView.publicSpace:
-        return _buildPublicView();
-      case AppView.profile:
-        return _buildProfileView();
-      case AppView.postDetail:
-        return _buildPostDetailView();
-      case AppView.levels:
-        return _buildLevelsView();
-      case AppView.subscription:
-        return _buildSubscriptionView();
-      case AppView.blockchain:
-        return _buildBlockchainView();
-      case AppView.friends:
-        return _buildFriendsView();
-      case AppView.chat:
-        return _buildChatView(width);
-    }
+    return sectionBodyForView(
+      _view,
+      dashboard: _buildDashboardView(width),
+      privateSpace: _buildPrivateView(),
+      publicSpace: _buildPublicView(),
+      profile: _buildProfileView(),
+      postDetail: _buildPostDetailView(),
+      levels: _buildLevelsView(),
+      subscription: _buildSubscriptionView(),
+      blockchain: _buildBlockchainView(),
+      friends: _buildFriendsView(),
+      chat: _buildChatView(width),
+    );
   }
 
   Widget _buildDashboardView(double width) {
