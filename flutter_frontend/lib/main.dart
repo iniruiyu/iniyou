@@ -13,6 +13,7 @@ import 'views/guest_landing_view.dart';
 import 'views/settings_views.dart';
 import 'views/shell_widgets.dart';
 import 'views/social_views.dart';
+import 'views/view_state_helpers.dart';
 import 'widgets/app_cards.dart';
 
 void main() {
@@ -248,7 +249,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _subscription = subscription;
       _externalAccounts = externalAccounts;
       if (_activeChat != null) {
-        _activeChat = _findFriend(_activeChat!.id, friends);
+        _activeChat = findFriendById(_activeChat!.id, friends);
       }
     });
 
@@ -366,7 +367,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
         setState(() => _conversations = conversations);
         if (_activeChat?.id == peerId) {
-          final friend = _findFriend(peerId, _friends);
+          final friend = findFriendById(peerId, _friends);
           if (friend != null) {
             await _loadMessages(friend, quiet: true);
           }
@@ -743,88 +744,6 @@ class _IniyouHomeState extends State<IniyouHome> {
     });
   }
 
-  FriendItem? _findFriend(String id, List<FriendItem> items) {
-    for (final item in items) {
-      if (item.id == id) {
-        return item;
-      }
-    }
-    return null;
-  }
-
-  List<FriendItem> get _acceptedFriends =>
-      _friends.where((item) => item.status == 'accepted').toList();
-
-  List<SpaceItem> get _privateSpaces =>
-      _spaces.where((space) => space.type == 'private').toList();
-
-  List<SpaceItem> get _publicSpaces =>
-      _spaces.where((space) => space.type == 'public').toList();
-
-  List<String> get _connectedChains {
-    final values = <String>{};
-    for (final item in _externalAccounts) {
-      if (item.bindingStatus == 'active' && item.chain.isNotEmpty) {
-        values.add(item.chain);
-      }
-    }
-    return values.toList()..sort();
-  }
-
-  String get _pageTitle {
-    switch (_view) {
-      case AppView.dashboard:
-        return '工作台';
-      case AppView.privateSpace:
-        return '私人空间';
-      case AppView.publicSpace:
-        return '公共空间';
-      case AppView.profile:
-        return _profileUser?.displayName.isNotEmpty == true
-            ? _profileUser!.displayName
-            : '个人主页';
-      case AppView.postDetail:
-        return _currentPost?.title.isNotEmpty == true
-            ? _currentPost!.title
-            : '文章详情';
-      case AppView.levels:
-        return '等级体系';
-      case AppView.subscription:
-        return '订阅计划';
-      case AppView.blockchain:
-        return '区块链接入';
-      case AppView.friends:
-        return '好友关系';
-      case AppView.chat:
-        return '实时聊天';
-    }
-  }
-
-  String get _pageSubtitle {
-    switch (_view) {
-      case AppView.dashboard:
-        return '汇总账号、空间、订阅、好友与实时互动状态。';
-      case AppView.privateSpace:
-        return '管理仅自己可见的内容、草稿和私人空间。';
-      case AppView.publicSpace:
-        return '发布公开内容、查看广场动态并打开作者主页。';
-      case AppView.profile:
-        return '查看用户资料、关系状态和历史文章。';
-      case AppView.postDetail:
-        return '查看完整正文、评论和互动统计。';
-      case AppView.levels:
-        return '等级与计划联动，决定展示身份和能力范围。';
-      case AppView.subscription:
-        return '管理当前会员计划和续费动作。';
-      case AppView.blockchain:
-        return '绑定链上账号并查看已连接链摘要。';
-      case AppView.friends:
-        return '搜索用户、发起好友请求并处理待接受关系。';
-      case AppView.chat:
-        return '查看会话摘要并发送实时消息。';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_booting) {
@@ -853,8 +772,12 @@ class _IniyouHomeState extends State<IniyouHome> {
           userLabel: _user!.displayName.isEmpty
               ? _user!.id
               : _user!.displayName,
-          pageTitle: _pageTitle,
-          pageSubtitle: _pageSubtitle,
+          pageTitle: pageTitleForView(
+            _view,
+            profileUser: _profileUser,
+            currentPost: _currentPost,
+          ),
+          pageSubtitle: pageSubtitleForView(_view),
           loading: _loading,
           wide: wide,
           sidebar: _buildSidebar(),
@@ -871,11 +794,11 @@ class _IniyouHomeState extends State<IniyouHome> {
                   SummaryCardData(
                     '空间',
                     '${_spaces.length}',
-                    '私人 ${_privateSpaces.length} / 公共 ${_publicSpaces.length}',
+                    '私人 ${privateSpaces(_spaces).length} / 公共 ${publicSpaces(_spaces).length}',
                   ),
                   SummaryCardData(
                     '好友',
-                    '${_acceptedFriends.length}',
+                    '${acceptedFriends(_friends).length}',
                     '总关系 ${_friends.length}',
                   ),
                   SummaryCardData(
@@ -888,9 +811,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                   SummaryCardData(
                     '链上账号',
                     '${_externalAccounts.length}',
-                    _connectedChains.isEmpty
+                    connectedChains(_externalAccounts).isEmpty
                         ? '尚未连接链'
-                        : _connectedChains.join(', '),
+                        : connectedChains(_externalAccounts).join(', '),
                   ),
                 ],
               ),
@@ -908,7 +831,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       user: _user!,
       subscription: _subscription,
       conversations: _conversations,
-      selectedViewKey: _sidebarViewKey(_view),
+      selectedViewKey: sidebarViewKey(_view),
       items: const [
         ShellSidebarItem(
           viewKey: 'dashboard',
@@ -952,7 +875,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           icon: Icons.chat_bubble_outline,
         ),
       ],
-      onNavigate: (viewKey) => _navigateTo(_appViewFromKey(viewKey)),
+      onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
     );
   }
 
@@ -1025,7 +948,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           ),
         ),
         const SizedBox(height: 16),
-        SpaceListSection(title: '私人空间列表', spaces: _privateSpaces),
+        SpaceListSection(title: '私人空间列表', spaces: privateSpaces(_spaces)),
         const SizedBox(height: 16),
         PostStreamSection(
           posts: _privatePosts,
@@ -1073,7 +996,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           ),
         ),
         const SizedBox(height: 16),
-        SpaceListSection(title: '公共空间列表', spaces: _publicSpaces),
+        SpaceListSection(title: '公共空间列表', spaces: publicSpaces(_spaces)),
         const SizedBox(height: 16),
         PostStreamSection(
           posts: _publicPosts,
@@ -1098,7 +1021,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       user: _user,
       profileUser: _profileUser,
       profilePosts: _profilePosts,
-      connectedChains: _connectedChains,
+      connectedChains: connectedChains(_externalAccounts),
       displayNameController: _displayNameController,
       loading: _loading,
       commentControllerFor: (postId) =>
@@ -1111,7 +1034,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         if (profile == null) {
           return;
         }
-        final friend = _findFriend(profile.id, _friends);
+        final friend = findFriendById(profile.id, _friends);
         if (friend != null) {
           _startChat(friend);
         }
@@ -1229,67 +1152,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       width: width,
       user: _user!,
       activeChat: _activeChat,
-      acceptedFriends: _acceptedFriends,
+      acceptedFriends: acceptedFriends(_friends),
       conversations: _conversations,
       messages: _messages,
       chatComposerController: _chatComposerController,
       loading: _loading,
-      findFriend: (id) => _findFriend(id, _friends),
+      findFriend: (id) => findFriendById(id, _friends),
       onStartChat: _startChat,
       onSendMessage: _sendMessage,
     );
-  }
-
-  String _sidebarViewKey(AppView view) {
-    if (view == AppView.postDetail) {
-      return 'public';
-    }
-    switch (view) {
-      case AppView.dashboard:
-        return 'dashboard';
-      case AppView.privateSpace:
-        return 'private';
-      case AppView.publicSpace:
-        return 'public';
-      case AppView.profile:
-        return 'profile';
-      case AppView.postDetail:
-        return 'public';
-      case AppView.levels:
-        return 'levels';
-      case AppView.subscription:
-        return 'subscription';
-      case AppView.blockchain:
-        return 'blockchain';
-      case AppView.friends:
-        return 'friends';
-      case AppView.chat:
-        return 'chat';
-    }
-  }
-
-  AppView _appViewFromKey(String key) {
-    switch (key) {
-      case 'dashboard':
-        return AppView.dashboard;
-      case 'private':
-        return AppView.privateSpace;
-      case 'public':
-        return AppView.publicSpace;
-      case 'profile':
-        return AppView.profile;
-      case 'levels':
-        return AppView.levels;
-      case 'subscription':
-        return AppView.subscription;
-      case 'blockchain':
-        return AppView.blockchain;
-      case 'friends':
-        return AppView.friends;
-      case 'chat':
-        return AppView.chat;
-      default:
-        return AppView.dashboard;
-    }
   }
 }
