@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+import 'api/api_client.dart';
+import 'models/app_models.dart';
+import 'widgets/app_cards.dart';
 
 void main() {
   runApp(const IniyouApp());
@@ -981,17 +984,17 @@ class _IniyouHomeState extends State<IniyouHome> {
           spacing: 12,
           runSpacing: 12,
           children: const [
-            _HeroStatCard(
+            HeroStatCard(
               index: '01',
               label: '登录或注册',
               text: '统一入口，减少未登录状态下的分叉页面。',
             ),
-            _HeroStatCard(
+            HeroStatCard(
               index: '02',
               label: '进入工作台',
               text: '登录后可查看仪表盘、空间、关系和聊天。',
             ),
-            _HeroStatCard(
+            HeroStatCard(
               index: '03',
               label: '双前端并存',
               text: 'Legacy Web 与 Flutter 前端保持一致的页面结构。',
@@ -1032,9 +1035,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                   spacing: 12,
                   runSpacing: 12,
                   children: const [
-                    _FeatureChip(title: '私人空间', text: '沉淀草稿、笔记和仅自己可见的记录。'),
-                    _FeatureChip(title: '公共空间', text: '展示项目、发布内容并建立公开连接。'),
-                    _FeatureChip(title: '实时互动', text: '登录后进入聊天、好友和资料工作台。'),
+                    FeatureChipCard(title: '私人空间', text: '沉淀草稿、笔记和仅自己可见的记录。'),
+                    FeatureChipCard(title: '公共空间', text: '展示项目、发布内容并建立公开连接。'),
+                    FeatureChipCard(title: '实时互动', text: '登录后进入聊天、好友和资料工作台。'),
                   ],
                 ),
               ],
@@ -1158,7 +1161,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
           ),
           const SizedBox(height: 18),
-          _InfoCard(
+          InfoCard(
             title: _user!.displayName.isEmpty ? _user!.id : _user!.displayName,
             lines: [
               '等级: ${_user!.level}',
@@ -1217,24 +1220,24 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Widget _buildTopSummaryRow(double width) {
     final cards = [
-      _SummaryCardData(
+      SummaryCardData(
         '空间',
         '${_spaces.length}',
         '私人 ${_privateSpaces.length} / 公共 ${_publicSpaces.length}',
       ),
-      _SummaryCardData(
+      SummaryCardData(
         '好友',
         '${_acceptedFriends.length}',
         '总关系 ${_friends.length}',
       ),
-      _SummaryCardData(
+      SummaryCardData(
         '订阅',
         _subscription?.planId.isNotEmpty == true
             ? _subscription!.planId
             : 'basic',
         '状态 ${_subscription?.status ?? 'inactive'}',
       ),
-      _SummaryCardData(
+      SummaryCardData(
         '链上账号',
         '${_externalAccounts.length}',
         _connectedChains.isEmpty ? '尚未连接链' : _connectedChains.join(', '),
@@ -1244,7 +1247,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       return Column(
         children: [
           for (final item in cards) ...[
-            _SummaryCard(item: item),
+            SummaryCard(item: item),
             const SizedBox(height: 12),
           ],
         ],
@@ -1253,7 +1256,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     return Row(
       children: [
         for (var index = 0; index < cards.length; index++) ...[
-          Expanded(child: _SummaryCard(item: cards[index])),
+          Expanded(child: SummaryCard(item: cards[index])),
           if (index < cards.length - 1) const SizedBox(width: 12),
         ],
       ],
@@ -1290,7 +1293,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     final left = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _InfoCard(
+        InfoCard(
           title: '账号概览',
           lines: [
             '用户 ID: ${_user!.id}',
@@ -1301,7 +1304,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           ],
         ),
         const SizedBox(height: 16),
-        _InfoCard(
+        InfoCard(
           title: '快捷入口',
           lines: const [
             '进入私人空间沉淀草稿和私人内容',
@@ -1319,7 +1322,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     final right = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _InfoCard(
+        InfoCard(
           title: '空间摘要',
           lines: [
             for (final space in _spaces.take(4))
@@ -1328,7 +1331,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           ],
         ),
         const SizedBox(height: 16),
-        _InfoCard(
+        InfoCard(
           title: '最近公共内容',
           lines: [
             for (final post in _publicPosts.take(3))
@@ -1418,14 +1421,14 @@ class _IniyouHomeState extends State<IniyouHome> {
   Widget _buildProfileView() {
     final profile = _profileUser;
     if (profile == null) {
-      return _InfoCard(title: '个人主页', lines: const ['尚未加载资料，点击左侧个人主页重新进入。']);
+      return InfoCard(title: '个人主页', lines: const ['尚未加载资料，点击左侧个人主页重新进入。']);
     }
 
     final isOwnProfile = _user != null && profile.id == _user!.id;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _InfoCard(
+        InfoCard(
           title: profile.displayName,
           lines: [
             '用户 ID: ${profile.id}',
@@ -1512,14 +1515,14 @@ class _IniyouHomeState extends State<IniyouHome> {
   Widget _buildPostDetailView() {
     final post = _currentPost;
     if (post == null) {
-      return _InfoCard(title: '文章详情', lines: const ['先从公共空间或个人主页打开一篇文章。']);
+      return InfoCard(title: '文章详情', lines: const ['先从公共空间或个人主页打开一篇文章。']);
     }
 
     final isOwnPost = _user != null && post.userId == _user!.id;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _PostCard(
+        PostCard(
           post: post,
           commentController: _commentControllers.putIfAbsent(
             post.id,
@@ -1620,21 +1623,17 @@ class _IniyouHomeState extends State<IniyouHome> {
   Widget _buildLevelsView() {
     final currentLevel = _user?.level ?? 'basic';
     final cards = [
-      _LevelCardData(
+      LevelCardData(
         level: 'basic',
         title: 'Basic',
         text: '默认身份，可访问工作台、公共空间和基础资料。',
       ),
-      _LevelCardData(
+      LevelCardData(
         level: 'premium',
         title: 'Premium',
         text: '解锁私密内容、好友互动和更完整的工作流。',
       ),
-      _LevelCardData(
-        level: 'vip',
-        title: 'VIP',
-        text: '强化身份层级和长期会员展示，适合高活跃用户。',
-      ),
+      LevelCardData(level: 'vip', title: 'VIP', text: '强化身份层级和长期会员展示，适合高活跃用户。'),
     ];
     return Wrap(
       spacing: 16,
@@ -1679,7 +1678,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _InfoCard(
+        InfoCard(
           title: '当前订阅',
           lines: [
             '计划: $currentPlan',
@@ -1694,21 +1693,27 @@ class _IniyouHomeState extends State<IniyouHome> {
         Wrap(
           spacing: 16,
           runSpacing: 16,
-          children: const [
-            _PlanCard(
+          children: [
+            PlanCard(
               planId: 'basic',
               title: 'Basic',
               features: ['公共内容流', '基础资料', '默认空间'],
+              isLoading: _loading,
+              onActivate: _activatePlan,
             ),
-            _PlanCard(
+            PlanCard(
               planId: 'premium',
               title: 'Premium',
               features: ['私密内容', '聊天能力', '扩展社交功能'],
+              isLoading: _loading,
+              onActivate: _activatePlan,
             ),
-            _PlanCard(
+            PlanCard(
               planId: 'vip',
               title: 'VIP',
               features: ['高级身份层级', '长期会员', '更强展示能力'],
+              isLoading: _loading,
+              onActivate: _activatePlan,
             ),
           ].map((card) => SizedBox(width: 300, child: card)).toList(),
         ),
@@ -1824,7 +1829,7 @@ class _IniyouHomeState extends State<IniyouHome> {
               .map(
                 (item) => SizedBox(
                   width: 320,
-                  child: _InfoCard(
+                  child: InfoCard(
                     title: '${item.provider.toUpperCase()} · ${item.chain}',
                     lines: [
                       item.address,
@@ -1885,7 +1890,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                       .map(
                         (item) => SizedBox(
                           width: 300,
-                          child: _InfoCard(
+                          child: InfoCard(
                             title: item.displayName,
                             lines: [
                               item.secondary,
@@ -1917,7 +1922,7 @@ class _IniyouHomeState extends State<IniyouHome> {
               .map(
                 (friend) => SizedBox(
                   width: 320,
-                  child: _InfoCard(
+                  child: InfoCard(
                     title: friend.displayName,
                     lines: [
                       friend.secondary,
@@ -2205,7 +2210,7 @@ class _IniyouHomeState extends State<IniyouHome> {
               .map(
                 (space) => SizedBox(
                   width: 320,
-                  child: _InfoCard(
+                  child: InfoCard(
                     title: space.name,
                     lines: [space.description, '类型: ${space.type}'],
                   ),
@@ -2224,12 +2229,12 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Widget _buildPostStream(List<PostItem> posts, {required String emptyText}) {
     if (posts.isEmpty) {
-      return _InfoCard(title: '内容流', lines: [emptyText]);
+      return InfoCard(title: '内容流', lines: [emptyText]);
     }
     return Column(
       children: [
         for (var index = 0; index < posts.length; index++) ...[
-          _PostCard(
+          PostCard(
             post: posts[index],
             commentController: _commentControllers.putIfAbsent(
               posts[index].id,
@@ -2251,1031 +2256,10 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 }
 
-class _PostCard extends StatelessWidget {
-  const _PostCard({
-    required this.post,
-    required this.commentController,
-    required this.onLike,
-    required this.onShare,
-    required this.onComment,
-    this.onOpenAuthor,
-    this.onOpenDetail,
-    this.onEdit,
-  });
-
-  final PostItem post;
-  final TextEditingController commentController;
-  final VoidCallback onLike;
-  final VoidCallback onShare;
-  final VoidCallback onComment;
-  final VoidCallback? onOpenAuthor;
-  final VoidCallback? onOpenDetail;
-  final VoidCallback? onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.authorName,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${post.visibility} · ${post.status} · ${post.createdAtLabel}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (onOpenAuthor != null)
-                      FilledButton.tonal(
-                        onPressed: onOpenAuthor,
-                        child: const Text('作者主页'),
-                      ),
-                    if (onOpenDetail != null)
-                      FilledButton.tonal(
-                        onPressed: onOpenDetail,
-                        child: const Text('详情'),
-                      ),
-                    if (onEdit != null)
-                      FilledButton.tonal(
-                        onPressed: onEdit,
-                        child: const Text('编辑'),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(post.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(post.content),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                FilledButton.tonal(
-                  onPressed: onLike,
-                  child: Text(
-                    '${post.likedByMe ? '取消点赞' : '点赞'} · ${post.likesCount}',
-                  ),
-                ),
-                FilledButton.tonal(
-                  onPressed: onShare,
-                  child: Text('转发 · ${post.sharesCount}'),
-                ),
-                Chip(label: Text('评论 ${post.commentsCount}')),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (post.comments.isNotEmpty)
-              ...post.comments.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text('${item.authorName}: ${item.content}'),
-                ),
-              ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: commentController,
-                    decoration: const InputDecoration(labelText: '写评论'),
-                    onSubmitted: (_) => onComment(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FilledButton.tonal(
-                  onPressed: onComment,
-                  child: const Text('提交'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.title, required this.lines, this.trailing});
-
-  final String title;
-  final List<String> lines;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                if (trailing != null) trailing!,
-              ],
-            ),
-            const SizedBox(height: 10),
-            ...lines.map(
-              (line) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(line),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PlanCard extends StatelessWidget {
-  const _PlanCard({
-    required this.planId,
-    required this.title,
-    required this.features,
-  });
-
-  final String planId;
-  final String title;
-  final List<String> features;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = context.findAncestorStateOfType<_IniyouHomeState>();
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            ...features.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text('- $item'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: state == null || state._loading
-                  ? null
-                  : () => state._activatePlan(planId),
-              child: Text('启用 $planId'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HeroStatCard extends StatelessWidget {
-  const _HeroStatCard({
-    required this.index,
-    required this.label,
-    required this.text,
-  });
-
-  final String index;
-  final String label;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 220,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(index, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              Text(label, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 6),
-              Text(text, style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({required this.title, required this.text});
-
-  final String title;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 220,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(text, style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.item});
-
-  final _SummaryCardData item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(item.label, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 8),
-            Text(item.value, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(item.detail, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryCardData {
-  const _SummaryCardData(this.label, this.value, this.detail);
-
-  final String label;
-  final String value;
-  final String detail;
-}
-
-class _LevelCardData {
-  const _LevelCardData({
-    required this.level,
-    required this.title,
-    required this.text,
-  });
-
-  final String level;
-  final String title;
-  final String text;
-}
-
 class _NavItem {
   const _NavItem(this.view, this.label, this.icon);
 
   final AppView view;
   final String label;
   final IconData icon;
-}
-
-class ApiClient {
-  static const String accountBase = String.fromEnvironment(
-    'ACCOUNT_API_BASE',
-    defaultValue: 'http://localhost:8080/api/v1',
-  );
-  static const String messageBase = String.fromEnvironment(
-    'MESSAGE_API_BASE',
-    defaultValue: 'http://localhost:8081/api/v1',
-  );
-
-  String? token;
-
-  Uri wsUri(String token) {
-    final parsed = Uri.parse(messageBase);
-    final scheme = parsed.scheme == 'https' ? 'wss' : 'ws';
-    return parsed.replace(
-      scheme: scheme,
-      path: '/ws',
-      queryParameters: {'token': token},
-    );
-  }
-
-  Future<AuthToken> login(String account, String password) async {
-    final json = await _post(accountBase, '/login', {
-      'account': account,
-      'password': password,
-    });
-    return AuthToken.fromJson(json);
-  }
-
-  Future<AuthToken> register({
-    required String email,
-    required String phone,
-    required String password,
-  }) async {
-    final json = await _post(accountBase, '/register', {
-      'email': email,
-      'phone': phone,
-      'password': password,
-    });
-    return AuthToken.fromJson(json);
-  }
-
-  Future<void> logout() async {
-    await _post(accountBase, '/logout', {});
-  }
-
-  Future<CurrentUser> fetchMe() async =>
-      CurrentUser.fromJson(await _get(accountBase, '/me'));
-
-  Future<CurrentUser> updateProfile(String displayName) async =>
-      CurrentUser.fromJson(
-        await _put(accountBase, '/me', {'display_name': displayName}),
-      );
-
-  Future<List<SpaceItem>> listSpaces() async =>
-      _list(await _get(accountBase, '/spaces'), SpaceItem.fromJson);
-
-  Future<SpaceItem> createSpace({
-    required String type,
-    required String name,
-    required String description,
-  }) async {
-    return SpaceItem.fromJson(
-      await _post(accountBase, '/spaces', {
-        'type': type,
-        'name': name,
-        'description': description,
-      }),
-    );
-  }
-
-  Future<List<PostItem>> listPosts({
-    String visibility = 'public',
-    int limit = 50,
-  }) async {
-    return _list(
-      await _get(accountBase, '/posts?visibility=$visibility&limit=$limit'),
-      PostItem.fromJson,
-    );
-  }
-
-  Future<List<PostItem>> listUserPosts(
-    String userId, {
-    String visibility = 'public',
-    int limit = 50,
-  }) async {
-    return _list(
-      await _get(
-        accountBase,
-        '/users/$userId/posts?visibility=$visibility&limit=$limit',
-      ),
-      PostItem.fromJson,
-    );
-  }
-
-  Future<PostItem> getPost(String id) async =>
-      PostItem.fromJson(await _get(accountBase, '/posts/$id'));
-
-  Future<PostItem> createPost({
-    required String title,
-    required String content,
-    required String visibility,
-    required String status,
-  }) async {
-    return PostItem.fromJson(
-      await _post(accountBase, '/posts', {
-        'title': title,
-        'content': content,
-        'visibility': visibility,
-        'status': status,
-      }),
-    );
-  }
-
-  Future<PostItem> updatePost({
-    required String id,
-    required String title,
-    required String content,
-    required String visibility,
-    required String status,
-  }) async {
-    return PostItem.fromJson(
-      await _patch(accountBase, '/posts/$id', {
-        'title': title,
-        'content': content,
-        'visibility': visibility,
-        'status': status,
-      }),
-    );
-  }
-
-  Future<PostItem> toggleLike(String id) async =>
-      PostItem.fromJson(await _post(accountBase, '/posts/$id/likes', {}));
-
-  Future<PostItem> commentPost(String id, String content) async =>
-      PostItem.fromJson(
-        await _post(accountBase, '/posts/$id/comments', {'content': content}),
-      );
-
-  Future<PostItem> sharePost(String id) async =>
-      PostItem.fromJson(await _post(accountBase, '/posts/$id/shares', {}));
-
-  Future<List<FriendItem>> listFriends() async =>
-      _list(await _get(accountBase, '/friends'), FriendItem.fromJson);
-
-  Future<List<UserSearchItem>> searchUsers(String query) async {
-    if (query.isEmpty) {
-      return const [];
-    }
-    final encoded = Uri.encodeQueryComponent(query);
-    return _list(
-      await _get(accountBase, '/users/search?q=$encoded'),
-      UserSearchItem.fromJson,
-    );
-  }
-
-  Future<UserProfileItem> fetchUserProfile(String userId) async =>
-      UserProfileItem.fromJson(
-        await _get(accountBase, '/users/$userId/profile'),
-      );
-
-  Future<void> addFriend(String friendId) async {
-    await _post(accountBase, '/friends', {'friend_id': friendId});
-  }
-
-  Future<void> acceptFriend(String friendId) async {
-    await _post(accountBase, '/friends/accept', {'friend_id': friendId});
-  }
-
-  Future<List<ConversationItem>> listConversations() async => _list(
-    await _get(messageBase, '/conversations'),
-    ConversationItem.fromJson,
-  );
-
-  Future<List<ChatMessage>> listMessages(String peerId) async {
-    final encoded = Uri.encodeQueryComponent(peerId);
-    return _list(
-      await _get(messageBase, '/messages?peer_id=$encoded&limit=100&offset=0'),
-      ChatMessage.fromJson,
-    );
-  }
-
-  Future<void> sendMessage(String peerId, String content) async {
-    await _post(messageBase, '/messages', {
-      'peer_id': peerId,
-      'content': content,
-    });
-  }
-
-  Future<SubscriptionItem?> fetchSubscription() async {
-    final json = await _get(accountBase, '/subscriptions/current');
-    if ((json['plan_id'] ?? '').toString().isEmpty) {
-      return null;
-    }
-    return SubscriptionItem.fromJson(json);
-  }
-
-  Future<SubscriptionItem> activateSubscription(String planId) async =>
-      SubscriptionItem.fromJson(
-        await _post(accountBase, '/subscriptions', {'plan_id': planId}),
-      );
-
-  Future<List<ExternalAccountItem>> listExternalAccounts() async => _list(
-    await _get(accountBase, '/external-accounts'),
-    ExternalAccountItem.fromJson,
-  );
-
-  Future<void> bindExternalAccount({
-    required String provider,
-    required String chain,
-    required String address,
-    required String signature,
-  }) async {
-    await _post(accountBase, '/external-accounts', {
-      'provider': provider,
-      'chain': chain,
-      'account_address': address,
-      'signature_payload': signature,
-    });
-  }
-
-  Future<void> deleteExternalAccount(String id) async {
-    await _delete(accountBase, '/external-accounts/$id');
-  }
-
-  Future<Map<String, dynamic>> _get(String base, String path) async {
-    final response = await http.get(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-    );
-    return _decode(response);
-  }
-
-  Future<Map<String, dynamic>> _post(
-    String base,
-    String path,
-    Map<String, dynamic> body,
-  ) async {
-    final response = await http.post(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-      body: jsonEncode(body),
-    );
-    return _decode(response);
-  }
-
-  Future<Map<String, dynamic>> _put(
-    String base,
-    String path,
-    Map<String, dynamic> body,
-  ) async {
-    final response = await http.put(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-      body: jsonEncode(body),
-    );
-    return _decode(response);
-  }
-
-  Future<Map<String, dynamic>> _patch(
-    String base,
-    String path,
-    Map<String, dynamic> body,
-  ) async {
-    final response = await http.patch(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-      body: jsonEncode(body),
-    );
-    return _decode(response);
-  }
-
-  Future<Map<String, dynamic>> _delete(String base, String path) async {
-    final response = await http.delete(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-    );
-    return _decode(response);
-  }
-
-  Map<String, String> _headers() {
-    final headers = {'Content-Type': 'application/json'};
-    final tokenValue = token;
-    if (tokenValue != null && tokenValue.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $tokenValue';
-    }
-    return headers;
-  }
-
-  Map<String, dynamic> _decode(http.Response response) {
-    final body = response.body.isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode >= 400) {
-      throw ApiException(
-        (body['error'] ?? body['message'] ?? 'request failed').toString(),
-      );
-    }
-    return body;
-  }
-
-  List<T> _list<T>(
-    Map<String, dynamic> json,
-    T Function(Map<String, dynamic>) convert,
-  ) {
-    final items = (json['items'] as List<dynamic>? ?? const []);
-    return items.map((item) => convert(item as Map<String, dynamic>)).toList();
-  }
-}
-
-class ApiException implements Exception {
-  ApiException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
-class AuthToken {
-  AuthToken({required this.userId, required this.token});
-
-  final String userId;
-  final String token;
-
-  factory AuthToken.fromJson(Map<String, dynamic> json) {
-    return AuthToken(
-      userId: (json['user_id'] ?? '').toString(),
-      token: (json['token'] ?? '').toString(),
-    );
-  }
-}
-
-class CurrentUser {
-  CurrentUser({
-    required this.id,
-    required this.email,
-    required this.phone,
-    required this.displayName,
-    required this.level,
-    required this.status,
-  });
-
-  final String id;
-  final String email;
-  final String phone;
-  final String displayName;
-  final String level;
-  final String status;
-
-  factory CurrentUser.fromJson(Map<String, dynamic> json) {
-    return CurrentUser(
-      id: (json['user_id'] ?? '').toString(),
-      email: (json['email'] ?? '').toString(),
-      phone: (json['phone'] ?? '').toString(),
-      displayName: (json['display_name'] ?? '').toString(),
-      level: (json['level'] ?? 'basic').toString(),
-      status: (json['status'] ?? 'active').toString(),
-    );
-  }
-}
-
-class UserProfileItem {
-  UserProfileItem({
-    required this.id,
-    required this.displayName,
-    required this.email,
-    required this.phone,
-    required this.status,
-    required this.relationStatus,
-    required this.direction,
-  });
-
-  final String id;
-  final String displayName;
-  final String email;
-  final String phone;
-  final String status;
-  final String relationStatus;
-  final String direction;
-
-  factory UserProfileItem.fromJson(Map<String, dynamic> json) {
-    return UserProfileItem(
-      id: (json['user_id'] ?? '').toString(),
-      displayName: (json['display_name'] ?? '').toString(),
-      email: (json['email'] ?? '').toString(),
-      phone: (json['phone'] ?? '').toString(),
-      status: (json['status'] ?? 'active').toString(),
-      relationStatus: (json['relation_status'] ?? '').toString(),
-      direction: (json['direction'] ?? '').toString(),
-    );
-  }
-
-  factory UserProfileItem.fromCurrentUser(CurrentUser user) {
-    return UserProfileItem(
-      id: user.id,
-      displayName: user.displayName,
-      email: user.email,
-      phone: user.phone,
-      status: user.status,
-      relationStatus: '',
-      direction: '',
-    );
-  }
-}
-
-class SpaceItem {
-  SpaceItem({
-    required this.id,
-    required this.userId,
-    required this.type,
-    required this.name,
-    required this.description,
-  });
-
-  final String id;
-  final String userId;
-  final String type;
-  final String name;
-  final String description;
-
-  factory SpaceItem.fromJson(Map<String, dynamic> json) {
-    return SpaceItem(
-      id: (json['id'] ?? '').toString(),
-      userId: (json['user_id'] ?? '').toString(),
-      type: (json['type'] ?? '').toString(),
-      name: (json['name'] ?? '').toString(),
-      description: (json['description'] ?? '').toString(),
-    );
-  }
-}
-
-class PostItem {
-  PostItem({
-    required this.id,
-    required this.userId,
-    required this.authorName,
-    required this.title,
-    required this.content,
-    required this.status,
-    required this.visibility,
-    required this.likesCount,
-    required this.commentsCount,
-    required this.sharesCount,
-    required this.likedByMe,
-    required this.createdAt,
-    required this.comments,
-  });
-
-  final String id;
-  final String userId;
-  final String authorName;
-  final String title;
-  final String content;
-  final String status;
-  final String visibility;
-  final int likesCount;
-  final int commentsCount;
-  final int sharesCount;
-  final bool likedByMe;
-  final DateTime createdAt;
-  final List<PostComment> comments;
-
-  String get createdAtLabel => _formatDateTime(createdAt);
-
-  factory PostItem.fromJson(Map<String, dynamic> json) {
-    final comments = (json['comments'] as List<dynamic>? ?? const [])
-        .map((item) => PostComment.fromJson(item as Map<String, dynamic>))
-        .toList();
-    return PostItem(
-      id: (json['id'] ?? '').toString(),
-      userId: (json['user_id'] ?? '').toString(),
-      authorName: (json['author_name'] ?? '').toString(),
-      title: (json['title'] ?? '').toString(),
-      content: (json['content'] ?? '').toString(),
-      status: (json['status'] ?? 'published').toString(),
-      visibility: (json['visibility'] ?? 'public').toString(),
-      likesCount: _toInt(json['likes_count']),
-      commentsCount: _toInt(json['comments_count']),
-      sharesCount: _toInt(json['shares_count']),
-      likedByMe: (json['liked_by_me'] ?? false) as bool,
-      createdAt:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
-          DateTime.now(),
-      comments: comments,
-    );
-  }
-}
-
-class PostComment {
-  PostComment({
-    required this.id,
-    required this.authorName,
-    required this.content,
-  });
-
-  final String id;
-  final String authorName;
-  final String content;
-
-  factory PostComment.fromJson(Map<String, dynamic> json) {
-    return PostComment(
-      id: (json['id'] ?? '').toString(),
-      authorName: (json['author_name'] ?? '').toString(),
-      content: (json['content'] ?? '').toString(),
-    );
-  }
-}
-
-class FriendItem {
-  FriendItem({
-    required this.id,
-    required this.displayName,
-    required this.email,
-    required this.phone,
-    required this.status,
-    required this.direction,
-  });
-
-  final String id;
-  final String displayName;
-  final String email;
-  final String phone;
-  final String status;
-  final String direction;
-
-  String get secondary =>
-      [email, phone].where((item) => item.isNotEmpty).join(' · ');
-
-  factory FriendItem.fromJson(Map<String, dynamic> json) {
-    return FriendItem(
-      id: (json['friend_id'] ?? '').toString(),
-      displayName: (json['display_name'] ?? '').toString(),
-      email: (json['email'] ?? '').toString(),
-      phone: (json['phone'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
-      direction: (json['direction'] ?? '').toString(),
-    );
-  }
-}
-
-class UserSearchItem {
-  UserSearchItem({
-    required this.id,
-    required this.displayName,
-    required this.email,
-    required this.phone,
-    required this.relationStatus,
-    required this.direction,
-  });
-
-  final String id;
-  final String displayName;
-  final String email;
-  final String phone;
-  final String relationStatus;
-  final String direction;
-
-  String get secondary =>
-      [email, phone].where((item) => item.isNotEmpty).join(' · ');
-
-  factory UserSearchItem.fromJson(Map<String, dynamic> json) {
-    return UserSearchItem(
-      id: (json['user_id'] ?? '').toString(),
-      displayName: (json['display_name'] ?? '').toString(),
-      email: (json['email'] ?? '').toString(),
-      phone: (json['phone'] ?? '').toString(),
-      relationStatus: (json['relation_status'] ?? '').toString(),
-      direction: (json['direction'] ?? '').toString(),
-    );
-  }
-}
-
-class ConversationItem {
-  ConversationItem({
-    required this.peerId,
-    required this.lastMessage,
-    required this.lastAt,
-    required this.unreadCount,
-  });
-
-  final String peerId;
-  final String lastMessage;
-  final DateTime lastAt;
-  final int unreadCount;
-
-  factory ConversationItem.fromJson(Map<String, dynamic> json) {
-    return ConversationItem(
-      peerId: (json['peer_id'] ?? '').toString(),
-      lastMessage: (json['last_message'] ?? '').toString(),
-      lastAt:
-          DateTime.tryParse((json['last_at'] ?? '').toString()) ??
-          DateTime.now(),
-      unreadCount: _toInt(json['unread_count']),
-    );
-  }
-}
-
-class ChatMessage {
-  ChatMessage({
-    required this.id,
-    required this.from,
-    required this.to,
-    required this.content,
-    required this.createdAt,
-  });
-
-  final String id;
-  final String from;
-  final String to;
-  final String content;
-  final DateTime createdAt;
-
-  String get createdAtLabel => _formatDateTime(createdAt);
-
-  factory ChatMessage.fromJson(Map<String, dynamic> json) {
-    return ChatMessage(
-      id: (json['id'] ?? '').toString(),
-      from: (json['sender_id'] ?? json['from'] ?? '').toString(),
-      to: (json['receiver_id'] ?? json['to'] ?? '').toString(),
-      content: (json['content'] ?? '').toString(),
-      createdAt:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
-          DateTime.now(),
-    );
-  }
-}
-
-class SubscriptionItem {
-  SubscriptionItem({
-    required this.planId,
-    required this.status,
-    required this.startedAt,
-    required this.endedAt,
-  });
-
-  final String planId;
-  final String status;
-  final DateTime? startedAt;
-  final DateTime? endedAt;
-
-  String get startedAtLabel =>
-      startedAt == null ? '-' : _formatDateTime(startedAt!);
-  String get endedAtLabel => endedAt == null ? '-' : _formatDateTime(endedAt!);
-
-  factory SubscriptionItem.fromJson(Map<String, dynamic> json) {
-    return SubscriptionItem(
-      planId: (json['plan_id'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
-      startedAt: DateTime.tryParse((json['started_at'] ?? '').toString()),
-      endedAt: DateTime.tryParse((json['ended_at'] ?? '').toString()),
-    );
-  }
-}
-
-class ExternalAccountItem {
-  ExternalAccountItem({
-    required this.id,
-    required this.provider,
-    required this.chain,
-    required this.address,
-    required this.bindingStatus,
-    required this.createdAt,
-  });
-
-  final String id;
-  final String provider;
-  final String chain;
-  final String address;
-  final String bindingStatus;
-  final DateTime createdAt;
-
-  String get createdAtLabel => _formatDateTime(createdAt);
-
-  factory ExternalAccountItem.fromJson(Map<String, dynamic> json) {
-    return ExternalAccountItem(
-      id: (json['id'] ?? '').toString(),
-      provider: (json['provider'] ?? '').toString(),
-      chain: (json['chain'] ?? '').toString(),
-      address: (json['account_address'] ?? '').toString(),
-      bindingStatus: (json['binding_status'] ?? '').toString(),
-      createdAt:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
-          DateTime.now(),
-    );
-  }
-}
-
-int _toInt(dynamic value) {
-  if (value is int) {
-    return value;
-  }
-  return int.tryParse('$value') ?? 0;
-}
-
-String _formatDateTime(DateTime time) {
-  final local = time.toLocal();
-  String pad(int value) => value.toString().padLeft(2, '0');
-  return '${local.year}-${pad(local.month)}-${pad(local.day)} ${pad(local.hour)}:${pad(local.minute)}';
 }
