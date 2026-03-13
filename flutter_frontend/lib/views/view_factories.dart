@@ -159,6 +159,111 @@ Widget buildPublicView({
   );
 }
 
+Widget buildProfileView({
+  required CurrentUser? user,
+  required UserProfileItem? profileUser,
+  required List<PostItem> profilePosts,
+  required List<ExternalAccountItem> externalAccounts,
+  required List<FriendItem> friends,
+  required TextEditingController displayNameController,
+  required bool loading,
+  required TextEditingController Function(String postId) commentControllerFor,
+  required VoidCallback onSaveProfile,
+  required ValueChanged<String> onAddFriend,
+  required ValueChanged<String> onAcceptFriend,
+  required ValueChanged<FriendItem> onStartChat,
+  required ValueChanged<PostItem> onToggleLike,
+  required ValueChanged<PostItem> onSharePost,
+  required ValueChanged<PostItem> onCommentPost,
+  required ValueChanged<String> onOpenProfile,
+  required ValueChanged<String> onOpenPostDetail,
+}) {
+  return ProfileView(
+    user: user,
+    profileUser: profileUser,
+    profilePosts: profilePosts,
+    connectedChains: connectedChains(externalAccounts),
+    displayNameController: displayNameController,
+    loading: loading,
+    commentControllerFor: commentControllerFor,
+    onSaveProfile: onSaveProfile,
+    onAddFriend: onAddFriend,
+    onAcceptFriend: onAcceptFriend,
+    onStartChat: () {
+      final profile = profileUser;
+      if (profile == null) {
+        return;
+      }
+      final friend = findFriendById(profile.id, friends);
+      if (friend != null) {
+        onStartChat(friend);
+      }
+    },
+    onToggleLike: onToggleLike,
+    onSharePost: onSharePost,
+    onCommentPost: onCommentPost,
+    onOpenProfile: onOpenProfile,
+    onOpenPostDetail: onOpenPostDetail,
+  );
+}
+
+Widget buildPostDetailView({
+  required CurrentUser? user,
+  required PostItem? currentPost,
+  required bool loading,
+  required TextEditingController Function(String postId) commentControllerFor,
+  required TextEditingController editTitleController,
+  required TextEditingController editContentController,
+  required String editVisibility,
+  required String editStatus,
+  required ValueChanged<String> onEditVisibilityChanged,
+  required ValueChanged<String> onEditStatusChanged,
+  required ValueChanged<PostItem> onToggleLike,
+  required ValueChanged<PostItem> onSharePost,
+  required ValueChanged<PostItem> onCommentPost,
+  required ValueChanged<String> onOpenProfile,
+  required VoidCallback onSaveEdits,
+}) {
+  final post = currentPost;
+  return PostDetailView(
+    user: user,
+    currentPost: post,
+    loading: loading,
+    commentController: commentControllerFor(post?.id ?? '__missing__'),
+    editTitleController: editTitleController,
+    editContentController: editContentController,
+    editVisibility: editVisibility,
+    editStatus: editStatus,
+    onEditVisibilityChanged: onEditVisibilityChanged,
+    onEditStatusChanged: onEditStatusChanged,
+    onLike: () {
+      final current = currentPost;
+      if (current != null) {
+        onToggleLike(current);
+      }
+    },
+    onShare: () {
+      final current = currentPost;
+      if (current != null) {
+        onSharePost(current);
+      }
+    },
+    onComment: () {
+      final current = currentPost;
+      if (current != null) {
+        onCommentPost(current);
+      }
+    },
+    onOpenAuthor: () {
+      final current = currentPost;
+      if (current != null) {
+        onOpenProfile(current.userId);
+      }
+    },
+    onSaveEdits: onSaveEdits,
+  );
+}
+
 Widget buildLevelsView({
   required String currentLevel,
   required ValueChanged<String> onActivateLevel,

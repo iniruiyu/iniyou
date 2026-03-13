@@ -14,7 +14,6 @@ import 'views/content_sections.dart';
 import 'views/guest_landing_view.dart';
 import 'views/section_body_router.dart';
 import 'views/shell_widgets.dart';
-import 'views/social_views.dart';
 import 'views/view_factories.dart';
 import 'views/view_state_helpers.dart';
 import 'widgets/app_cards.dart';
@@ -885,8 +884,45 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
       ),
-      profile: _buildProfileView(),
-      postDetail: _buildPostDetailView(),
+      profile: buildProfileView(
+        user: _user,
+        profileUser: _profileUser,
+        profilePosts: _profilePosts,
+        externalAccounts: _externalAccounts,
+        friends: _friends,
+        displayNameController: _displayNameController,
+        loading: _loading,
+        commentControllerFor: (postId) =>
+            _commentControllers.putIfAbsent(postId, TextEditingController.new),
+        onSaveProfile: _saveProfile,
+        onAddFriend: _addFriend,
+        onAcceptFriend: _acceptFriend,
+        onStartChat: _startChat,
+        onToggleLike: _toggleLike,
+        onSharePost: _sharePost,
+        onCommentPost: _comment,
+        onOpenProfile: _openProfile,
+        onOpenPostDetail: _openPostDetail,
+      ),
+      postDetail: buildPostDetailView(
+        user: _user,
+        currentPost: _currentPost,
+        loading: _loading,
+        commentControllerFor: (postId) =>
+            _commentControllers.putIfAbsent(postId, TextEditingController.new),
+        editTitleController: _editPostTitleController,
+        editContentController: _editPostContentController,
+        editVisibility: _editPostVisibility,
+        editStatus: _editPostStatus,
+        onEditVisibilityChanged: (value) =>
+            setState(() => _editPostVisibility = value),
+        onEditStatusChanged: (value) => setState(() => _editPostStatus = value),
+        onToggleLike: _toggleLike,
+        onSharePost: _sharePost,
+        onCommentPost: _comment,
+        onOpenProfile: _openProfile,
+        onSaveEdits: _savePostEdits,
+      ),
       levels: buildLevelsView(
         currentLevel: _user?.level ?? 'basic',
         onActivateLevel: _activatePlan,
@@ -934,82 +970,6 @@ class _IniyouHomeState extends State<IniyouHome> {
         onStartChat: _startChat,
         onSendMessage: _sendMessage,
       ),
-    );
-  }
-
-  Widget _buildProfileView() {
-    return ProfileView(
-      user: _user,
-      profileUser: _profileUser,
-      profilePosts: _profilePosts,
-      connectedChains: connectedChains(_externalAccounts),
-      displayNameController: _displayNameController,
-      loading: _loading,
-      commentControllerFor: (postId) =>
-          _commentControllers.putIfAbsent(postId, TextEditingController.new),
-      onSaveProfile: _saveProfile,
-      onAddFriend: _addFriend,
-      onAcceptFriend: _acceptFriend,
-      onStartChat: () {
-        final profile = _profileUser;
-        if (profile == null) {
-          return;
-        }
-        final friend = findFriendById(profile.id, _friends);
-        if (friend != null) {
-          _startChat(friend);
-        }
-      },
-      onToggleLike: _toggleLike,
-      onSharePost: _sharePost,
-      onCommentPost: _comment,
-      onOpenProfile: _openProfile,
-      onOpenPostDetail: _openPostDetail,
-    );
-  }
-
-  Widget _buildPostDetailView() {
-    final post = _currentPost;
-    return PostDetailView(
-      user: _user,
-      currentPost: post,
-      loading: _loading,
-      commentController: _commentControllers.putIfAbsent(
-        post?.id ?? '__missing__',
-        TextEditingController.new,
-      ),
-      editTitleController: _editPostTitleController,
-      editContentController: _editPostContentController,
-      editVisibility: _editPostVisibility,
-      editStatus: _editPostStatus,
-      onEditVisibilityChanged: (value) =>
-          setState(() => _editPostVisibility = value),
-      onEditStatusChanged: (value) => setState(() => _editPostStatus = value),
-      onLike: () {
-        final current = _currentPost;
-        if (current != null) {
-          _toggleLike(current);
-        }
-      },
-      onShare: () {
-        final current = _currentPost;
-        if (current != null) {
-          _sharePost(current);
-        }
-      },
-      onComment: () {
-        final current = _currentPost;
-        if (current != null) {
-          _comment(current);
-        }
-      },
-      onOpenAuthor: () {
-        final current = _currentPost;
-        if (current != null) {
-          _openProfile(current.userId);
-        }
-      },
-      onSaveEdits: _savePostEdits,
     );
   }
 }
