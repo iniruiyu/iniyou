@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +6,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'api/api_client.dart';
 import 'controllers/app_actions.dart';
+import 'controllers/post_state_actions.dart';
 import 'controllers/session_actions.dart';
 import 'models/app_models.dart';
 import 'views/authenticated_shell_view.dart';
@@ -334,26 +334,24 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (_user == null) {
         return;
       }
-      try {
-        final payload = jsonDecode(event.toString()) as Map<String, dynamic>;
-        final peerId = payload['from'] == _user!.id
-            ? payload['to']
-            : payload['from'];
-        if (peerId is! String) {
-          return;
+      final peerId = SessionActions.extractPeerIdFromSocketEvent(
+        event,
+        _user!.id,
+      );
+      if (peerId == null) {
+        return;
+      }
+      final conversations = await _api.listConversations();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _conversations = conversations);
+      if (_activeChat?.id == peerId) {
+        final friend = findFriendById(peerId, _friends);
+        if (friend != null) {
+          await _loadMessages(friend, quiet: true);
         }
-        final conversations = await _api.listConversations();
-        if (!mounted) {
-          return;
-        }
-        setState(() => _conversations = conversations);
-        if (_activeChat?.id == peerId) {
-          final friend = findFriendById(peerId, _friends);
-          if (friend != null) {
-            await _loadMessages(friend, quiet: true);
-          }
-        }
-      } catch (_) {}
+      }
     });
   }
 
@@ -467,34 +465,18 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   void _applyPostUpdate(PostItem updated) {
-    List<PostItem> syncList(List<PostItem> items, String visibility) {
-      final next = [...items];
-      final index = next.indexWhere((post) => post.id == updated.id);
-      final shouldExist = updated.visibility == visibility;
-      if (index >= 0 && !shouldExist) {
-        next.removeAt(index);
-      } else if (index >= 0) {
-        next[index] = updated;
-      } else if (shouldExist) {
-        next.insert(0, updated);
-      }
-      return next;
-    }
-
+    final next = PostStateActions.applyPostUpdate(
+      updated: updated,
+      publicPosts: _publicPosts,
+      privatePosts: _privatePosts,
+      profilePosts: _profilePosts,
+      currentPost: _currentPost,
+    );
     setState(() {
-      _publicPosts = syncList(_publicPosts, 'public');
-      _privatePosts = syncList(_privatePosts, 'private');
-      final profileIndex = _profilePosts.indexWhere(
-        (post) => post.id == updated.id,
-      );
-      if (profileIndex >= 0) {
-        final next = [..._profilePosts];
-        next[profileIndex] = updated;
-        _profilePosts = next;
-      }
-      if (_currentPost?.id == updated.id) {
-        _currentPost = updated;
-      }
+      _publicPosts = next.publicPosts;
+      _privatePosts = next.privatePosts;
+      _profilePosts = next.profilePosts;
+      _currentPost = next.currentPost;
     });
   }
 

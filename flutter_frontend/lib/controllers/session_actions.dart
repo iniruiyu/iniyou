@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -72,6 +74,24 @@ class SessionActions {
       return null;
     }
     return WebSocketChannel.connect(api.wsUri(token));
+  }
+
+  static String? extractPeerIdFromSocketEvent(
+    Object event,
+    String currentUserId,
+  ) {
+    try {
+      final payload = jsonDecode(event.toString()) as Map<String, dynamic>;
+      final peerId = payload['from'] == currentUserId
+          ? payload['to']
+          : payload['from'];
+      if (peerId is! String || peerId.isEmpty) {
+        return null;
+      }
+      return peerId;
+    } catch (_) {
+      return null;
+    }
   }
 
   static bool restoreSession(ApiClient api, SharedPreferences prefs) {

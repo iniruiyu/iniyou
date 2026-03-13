@@ -175,7 +175,7 @@
 
 - Flutter 前端当前已拆分为以下层级：
   - `api/`: REST 与 WebSocket 相关访问逻辑
-  - `controllers/`: 多接口编排、结果装配、会话动作与登录态辅助（含 `app_actions.dart` 与 `session_actions.dart`）
+  - `controllers/`: 多接口编排、结果装配、会话动作与状态同步辅助（含 `app_actions.dart`、`session_actions.dart`、`post_state_actions.dart`）
   - `models/`: 页面共享数据模型与格式化辅助
   - `widgets/`: 可跨页面复用的基础组件
   - `views/`: 页面壳层与页面区块
