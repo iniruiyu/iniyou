@@ -16,7 +16,6 @@ import 'views/section_body_router.dart';
 import 'views/shell_widgets.dart';
 import 'views/view_factories.dart';
 import 'views/view_state_helpers.dart';
-import 'widgets/app_cards.dart';
 
 void main() {
   runApp(const IniyouApp());
@@ -761,32 +760,12 @@ class _IniyouHomeState extends State<IniyouHome> {
             width: constraints.maxWidth,
             error: _error,
             flash: _flash,
-            summaryCards: [
-              SummaryCardData(
-                '空间',
-                '${_spaces.length}',
-                '私人 ${privateSpaces(_spaces).length} / 公共 ${publicSpaces(_spaces).length}',
-              ),
-              SummaryCardData(
-                '好友',
-                '${acceptedFriends(_friends).length}',
-                '总关系 ${_friends.length}',
-              ),
-              SummaryCardData(
-                '订阅',
-                _subscription?.planId.isNotEmpty == true
-                    ? _subscription!.planId
-                    : 'basic',
-                '状态 ${_subscription?.status ?? 'inactive'}',
-              ),
-              SummaryCardData(
-                '链上账号',
-                '${_externalAccounts.length}',
-                connectedChains(_externalAccounts).isEmpty
-                    ? '尚未连接链'
-                    : connectedChains(_externalAccounts).join(', '),
-              ),
-            ],
+            summaryCards: buildHomeSummaryCards(
+              spaces: _spaces,
+              friends: _friends,
+              subscription: _subscription,
+              externalAccounts: _externalAccounts,
+            ),
             sectionBody: _buildSectionBody(constraints.maxWidth),
           ),
         );

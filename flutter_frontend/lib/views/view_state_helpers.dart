@@ -1,5 +1,6 @@
 import '../models/app_models.dart';
 import '../main.dart' show AppView;
+import '../widgets/app_cards.dart';
 
 FriendItem? findFriendById(String id, List<FriendItem> items) {
   for (final item in items) {
@@ -30,6 +31,37 @@ List<String> connectedChains(List<ExternalAccountItem> externalAccounts) {
     }
   }
   return values.toList()..sort();
+}
+
+List<SummaryCardData> buildHomeSummaryCards({
+  required List<SpaceItem> spaces,
+  required List<FriendItem> friends,
+  required SubscriptionItem? subscription,
+  required List<ExternalAccountItem> externalAccounts,
+}) {
+  final chains = connectedChains(externalAccounts);
+  return [
+    SummaryCardData(
+      '空间',
+      '${spaces.length}',
+      '私人 ${privateSpaces(spaces).length} / 公共 ${publicSpaces(spaces).length}',
+    ),
+    SummaryCardData(
+      '好友',
+      '${acceptedFriends(friends).length}',
+      '总关系 ${friends.length}',
+    ),
+    SummaryCardData(
+      '订阅',
+      subscription?.planId.isNotEmpty == true ? subscription!.planId : 'basic',
+      '状态 ${subscription?.status ?? 'inactive'}',
+    ),
+    SummaryCardData(
+      '链上账号',
+      '${externalAccounts.length}',
+      chains.isEmpty ? '尚未连接链' : chains.join(', '),
+    ),
+  ];
 }
 
 String pageTitleForView(
