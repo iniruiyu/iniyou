@@ -12,6 +12,9 @@
 <body>
   <!-- Vue root / Vue 根节点 -->
   <div id="app" class="app">
+    <landing-page v-if="!isLoggedIn" :app="appContext"></landing-page>
+
+    <template v-else>
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark">AS</div>
@@ -21,28 +24,8 @@
         </div>
       </div>
 
-      <!-- Language controls / 语言控制 -->
-      <section class="lang-panel">
-        <div class="lang-title">{{ t('i18n.title') }}</div>
-        <label class="lang-label">{{ t('i18n.choose') }}</label>
-        <select class="lang-select" v-model="locale">
-          <option v-for="option in languageOptions" :key="option.code" :value="option.code">{{ option.name }} ({{ option.code }})</option>
-        </select>
-        <div class="lang-add-title">{{ t('i18n.addTitle') }}</div>
-        <input class="lang-input" type="text" :placeholder="t('i18n.codePlaceholder')" v-model="newLanguage.code" />
-        <input class="lang-input" type="text" :placeholder="t('i18n.namePlaceholder')" v-model="newLanguage.name" />
-        <label class="lang-label">{{ t('i18n.dirLabel') }}</label>
-        <select class="lang-select" v-model="newLanguage.dir">
-          <option value="ltr">{{ t('i18n.dirLtr') }}</option>
-          <option value="rtl">{{ t('i18n.dirRtl') }}</option>
-        </select>
-        <textarea class="lang-textarea" :placeholder="t('i18n.jsonPlaceholder')" v-model="newLanguage.json"></textarea>
-        <button class="ghost" @click="addLanguage">{{ t('i18n.addButton') }}</button>
-      </section>
-
       <nav class="nav">
         <!-- Navigation / 侧边导航 -->
-        <button class="nav-item" :class="{active: view === 'auth'}" @click="view = 'auth'">{{ t('nav.auth') }}</button>
         <button class="nav-item" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">{{ t('nav.dashboard') }}</button>
         <button class="nav-item" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">{{ t('nav.private') }}</button>
         <button class="nav-item" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">{{ t('nav.public') }}</button>
@@ -73,41 +56,21 @@
           <div class="page-title">{{ pageTitle }}</div>
           <div class="page-sub">{{ pageSub }}</div>
         </div>
-        <div class="profile">
-          <div class="avatar"></div>
-          <div>
-            <div class="profile-name">{{ user.name }}</div>
-            <div class="profile-level">{{ localizedLevelName }} · {{ localizedPlan }}</div>
+        <div class="topbar-actions">
+          <settings-menu :app="appContext"></settings-menu>
+          <div class="profile">
+            <div class="avatar"></div>
+            <div>
+              <div class="profile-name">{{ user.name }}</div>
+              <div class="profile-level">{{ localizedLevelName }} · {{ localizedPlan }}</div>
+            </div>
+            <button v-if="isLoggedIn" class="ghost compact" @click="logout">{{ t('auth.logout') }}</button>
           </div>
-          <button v-if="isLoggedIn" class="ghost compact" @click="logout">{{ t('auth.logout') }}</button>
         </div>
       </header>
 
       <div v-if="flashMessage" class="banner banner-success">{{ flashMessage }}</div>
       <div v-if="errorMessage" class="banner banner-error">{{ errorMessage }}</div>
-
-      <!-- Auth view / 登录注册视图 -->
-      <section v-if="view === 'auth'" class="panel-grid">
-        <div class="panel">
-          <h2>{{ t('auth.welcomeTitle') }}</h2>
-          <p>{{ t('auth.welcomeSub') }}</p>
-          <form class="form">
-            <input type="text" :placeholder="t('auth.accountPlaceholder')" v-model="auth.account" />
-            <input type="password" :placeholder="t('auth.passwordPlaceholder')" v-model="auth.password" />
-            <button class="primary" type="button" @click="login">{{ t('auth.login') }}</button>
-          </form>
-        </div>
-        <div class="panel accent">
-          <h2>{{ t('auth.createTitle') }}</h2>
-          <p>{{ t('auth.createSub') }}</p>
-          <form class="form">
-            <input type="text" :placeholder="t('auth.emailPlaceholder')" v-model="auth.email" />
-            <input type="text" :placeholder="t('auth.phonePlaceholder')" v-model="auth.phone" />
-            <input type="password" :placeholder="t('auth.passwordPlaceholder')" v-model="auth.password" />
-            <button class="primary" type="button" @click="register">{{ t('auth.register') }}</button>
-          </form>
-        </div>
-      </section>
 
       <section v-if="view === 'dashboard'" class="panel-grid">
         <div class="panel">
@@ -510,9 +473,13 @@
         </div>
       </section>
     </main>
+    </template>
   </div>
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="components/settings-menu.js"></script>
+  <script src="components/auth-panel.js"></script>
+  <script src="components/landing-page.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -30,6 +30,9 @@ test-backend:
 
 test-frontend:
 	node --check $(FRONTEND_DIR)/app.js
+	node --check $(FRONTEND_DIR)/components/settings-menu.js
+	node --check $(FRONTEND_DIR)/components/auth-panel.js
+	node --check $(FRONTEND_DIR)/components/landing-page.js
 
 test-flutter:
 	cd $(FLUTTER_FRONTEND_DIR) && CI=true FLUTTER_SUPPRESS_ANALYTICS=true $(FLUTTER_BIN) pub get

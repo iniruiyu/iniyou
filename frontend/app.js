@@ -1,17 +1,23 @@
 const { createApp } = Vue;
 
-createApp({
+const app = createApp({
   data() {
     return {
       // Current view in SPA.
       // 当前 SPA 视图。
-      view: 'dashboard',
+      view: 'auth',
       // API base URL.
       // 接口基础地址。
       apiBase: 'http://localhost:8080/api/v1',
       // Message service API base URL.
       // 通讯服务接口基础地址。
       messageApiBase: 'http://localhost:8081/api/v1',
+      // Visible auth mode on the guest landing page.
+      // 未登录首页当前显示的认证模式。
+      authMode: 'login',
+      // Settings dropdown visibility.
+      // 设置下拉菜单显示状态。
+      settingsOpen: false,
       // JWT token.
       // JWT 令牌。
       token: '',
@@ -32,6 +38,30 @@ createApp({
         'zh-CN': {
           htmlTitle: '账号服务 · 私人空间与公共空间',
           brandSub: '私人 + 公共空间',
+          landing: {
+            heroPill: '登录或注册后进入工作台',
+            heroTitle: '先完成账号流程，再进入首页与工作台。',
+            heroSub: '未登录用户先进入登录或注册流程。登录与注册共用一个入口区，但同一时间只显示一个表单。',
+            authEyebrow: '账号入口',
+            loginHint: '输入账号后直接进入控制台。',
+            registerHint: '创建账号后自动进入你的空间。',
+            statStepOne: '选择登录或注册，缩短首次进入路径。',
+            statStepTwo: '完成认证后进入首页 / 工作台。',
+            statStepThree: '语言切换保持在右上角稳定可见。',
+            previewLabel: 'Auth Flow',
+            previewTitle: '未登录态聚焦在账号流程',
+            previewSub: '账号入口、语言设置和功能说明分区清晰，避免在首页提前展示完整业务模块。',
+            featurePrivateTitle: '私人空间',
+            featurePrivateSub: '沉淀草稿、笔记和仅自己可见的记录。',
+            featurePublicTitle: '公共空间',
+            featurePublicSub: '展示项目、发布内容并建立公开连接。',
+            featureLiveTitle: '实时互动',
+            featureLiveSub: '登录后进入聊天、好友和资料工作台。',
+          },
+          settings: {
+            menu: '设置',
+            customize: '界面与语言',
+          },
           common: {
             guest: '访客',
             notAvailable: '--',
@@ -276,6 +306,30 @@ createApp({
         'en-US': {
           htmlTitle: 'Account Service · Private & Public Spaces',
           brandSub: 'Private + Public Spaces',
+          landing: {
+            heroPill: 'Complete auth before entering the workspace',
+            heroTitle: 'Finish the account flow first, then enter the dashboard.',
+            heroSub: 'Signed-out users enter the sign-in or sign-up flow first. Both actions share one entry area, but only one form is shown at a time.',
+            authEyebrow: 'Account Access',
+            loginHint: 'Sign in and jump straight into the workspace.',
+            registerHint: 'Create an account and enter your space immediately.',
+            statStepOne: 'Choose sign in or sign up for a shorter entry path.',
+            statStepTwo: 'Enter the home dashboard after authentication.',
+            statStepThree: 'Keep language switching stable in the top-right menu.',
+            previewLabel: 'Auth Flow',
+            previewTitle: 'Keep the signed-out state focused on account flow',
+            previewSub: 'Separate account entry, language settings, and feature guidance clearly instead of exposing the full workspace before login.',
+            featurePrivateTitle: 'Private Space',
+            featurePrivateSub: 'Capture drafts, notes, and content only you can see.',
+            featurePublicTitle: 'Public Space',
+            featurePublicSub: 'Showcase projects, publish updates, and build public connections.',
+            featureLiveTitle: 'Live Collaboration',
+            featureLiveSub: 'Open chat, friends, and profile tools after sign-in.',
+          },
+          settings: {
+            menu: 'Settings',
+            customize: 'Language & interface',
+          },
           common: {
             guest: 'Guest',
             notAvailable: '--',
@@ -707,6 +761,9 @@ createApp({
     };
   },
   computed: {
+    appContext() {
+      return this;
+    },
     languageOptions() {
       return Object.keys(this.translations).map((code) => ({
         code,
@@ -1478,6 +1535,23 @@ createApp({
       this.newLanguage.dir = 'ltr';
       this.newLanguage.json = '';
       this.locale = code;
+      this.settingsOpen = false;
+    },
+    setAuthMode(mode) {
+      this.authMode = mode === 'register' ? 'register' : 'login';
+      this.clearFeedback();
+    },
+    toggleSettingsMenu() {
+      this.settingsOpen = !this.settingsOpen;
+    },
+    closeSettingsMenu() {
+      this.settingsOpen = false;
+    },
+    handleDocumentClick(event) {
+      if (event.target.closest('.settings-menu')) {
+        return;
+      }
+      this.closeSettingsMenu();
     },
     async login() {
       // Login and store token.
@@ -1516,6 +1590,7 @@ createApp({
           await this.loadUnread();
         }
         this.view = 'dashboard';
+        this.settingsOpen = false;
       }
     },
     async register() {
@@ -1556,6 +1631,7 @@ createApp({
           await this.loadUnread();
         }
         this.view = 'dashboard';
+        this.settingsOpen = false;
       }
     },
     async loadMe() {
@@ -2398,6 +2474,7 @@ createApp({
       }
       this.resetSession();
       this.view = 'auth';
+      this.authMode = 'login';
       this.setFlash(this.t('auth.logoutSuccess'));
     },
     async sendMessage() {
@@ -2448,6 +2525,7 @@ createApp({
     const stored = localStorage.getItem('token');
     if (stored) {
       this.token = stored;
+      this.view = 'dashboard';
       this.loadMe().then(() => {
         this.loadSpaces();
         this.loadSubscription();
@@ -2464,5 +2542,15 @@ createApp({
         }
       });
     }
+    document.addEventListener('click', this.handleDocumentClick);
   },
-}).mount('#app');
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleDocumentClick);
+  },
+});
+
+app.component('settings-menu', window.SettingsMenu);
+app.component('auth-panel', window.AuthPanel);
+app.component('landing-page', window.LandingPage);
+
+app.mount('#app');
