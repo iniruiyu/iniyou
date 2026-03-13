@@ -87,6 +87,7 @@ make run-flutter-web
 - `flutter_frontend/lib/views/guest_landing_view.dart`: 未登录落地页
 - `flutter_frontend/lib/views/content_sections.dart`: 工作台摘要、空间与内容流区块
 - `flutter_frontend/lib/views/section_body_router.dart`: 已登录主内容区的视图分发
+- `flutter_frontend/lib/views/view_factories.dart`: 已登录各页面视图参数拼装工厂
 - `flutter_frontend/lib/views/social_views.dart`: 个人主页、文章详情、好友、聊天
 - `flutter_frontend/lib/views/settings_views.dart`: 等级、订阅、区块链接入
 - `flutter_frontend/lib/views/shell_widgets.dart`: 侧边栏与反馈横幅

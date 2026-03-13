@@ -13,9 +13,9 @@ import 'views/authenticated_shell_view.dart';
 import 'views/content_sections.dart';
 import 'views/guest_landing_view.dart';
 import 'views/section_body_router.dart';
-import 'views/settings_views.dart';
 import 'views/shell_widgets.dart';
 import 'views/social_views.dart';
+import 'views/view_factories.dart';
 import 'views/view_state_helpers.dart';
 import 'widgets/app_cards.dart';
 
@@ -817,126 +817,123 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Widget _buildSectionBody(double width) {
+    _externalChain = normalizeBlockchainChain(
+      _externalProvider,
+      _externalChain,
+    );
     return sectionBodyForView(
       _view,
-      dashboard: _buildDashboardView(width),
-      privateSpace: _buildPrivateView(),
-      publicSpace: _buildPublicView(),
-      profile: _buildProfileView(),
-      postDetail: _buildPostDetailView(),
-      levels: _buildLevelsView(),
-      subscription: _buildSubscriptionView(),
-      blockchain: _buildBlockchainView(),
-      friends: _buildFriendsView(),
-      chat: _buildChatView(width),
-    );
-  }
-
-  Widget _buildDashboardView(double width) {
-    return DashboardOverviewView(
-      width: width,
-      user: _user!,
-      spaces: _spaces,
-      publicPosts: _publicPosts,
-      onOpenPublicSpace: () => _navigateTo(AppView.publicSpace),
-      onOpenPostDetail: _openPostDetail,
-    );
-  }
-
-  Widget _buildPrivateView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SpaceComposerCard(
-          type: 'private',
-          loading: _loading,
-          nameController: _spaceNameController,
-          descriptionController: _spaceDescriptionController,
-          onSubmit: () => _createSpace('private'),
-        ),
-        const SizedBox(height: 16),
-        PostComposerCard(
-          loading: _loading,
-          title: '发布私人内容',
-          subtitle: '私人内容仅自己可见，适合草稿、笔记和内部记录。',
+      dashboard: buildDashboardView(
+        width: width,
+        user: _user!,
+        spaces: _spaces,
+        publicPosts: _publicPosts,
+        onOpenPublicSpace: () => _navigateTo(AppView.publicSpace),
+        onOpenPostDetail: _openPostDetail,
+      ),
+      privateSpace: buildPrivateView(
+        loading: _loading,
+        spaceNameController: _spaceNameController,
+        spaceDescriptionController: _spaceDescriptionController,
+        privatePostTitleController: _privatePostTitleController,
+        privatePostContentController: _privatePostContentController,
+        privatePostStatus: _privatePostStatus,
+        spaces: _spaces,
+        privatePosts: _privatePosts,
+        user: _user,
+        commentControllerFor: (postId) =>
+            _commentControllers.putIfAbsent(postId, TextEditingController.new),
+        onPrivateStatusChanged: (value) =>
+            setState(() => _privatePostStatus = value),
+        onCreatePrivateSpace: () => _createSpace('private'),
+        onPublishPrivatePost: () => _publishPost(
+          visibility: 'private',
           titleController: _privatePostTitleController,
           contentController: _privatePostContentController,
           status: _privatePostStatus,
-          onStatusChanged: (value) =>
-              setState(() => _privatePostStatus = value),
-          onSubmit: () => _publishPost(
-            visibility: 'private',
-            titleController: _privatePostTitleController,
-            contentController: _privatePostContentController,
-            status: _privatePostStatus,
-          ),
         ),
-        const SizedBox(height: 16),
-        SpaceListSection(title: '私人空间列表', spaces: privateSpaces(_spaces)),
-        const SizedBox(height: 16),
-        PostStreamSection(
-          posts: _privatePosts,
-          emptyText: '还没有私人内容。',
-          commentControllerFor: (postId) => _commentControllers.putIfAbsent(
-            postId,
-            TextEditingController.new,
-          ),
-          onLike: _toggleLike,
-          onShare: _sharePost,
-          onComment: _comment,
-          onOpenAuthor: _openProfile,
-          onOpenDetail: _openPostDetail,
-          canEditPost: (post) => _user != null && post.userId == _user!.id,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPublicView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SpaceComposerCard(
-          type: 'public',
-          loading: _loading,
-          nameController: _spaceNameController,
-          descriptionController: _spaceDescriptionController,
-          onSubmit: () => _createSpace('public'),
-        ),
-        const SizedBox(height: 16),
-        PostComposerCard(
-          loading: _loading,
-          title: '发布公共内容',
-          subtitle: '公开文章会出现在公共空间和作者主页。',
+        onToggleLike: _toggleLike,
+        onSharePost: _sharePost,
+        onCommentPost: _comment,
+        onOpenProfile: _openProfile,
+        onOpenPostDetail: _openPostDetail,
+      ),
+      publicSpace: buildPublicView(
+        loading: _loading,
+        spaceNameController: _spaceNameController,
+        spaceDescriptionController: _spaceDescriptionController,
+        publicPostTitleController: _publicPostTitleController,
+        publicPostContentController: _publicPostContentController,
+        publicPostStatus: _publicPostStatus,
+        spaces: _spaces,
+        publicPosts: _publicPosts,
+        user: _user,
+        commentControllerFor: (postId) =>
+            _commentControllers.putIfAbsent(postId, TextEditingController.new),
+        onPublicStatusChanged: (value) =>
+            setState(() => _publicPostStatus = value),
+        onCreatePublicSpace: () => _createSpace('public'),
+        onPublishPublicPost: () => _publishPost(
+          visibility: 'public',
           titleController: _publicPostTitleController,
           contentController: _publicPostContentController,
           status: _publicPostStatus,
-          onStatusChanged: (value) => setState(() => _publicPostStatus = value),
-          onSubmit: () => _publishPost(
-            visibility: 'public',
-            titleController: _publicPostTitleController,
-            contentController: _publicPostContentController,
-            status: _publicPostStatus,
-          ),
         ),
-        const SizedBox(height: 16),
-        SpaceListSection(title: '公共空间列表', spaces: publicSpaces(_spaces)),
-        const SizedBox(height: 16),
-        PostStreamSection(
-          posts: _publicPosts,
-          emptyText: '公共空间里还没有内容。',
-          commentControllerFor: (postId) => _commentControllers.putIfAbsent(
-            postId,
-            TextEditingController.new,
-          ),
-          onLike: _toggleLike,
-          onShare: _sharePost,
-          onComment: _comment,
-          onOpenAuthor: _openProfile,
-          onOpenDetail: _openPostDetail,
-          canEditPost: (post) => _user != null && post.userId == _user!.id,
-        ),
-      ],
+        onToggleLike: _toggleLike,
+        onSharePost: _sharePost,
+        onCommentPost: _comment,
+        onOpenProfile: _openProfile,
+        onOpenPostDetail: _openPostDetail,
+      ),
+      profile: _buildProfileView(),
+      postDetail: _buildPostDetailView(),
+      levels: buildLevelsView(
+        currentLevel: _user?.level ?? 'basic',
+        onActivateLevel: _activatePlan,
+      ),
+      subscription: buildSubscriptionView(
+        subscription: _subscription,
+        loading: _loading,
+        onActivatePlan: _activatePlan,
+      ),
+      blockchain: buildBlockchainView(
+        loading: _loading,
+        externalProvider: _externalProvider,
+        externalChain: _externalChain,
+        externalAccounts: _externalAccounts,
+        addressController: _externalAddressController,
+        signatureController: _externalSignatureController,
+        onProviderChanged: (value) => setState(() {
+          _externalProvider = value;
+          _externalChain = normalizeBlockchainChain(value, _externalChain);
+        }),
+        onChainChanged: (value) => setState(() => _externalChain = value),
+        onBind: _bindExternalAccount,
+        onRemove: _removeExternalAccount,
+      ),
+      friends: buildFriendsView(
+        loading: _loading,
+        searchController: _friendSearchController,
+        searchResults: _searchResults,
+        friends: _friends,
+        onSearch: _searchUsers,
+        onAddFriend: _addFriend,
+        onAcceptFriend: _acceptFriend,
+        onOpenProfile: _openProfile,
+        onStartChat: _startChat,
+      ),
+      chat: buildChatView(
+        width: width,
+        user: _user!,
+        activeChat: _activeChat,
+        friends: _friends,
+        conversations: _conversations,
+        messages: _messages,
+        chatComposerController: _chatComposerController,
+        loading: _loading,
+        onStartChat: _startChat,
+        onSendMessage: _sendMessage,
+      ),
     );
   }
 
@@ -1013,77 +1010,6 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
       },
       onSaveEdits: _savePostEdits,
-    );
-  }
-
-  Widget _buildLevelsView() {
-    return LevelsView(
-      currentLevel: _user?.level ?? 'basic',
-      onActivateLevel: _activatePlan,
-    );
-  }
-
-  Widget _buildSubscriptionView() {
-    return SubscriptionView(
-      subscription: _subscription,
-      loading: _loading,
-      onActivatePlan: _activatePlan,
-    );
-  }
-
-  Widget _buildBlockchainView() {
-    final chainsByProvider = const {
-      'evm': ['ethereum', 'base', 'bsc', 'polygon'],
-      'solana': ['solana'],
-      'tron': ['tron'],
-    };
-    if (!chainsByProvider[_externalProvider]!.contains(_externalChain)) {
-      _externalChain = chainsByProvider[_externalProvider]!.first;
-    }
-    return BlockchainView(
-      loading: _loading,
-      externalProvider: _externalProvider,
-      externalChain: _externalChain,
-      externalAccounts: _externalAccounts,
-      addressController: _externalAddressController,
-      signatureController: _externalSignatureController,
-      onProviderChanged: (value) => setState(() {
-        _externalProvider = value;
-        _externalChain = chainsByProvider[value]!.first;
-      }),
-      onChainChanged: (value) => setState(() => _externalChain = value),
-      onBind: _bindExternalAccount,
-      onRemove: _removeExternalAccount,
-    );
-  }
-
-  Widget _buildFriendsView() {
-    return FriendsView(
-      loading: _loading,
-      searchController: _friendSearchController,
-      searchResults: _searchResults,
-      friends: _friends,
-      onSearch: _searchUsers,
-      onAddFriend: _addFriend,
-      onAcceptFriend: _acceptFriend,
-      onOpenProfile: _openProfile,
-      onStartChat: _startChat,
-    );
-  }
-
-  Widget _buildChatView(double width) {
-    return ChatView(
-      width: width,
-      user: _user!,
-      activeChat: _activeChat,
-      acceptedFriends: acceptedFriends(_friends),
-      conversations: _conversations,
-      messages: _messages,
-      chatComposerController: _chatComposerController,
-      loading: _loading,
-      findFriend: (id) => findFriendById(id, _friends),
-      onStartChat: _startChat,
-      onSendMessage: _sendMessage,
     );
   }
 }
