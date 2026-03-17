@@ -18,6 +18,9 @@ class GuestLandingView extends StatelessWidget {
     required this.onRegister,
     required this.currentLanguageCode,
     required this.onLanguageChanged,
+    required this.currentThemeKey,
+    required this.onThemeChanged,
+    required this.themeOptions,
     required this.t,
   });
 
@@ -34,6 +37,15 @@ class GuestLandingView extends StatelessWidget {
   final VoidCallback onRegister;
   final String currentLanguageCode;
   final ValueChanged<String> onLanguageChanged;
+  // Current theme key for skin switching.
+  // 皮肤切换的当前主题键。
+  final String currentThemeKey;
+  // Theme change handler.
+  // 主题切换回调。
+  final ValueChanged<String> onThemeChanged;
+  // Available theme options.
+  // 可选主题列表。
+  final List<ThemeOption> themeOptions;
   final String Function(String key) t;
 
   @override
@@ -78,6 +90,9 @@ class GuestLandingView extends StatelessWidget {
                             SettingsMenuButton(
                               currentLanguageCode: currentLanguageCode,
                               onLanguageChanged: onLanguageChanged,
+                              currentThemeKey: currentThemeKey,
+                              onThemeChanged: onThemeChanged,
+                              themeOptions: themeOptions,
                               t: t,
                             ),
                           ],

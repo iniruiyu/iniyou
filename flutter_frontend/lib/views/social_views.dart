@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import '../widgets/app_cards.dart';
+import '../main.dart' show ProfileTab;
+import 'settings_views.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({
@@ -10,10 +12,16 @@ class ProfileView extends StatelessWidget {
     required this.user,
     required this.profileUser,
     required this.profilePosts,
+    required this.subscription,
     required this.connectedChains,
     required this.displayNameController,
     required this.loading,
     required this.commentControllerFor,
+    required this.profileTab,
+    required this.onProfileTabChanged,
+    required this.currentLevel,
+    required this.onActivateLevel,
+    required this.onActivatePlan,
     required this.onSaveProfile,
     required this.onAddFriend,
     required this.onAcceptFriend,
@@ -23,15 +31,32 @@ class ProfileView extends StatelessWidget {
     required this.onCommentPost,
     required this.onOpenProfile,
     required this.onOpenPostDetail,
+    required this.t,
   });
 
   final CurrentUser? user;
   final UserProfileItem? profileUser;
   final List<PostItem> profilePosts;
+  final SubscriptionItem? subscription;
   final List<String> connectedChains;
   final TextEditingController displayNameController;
   final bool loading;
   final TextEditingController Function(String postId) commentControllerFor;
+  // Current profile tab.
+  // 当前个人主页选项卡。
+  final ProfileTab profileTab;
+  // Profile tab change handler.
+  // 个人主页选项卡切换回调。
+  final ValueChanged<ProfileTab> onProfileTabChanged;
+  // Current level for membership.
+  // 当前会员等级。
+  final String currentLevel;
+  // Activate membership level.
+  // 激活会员等级回调。
+  final ValueChanged<String> onActivateLevel;
+  // Activate subscription plan.
+  // 激活订阅方案回调。
+  final ValueChanged<String> onActivatePlan;
   final VoidCallback onSaveProfile;
   final ValueChanged<String> onAddFriend;
   final ValueChanged<String> onAcceptFriend;
@@ -41,6 +66,7 @@ class ProfileView extends StatelessWidget {
   final ValueChanged<PostItem> onCommentPost;
   final ValueChanged<String> onOpenProfile;
   final ValueChanged<String> onOpenPostDetail;
+  final String Function(String key) t;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +76,13 @@ class ProfileView extends StatelessWidget {
     }
 
     final isOwnProfile = user != null && profile.id == user!.id;
+    final hasBlockchain = connectedChains.isNotEmpty;
+    // Ensure blockchain tab is hidden when there are no accounts.
+    // 链上账号为空时隐藏对应选项卡。
+    final effectiveTab =
+        !hasBlockchain && profileTab == ProfileTab.blockchain
+            ? ProfileTab.levels
+            : profileTab;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -62,8 +95,8 @@ class ProfileView extends StatelessWidget {
             '状态: ${profile.status}',
             if (!isOwnProfile && profile.relationStatus.isNotEmpty)
               '关系: ${profile.relationStatus} / ${profile.direction}',
-            if (isOwnProfile)
-              '已连接链: ${connectedChains.isEmpty ? '暂无' : connectedChains.join(', ')}',
+            if (isOwnProfile && connectedChains.isNotEmpty)
+              '已连接链: ${connectedChains.join(', ')}',
           ],
         ),
         const SizedBox(height: 16),
@@ -115,6 +148,82 @@ class ProfileView extends StatelessWidget {
                   onPressed: onStartChat,
                   child: const Text('发起聊天'),
                 ),
+            ],
+          ),
+        const SizedBox(height: 16),
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                ChoiceChip(
+                  label: Text(t('profile.tab.levels')),
+                  selected: effectiveTab == ProfileTab.levels,
+                  onSelected: (_) => onProfileTabChanged(ProfileTab.levels),
+                ),
+                ChoiceChip(
+                  label: Text(t('profile.tab.subscription')),
+                  selected: effectiveTab == ProfileTab.subscription,
+                  onSelected: (_) =>
+                      onProfileTabChanged(ProfileTab.subscription),
+                ),
+                if (hasBlockchain)
+                  ChoiceChip(
+                    label: Text(t('profile.tab.blockchain')),
+                    selected: effectiveTab == ProfileTab.blockchain,
+                    onSelected: (_) =>
+                        onProfileTabChanged(ProfileTab.blockchain),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (effectiveTab == ProfileTab.levels)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              LevelsView(
+                currentLevel: currentLevel,
+                onActivateLevel: onActivateLevel,
+              ),
+            ],
+          )
+        else if (effectiveTab == ProfileTab.subscription)
+          SubscriptionView(
+            subscription: subscription,
+            loading: loading,
+            onActivatePlan: onActivatePlan,
+          )
+        else if (hasBlockchain)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InfoCard(
+                title: t('profile.blockchain.title'),
+                lines: [
+                  '${t('profile.blockchain.total')}: ${connectedChains.isEmpty ? t('profile.blockchain.empty') : connectedChains.join(', ')}',
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: connectedChains
+                    .map(
+                      (chain) => SizedBox(
+                        width: 240,
+                        child: InfoCard(
+                          title: chain,
+                          lines: [t('profile.blockchain.connected')],
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
             ],
           ),
         const SizedBox(height: 16),

@@ -72,6 +72,12 @@ enum AppView {
   chat,
 }
 
+enum ProfileTab {
+  levels,
+  subscription,
+  blockchain,
+}
+
 class IniyouHome extends StatefulWidget {
   const IniyouHome({super.key});
 
@@ -81,6 +87,7 @@ class IniyouHome extends StatefulWidget {
 
 class _IniyouHomeState extends State<IniyouHome> {
   static const _languageKey = 'iniyou_language';
+  static const _themeKey = 'iniyou_theme';
   final ApiClient _api = ApiClient();
 
   final _loginAccountController = TextEditingController();
@@ -111,6 +118,15 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _loading = false;
   bool _loginMode = true;
   String _languageCode = AppI18n.defaultLanguageCode;
+  // Current theme key for skin switching.
+  // 皮肤切换的当前主题键。
+  String _themeKeyValue = 'midnight';
+  // Sidebar collapsed state.
+  // 侧边栏折叠状态。
+  bool _sidebarCollapsed = false;
+  // Current profile tab.
+  // 当前个人主页选项卡。
+  ProfileTab _profileTab = ProfileTab.levels;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -135,6 +151,14 @@ class _IniyouHomeState extends State<IniyouHome> {
   List<ExternalAccountItem> _externalAccounts = const [];
   SubscriptionItem? _subscription;
   FriendItem? _activeChat;
+
+  // Available theme options for the settings menu.
+  // 设置菜单可选主题列表。
+  static const List<ThemeOption> _themeOptions = [
+    ThemeOption(key: 'midnight', labelKey: 'theme.midnight'),
+    ThemeOption(key: 'dawn', labelKey: 'theme.dawn'),
+    ThemeOption(key: 'ocean', labelKey: 'theme.ocean'),
+  ];
 
   @override
   void initState() {
@@ -181,6 +205,13 @@ class _IniyouHomeState extends State<IniyouHome> {
         AppI18n.supportedLanguageCodes.contains(savedLanguage)) {
       _languageCode = savedLanguage;
     }
+    // Restore saved theme selection.
+    // 恢复保存的皮肤主题选择。
+    final savedTheme = _prefs?.getString(_themeKey);
+    if (savedTheme != null &&
+        _themeOptions.any((option) => option.key == savedTheme)) {
+      _themeKeyValue = savedTheme;
+    }
     final sessionRestored = SessionActions.restoreSession(_api, _prefs!);
     if (sessionRestored) {
       try {
@@ -207,6 +238,126 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     setState(() => _languageCode = languageCode);
+  }
+
+  void _toggleSidebar() {
+    // Toggle sidebar collapsed state.
+    // 切换侧边栏折叠状态。
+    setState(() => _sidebarCollapsed = !_sidebarCollapsed);
+  }
+
+  void _setProfileTab(ProfileTab tab) {
+    // Switch profile tab.
+    // 切换个人主页选项卡。
+    setState(() => _profileTab = tab);
+  }
+
+  Future<void> _setTheme(String themeKey) async {
+    // Persist and apply theme selection.
+    // 保存并应用主题选择。
+    if (!_themeOptions.any((option) => option.key == themeKey)) {
+      return;
+    }
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await prefs.setString(_themeKey, themeKey);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _themeKeyValue = themeKey);
+  }
+
+  ThemeData _themeDataFor(String themeKey) {
+    // Build theme data for the selected skin.
+    // 构建所选皮肤的主题数据。
+    switch (themeKey) {
+      case 'dawn':
+        final scheme = ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2F80ED),
+          brightness: Brightness.light,
+        );
+        return ThemeData(
+          colorScheme: scheme,
+          scaffoldBackgroundColor: const Color(0xFFF6F7FB),
+          useMaterial3: true,
+          cardTheme: const CardThemeData(
+            color: Colors.white,
+            elevation: 0,
+            margin: EdgeInsets.zero,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: const Color(0xFFEEF1F6),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        );
+      case 'ocean':
+        final scheme = ColorScheme.fromSeed(
+          seedColor: const Color(0xFF4DD6D3),
+          brightness: Brightness.dark,
+          surface: const Color(0xFF0B1E2D),
+        );
+        return ThemeData(
+          colorScheme: scheme,
+          scaffoldBackgroundColor: const Color(0xFF06131F),
+          useMaterial3: true,
+          cardTheme: const CardThemeData(
+            color: Color(0xFF0B1E2D),
+            elevation: 0,
+            margin: EdgeInsets.zero,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: const Color(0xFF10283B),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        );
+      case 'midnight':
+      default:
+        const seed = Color(0xFF6EE7FF);
+        final scheme = ColorScheme.fromSeed(
+          seedColor: seed,
+          brightness: Brightness.dark,
+          surface: const Color(0xFF101925),
+        );
+        return ThemeData(
+          colorScheme: scheme,
+          scaffoldBackgroundColor: const Color(0xFF08111D),
+          useMaterial3: true,
+          cardTheme: const CardThemeData(
+            color: Color(0xFF101925),
+            elevation: 0,
+            margin: EdgeInsets.zero,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: const Color(0xFF152131),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        );
+    }
+  }
+
+  List<Color> _backgroundGradientFor(String themeKey) {
+    // Return background gradient colors per theme.
+    // 返回各主题的背景渐变色。
+    switch (themeKey) {
+      case 'dawn':
+        return const [Color(0xFFEEF1FF), Color(0xFFF6F7FB)];
+      case 'ocean':
+        return const [Color(0xFF12334F), Color(0xFF06131F)];
+      case 'midnight':
+      default:
+        return const [Color(0xFF08111D), Color(0xFF0E1A2A)];
+    }
   }
 
   Future<void> _runBusy(Future<void> Function() action) async {
@@ -377,6 +528,20 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   void _navigateTo(AppView view) {
+    // Redirect settings views into profile tabs.
+    // 将设置类视图重定向到个人主页标签。
+    if (view == AppView.levels) {
+      _openProfileTab(ProfileTab.levels);
+      return;
+    }
+    if (view == AppView.subscription) {
+      _openProfileTab(ProfileTab.subscription);
+      return;
+    }
+    if (view == AppView.blockchain) {
+      _openProfileTab(ProfileTab.blockchain);
+      return;
+    }
     if (view == AppView.profile && _user != null) {
       _openProfile(_user!.id);
       return;
@@ -384,6 +549,19 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (mounted) {
       setState(() {
         _view = view;
+        _error = null;
+        _flash = null;
+      });
+    }
+  }
+
+  void _openProfileTab(ProfileTab tab) {
+    // Open profile view with a selected tab.
+    // 打开个人主页并定位到指定选项卡。
+    if (mounted) {
+      setState(() {
+        _view = AppView.profile;
+        _profileTab = tab;
         _error = null;
         _flash = null;
       });
@@ -502,6 +680,9 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _openProfile(String userId) async {
+    // Reset profile tab when opening profile.
+    // 打开个人主页时重置选项卡。
+    _profileTab = ProfileTab.levels;
     await _runBusy(() => _loadProfile(userId));
   }
 
@@ -764,6 +945,9 @@ class _IniyouHomeState extends State<IniyouHome> {
         onRegister: _register,
         currentLanguageCode: _languageCode,
         onLanguageChanged: _setLanguage,
+        currentThemeKey: _themeKeyValue,
+        onThemeChanged: _setTheme,
+        themeOptions: _themeOptions,
         t: _t,
       );
     } else {
@@ -783,30 +967,36 @@ class _IniyouHomeState extends State<IniyouHome> {
             pageSubtitle: pageSubtitleForView(_view, t: _t),
             loading: _loading,
             wide: wide,
+            sidebarCollapsed: _sidebarCollapsed,
             sidebar: _buildSidebar(),
             onRefresh: () => _runBusy(_refreshAll),
             onLogout: _logout,
+            onToggleSidebar: _toggleSidebar,
             currentLanguageCode: _languageCode,
             onLanguageChanged: _setLanguage,
+            currentThemeKey: _themeKeyValue,
+            onThemeChanged: _setTheme,
+            themeOptions: _themeOptions,
+            backgroundGradient: _backgroundGradientFor(_themeKeyValue),
+            topNav: _buildTopNavBar(),
+            // Show nav buttons only when sidebar is collapsed on wide layouts.
+            // 仅在宽屏且侧边栏折叠时显示导航按钮。
+            showTopNav: wide && _sidebarCollapsed,
             t: _t,
             body: AuthenticatedHomeView(
               width: constraints.maxWidth,
               error: _error,
               flash: _flash,
-              summaryCards: buildHomeSummaryCards(
-                spaces: _spaces,
-                friends: _friends,
-                subscription: _subscription,
-                externalAccounts: _externalAccounts,
-                t: _t,
-              ),
               sectionBody: _buildSectionBody(constraints.maxWidth),
             ),
           );
         },
       );
     }
-    return Directionality(textDirection: textDirection, child: content);
+    return Directionality(
+      textDirection: textDirection,
+      child: Theme(data: _themeDataFor(_themeKeyValue), child: content),
+    );
   }
 
   Widget _buildSidebar() {
@@ -818,6 +1008,51 @@ class _IniyouHomeState extends State<IniyouHome> {
       items: buildShellSidebarItems(_t),
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
       t: _t,
+    );
+  }
+
+  PreferredSizeWidget _buildTopNavBar() {
+    // Top navigation for quick switching.
+    // 顶部导航用于快速切换视图。
+    final items = [
+      (AppView.dashboard, _t('sidebar.dashboard')),
+      (AppView.privateSpace, _t('sidebar.private')),
+      (AppView.publicSpace, _t('sidebar.public')),
+      (AppView.friends, _t('sidebar.friends')),
+      (AppView.profile, _t('sidebar.profile')),
+      (AppView.chat, _t('sidebar.chat')),
+    ];
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(56),
+      child: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          // Keep navigation buttons in a single row.
+          // 保持导航按钮单行展示。
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final item in items)
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: FilledButton.tonal(
+                    onPressed: () => _navigateTo(item.$1),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _view == item.$1
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                    ),
+                    child: Text(item.$2),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -894,12 +1129,18 @@ class _IniyouHomeState extends State<IniyouHome> {
         user: _user,
         profileUser: _profileUser,
         profilePosts: _profilePosts,
+        subscription: _subscription,
         externalAccounts: _externalAccounts,
         friends: _friends,
+        currentLevel: _user?.level ?? 'basic',
+        onActivateLevel: _activatePlan,
+        onActivatePlan: _activatePlan,
         displayNameController: _displayNameController,
         loading: _loading,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
+        profileTab: _profileTab,
+        onProfileTabChanged: _setProfileTab,
         onSaveProfile: _saveProfile,
         onAddFriend: _addFriend,
         onAcceptFriend: _acceptFriend,
@@ -909,6 +1150,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onCommentPost: _comment,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        t: _t,
       ),
       postDetail: buildPostDetailView(
         user: _user,

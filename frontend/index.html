@@ -11,30 +11,58 @@
 </head>
 <body>
   <!-- Vue root / Vue 根节点 -->
-  <div id="app" class="app">
+  <div id="app" class="app" :class="{ 'sidebar-collapsed': layoutMode === 'side' && sidebarCollapsed, 'layout-top': layoutMode === 'top' }">
     <landing-page v-if="!isLoggedIn" :app="appContext"></landing-page>
 
     <template v-else>
-    <aside class="sidebar">
+    <aside v-if="layoutMode === 'side'" class="sidebar">
       <div class="brand">
-        <div class="brand-mark">AS</div>
-        <div>
-          <div class="brand-title">Account Space</div>
-          <div class="brand-sub">{{ t('brandSub') }}</div>
+        <div class="brand-core">
+          <div class="brand-mark">AS</div>
+          <div>
+            <div class="brand-title">Account Space</div>
+            <div class="brand-sub">{{ t('brandSub') }}</div>
+          </div>
         </div>
+        <button class="nav-toggle ghost" type="button" @click="toggleSidebar" :aria-label="sidebarCollapsed ? t('nav.expand') : t('nav.collapse')">
+          <span class="nav-toggle-icon" aria-hidden="true"></span>
+          <span class="nav-toggle-text">{{ sidebarCollapsed ? t('nav.expand') : t('nav.collapse') }}</span>
+        </button>
       </div>
 
       <nav class="nav">
         <!-- Navigation / 侧边导航 -->
-        <button class="nav-item" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">{{ t('nav.dashboard') }}</button>
-        <button class="nav-item" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">{{ t('nav.private') }}</button>
-        <button class="nav-item" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">{{ t('nav.public') }}</button>
-        <button class="nav-item" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">{{ t('nav.profile') }}</button>
-        <button class="nav-item" :class="{active: view === 'levels'}" :disabled="!isLoggedIn" @click="view = 'levels'">{{ t('nav.levels') }}</button>
-        <button class="nav-item" :class="{active: view === 'subscription'}" :disabled="!isLoggedIn" @click="view = 'subscription'">{{ t('nav.subscription') }}</button>
-        <button class="nav-item" :class="{active: view === 'blockchain'}" :disabled="!isLoggedIn" @click="view = 'blockchain'">{{ t('nav.blockchain') }}</button>
-        <button class="nav-item" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">{{ t('nav.friends') }}</button>
-        <button class="nav-item" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">{{ t('nav.chat') }}</button>
+        <button class="nav-item nav-item-control" type="button" @click="toggleLayoutMode">
+          <span class="nav-icon">SW</span>
+          <span class="nav-label">{{ layoutMode === 'side' ? t('nav.layoutTop') : t('nav.layoutSide') }}</span>
+        </button>
+        <div class="nav-item nav-item-control nav-item-settings">
+          <settings-menu :app="appContext"></settings-menu>
+        </div>
+        <button class="nav-item" data-icon="DB" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">
+          <span class="nav-icon">DB</span>
+          <span class="nav-label">{{ t('nav.dashboard') }}</span>
+        </button>
+        <button class="nav-item" data-icon="PR" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">
+          <span class="nav-icon">PR</span>
+          <span class="nav-label">{{ t('nav.private') }}</span>
+        </button>
+        <button class="nav-item" data-icon="PU" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">
+          <span class="nav-icon">PU</span>
+          <span class="nav-label">{{ t('nav.public') }}</span>
+        </button>
+        <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
+          <span class="nav-icon">FR</span>
+          <span class="nav-label">{{ t('nav.friends') }}</span>
+        </button>
+        <button class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
+          <span class="nav-icon">CH</span>
+          <span class="nav-label">{{ t('nav.chat') }}</span>
+        </button>
+        <button class="nav-item" data-icon="ME" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">
+          <span class="nav-icon">ME</span>
+          <span class="nav-label">{{ t('nav.profile') }}</span>
+        </button>
       </nav>
 
       <div class="sidebar-foot">
@@ -51,13 +79,54 @@
 
     <!-- Main content / 主内容 -->
     <main class="main">
+      <header v-if="layoutMode === 'top'" class="top-shell">
+        <div class="top-shell-brand">
+          <div class="brand-mark">AS</div>
+          <div>
+            <div class="brand-title">Account Space</div>
+            <div class="brand-sub">{{ t('brandSub') }}</div>
+          </div>
+        </div>
+        <div class="top-shell-nav">
+          <button class="nav-item" data-icon="DB" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">
+            <span class="nav-icon">DB</span>
+            <span class="nav-label">{{ t('nav.dashboard') }}</span>
+          </button>
+          <button class="nav-item" data-icon="PR" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">
+            <span class="nav-icon">PR</span>
+            <span class="nav-label">{{ t('nav.private') }}</span>
+          </button>
+          <button class="nav-item" data-icon="PU" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">
+            <span class="nav-icon">PU</span>
+            <span class="nav-label">{{ t('nav.public') }}</span>
+          </button>
+          <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
+            <span class="nav-icon">FR</span>
+            <span class="nav-label">{{ t('nav.friends') }}</span>
+          </button>
+          <button class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
+            <span class="nav-icon">CH</span>
+            <span class="nav-label">{{ t('nav.chat') }}</span>
+          </button>
+          <button class="nav-item" data-icon="ME" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">
+            <span class="nav-icon">ME</span>
+            <span class="nav-label">{{ t('nav.profile') }}</span>
+          </button>
+        </div>
+        <div class="top-shell-actions">
+          <button class="layout-toggle ghost" type="button" @click="toggleLayoutMode">
+            <span class="nav-icon">SW</span>
+            <span class="layout-toggle-label">{{ t('nav.layoutSide') }}</span>
+          </button>
+          <settings-menu :app="appContext"></settings-menu>
+        </div>
+      </header>
       <header class="topbar">
         <div>
           <div class="page-title">{{ pageTitle }}</div>
           <div class="page-sub">{{ pageSub }}</div>
         </div>
         <div class="topbar-actions">
-          <settings-menu :app="appContext"></settings-menu>
           <div class="profile">
             <div class="avatar"></div>
             <div>
@@ -122,7 +191,7 @@
               <div class="subscription-title">{{ t('dashboard.blockchainStat') }}: {{ activeExternalAccounts.length }}</div>
               <div class="subscription-sub">{{ t('blockchain.connectedChains') }}: {{ connectedChainText }}</div>
             </div>
-            <button class="primary" type="button" @click="view = 'blockchain'">{{ t('blockchain.openManager') }}</button>
+            <button class="primary" type="button" @click="openProfileTab('blockchain')">{{ t('blockchain.openManager') }}</button>
           </div>
         </div>
       </section>
@@ -257,8 +326,8 @@
                 <div v-if="profileUser.secondary" class="post-meta">{{ profileUser.secondary }}</div>
                 <div class="post-meta">{{ t('posts.articleCount') }} · {{ profilePosts.length }}</div>
                 <div v-if="profileUser.relationStatus" class="post-meta">{{ statusLabel(profileUser.relationStatus) }}</div>
-                <div v-if="profileUser.id === user.id" class="post-meta">{{ t('dashboard.blockchainStat') }} · {{ activeExternalAccounts.length }}</div>
-                <div v-if="profileUser.id === user.id" class="post-meta">{{ t('blockchain.connectedChains') }} · {{ connectedChainText }}</div>
+                <div v-if="profileUser.id === user.id && hasBlockchainAccounts" class="post-meta">{{ t('dashboard.blockchainStat') }} · {{ activeExternalAccounts.length }}</div>
+                <div v-if="profileUser.id === user.id && hasBlockchainAccounts" class="post-meta">{{ t('blockchain.connectedChains') }} · {{ connectedChainText }}</div>
               </div>
               <div class="profile-actions">
                 <button class="ghost compact" @click="backToPublicFeed">{{ t('posts.backToFeed') }}</button>
@@ -266,6 +335,61 @@
                 <button v-else-if="profileUser.relationStatus === 'pending' && profileUser.direction === 'incoming'" class="ghost compact" @click="acceptProfileFriend">{{ t('posts.acceptFriend') }}</button>
                 <button v-else-if="profileUser.id && profileUser.id !== user.id && !profileUser.relationStatus" class="ghost compact" @click="addProfileFriend">{{ t('posts.addFriend') }}</button>
               </div>
+            </div>
+          </div>
+          <div class="profile-tabs">
+            <button class="profile-tab" :class="{active: profileTab === 'levels'}" @click="profileTab = 'levels'">{{ t('profile.tabs.levels') }}</button>
+            <button class="profile-tab" :class="{active: profileTab === 'subscription'}" @click="profileTab = 'subscription'">{{ t('profile.tabs.subscription') }}</button>
+            <button v-if="hasBlockchainAccounts" class="profile-tab" :class="{active: profileTab === 'blockchain'}" @click="profileTab = 'blockchain'">{{ t('profile.tabs.blockchain') }}</button>
+          </div>
+          <div class="profile-tab-panel" v-if="profileTab === 'levels'">
+            <div class="panel">
+              <h3>{{ t('profile.levels.title') }}</h3>
+              <p>{{ t('profile.levels.sub') }}</p>
+              <div class="level-grid">
+                <div class="level-card" v-for="level in levels" :key="level.name">
+                  <div class="level-title">{{ localizedLevelText('name', level) }}</div>
+                  <div class="level-price">{{ level.price }}</div>
+                  <ul class="level-features">
+                    <li v-for="feature in localizedLevelText('features', level)" :key="feature">{{ feature }}</li>
+                  </ul>
+                  <button v-if="isCurrentLevel(level)" class="ghost" disabled>{{ t('levels.current') }}</button>
+                  <button v-else class="ghost" @click="createSubscription(level.planID)">{{ t('levels.upgrade') }}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="profile-tab-panel" v-else-if="profileTab === 'subscription'">
+            <div class="panel">
+              <h3>{{ t('profile.subscription.title') }}</h3>
+              <p>{{ t('profile.subscription.sub') }}</p>
+              <div class="subscription">
+                <div>
+                  <div class="subscription-title">{{ t('subscription.currentPlan') }}: {{ localizedPlan }}</div>
+                  <div class="subscription-sub">{{ t('subscription.status') }}: {{ statusLabel(subscription.status) }}</div>
+                  <div class="subscription-sub">{{ t('subscription.startedAt') }}: {{ formatDateTime(subscription.startedAt) }}</div>
+                  <div class="subscription-sub">{{ t('subscription.expiresAt') }}: {{ formatDateTime(subscription.endedAt) }}</div>
+                </div>
+                <button class="primary" @click="createSubscription(subscription.planID || 'premium')">{{ subscription.planID ? t('subscription.renew') : t('subscription.activate') }}</button>
+              </div>
+              <div v-if="!subscription.planID" class="empty-state">{{ t('subscription.empty') }}</div>
+            </div>
+          </div>
+          <div class="profile-tab-panel" v-else-if="profileTab === 'blockchain' && hasBlockchainAccounts">
+            <div class="panel">
+              <h3>{{ t('profile.blockchain.title') }}</h3>
+              <p>{{ t('profile.blockchain.sub') }}</p>
+              <div class="friends-grid">
+                <div class="friend-card" v-for="account in externalAccounts" :key="account.id">
+                  <div class="avatar small"></div>
+                  <div>
+                    <div class="friend-name">{{ account.provider.toUpperCase() }} <span v-if="account.chain">· {{ account.chain }}</span></div>
+                    <div class="friend-secondary">{{ account.accountAddress }}</div>
+                    <div class="friend-status">{{ statusLabel(account.bindingStatus) }}</div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="externalAccounts.length === 0" class="empty-state">{{ t('profile.blockchain.empty') }}</div>
             </div>
           </div>
           <div v-if="profilePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
@@ -338,35 +462,6 @@
             </div>
           </article>
         </div>
-      </section>
-
-      <section v-if="view === 'levels'" class="panel">
-        <h2>{{ t('levels.title') }}</h2>
-        <div class="level-grid">
-          <div class="level-card" v-for="level in levels" :key="level.name">
-            <div class="level-title">{{ level.name }}</div>
-            <div class="level-price">{{ localizedLevelPrice(level) }}</div>
-            <ul class="level-features">
-              <li v-for="item in localizedLevelFeatures(level)" :key="item">{{ item }}</li>
-            </ul>
-            <button v-if="isCurrentLevel(level)" class="ghost" disabled>{{ t('levels.current') }}</button>
-            <button v-else class="ghost" @click="createSubscription(level.planID)">{{ t('levels.upgrade') }}</button>
-          </div>
-        </div>
-      </section>
-
-      <section v-if="view === 'subscription'" class="panel">
-        <h2>{{ t('subscription.title') }}</h2>
-        <div class="subscription">
-          <div>
-            <div class="subscription-title">{{ t('subscription.currentPlan') }}: {{ localizedPlan }}</div>
-            <div class="subscription-sub">{{ t('subscription.status') }}: {{ statusLabel(subscription.status) }}</div>
-            <div class="subscription-sub">{{ t('subscription.startedAt') }}: {{ formatDateTime(subscription.startedAt) }}</div>
-            <div class="subscription-sub">{{ t('subscription.expiresAt') }}: {{ formatDateTime(subscription.endedAt) }}</div>
-          </div>
-          <button class="primary" @click="createSubscription(subscription.planID || 'premium')">{{ subscription.planID ? t('subscription.renew') : t('subscription.activate') }}</button>
-        </div>
-        <div v-if="!subscription.planID" class="empty-state">{{ t('subscription.empty') }}</div>
       </section>
 
       <section v-if="view === 'blockchain'" class="panel">

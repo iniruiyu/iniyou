@@ -5,11 +5,17 @@ window.SettingsMenu = {
       required: true,
     },
   },
+  // Compact layout for sidebar navigation.
+  // 侧边栏导航的紧凑布局。
   template: `
     <div class="settings-menu" @click.stop>
       <button class="settings-trigger ghost" type="button" @click="app.toggleSettingsMenu()">
-        <span class="settings-trigger-label">{{ app.t('settings.menu') }}</span>
-        <span class="settings-trigger-meta">{{ app.getLanguageMeta(app.locale).name }}</span>
+        <!-- Settings icon / 设置图标 -->
+        <span class="settings-trigger-icon">SET</span>
+        <span class="settings-trigger-text">
+          <span class="settings-trigger-label">{{ app.t('settings.menu') }}</span>
+          <span class="settings-trigger-meta">{{ app.getLanguageMeta(app.locale).name }}</span>
+        </span>
       </button>
       <div v-if="app.settingsOpen" class="settings-dropdown">
         <div class="settings-header">
@@ -20,6 +26,13 @@ window.SettingsMenu = {
         <select class="lang-select" v-model="app.locale">
           <option v-for="option in app.languageOptions" :key="option.code" :value="option.code">
             {{ option.name }} ({{ option.code }})
+          </option>
+        </select>
+        <div class="lang-add-title">{{ app.t('theme.title') }}</div>
+        <label class="lang-label">{{ app.t('theme.label') }}</label>
+        <select class="lang-select" v-model="app.theme" @change="app.applyTheme()">
+          <option v-for="theme in app.themeOptions" :key="theme.value" :value="theme.value">
+            {{ app.t(theme.labelKey) }}
           </option>
         </select>
         <div class="lang-add-title">{{ app.t('i18n.addTitle') }}</div>

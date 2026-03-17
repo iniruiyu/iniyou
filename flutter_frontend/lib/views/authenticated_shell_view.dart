@@ -10,12 +10,20 @@ class AuthenticatedShellView extends StatelessWidget {
     required this.pageSubtitle,
     required this.loading,
     required this.wide,
+    required this.sidebarCollapsed,
     required this.sidebar,
     required this.body,
     required this.onRefresh,
     required this.onLogout,
+    required this.onToggleSidebar,
     required this.currentLanguageCode,
     required this.onLanguageChanged,
+    required this.currentThemeKey,
+    required this.onThemeChanged,
+    required this.themeOptions,
+    required this.backgroundGradient,
+    required this.topNav,
+    required this.showTopNav,
     required this.t,
   });
 
@@ -24,12 +32,36 @@ class AuthenticatedShellView extends StatelessWidget {
   final String pageSubtitle;
   final bool loading;
   final bool wide;
+  // Sidebar collapsed state.
+  // 侧边栏折叠状态。
+  final bool sidebarCollapsed;
   final Widget sidebar;
   final Widget body;
   final VoidCallback onRefresh;
   final VoidCallback onLogout;
+  // Toggle sidebar collapsed/expanded.
+  // 切换侧边栏折叠/展开。
+  final VoidCallback onToggleSidebar;
   final String currentLanguageCode;
   final ValueChanged<String> onLanguageChanged;
+  // Current theme key for skin switching.
+  // 皮肤切换的当前主题键。
+  final String currentThemeKey;
+  // Theme change handler.
+  // 主题切换回调。
+  final ValueChanged<String> onThemeChanged;
+  // Available theme options.
+  // 可选主题列表。
+  final List<ThemeOption> themeOptions;
+  // Background gradient colors.
+  // 背景渐变颜色。
+  final List<Color> backgroundGradient;
+  // Top navigation widget.
+  // 顶部导航组件。
+  final PreferredSizeWidget topNav;
+  // Show top navigation buttons.
+  // 是否显示顶部导航按钮。
+  final bool showTopNav;
   final String Function(String key) t;
 
   @override
@@ -38,13 +70,26 @@ class AuthenticatedShellView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         titleSpacing: 20,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(pageTitle),
-            Text(pageSubtitle, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
+        // Keep nav buttons on the same row as the toggle button.
+        // 将导航按钮与折叠按钮放在同一行。
+        title: showTopNav ? topNav : const SizedBox.shrink(),
+        leading: wide
+            ? IconButton(
+                tooltip: t('shell.toggleSidebar'),
+                onPressed: onToggleSidebar,
+                icon: Icon(
+                  sidebarCollapsed ? Icons.menu_open : Icons.menu,
+                ),
+              )
+            : Builder(
+                builder: (context) {
+                  return IconButton(
+                    tooltip: t('shell.toggleSidebar'),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    icon: const Icon(Icons.menu),
+                  );
+                },
+              ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -63,6 +108,9 @@ class AuthenticatedShellView extends StatelessWidget {
           SettingsMenuButton(
             currentLanguageCode: currentLanguageCode,
             onLanguageChanged: onLanguageChanged,
+            currentThemeKey: currentThemeKey,
+            onThemeChanged: onThemeChanged,
+            themeOptions: themeOptions,
             t: t,
           ),
           IconButton(
@@ -71,18 +119,19 @@ class AuthenticatedShellView extends StatelessWidget {
             icon: const Icon(Icons.logout),
           ),
         ],
+        bottom: null,
       ),
       drawer: wide ? null : Drawer(child: SafeArea(child: sidebar)),
       body: Row(
         children: [
-          if (wide) SizedBox(width: 260, child: sidebar),
+          if (wide && !sidebarCollapsed) SizedBox(width: 260, child: sidebar),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF08111D), Color(0xFF0E1A2A)],
+                  colors: backgroundGradient,
                 ),
               ),
               child: Stack(

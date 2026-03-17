@@ -18,20 +18,38 @@ const app = createApp({
       // Settings dropdown visibility.
       // 设置下拉菜单显示状态。
       settingsOpen: false,
+      // Sidebar collapsed state.
+      // 侧边栏折叠状态。
+      sidebarCollapsed: false,
+      // Layout mode for navigation placement.
+      // 导航布局模式（左侧/顶部）。
+      layoutMode: 'side',
       // JWT token.
       // JWT 令牌。
       token: '',
       // Current language code.
       // 当前语言代码。
       locale: 'zh-CN',
+      // Current profile tab.
+      // 当前个人主页选项卡。
+      profileTab: 'levels',
+      // Theme selection.
+      // 皮肤主题选择。
+      theme: 'midnight',
       // Language display names.
       // 语言显示名称。
       languageMeta: {
         'zh-CN': { name: '简体中文', dir: 'ltr' },
         'zh-TW': { name: '繁體中文', dir: 'ltr' },
         'en-US': { name: 'English', dir: 'ltr' },
-        he: { name: 'עברית', dir: 'rtl' },
       },
+      // Theme options for skin switching.
+      // 皮肤切换可选主题。
+      themeOptions: [
+        { value: 'midnight', labelKey: 'theme.options.midnight' },
+        { value: 'dawn', labelKey: 'theme.options.dawn' },
+        { value: 'ocean', labelKey: 'theme.options.ocean' },
+      ],
       // i18n dictionaries. New languages can be appended at runtime.
       // 国际化字典，可在运行时追加新语言。
       translations: {
@@ -62,6 +80,39 @@ const app = createApp({
             menu: '设置',
             customize: '界面与语言',
           },
+          profile: {
+            tabs: {
+              levels: '会员等级',
+              subscription: '订阅',
+              blockchain: '链上账号',
+            },
+            levels: {
+              title: '会员等级',
+              sub: '选择适合你的会员等级方案。',
+            },
+            subscription: {
+              title: '订阅概览',
+              sub: '查看订阅方案与到期时间。',
+            },
+            blockchain: {
+              title: '链上账号概览',
+              sub: '查看已绑定的链上账号。',
+              empty: '尚未绑定链上账号。',
+            },
+          },
+          profileMenu: {
+            title: '个人主页菜单',
+            subtitle: '会员等级 / 订阅 / 链上账号',
+          },
+          theme: {
+            title: '外观皮肤',
+            label: '选择皮肤',
+            options: {
+              midnight: '深空黑',
+              dawn: '晨光白',
+              ocean: '深海蓝',
+            },
+          },
           common: {
             guest: '访客',
             notAvailable: '--',
@@ -78,6 +129,10 @@ const app = createApp({
             blockchain: '链上账号',
             friends: '好友',
             chat: '实时聊天',
+            layoutTop: '切换顶部',
+            layoutSide: '切换左侧',
+            collapse: '折叠导航',
+            expand: '展开导航',
           },
           ws: {
             statusLabel: '连接状态',
@@ -330,6 +385,39 @@ const app = createApp({
             menu: 'Settings',
             customize: 'Language & interface',
           },
+          profile: {
+            tabs: {
+              levels: 'Membership',
+              subscription: 'Subscription',
+              blockchain: 'Blockchain',
+            },
+            levels: {
+              title: 'Membership Levels',
+              sub: 'Choose the right membership tier.',
+            },
+            subscription: {
+              title: 'Subscription Overview',
+              sub: 'Review your plan and renewal timeline.',
+            },
+            blockchain: {
+              title: 'Blockchain Overview',
+              sub: 'Review bound on-chain accounts.',
+              empty: 'No on-chain accounts bound.',
+            },
+          },
+          profileMenu: {
+            title: 'Profile Menu',
+            subtitle: 'Membership / Subscription / Blockchain',
+          },
+          theme: {
+            title: 'Theme',
+            label: 'Choose skin',
+            options: {
+              midnight: 'Midnight',
+              dawn: 'Dawn',
+              ocean: 'Ocean',
+            },
+          },
           common: {
             guest: 'Guest',
             notAvailable: '--',
@@ -346,6 +434,10 @@ const app = createApp({
             blockchain: 'Blockchain',
             friends: 'Friends',
             chat: 'Live Chat',
+            layoutTop: 'Switch Top',
+            layoutSide: 'Switch Side',
+            collapse: 'Collapse Nav',
+            expand: 'Expand Nav',
           },
           ws: {
             statusLabel: 'Connection',
@@ -819,16 +911,25 @@ const app = createApp({
     connectedChainText() {
       return this.connectedChainList.join(', ') || this.t('common.notAvailable');
     },
+    hasBlockchainAccounts() {
+      // Check if any blockchain account is active.
+      // 判断是否存在可用的链上账号。
+      return this.activeExternalAccounts.length > 0;
+    },
     acceptedFriends() {
       return this.friends.filter((friend) => friend.status === 'accepted');
     },
     chatEntries() {
       return this.acceptedFriends.map((friend) => {
         const summary = this.chatSummaries.find((item) => item.peerId === friend.id);
+        // Normalize last message timestamp to avoid invalid dates.
+        // 规范最后消息时间，避免无效日期显示。
+        const lastAtRaw = summary?.lastAt || '';
+        const lastAt = this.safeTimestamp(lastAtRaw) ? lastAtRaw : '';
         return {
           ...friend,
           lastMessage: summary?.lastMessage || '',
-          lastAt: summary?.lastAt || '',
+          lastAt,
           unreadCount: summary?.unreadCount || 0,
         };
       }).sort((a, b) => {
@@ -837,8 +938,8 @@ const app = createApp({
         if (aHasMessage !== bHasMessage) {
           return aHasMessage ? -1 : 1;
         }
-        const aTime = a.lastAt ? new Date(a.lastAt).getTime() : 0;
-        const bTime = b.lastAt ? new Date(b.lastAt).getTime() : 0;
+        const aTime = this.safeTimestamp(a.lastAt);
+        const bTime = this.safeTimestamp(b.lastAt);
         if (aTime !== bTime) {
           return bTime - aTime;
         }
@@ -948,6 +1049,17 @@ const app = createApp({
               blockchain: '鏈上帳號',
               friends: '好友',
               chat: '即時聊天',
+              layoutTop: '切換頂部',
+              layoutSide: '切換左側',
+              collapse: '收合導航',
+              expand: '展開導航',
+            },
+            profile: {
+              tabs: {
+                levels: '會員等級',
+                subscription: '訂閱',
+                blockchain: '鏈上帳號',
+              },
             },
             ws: {
               statusLabel: '連線狀態',
@@ -1133,222 +1245,6 @@ const app = createApp({
           },
         );
       }
-      if (!this.translations.he) {
-        this.translations.he = this.deepMerge(
-          JSON.parse(JSON.stringify(this.translations['en-US'])),
-          {
-            htmlTitle: 'שירות חשבון · מרחב פרטי וציבורי',
-            brandSub: 'מרחב פרטי + ציבורי',
-            common: { guest: 'אורח' },
-            nav: {
-              auth: 'כניסה / הרשמה',
-              dashboard: 'לוח בקרה',
-              private: 'מרחב פרטי',
-              public: 'מרחב ציבורי',
-              levels: 'חברות',
-              subscription: 'מנוי',
-              blockchain: 'חשבונות בלוקצ׳יין',
-              friends: 'חברים',
-              chat: 'צ׳אט חי',
-            },
-            ws: {
-              statusLabel: 'מצב חיבור',
-              unreadLabel: 'לא נקראו',
-              connect: 'התחבר לצ׳אט',
-              disconnect: 'התנתק מהצ׳אט',
-              disconnected: 'מנותק',
-              connecting: 'מתחבר...',
-              connected: 'מחובר',
-              closed: 'נסגר',
-              needLogin: 'נדרשת כניסה',
-            },
-            pageTitle: {
-              auth: 'כניסה / הרשמה',
-              dashboard: 'לוח בקרה',
-              private: 'מרחב פרטי',
-              public: 'מרחב ציבורי',
-              levels: 'חברות',
-              subscription: 'מנוי',
-              blockchain: 'חשבונות בלוקצ׳יין',
-              friends: 'חברים',
-              chat: 'צ׳אט חי',
-            },
-            pageSub: {
-              auth: 'גישה מהירה למרחב הפרטי והציבורי שלך',
-              dashboard: 'סיכום חשבון ותובנות על המרחב',
-              private: 'ארגון תוכן אישי',
-              public: 'שיתוף תוכן ויצירת קשרים',
-              levels: 'בחירת רמת החברות המתאימה',
-              subscription: 'ניהול תכנית והטבות',
-              blockchain: 'ניהול חיבורי חשבונות בלוקצ׳יין חיצוניים',
-              friends: 'בניית קשרים ושיחה פרטית',
-              chat: 'תקשורת בזמן אמת',
-            },
-            auth: {
-              welcomeTitle: 'ברוך הבא בחזרה',
-              welcomeSub: 'התחבר כדי לגשת למרחבים הפרטי והציבורי שלך.',
-              createTitle: 'יצירת חשבון',
-              createSub: 'הצטרף לתכניות החברות ופתח יותר אפשרויות.',
-              accountPlaceholder: 'אימייל / טלפון',
-              passwordPlaceholder: 'סיסמה',
-              emailPlaceholder: 'אימייל',
-              phonePlaceholder: 'טלפון',
-              login: 'כניסה',
-              register: 'הרשמה',
-              logout: 'התנתקות',
-              logoutSuccess: 'התנתקת.',
-              loginError: 'הכניסה נכשלה. בדוק את החשבון והסיסמה.',
-              registerError: 'ההרשמה נכשלה. בדוק את הפרטים ונסה שוב.',
-            },
-            dashboard: {
-              overviewTitle: 'סקירת חשבון',
-              overviewSub: 'עקוב בקלות אחרי הרמה, המנוי והשימוש במרחבים.',
-              levelStat: 'רמת חברות',
-              planStat: 'מנוי',
-              friendStat: 'חברים',
-              blockchainStat: 'בלוקצ׳יין',
-              spaceSummaryTitle: 'סיכום מרחבים',
-              spaceSummarySub: 'מרחבים פרטיים להתמקדות, מרחבים ציבוריים לשיתוף.',
-              profileTitle: 'הגדרות פרופיל',
-              profileSub: 'עדכן את שם התצוגה עבור הלוח והצ׳אט.',
-              blockchainTitle: 'הרחבת בלוקצ׳יין',
-              blockchainSub: 'חשבונות בלוקצ׳יין מחוברים מסוכמים כאן כהכנה לחיבורי זהות ונכסים בהמשך.',
-              displayNamePlaceholder: 'הכנס שם תצוגה',
-              saveProfile: 'שמור פרופיל',
-              saveSuccess: 'הפרופיל עודכן',
-              saveError: 'עדכון הפרופיל נכשל. נסה שוב מאוחר יותר.',
-            },
-            spaces: {
-              privateTitle: 'מרחב פרטי',
-              privateSub: 'להערות אישיות, טיוטות ורשומות פרטיות.',
-              publicTitle: 'מרחב ציבורי',
-              publicSub: 'שתף עדכונים, הצג פרויקטים וצור קשרים.',
-              createTitle: 'יצירת מרחב',
-              createSub: 'הוסף מרחב פרטי או ציבורי חדש.',
-              namePlaceholder: 'שם המרחב',
-              descPlaceholder: 'תיאור המרחב',
-              createAction: 'צור מרחב',
-              createSuccess: 'המרחב נוצר',
-              createError: 'יצירת המרחב נכשלה. בדוק את השם ונסה שוב.',
-              type: { private: 'פרטי', public: 'ציבורי' },
-            },
-            posts: {
-              feedTitle: 'פיד ציבורי',
-              feedSub: 'שתף עדכונים, רעיונות והתקדמות בפרויקט.',
-              titlePlaceholder: 'כותרת הפוסט',
-              contentPlaceholder: 'כתוב משהו לשתף...',
-              publishAction: 'פרסם פוסט',
-              publishSuccess: 'הפוסט פורסם.',
-              publishError: 'הפרסום נכשל. נסה שוב מאוחר יותר.',
-              empty: 'הפיד הציבורי ריק. פרסם את הפוסט הראשון.',
-              like: 'לייק',
-              unlike: 'בטל לייק',
-              comment: 'תגובה',
-              commentPlaceholder: 'כתוב תגובה...',
-              commentAction: 'שלח תגובה',
-              commentError: 'שליחת התגובה נכשלה. נסה שוב מאוחר יותר.',
-              share: 'שיתוף',
-              shareError: 'השיתוף נכשל. נסה שוב מאוחר יותר.',
-              privateLabel: 'פרטי',
-              publicLabel: 'ציבורי',
-            },
-            levels: {
-              title: 'רמות חברות',
-              upgrade: 'שדרג',
-              current: 'הרמה הנוכחית',
-            },
-            subscription: {
-              title: 'מנוי',
-              currentPlan: 'תכנית נוכחית',
-              status: 'סטטוס',
-              startedAt: 'התחיל ב',
-              expiresAt: 'פג תוקף ב',
-              renew: 'חדש',
-              activate: 'הפעל',
-              empty: 'עדיין אין מנוי פעיל.',
-              actionSuccess: 'המנוי פעיל כעת.',
-              actionError: 'פעולת המנוי נכשלה. נסה שוב מאוחר יותר.',
-            },
-            blockchain: {
-              title: 'חשבונות בלוקצ׳יין',
-              sub: 'חבר כעת כתובות ארנק חיצוניות והשאר מקום ליכולות זהות on-chain בהמשך.',
-              providerLabel: 'ספק',
-              chainLabel: 'רשת',
-              addressPlaceholder: 'כתובת ארנק / כתובת חשבון',
-              signaturePlaceholder: 'מטען חתימה (חובה עבור בדיקות בסיס)',
-              securityHint: 'בגרסה זו מתבצעת בדיקת ספק, רשת, פורמט כתובת ואורך מטען החתימה.',
-              bindAction: 'חבר חשבון',
-              removeAction: 'נתק',
-              empty: 'עדיין אין חשבונות בלוקצ׳יין מחוברים.',
-              bindSuccess: 'חשבון הבלוקצ׳יין חובר.',
-              bindError: 'חיבור חשבון הבלוקצ׳יין נכשל. בדוק את הקלט ונסה שוב.',
-              removeSuccess: 'חשבון הבלוקצ׳יין נותק.',
-              removeError: 'ניתוק חשבון הבלוקצ׳יין נכשל. נסה שוב מאוחר יותר.',
-              boundAt: 'חובר בתאריך',
-              openManager: 'נהל חיבורים',
-              connectedChains: 'רשתות מחוברות',
-            },
-            friends: {
-              title: 'חברים',
-              chat: 'צ׳אט',
-              searchPlaceholder: 'הכנס שם תצוגה, אימייל, טלפון או מזהה משתמש',
-              searchAction: 'חפש משתמשים',
-              addAction: 'שלח בקשה',
-              acceptAction: 'אשר',
-              directionIncoming: 'בקשה נכנסת',
-              directionOutgoing: 'בקשה יוצאת',
-              contactSeparator: ' · ',
-              empty: 'עדיין אין חברים. הוסף אחד כדי להתחיל.',
-              searchEmpty: 'לא נמצאו משתמשים מתאימים.',
-              searchHint: 'חפש משתמש תחילה ואז שלח בקשת חברות.',
-              searchError: 'חיפוש המשתמש נכשל. נסה שוב מאוחר יותר.',
-              addError: 'שליחת בקשת החברות נכשלה.',
-              addSuccess: 'בקשת החברות נשלחה.',
-              acceptError: 'אישור בקשת החברות נכשל.',
-            },
-            chat: {
-              title: 'שיחות',
-              pickFriend: 'בחר חבר כדי להתחיל צ׳אט',
-              onlineNow: 'מחובר כעת',
-              inputPlaceholder: 'הקלד הודעה...',
-              send: 'שלח',
-              loadError: 'טעינת היסטוריית הצ׳אט נכשלה.',
-              emptyConversation: 'עדיין אין הודעות בשיחה הזו.',
-              sendError: 'שירות הצ׳אט אינו מחובר עדיין.',
-            },
-            plans: {
-              basic: 'בסיסי',
-              premium: 'פרימיום',
-              vip: 'VIP',
-              monthly: 'תכנית חודשית',
-            },
-            statuses: {
-              online: 'מחובר',
-              busy: 'עסוק',
-              offline: 'לא מחובר',
-              inactive: 'לא פעיל',
-              active: 'פעיל',
-              expired: 'פג תוקף',
-              canceled: 'בוטל',
-              pending: 'ממתין',
-              accepted: 'אושר',
-              blocked: 'נחסם',
-            },
-            i18n: {
-              title: 'הגדרות שפה',
-              choose: 'שפה נוכחית',
-              addTitle: 'הוסף שפה',
-              codePlaceholder: 'קוד שפה (למשל: ar)',
-              namePlaceholder: 'שם תצוגה',
-              dirLabel: 'כיוון טקסט',
-              dirLtr: 'משמאל לימין',
-              dirRtl: 'מימין לשמאל',
-              jsonPlaceholder: 'אופציונלי: JSON לעדיפות תרגום, לפי מבנה zh-CN',
-              addButton: 'הוסף שפה',
-            },
-          },
-        );
-      }
     },
     clearFeedback() {
       // Reset transient success/error messages before a new action.
@@ -1477,6 +1373,28 @@ const app = createApp({
         minute: '2-digit',
       });
     },
+    safeTimestamp(value) {
+      // Return a safe epoch timestamp or 0 when invalid.
+      // 返回安全时间戳，非法值则返回 0。
+      if (!value) {
+        return 0;
+      }
+      const date = new Date(value);
+      const time = date.getTime();
+      return Number.isNaN(time) ? 0 : time;
+    },
+    formatChatTime(value) {
+      // Format chat time safely to avoid "Invalid Date".
+      // 安全格式化聊天时间，避免出现“Invalid Date”。
+      const time = this.safeTimestamp(value);
+      if (!time) {
+        return '';
+      }
+      return new Date(time).toLocaleTimeString(this.locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    },
     localizedSpaceText(field, item) {
       return item[field][this.locale] || item[field]['zh-CN'] || '';
     },
@@ -1503,6 +1421,9 @@ const app = createApp({
       return String(this.user.level || '').toLowerCase() === String(level.planID || '').toLowerCase();
     },
     localizedMessageContent(message) {
+      if (!message || message.content == null) {
+        return '';
+      }
       if (typeof message.content === 'string') {
         return message.content;
       }
@@ -1546,6 +1467,47 @@ const app = createApp({
     },
     closeSettingsMenu() {
       this.settingsOpen = false;
+    },
+    toggleSidebar() {
+      // Toggle sidebar collapsed state.
+      // 切换侧边栏折叠状态。
+      this.sidebarCollapsed = !this.sidebarCollapsed;
+    },
+    toggleLayoutMode() {
+      // Toggle navigation layout placement.
+      // 切换导航布局位置。
+      this.layoutMode = this.layoutMode === 'side' ? 'top' : 'side';
+      localStorage.setItem('layoutMode', this.layoutMode);
+      if (this.layoutMode === 'top') {
+        this.sidebarCollapsed = false;
+      }
+    },
+    openProfileTab(tabKey) {
+      // Open profile view with a specific tab.
+      // 打开个人主页并定位到指定选项卡。
+      if (!tabKey) {
+        return;
+      }
+      if (tabKey === 'blockchain' && !this.hasBlockchainAccounts) {
+        // Skip blockchain tab when no accounts.
+        // 没有链上账号时跳过该选项卡。
+        // Default to membership tab for profile view.
+        // 默认回到个人主页的会员等级标签。
+        this.profileTab = 'levels';
+        this.view = 'profile';
+        return;
+      }
+      this.profileTab = tabKey;
+      this.view = 'profile';
+    },
+    applyTheme() {
+      // Apply theme selection to the document root.
+      // 将皮肤选择应用到页面根节点。
+      if (!this.theme) {
+        return;
+      }
+      document.documentElement.dataset.theme = this.theme;
+      localStorage.setItem('theme', this.theme);
     },
     handleDocumentClick(event) {
       if (event.target.closest('.settings-menu')) {
@@ -1862,6 +1824,11 @@ const app = createApp({
       if (this.profilePosts[0]?.authorName) {
         this.profileUser.name = this.profilePosts[0].authorName;
       }
+      // Reset profile tab when opening profile.
+      // 打开个人主页时重置选项卡。
+      // Reset to membership tab in profile.
+      // 重置为个人主页的会员等级标签。
+      this.profileTab = 'levels';
       this.view = 'profile';
     },
     async openPostDetail(postID) {
@@ -2304,13 +2271,15 @@ const app = createApp({
       const data = await res.json();
       if (Array.isArray(data.items)) {
         this.chatMessages = data.items.map((item) => ({
-          id: item.id,
-          from: item.sender_id,
+          // Support snake_case and camelCase message payloads.
+          // 兼容下划线与驼峰字段的消息数据。
+          id: item.id || item.ID,
+          from: item.sender_id || item.SenderID || item.from,
           content: {
-            'zh-CN': item.content,
-            'en-US': item.content,
+            'zh-CN': item.content || item.Content || '',
+            'en-US': item.content || item.Content || '',
           },
-          time: new Date(item.created_at).toLocaleTimeString(this.locale, { hour: '2-digit', minute: '2-digit' }),
+          time: this.formatChatTime(item.created_at || item.CreatedAt || item.createdAt),
         }));
       }
       await this.loadUnread();
@@ -2519,6 +2488,21 @@ const app = createApp({
     document.documentElement.lang = this.locale;
     document.documentElement.dir = this.localeDirection;
     document.title = this.t('htmlTitle');
+
+    // Restore theme from local storage.
+    // 从本地存储恢复皮肤主题。
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme && this.themeOptions.find((option) => option.value === savedTheme)) {
+      this.theme = savedTheme;
+    }
+    this.applyTheme();
+
+    // Restore layout mode from local storage.
+    // 从本地存储恢复导航布局模式。
+    const savedLayoutMode = localStorage.getItem('layoutMode');
+    if (savedLayoutMode === 'side' || savedLayoutMode === 'top') {
+      this.layoutMode = savedLayoutMode;
+    }
 
     // Load token from storage.
     // 从本地存储读取 token。

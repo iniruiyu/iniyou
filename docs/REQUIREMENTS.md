@@ -111,15 +111,14 @@
   - English
   - 简体中文（`zh-CN`）
   - 繁體中文（`zh-TW`）
-  - 希伯来语（`he`）
 - 多语言能力应覆盖导航、表单、状态提示、按钮文案、页面标题和主要交互反馈
 - 语言配置必须支持继续扩展，后续新增语言时不应要求重写整套界面逻辑
 - 语言元数据应支持至少以下属性：
   - 语言代码
   - 显示名称
   - 文本方向
-- 希伯来语界面需要支持 RTL（Right-to-Left）排版
-- 其他新增语言默认支持 LTR，若后续接入阿拉伯语等 RTL 语言，应可通过配置切换排版方向
+- 当前默认支持 LTR，预留 RTL（Right-to-Left）排版扩展能力
+- 若后续接入阿拉伯语等 RTL 语言，应可通过配置切换排版方向
 
 ## 6. 功能模块拆分
 
@@ -221,6 +220,11 @@
 当前需求为首版基础范围，后续还会继续补充。每次补充需求时，应把新增能力、影响范围和优先级写入本文件。
 
 ## 12. 变更日志
+
+### 2026-03-17
+
+- 收敛首批语言为 English、简体中文与繁體中文 / Reduced built-in languages to English, Simplified Chinese, and Traditional Chinese.
+- 保留 RTL 扩展能力，不再内建希伯来语 / Kept RTL extensibility while removing built-in Hebrew.
 
 ### 2026-03-12
 

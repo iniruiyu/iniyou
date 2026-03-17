@@ -5,6 +5,7 @@ import 'content_sections.dart';
 import 'settings_views.dart';
 import 'social_views.dart';
 import 'view_state_helpers.dart';
+import '../main.dart' show ProfileTab;
 
 const blockchainChainsByProvider = {
   'evm': ['ethereum', 'base', 'bsc', 'polygon'],
@@ -163,11 +164,17 @@ Widget buildProfileView({
   required CurrentUser? user,
   required UserProfileItem? profileUser,
   required List<PostItem> profilePosts,
+  required SubscriptionItem? subscription,
   required List<ExternalAccountItem> externalAccounts,
   required List<FriendItem> friends,
+  required String currentLevel,
+  required ValueChanged<String> onActivateLevel,
+  required ValueChanged<String> onActivatePlan,
   required TextEditingController displayNameController,
   required bool loading,
   required TextEditingController Function(String postId) commentControllerFor,
+  required ProfileTab profileTab,
+  required ValueChanged<ProfileTab> onProfileTabChanged,
   required VoidCallback onSaveProfile,
   required ValueChanged<String> onAddFriend,
   required ValueChanged<String> onAcceptFriend,
@@ -177,15 +184,22 @@ Widget buildProfileView({
   required ValueChanged<PostItem> onCommentPost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required String Function(String key) t,
 }) {
   return ProfileView(
     user: user,
     profileUser: profileUser,
     profilePosts: profilePosts,
+    subscription: subscription,
     connectedChains: connectedChains(externalAccounts),
     displayNameController: displayNameController,
     loading: loading,
     commentControllerFor: commentControllerFor,
+    profileTab: profileTab,
+    onProfileTabChanged: onProfileTabChanged,
+    currentLevel: currentLevel,
+    onActivateLevel: onActivateLevel,
+    onActivatePlan: onActivatePlan,
     onSaveProfile: onSaveProfile,
     onAddFriend: onAddFriend,
     onAcceptFriend: onAcceptFriend,
@@ -204,6 +218,7 @@ Widget buildProfileView({
     onCommentPost: onCommentPost,
     onOpenProfile: onOpenProfile,
     onOpenPostDetail: onOpenPostDetail,
+    t: t,
   );
 }
 

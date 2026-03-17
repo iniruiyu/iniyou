@@ -34,29 +34,14 @@ List<ShellSidebarItem> buildShellSidebarItems(String Function(String key) t) {
       icon: Icons.public,
     ),
     ShellSidebarItem(
-      viewKey: 'profile',
-      label: t('sidebar.profile'),
-      icon: Icons.person_outline,
-    ),
-    ShellSidebarItem(
-      viewKey: 'levels',
-      label: t('sidebar.levels'),
-      icon: Icons.stars_outlined,
-    ),
-    ShellSidebarItem(
-      viewKey: 'subscription',
-      label: t('sidebar.subscription'),
-      icon: Icons.workspace_premium_outlined,
-    ),
-    ShellSidebarItem(
-      viewKey: 'blockchain',
-      label: t('sidebar.blockchain'),
-      icon: Icons.hub_outlined,
-    ),
-    ShellSidebarItem(
       viewKey: 'friends',
       label: t('sidebar.friends'),
       icon: Icons.people_alt_outlined,
+    ),
+    ShellSidebarItem(
+      viewKey: 'profile',
+      label: t('sidebar.profile'),
+      icon: Icons.person_outline,
     ),
     ShellSidebarItem(
       viewKey: 'chat',
@@ -89,7 +74,7 @@ class ShellSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0D1623),
+      color: Theme.of(context).colorScheme.surface,
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -124,8 +109,8 @@ class ShellSidebar extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   alignment: Alignment.centerLeft,
                   backgroundColor: selected
-                      ? const Color(0xFF1D6F87)
-                      : const Color(0xFF152131),
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
@@ -153,22 +138,36 @@ class SettingsMenuButton extends StatelessWidget {
     super.key,
     required this.currentLanguageCode,
     required this.onLanguageChanged,
+    required this.currentThemeKey,
+    required this.onThemeChanged,
+    required this.themeOptions,
     required this.t,
   });
 
   final String currentLanguageCode;
   final ValueChanged<String> onLanguageChanged;
+  final String currentThemeKey;
+  final ValueChanged<String> onThemeChanged;
+  final List<ThemeOption> themeOptions;
   final String Function(String key) t;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
+    return PopupMenuButton<SettingsAction>(
       tooltip: t('settings.title'),
       icon: const Icon(Icons.settings_outlined),
-      onSelected: onLanguageChanged,
+      onSelected: (action) {
+        // Route settings menu selection to the right handler.
+        // 将设置菜单动作路由到对应处理函数。
+        if (action.type == SettingsActionType.language) {
+          onLanguageChanged(action.value);
+        } else if (action.type == SettingsActionType.theme) {
+          onThemeChanged(action.value);
+        }
+      },
       itemBuilder: (context) {
         return [
-          PopupMenuItem<String>(
+          PopupMenuItem<SettingsAction>(
             enabled: false,
             child: Text(
               t('settings.language'),
@@ -176,8 +175,8 @@ class SettingsMenuButton extends StatelessWidget {
             ),
           ),
           for (final code in AppI18n.supportedLanguageCodes)
-            PopupMenuItem<String>(
-              value: code,
+            PopupMenuItem<SettingsAction>(
+              value: SettingsAction(SettingsActionType.language, code),
               child: Row(
                 children: [
                   Icon(
@@ -191,10 +190,55 @@ class SettingsMenuButton extends StatelessWidget {
                 ],
               ),
             ),
+          const PopupMenuDivider(),
+          PopupMenuItem<SettingsAction>(
+            enabled: false,
+            child: Text(
+              t('theme.title'),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+          ),
+          for (final option in themeOptions)
+            PopupMenuItem<SettingsAction>(
+              value: SettingsAction(SettingsActionType.theme, option.key),
+              child: Row(
+                children: [
+                  Icon(
+                    option.key == currentThemeKey
+                        ? Icons.check_circle
+                        : Icons.circle_outlined,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(t(option.labelKey)),
+                ],
+              ),
+            ),
         ];
       },
     );
   }
+}
+
+class ThemeOption {
+  // Theme option metadata.
+  // 主题选项元数据。
+  const ThemeOption({required this.key, required this.labelKey});
+
+  final String key;
+  final String labelKey;
+}
+
+enum SettingsActionType {
+  language,
+  theme,
+}
+
+class SettingsAction {
+  const SettingsAction(this.type, this.value);
+
+  final SettingsActionType type;
+  final String value;
 }
 
 class BannerCard extends StatelessWidget {

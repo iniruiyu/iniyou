@@ -5,8 +5,10 @@ window.LandingPage = {
       required: true,
     },
   },
+  // Use landing shell layout for auth-only view.
+  // 认证页沿用 landing-shell 布局。
   template: `
-    <div class="auth-shell">
+    <div class="landing-shell auth-shell">
       <div class="landing-backdrop landing-backdrop-one"></div>
       <div class="landing-backdrop landing-backdrop-two"></div>
 

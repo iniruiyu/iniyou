@@ -143,11 +143,11 @@ String sidebarViewKey(AppView view) {
     case AppView.postDetail:
       return 'public';
     case AppView.levels:
-      return 'levels';
+      return 'profile';
     case AppView.subscription:
-      return 'subscription';
+      return 'profile';
     case AppView.blockchain:
-      return 'blockchain';
+      return 'profile';
     case AppView.friends:
       return 'friends';
     case AppView.chat:

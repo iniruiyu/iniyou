@@ -9,3 +9,10 @@ build/
 .env.*
 !.env.example
 coverage/
+
+# IDE configs / IDE 配置
+.idea/
+flutter_frontend/.idea/
+
+# Local build caches / 本地构建缓存
+flutter_frontend/gradle_home/
