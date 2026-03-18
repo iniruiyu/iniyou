@@ -268,10 +268,56 @@ class BannerCard extends StatelessWidget {
     }
     final color = error != null ? Colors.redAccent : const Color(0xFF6EE7FF);
     final message = error ?? flash!;
+    final theme = Theme.of(context);
     return Card(
-      child: Padding(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withValues(alpha: 0.18),
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.96),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.12),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
         padding: const EdgeInsets.all(14),
-        child: Text(message, style: TextStyle(color: color)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                error != null ? Icons.warning_amber_rounded : Icons.bolt_rounded,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -80,6 +80,7 @@ class ChatView extends StatefulWidget {
 
 class _ChatViewState extends State<ChatView> {
   final ScrollController _messageScrollController = ScrollController();
+  bool _showQuickInsertPanel = false;
 
   @override
   void initState() {
@@ -109,6 +110,24 @@ class _ChatViewState extends State<ChatView> {
   }
 
   bool get _canCompose => widget.activeChat != null && !widget.loading;
+
+  void _openQuickInsertPanel() {
+    if (_showQuickInsertPanel) {
+      return;
+    }
+    // Open the quick insert panel for emojis and text stickers.
+    // 打开表情与文字表情的快捷面板。
+    setState(() => _showQuickInsertPanel = true);
+  }
+
+  void _closeQuickInsertPanel() {
+    if (!_showQuickInsertPanel) {
+      return;
+    }
+    // Close the quick insert panel with a visible red close affordance.
+    // 使用醒目的红色关闭入口收起快捷面板。
+    setState(() => _showQuickInsertPanel = false);
+  }
 
   void _scrollToBottom({bool immediate = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -480,6 +499,138 @@ class _ChatViewState extends State<ChatView> {
     );
   }
 
+  Widget _buildQuickInsertPanel(
+    BuildContext context,
+    ChatAttachmentDraft? attachment,
+  ) {
+    final theme = Theme.of(context);
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: !_showQuickInsertPanel
+          ? const SizedBox.shrink()
+          : Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.96),
+                    theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.94),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.emoji_emotions_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '表情包面板',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      // Red close button to dismiss the emoji panel.
+                      // 红色关闭按钮用于收起表情包面板。
+                      IconButton(
+                        tooltip: '关闭表情包面板 / Close sticker panel',
+                        onPressed: _closeQuickInsertPanel,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              Colors.redAccent.withValues(alpha: 0.12),
+                          foregroundColor: Colors.redAccent,
+                        ),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '常用表情 / Emoji',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final emoji in _emojiQuickItems)
+                        ActionChip(
+                          label: Text(emoji, style: const TextStyle(fontSize: 18)),
+                          onPressed: _canCompose
+                              ? () => _insertComposerText(emoji)
+                              : null,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '文字表情 / Text stickers',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final sticker in _stickerQuickItems)
+                        Tooltip(
+                          message: sticker.label,
+                          child: ActionChip(
+                            label: Text(sticker.token),
+                            onPressed: _canCompose
+                                ? () => _insertComposerText(sticker.token)
+                                : null,
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (attachment != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      '当前附件 / Active attachment',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      attachment.mediaName,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+    );
+  }
+
   Widget _buildComposer(
     BuildContext context,
     ChatAttachmentDraft? attachment,
@@ -487,53 +638,19 @@ class _ChatViewState extends State<ChatView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '常用表情 / 贴纸',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final emoji in _emojiQuickItems)
-                    ActionChip(
-                      label: Text(emoji, style: const TextStyle(fontSize: 18)),
-                      onPressed: _canCompose
-                          ? () => _insertComposerText(emoji)
-                          : null,
-                    ),
-                  for (final sticker in _stickerQuickItems)
-                    Tooltip(
-                      message: sticker.label,
-                      child: ActionChip(
-                        label: Text(sticker.token),
-                        onPressed: _canCompose
-                            ? () => _insertComposerText(sticker.token)
-                            : null,
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        _buildQuickInsertPanel(context, attachment),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
+            // Emoji panel toggle goes before media actions for faster access.
+            // 表情面板入口放在媒体按钮之前，方便先打开再发送内容。
+            FilledButton.tonalIcon(
+              onPressed: _canCompose ? _openQuickInsertPanel : null,
+              icon: const Icon(Icons.emoji_emotions_outlined),
+              label: const Text('表情'),
+            ),
             FilledButton.tonalIcon(
               onPressed: _canCompose ? () => widget.onPickAttachment('image') : null,
               icon: const Icon(Icons.image_outlined),

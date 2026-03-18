@@ -138,13 +138,53 @@ class AuthenticatedShellView extends StatelessWidget {
               ),
               child: Stack(
                 children: [
+                  // Add soft atmospheric glows so the shell feels less flat.
+                  // 增加柔和氛围光斑，让壳层背景不再过于平直。
+                  Positioned(
+                    top: -120,
+                    right: -80,
+                    child: IgnorePointer(
+                      child: Container(
+                        width: 260,
+                        height: 260,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.white.withValues(alpha: 0.12),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -160,
+                    left: -120,
+                    child: IgnorePointer(
+                      child: Container(
+                        width: 320,
+                        height: 320,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   body,
                   if (floatingNotice != null)
                     PositionedDirectional(
                       top: 16,
                       end: 16,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 360),
+                        constraints: const BoxConstraints(maxWidth: 420),
                         child: floatingNotice!,
                       ),
                     ),

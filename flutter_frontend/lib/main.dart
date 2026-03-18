@@ -40,27 +40,112 @@ class IniyouApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'iniyou',
-      theme: ThemeData(
-        colorScheme: scheme,
+      theme: _buildAppTheme(
+        scheme: scheme,
         scaffoldBackgroundColor: const Color(0xFF08111D),
-        useMaterial3: true,
-        cardTheme: const CardThemeData(
-          color: Color(0xFF101925),
-          elevation: 0,
-          margin: EdgeInsets.zero,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFF152131),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-        ),
+        cardColor: const Color(0xFF101925),
+        fillColor: const Color(0xFF152131),
       ),
       home: const IniyouHome(),
     );
   }
+}
+
+ThemeData _buildAppTheme({
+  required ColorScheme scheme,
+  required Color scaffoldBackgroundColor,
+  required Color cardColor,
+  required Color fillColor,
+}) {
+  // Build a polished app theme with softer surfaces and stronger depth cues.
+  // 构建更有层次感的应用主题，强化表面层级与视觉深度。
+  return ThemeData(
+    colorScheme: scheme,
+    scaffoldBackgroundColor: scaffoldBackgroundColor,
+    useMaterial3: true,
+    cardTheme: CardThemeData(
+      color: cardColor,
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      surfaceTintColor: Colors.transparent,
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      iconTheme: IconThemeData(color: scheme.onSurfaceVariant),
+      titleTextStyle: TextStyle(
+        color: scheme.onSurface,
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        textStyle: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: fillColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: scheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: scheme.primary.withValues(alpha: 0.8),
+          width: 1.4,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: scheme.surfaceContainerHighest,
+      selectedColor: scheme.primaryContainer,
+      disabledColor: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+      labelStyle: TextStyle(color: scheme.onSurface),
+      secondaryLabelStyle: TextStyle(color: scheme.onSurface),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    ),
+    dividerTheme: DividerThemeData(
+      color: scheme.outlineVariant.withValues(alpha: 0.45),
+      thickness: 1,
+    ),
+    iconTheme: IconThemeData(color: scheme.onSurfaceVariant),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: scheme.surfaceContainerHighest,
+      contentTextStyle: TextStyle(color: scheme.onSurface),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+  );
 }
 
 enum AppView {
@@ -332,23 +417,11 @@ class _IniyouHomeState extends State<IniyouHome> {
           seedColor: const Color(0xFF2F80ED),
           brightness: Brightness.light,
         );
-        return ThemeData(
-          colorScheme: scheme,
-          scaffoldBackgroundColor: const Color(0xFFF6F7FB),
-          useMaterial3: true,
-          cardTheme: const CardThemeData(
-            color: Colors.white,
-            elevation: 0,
-            margin: EdgeInsets.zero,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFFEEF1F6),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
-          ),
+        return _buildAppTheme(
+          scheme: scheme,
+          scaffoldBackgroundColor: const Color(0xFFF4F6FB),
+          cardColor: const Color(0xFFFFFEFF),
+          fillColor: const Color(0xFFEAF0F7),
         );
       case 'ocean':
         final scheme = ColorScheme.fromSeed(
@@ -356,23 +429,11 @@ class _IniyouHomeState extends State<IniyouHome> {
           brightness: Brightness.dark,
           surface: const Color(0xFF0B1E2D),
         );
-        return ThemeData(
-          colorScheme: scheme,
+        return _buildAppTheme(
+          scheme: scheme,
           scaffoldBackgroundColor: const Color(0xFF06131F),
-          useMaterial3: true,
-          cardTheme: const CardThemeData(
-            color: Color(0xFF0B1E2D),
-            elevation: 0,
-            margin: EdgeInsets.zero,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF10283B),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
-          ),
+          cardColor: const Color(0xFF0B1E2D),
+          fillColor: const Color(0xFF10283B),
         );
       case 'midnight':
       default:
@@ -382,23 +443,11 @@ class _IniyouHomeState extends State<IniyouHome> {
           brightness: Brightness.dark,
           surface: const Color(0xFF101925),
         );
-        return ThemeData(
-          colorScheme: scheme,
+        return _buildAppTheme(
+          scheme: scheme,
           scaffoldBackgroundColor: const Color(0xFF08111D),
-          useMaterial3: true,
-          cardTheme: const CardThemeData(
-            color: Color(0xFF101925),
-            elevation: 0,
-            margin: EdgeInsets.zero,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF152131),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
-          ),
+          cardColor: const Color(0xFF101925),
+          fillColor: const Color(0xFF152131),
         );
     }
   }
@@ -408,12 +457,12 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 返回各主题的背景渐变色。
     switch (themeKey) {
       case 'dawn':
-        return const [Color(0xFFEEF1FF), Color(0xFFF6F7FB)];
+        return const [Color(0xFFF4F6FB), Color(0xFFE8EDF8), Color(0xFFF8FAFD)];
       case 'ocean':
-        return const [Color(0xFF12334F), Color(0xFF06131F)];
+        return const [Color(0xFF12334F), Color(0xFF0A1E2F), Color(0xFF06131F)];
       case 'midnight':
       default:
-        return const [Color(0xFF08111D), Color(0xFF0E1A2A)];
+        return const [Color(0xFF08111D), Color(0xFF0D1A2A), Color(0xFF111F35)];
     }
   }
 
@@ -2050,57 +2099,173 @@ class _IniyouHomeState extends State<IniyouHome> {
         '${pendingFriend.displayName.isNotEmpty ? pendingFriend.displayName : pendingFriend.id} ${_t('friends.title')}',
       if (unreadCount > 0) '$_unreadMessageCount ${_t('ws.unreadLabel')}',
     ];
+    final accentColor = pendingFriend != null
+        ? const Color(0xFFFFB86B)
+        : const Color(0xFF6EE7FF);
+    final title = pendingFriend != null ? '好友提醒' : '新消息提醒';
+    final subtitle = pendingFriend != null
+        ? '有新的好友请求正在等待处理。'
+        : '有未读消息正在等待你查看。';
 
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+      elevation: 16,
+      shadowColor: accentColor.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: BorderSide(color: accentColor.withValues(alpha: 0.35)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              accentColor.withValues(alpha: 0.24),
+              Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.96),
+            ],
+          ),
+        ),
+        child: Stack(
           children: [
-            Row(
-              children: [
-                Icon(
-                  pendingFriend != null
-                      ? Icons.person_add_alt_1_outlined
-                      : Icons.mark_chat_unread_outlined,
-                  size: 18,
+            Positioned(
+              right: -18,
+              top: -18,
+              child: IgnorePointer(
+                child: Container(
+                  width: 92,
+                  height: 92,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accentColor.withValues(alpha: 0.18),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  pendingFriend != null ? '新好友提醒' : '新消息提醒',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            for (final line in lines)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(line),
               ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (pendingFriend != null)
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    onPressed: () => _navigateTo(AppView.friends),
-                    primaryLabel: '查看好友',
-                    secondaryLabel: 'View friends',
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          pendingFriend != null
+                              ? Icons.person_add_alt_1_outlined
+                              : Icons.mark_chat_unread_outlined,
+                          color: accentColor,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              subtitle,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: accentColor.withValues(alpha: 0.28),
+                          ),
+                        ),
+                        child: Text(
+                          pendingFriend != null
+                              ? '$_pendingFriendCount 个'
+                              : '$_unreadMessageCount 条',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(
+                                color: accentColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ),
+                    ],
                   ),
-                if (unreadCount > 0)
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    onPressed: () => _navigateTo(AppView.chat),
-                    primaryLabel: '查看聊天',
-                    secondaryLabel: 'View chat',
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outlineVariant
+                            .withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final line in lines)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(line),
+                          ),
+                      ],
+                    ),
                   ),
-              ],
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (pendingFriend != null)
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.filled,
+                          onPressed: () => _navigateTo(AppView.friends),
+                          primaryLabel: '查看好友',
+                          secondaryLabel: 'View friends',
+                        ),
+                      if (unreadCount > 0)
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.tonal,
+                          onPressed: () => _navigateTo(AppView.chat),
+                          primaryLabel: '查看聊天',
+                          secondaryLabel: 'View chat',
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
