@@ -18,6 +18,8 @@ import 'views/section_body_router.dart';
 import 'views/shell_widgets.dart';
 import 'views/view_factories.dart';
 import 'views/view_state_helpers.dart';
+import 'widgets/bilingual_dropdown_field.dart';
+import 'widgets/bilingual_dropdown_options.dart';
 
 void main() {
   runApp(const IniyouApp());
@@ -652,20 +654,11 @@ class _IniyouHomeState extends State<IniyouHome> {
                               : '选择私人或公共空间，然后补充名称、描述和二级域名。名称和二级域名互不关联，二级域名最长 63 个字符。',
                         ),
                         const SizedBox(height: 20),
-                        DropdownButtonFormField<String>(
-                          key: ValueKey('space-type-$selectedType'),
-                          initialValue: selectedType,
-                          decoration: const InputDecoration(labelText: '空间类型'),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'private',
-                              child: Text('私人空间'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'public',
-                              child: Text('公共空间'),
-                            ),
-                          ],
+                        BilingualDropdownField<String>(
+                          primaryLabel: '空间类型',
+                          secondaryLabel: 'Space type',
+                          value: selectedType,
+                          items: buildSpaceTypeItems(),
                           onChanged: isEditing
                               ? null
                               : (value) {
@@ -839,19 +832,11 @@ class _IniyouHomeState extends State<IniyouHome> {
                         ),
                       ],
                       const SizedBox(height: 20),
-                      DropdownButtonFormField<String>(
-                        key: ValueKey('space-select-$selectedSpaceId'),
-                        initialValue: selectedSpaceId,
-                        decoration: const InputDecoration(labelText: '发布空间'),
-                        items: [
-                          for (final space in spaces)
-                            DropdownMenuItem(
-                              value: space.id,
-                              child: Text(
-                                '${space.name} · @${space.subdomain}',
-                              ),
-                            ),
-                        ],
+                      BilingualDropdownField<String>(
+                        primaryLabel: '发布空间',
+                        secondaryLabel: 'Publish space',
+                        value: selectedSpaceId,
+                        items: buildSpaceItems(spaces),
                         onChanged: (value) {
                           setDialogState(() {
                             selectedSpaceId = value ?? selectedSpaceId;
@@ -871,18 +856,11 @@ class _IniyouHomeState extends State<IniyouHome> {
                         decoration: const InputDecoration(labelText: '内容'),
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        key: ValueKey('status-$selectedStatus'),
-                        initialValue: selectedStatus,
-                        decoration: const InputDecoration(labelText: '状态'),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'published',
-                            child: Text('已发布'),
-                          ),
-                          DropdownMenuItem(value: 'draft', child: Text('草稿')),
-                          DropdownMenuItem(value: 'hidden', child: Text('隐藏')),
-                        ],
+                      BilingualDropdownField<String>(
+                        primaryLabel: '状态',
+                        secondaryLabel: 'Status',
+                        value: selectedStatus,
+                        items: buildPostStatusItems(),
                         onChanged: (value) {
                           setDialogState(() {
                             selectedStatus = value ?? selectedStatus;

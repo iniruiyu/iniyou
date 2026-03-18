@@ -212,46 +212,30 @@
               <textarea class="post-textarea" :placeholder="t('profile.identity.signaturePlaceholder')" v-model="profileDraft.signature"></textarea>
             </bilingual-field>
             <div class="identity-visibility-grid">
-              <bilingual-field
+              <bilingual-select-field
                 :primary-label="t('profile.identity.phoneVisibility')"
                 :secondary-label="peerLocaleText('profile.identity.phoneVisibility')"
-              >
-                <select v-model="profileDraft.phoneVisibility">
-                  <option value="public">{{ t('profile.identity.visibility.public') }}</option>
-                  <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
-                  <option value="private">{{ t('profile.identity.visibility.private') }}</option>
-                </select>
-              </bilingual-field>
-              <bilingual-field
+                v-model="profileDraft.phoneVisibility"
+                :options="identityVisibilityOptions()"
+              ></bilingual-select-field>
+              <bilingual-select-field
                 :primary-label="t('profile.identity.emailVisibility')"
                 :secondary-label="peerLocaleText('profile.identity.emailVisibility')"
-              >
-                <select v-model="profileDraft.emailVisibility">
-                  <option value="public">{{ t('profile.identity.visibility.public') }}</option>
-                  <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
-                  <option value="private">{{ t('profile.identity.visibility.private') }}</option>
-                </select>
-              </bilingual-field>
-              <bilingual-field
+                v-model="profileDraft.emailVisibility"
+                :options="identityVisibilityOptions()"
+              ></bilingual-select-field>
+              <bilingual-select-field
                 :primary-label="t('profile.identity.ageVisibility')"
                 :secondary-label="peerLocaleText('profile.identity.ageVisibility')"
-              >
-                <select v-model="profileDraft.ageVisibility">
-                  <option value="public">{{ t('profile.identity.visibility.public') }}</option>
-                  <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
-                  <option value="private">{{ t('profile.identity.visibility.private') }}</option>
-                </select>
-              </bilingual-field>
-              <bilingual-field
+                v-model="profileDraft.ageVisibility"
+                :options="identityVisibilityOptions()"
+              ></bilingual-select-field>
+              <bilingual-select-field
                 :primary-label="t('profile.identity.genderVisibility')"
                 :secondary-label="peerLocaleText('profile.identity.genderVisibility')"
-              >
-                <select v-model="profileDraft.genderVisibility">
-                  <option value="public">{{ t('profile.identity.visibility.public') }}</option>
-                  <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
-                  <option value="private">{{ t('profile.identity.visibility.private') }}</option>
-                </select>
-              </bilingual-field>
+                v-model="profileDraft.genderVisibility"
+                :options="identityVisibilityOptions()"
+              ></bilingual-select-field>
             </div>
             <button class="primary" type="button" @click="saveProfile">{{ t('profile.identity.save') }}</button>
           </form>
@@ -543,24 +527,25 @@
               <form class="form">
                 <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="editPostDraft.title" />
                 <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="editPostDraft.content"></textarea>
-                <select v-model="editPostDraft.visibility" @change="editPostDraft.spaceId = selectedSpaceIdForVisibility($event.target.value, editPostDraft.spaceId)">
-                  <option value="public">{{ t('posts.publicLabel') }}</option>
-                  <option value="private">{{ t('posts.privateLabel') }}</option>
-                </select>
-                <select v-model="editPostDraft.spaceId">
-                  <option
-                    v-for="space in (editPostDraft.visibility === 'private' ? privateSpaces : publicSpaces)"
-                    :key="space.id"
-                    :value="space.id"
-                  >
-                    {{ localizedSpaceText('name', space) }} · @{{ space.subdomain }}
-                  </option>
-                </select>
-                <select v-model="editPostDraft.status">
-                  <option value="published">{{ t('posts.statusPublished') }}</option>
-                  <option value="draft">{{ t('posts.statusDraft') }}</option>
-                  <option value="hidden">{{ t('posts.statusHidden') }}</option>
-                </select>
+                <bilingual-select-field
+                  :primary-label="t('posts.visibilityLabel')"
+                  :secondary-label="peerLocaleText('posts.visibilityLabel')"
+                  v-model="editPostDraft.visibility"
+                  :options="postVisibilityOptions()"
+                  @change="editPostDraft.spaceId = selectedSpaceIdForVisibility($event, editPostDraft.spaceId)"
+                ></bilingual-select-field>
+                <bilingual-select-field
+                  :primary-label="t('posts.spaceLabel')"
+                  :secondary-label="peerLocaleText('posts.spaceLabel')"
+                  v-model="editPostDraft.spaceId"
+                  :options="spaceOptions(editPostDraft.visibility === 'private' ? privateSpaces : publicSpaces)"
+                ></bilingual-select-field>
+                <bilingual-select-field
+                  :primary-label="t('posts.statusLabel')"
+                  :secondary-label="peerLocaleText('posts.statusLabel')"
+                  v-model="editPostDraft.status"
+                  :options="postStatusOptions()"
+                ></bilingual-select-field>
                 <button class="primary" type="button" @click="savePostEdit">{{ t('posts.editAction') }}</button>
               </form>
             </div>
@@ -583,14 +568,18 @@
         <p>{{ t('blockchain.sub') }}</p>
         <div class="search-hint">{{ t('blockchain.securityHint') }}</div>
         <form class="form">
-          <label>{{ t('blockchain.providerLabel') }}</label>
-          <select v-model="externalAccountDraft.provider">
-            <option v-for="provider in blockchainProviderOptions" :key="provider" :value="provider">{{ provider.toUpperCase() }}</option>
-          </select>
-          <label>{{ t('blockchain.chainLabel') }}</label>
-          <select v-model="externalAccountDraft.chain">
-            <option v-for="chain in blockchainChainOptions" :key="chain" :value="chain">{{ chain }}</option>
-          </select>
+          <bilingual-select-field
+            :primary-label="t('blockchain.providerLabel')"
+            :secondary-label="peerLocaleText('blockchain.providerLabel')"
+            v-model="externalAccountDraft.provider"
+            :options="blockchainProviderChoiceOptions()"
+          ></bilingual-select-field>
+          <bilingual-select-field
+            :primary-label="t('blockchain.chainLabel')"
+            :secondary-label="peerLocaleText('blockchain.chainLabel')"
+            v-model="externalAccountDraft.chain"
+            :options="blockchainChainChoiceOptions()"
+          ></bilingual-select-field>
           <input type="text" :placeholder="t('blockchain.addressPlaceholder')" v-model="externalAccountDraft.accountAddress" />
           <textarea class="post-textarea" :placeholder="t('blockchain.signaturePlaceholder')" v-model="externalAccountDraft.signaturePayload"></textarea>
           <button class="primary" type="button" @click="bindExternalAccount">{{ t('blockchain.bindAction') }}</button>
@@ -755,15 +744,14 @@
             <button class="ghost compact" type="button" @click="closeSpaceComposer">×</button>
           </div>
           <form class="form modal-form" @submit.prevent="createSpace">
-            <label>{{ t('spaces.typeLabel') }}</label>
-            <select
+            <bilingual-select-field
+              :primary-label="t('spaces.typeLabel')"
+              :secondary-label="peerLocaleText('spaces.typeLabel')"
               v-model="spaceDraft.type"
               :disabled="Boolean(spaceDraft.id)"
-              @change="!spaceDraft.id && (spaceDraft.subdomain = spaceDraft.subdomain.trim() || suggestSpaceSubdomain(spaceDraft.name, $event.target.value))"
-            >
-              <option value="private">{{ t('spaces.type.private') }}</option>
-              <option value="public">{{ t('spaces.type.public') }}</option>
-            </select>
+              :options="spaceTypeOptions()"
+              @change="!spaceDraft.id && (spaceDraft.subdomain = spaceDraft.subdomain.trim() || suggestSpaceSubdomain(spaceDraft.name, $event))"
+            ></bilingual-select-field>
             <input
               type="text"
               :placeholder="t('spaces.namePlaceholder')"
@@ -797,29 +785,27 @@
             <button class="ghost compact" type="button" @click="closePostComposer">×</button>
           </div>
           <form class="form modal-form" @submit.prevent="createPost">
-            <label>{{ t('posts.visibilityLabel') }}</label>
-            <select v-model="postDraft.visibility" @change="postDraft.spaceId = selectedSpaceIdForVisibility($event.target.value, postDraft.spaceId)">
-              <option value="public">{{ t('posts.publicLabel') }}</option>
-              <option value="private">{{ t('posts.privateLabel') }}</option>
-            </select>
-            <label>{{ t('posts.spaceLabel') }}</label>
-            <select v-model="postDraft.spaceId">
-              <option
-                v-for="space in (postDraft.visibility === 'private' ? privateSpaces : publicSpaces)"
-                :key="space.id"
-                :value="space.id"
-              >
-                {{ localizedSpaceText('name', space) }} · @{{ space.subdomain }}
-              </option>
-            </select>
+            <bilingual-select-field
+              :primary-label="t('posts.visibilityLabel')"
+              :secondary-label="peerLocaleText('posts.visibilityLabel')"
+              v-model="postDraft.visibility"
+              :options="postVisibilityOptions()"
+              @change="postDraft.spaceId = selectedSpaceIdForVisibility($event, postDraft.spaceId)"
+            ></bilingual-select-field>
+            <bilingual-select-field
+              :primary-label="t('posts.spaceLabel')"
+              :secondary-label="peerLocaleText('posts.spaceLabel')"
+              v-model="postDraft.spaceId"
+              :options="spaceOptions(postDraft.visibility === 'private' ? privateSpaces : publicSpaces)"
+            ></bilingual-select-field>
             <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="postDraft.title" />
             <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="postDraft.content"></textarea>
-            <label>{{ t('posts.statusLabel') }}</label>
-            <select v-model="postDraft.status">
-              <option value="published">{{ t('posts.statusPublished') }}</option>
-              <option value="draft">{{ t('posts.statusDraft') }}</option>
-              <option value="hidden">{{ t('posts.statusHidden') }}</option>
-            </select>
+            <bilingual-select-field
+              :primary-label="t('posts.statusLabel')"
+              :secondary-label="peerLocaleText('posts.statusLabel')"
+              v-model="postDraft.status"
+              :options="postStatusOptions()"
+            ></bilingual-select-field>
             <div class="modal-actions">
               <button class="ghost" type="button" @click="closePostComposer">{{ t('common.cancel') }}</button>
               <button class="primary" type="submit">{{ t('posts.publishAction') }}</button>
@@ -836,6 +822,7 @@
   <script src="components/auth-panel.js"></script>
   <script src="components/landing-page.js"></script>
   <script src="components/bilingual-field.js"></script>
+  <script src="components/bilingual-select-field.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

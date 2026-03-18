@@ -9,6 +9,8 @@ import '../models/app_models.dart';
 import 'content_sections.dart';
 import '../widgets/app_cards.dart';
 import '../widgets/bilingual_field.dart';
+import '../widgets/bilingual_dropdown_field.dart';
+import '../widgets/bilingual_dropdown_options.dart';
 import '../main.dart' show ProfileTab;
 import 'settings_views.dart';
 
@@ -229,117 +231,49 @@ class ProfileView extends StatelessWidget {
                         children: [
                           SizedBox(
                             width: fieldWidth,
-                            child: BilingualField(
+                            child: BilingualDropdownField<String>(
                               primaryLabel: t('profile.identity.phoneVisibility'),
                               secondaryLabel: peerT('profile.identity.phoneVisibility'),
-                              child: DropdownButtonFormField<String>(
-                                initialValue: phoneVisibility,
-                                isExpanded: true,
-                                decoration: const InputDecoration(),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'public',
-                                    child: Text('公开 / Public'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'friends',
-                                    child: Text('好友可见 / Friends'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'private',
-                                    child: Text('仅自己 / Only me'),
-                                  ),
-                                ],
-                                onChanged: (value) => onPhoneVisibilityChanged(
-                                  value ?? phoneVisibility,
-                                ),
+                              value: phoneVisibility,
+                              items: buildIdentityVisibilityItems(),
+                              onChanged: (value) => onPhoneVisibilityChanged(
+                                value ?? phoneVisibility,
                               ),
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: BilingualField(
+                            child: BilingualDropdownField<String>(
                               primaryLabel: t('profile.identity.emailVisibility'),
                               secondaryLabel: peerT('profile.identity.emailVisibility'),
-                              child: DropdownButtonFormField<String>(
-                                initialValue: emailVisibility,
-                                isExpanded: true,
-                                decoration: const InputDecoration(),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'public',
-                                    child: Text('公开 / Public'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'friends',
-                                    child: Text('好友可见 / Friends'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'private',
-                                    child: Text('仅自己 / Only me'),
-                                  ),
-                                ],
-                                onChanged: (value) => onEmailVisibilityChanged(
-                                  value ?? emailVisibility,
-                                ),
+                              value: emailVisibility,
+                              items: buildIdentityVisibilityItems(),
+                              onChanged: (value) => onEmailVisibilityChanged(
+                                value ?? emailVisibility,
                               ),
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: BilingualField(
+                            child: BilingualDropdownField<String>(
                               primaryLabel: t('profile.identity.ageVisibility'),
                               secondaryLabel: peerT('profile.identity.ageVisibility'),
-                              child: DropdownButtonFormField<String>(
-                                initialValue: ageVisibility,
-                                isExpanded: true,
-                                decoration: const InputDecoration(),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'public',
-                                    child: Text('公开 / Public'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'friends',
-                                    child: Text('好友可见 / Friends'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'private',
-                                    child: Text('仅自己 / Only me'),
-                                  ),
-                                ],
-                                onChanged: (value) => onAgeVisibilityChanged(
-                                  value ?? ageVisibility,
-                                ),
+                              value: ageVisibility,
+                              items: buildIdentityVisibilityItems(),
+                              onChanged: (value) => onAgeVisibilityChanged(
+                                value ?? ageVisibility,
                               ),
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: BilingualField(
+                            child: BilingualDropdownField<String>(
                               primaryLabel: t('profile.identity.genderVisibility'),
                               secondaryLabel: peerT('profile.identity.genderVisibility'),
-                              child: DropdownButtonFormField<String>(
-                                initialValue: genderVisibility,
-                                isExpanded: true,
-                                decoration: const InputDecoration(),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'public',
-                                    child: Text('公开 / Public'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'friends',
-                                    child: Text('好友可见 / Friends'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'private',
-                                    child: Text('仅自己 / Only me'),
-                                  ),
-                                ],
-                                onChanged: (value) => onGenderVisibilityChanged(
-                                  value ?? genderVisibility,
-                                ),
+                              value: genderVisibility,
+                              items: buildIdentityVisibilityItems(),
+                              onChanged: (value) => onGenderVisibilityChanged(
+                                value ?? genderVisibility,
                               ),
                             ),
                           ),
@@ -569,39 +503,22 @@ class PostDetailView extends StatelessWidget {
                     children: [
                       SizedBox(
                         width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: editVisibility,
-                          decoration: const InputDecoration(labelText: '可见性'),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'public',
-                              child: Text('公开'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'private',
-                              child: Text('私密'),
-                            ),
-                          ],
+                        child: BilingualDropdownField<String>(
+                          primaryLabel: '可见性',
+                          secondaryLabel: 'Visibility',
+                          value: editVisibility,
+                          items: buildPostVisibilityItems(),
                           onChanged: (value) =>
                               onEditVisibilityChanged(value ?? editVisibility),
                         ),
                       ),
                       SizedBox(
                         width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: editStatus,
-                          decoration: const InputDecoration(labelText: '状态'),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'published',
-                              child: Text('已发布'),
-                            ),
-                            DropdownMenuItem(value: 'draft', child: Text('草稿')),
-                            DropdownMenuItem(
-                              value: 'hidden',
-                              child: Text('隐藏'),
-                            ),
-                          ],
+                        child: BilingualDropdownField<String>(
+                          primaryLabel: '状态',
+                          secondaryLabel: 'Status',
+                          value: editStatus,
+                          items: buildPostStatusItems(),
                           onChanged: (value) =>
                               onEditStatusChanged(value ?? editStatus),
                         ),

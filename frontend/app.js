@@ -2065,6 +2065,98 @@ const app = createApp({
     localizedSpaceText(field, item) {
       return item[field][this.locale] || item[field]['zh-CN'] || '';
     },
+    identityVisibilityOptions() {
+      // Shared identity visibility choices / 共用身份资料可见范围选项。
+      return [
+        {
+          value: 'public',
+          primaryLabel: this.t('profile.identity.visibility.public'),
+          secondaryLabel: this.peerLocaleText('profile.identity.visibility.public'),
+        },
+        {
+          value: 'friends',
+          primaryLabel: this.t('profile.identity.visibility.friends'),
+          secondaryLabel: this.peerLocaleText('profile.identity.visibility.friends'),
+        },
+        {
+          value: 'private',
+          primaryLabel: this.t('profile.identity.visibility.private'),
+          secondaryLabel: this.peerLocaleText('profile.identity.visibility.private'),
+        },
+      ];
+    },
+    postVisibilityOptions() {
+      // Shared post visibility choices / 共用内容可见范围选项。
+      return [
+        {
+          value: 'public',
+          primaryLabel: this.t('posts.publicLabel'),
+          secondaryLabel: this.peerLocaleText('posts.publicLabel'),
+        },
+        {
+          value: 'private',
+          primaryLabel: this.t('posts.privateLabel'),
+          secondaryLabel: this.peerLocaleText('posts.privateLabel'),
+        },
+      ];
+    },
+    postStatusOptions() {
+      // Shared post status choices / 共用内容状态选项。
+      return [
+        {
+          value: 'published',
+          primaryLabel: this.t('posts.statusPublished'),
+          secondaryLabel: this.peerLocaleText('posts.statusPublished'),
+        },
+        {
+          value: 'draft',
+          primaryLabel: this.t('posts.statusDraft'),
+          secondaryLabel: this.peerLocaleText('posts.statusDraft'),
+        },
+        {
+          value: 'hidden',
+          primaryLabel: this.t('posts.statusHidden'),
+          secondaryLabel: this.peerLocaleText('posts.statusHidden'),
+        },
+      ];
+    },
+    spaceTypeOptions() {
+      // Shared space type choices / 共用空间类型选项。
+      return [
+        {
+          value: 'private',
+          primaryLabel: this.t('spaces.type.private'),
+          secondaryLabel: this.peerLocaleText('spaces.type.private'),
+        },
+        {
+          value: 'public',
+          primaryLabel: this.t('spaces.type.public'),
+          secondaryLabel: this.peerLocaleText('spaces.type.public'),
+        },
+      ];
+    },
+    spaceOptions(spaces) {
+      // Keep the space picker labels focused on the actual space name and handle.
+      // 空间选择器直接展示空间名称与句柄，避免二级域名入口信息被截断。
+      return (Array.isArray(spaces) ? spaces : []).map((space) => ({
+        value: space.id,
+        label: `${this.localizedSpaceText('name', space)} · @${space.subdomain}`,
+      }));
+    },
+    blockchainProviderChoiceOptions() {
+      // Provider labels / 提供方选项：保留简短代码名，避免下拉过宽。
+      return (this.blockchainProviderOptions || []).map((provider) => ({
+        value: provider,
+        label: provider.toUpperCase(),
+      }));
+    },
+    blockchainChainChoiceOptions() {
+      // Chain labels / 链网络选项：保留链名本身，保持识别性和紧凑布局。
+      return (this.blockchainChainOptions || []).map((chain) => ({
+        value: chain,
+        label: chain,
+      }));
+    },
     localizedLevelPrice(level) {
       return level.price[this.locale] || level.price['zh-CN'];
     },
@@ -3866,5 +3958,6 @@ app.component('settings-menu', window.SettingsMenu);
 app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
 app.component('bilingual-field', window.BilingualField);
+app.component('bilingual-select-field', window.BilingualSelectField);
 
 app.mount('#app');

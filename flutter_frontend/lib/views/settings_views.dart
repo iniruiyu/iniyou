@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
 import '../widgets/app_cards.dart';
+import '../widgets/bilingual_dropdown_field.dart';
 
 class LevelsView extends StatelessWidget {
   const LevelsView({
@@ -190,11 +191,10 @@ class BlockchainView extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 160,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: externalProvider,
-                        decoration: const InputDecoration(
-                          labelText: 'Provider',
-                        ),
+                      child: BilingualDropdownField<String>(
+                        primaryLabel: '提供方',
+                        secondaryLabel: 'Provider',
+                        value: externalProvider,
                         items: chainsByProvider.keys
                             .map(
                               (item) => DropdownMenuItem(
@@ -212,9 +212,10 @@ class BlockchainView extends StatelessWidget {
                     ),
                     SizedBox(
                       width: 180,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: externalChain,
-                        decoration: const InputDecoration(labelText: 'Chain'),
+                      child: BilingualDropdownField<String>(
+                        primaryLabel: '链网络',
+                        secondaryLabel: 'Chain',
+                        value: externalChain,
                         items: chainOptions
                             .map(
                               (item) => DropdownMenuItem(

@@ -5,6 +5,34 @@ window.SettingsMenu = {
       required: true,
     },
   },
+  methods: {
+    // Build bilingual option models for the compact settings menu.
+    // 为紧凑设置菜单构建双语选项模型。
+    languageSelectOptions() {
+      return this.app.languageOptions.map((option) => ({
+        value: option.code,
+        label: `${option.name} (${option.code})`,
+      }));
+    },
+    themeSelectOptions() {
+      return this.app.themeOptions.map((theme) => ({
+        value: theme.value,
+        label: this.app.t(theme.labelKey),
+      }));
+    },
+    directionSelectOptions() {
+      return [
+        {
+          value: 'ltr',
+          label: this.app.t('i18n.dirLtr'),
+        },
+        {
+          value: 'rtl',
+          label: this.app.t('i18n.dirRtl'),
+        },
+      ];
+    },
+  },
   // Compact layout for sidebar navigation.
   // 侧边栏导航的紧凑布局。
   template: `
@@ -22,27 +50,29 @@ window.SettingsMenu = {
           <div class="settings-eyebrow">{{ app.t('settings.customize') }}</div>
           <div class="settings-title">{{ app.t('i18n.title') }}</div>
         </div>
-        <label class="lang-label">{{ app.t('i18n.choose') }}</label>
-        <select class="lang-select" v-model="app.locale">
-          <option v-for="option in app.languageOptions" :key="option.code" :value="option.code">
-            {{ option.name }} ({{ option.code }})
-          </option>
-        </select>
+        <bilingual-select-field
+          :primary-label="app.t('i18n.choose')"
+          :secondary-label="app.peerLocaleText('i18n.choose')"
+          v-model="app.locale"
+          :options="languageSelectOptions()"
+        ></bilingual-select-field>
         <div class="lang-add-title">{{ app.t('theme.title') }}</div>
-        <label class="lang-label">{{ app.t('theme.label') }}</label>
-        <select class="lang-select" v-model="app.theme" @change="app.applyTheme()">
-          <option v-for="theme in app.themeOptions" :key="theme.value" :value="theme.value">
-            {{ app.t(theme.labelKey) }}
-          </option>
-        </select>
+        <bilingual-select-field
+          :primary-label="app.t('theme.label')"
+          :secondary-label="app.peerLocaleText('theme.label')"
+          v-model="app.theme"
+          :options="themeSelectOptions()"
+          @change="app.applyTheme()"
+        ></bilingual-select-field>
         <div class="lang-add-title">{{ app.t('i18n.addTitle') }}</div>
         <input class="lang-input" type="text" :placeholder="app.t('i18n.codePlaceholder')" v-model="app.newLanguage.code" />
         <input class="lang-input" type="text" :placeholder="app.t('i18n.namePlaceholder')" v-model="app.newLanguage.name" />
-        <label class="lang-label">{{ app.t('i18n.dirLabel') }}</label>
-        <select class="lang-select" v-model="app.newLanguage.dir">
-          <option value="ltr">{{ app.t('i18n.dirLtr') }}</option>
-          <option value="rtl">{{ app.t('i18n.dirRtl') }}</option>
-        </select>
+        <bilingual-select-field
+          :primary-label="app.t('i18n.dirLabel')"
+          :secondary-label="app.peerLocaleText('i18n.dirLabel')"
+          v-model="app.newLanguage.dir"
+          :options="directionSelectOptions()"
+        ></bilingual-select-field>
         <textarea class="lang-textarea" :placeholder="app.t('i18n.jsonPlaceholder')" v-model="app.newLanguage.json"></textarea>
         <button class="primary settings-action" type="button" @click="app.addLanguage()">{{ app.t('i18n.addButton') }}</button>
       </div>
