@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
+import 'bilingual_action_button.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({
@@ -65,22 +66,37 @@ class PostCard extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     if (onOpenAuthor != null)
-                      FilledButton.tonal(
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
                         onPressed: onOpenAuthor,
-                        child: const Text('作者主页'),
+                        primaryLabel: '作者主页',
+                        secondaryLabel: 'Author profile',
                       ),
                     if (onOpenDetail != null)
-                      FilledButton.tonal(
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
                         onPressed: onOpenDetail,
-                        child: const Text('详情'),
+                        primaryLabel: '详情',
+                        secondaryLabel: 'Details',
                       ),
                     if (onEdit != null)
-                      FilledButton.tonal(
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
                         onPressed: onEdit,
-                        child: const Text('编辑'),
+                        primaryLabel: '编辑',
+                        secondaryLabel: 'Edit',
                       ),
                     if (onDelete != null)
-                      TextButton(onPressed: onDelete, child: const Text('删除')),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.text,
+                        compact: true,
+                        onPressed: onDelete,
+                        primaryLabel: '删除',
+                        secondaryLabel: 'Delete',
+                      ),
                   ],
                 ),
               ],
@@ -94,15 +110,19 @@ class PostCard extends StatelessWidget {
               spacing: 12,
               runSpacing: 8,
               children: [
-                FilledButton.tonal(
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
+                  compact: true,
                   onPressed: onLike,
-                  child: Text(
-                    '${post.likedByMe ? '取消点赞' : '点赞'} · ${post.likesCount}',
-                  ),
+                  primaryLabel: '${post.likedByMe ? '取消点赞' : '点赞'} · ${post.likesCount}',
+                  secondaryLabel: '${post.likedByMe ? 'Unlike' : 'Like'} · ${post.likesCount}',
                 ),
-                FilledButton.tonal(
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
+                  compact: true,
                   onPressed: onShare,
-                  child: Text('转发 · ${post.sharesCount}'),
+                  primaryLabel: '转发 · ${post.sharesCount}',
+                  secondaryLabel: 'Share · ${post.sharesCount}',
                 ),
                 Chip(label: Text('评论 ${post.commentsCount}')),
               ],
@@ -125,9 +145,12 @@ class PostCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                FilledButton.tonal(
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
+                  compact: true,
                   onPressed: onComment,
-                  child: const Text('提交'),
+                  primaryLabel: '提交',
+                  secondaryLabel: 'Submit',
                 ),
               ],
             ),
@@ -219,9 +242,12 @@ class PlanCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            FilledButton(
+            BilingualActionButton(
+              variant: BilingualButtonVariant.filled,
+              compact: false,
               onPressed: isLoading ? null : () => onActivate(planId),
-              child: Text('启用 $planId'),
+              primaryLabel: '启用 $planId',
+              secondaryLabel: 'Activate $planId',
             ),
           ],
         ),

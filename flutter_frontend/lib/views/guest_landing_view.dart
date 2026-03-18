@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'shell_widgets.dart';
+import '../widgets/bilingual_action_button.dart';
 
 class GuestLandingView extends StatelessWidget {
   const GuestLandingView({
@@ -22,6 +23,7 @@ class GuestLandingView extends StatelessWidget {
     required this.onThemeChanged,
     required this.themeOptions,
     required this.t,
+    required this.peerT,
   });
 
   final bool loginMode;
@@ -47,6 +49,7 @@ class GuestLandingView extends StatelessWidget {
   // 可选主题列表。
   final List<ThemeOption> themeOptions;
   final String Function(String key) t;
+  final String Function(String key) peerT;
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +78,7 @@ class GuestLandingView extends StatelessWidget {
                 onLogin: onLogin,
                 onRegister: onRegister,
                 t: t,
+                peerT: peerT,
               );
               return Center(
                 child: ConstrainedBox(
@@ -133,6 +137,7 @@ class _AuthCard extends StatelessWidget {
     required this.onLogin,
     required this.onRegister,
     required this.t,
+    required this.peerT,
   });
 
   final bool loginMode;
@@ -147,6 +152,7 @@ class _AuthCard extends StatelessWidget {
   final VoidCallback onLogin;
   final VoidCallback onRegister;
   final String Function(String key) t;
+  final String Function(String key) peerT;
 
   @override
   Widget build(BuildContext context) {
@@ -201,9 +207,12 @@ class _AuthCard extends StatelessWidget {
                 decoration: InputDecoration(labelText: t('auth.password')),
               ),
               const SizedBox(height: 16),
-              FilledButton(
+              // Primary action buttons use the shared bilingual style.
+              // 主操作按钮统一使用双语样式组件。
+              BilingualActionButton(
                 onPressed: loading ? null : onLogin,
-                child: Text(t('auth.login')),
+                primaryLabel: t('auth.login'),
+                secondaryLabel: peerT('auth.login'),
               ),
             ] else ...[
               TextField(
@@ -222,9 +231,10 @@ class _AuthCard extends StatelessWidget {
                 decoration: InputDecoration(labelText: t('auth.passwordHint')),
               ),
               const SizedBox(height: 16),
-              FilledButton(
+              BilingualActionButton(
                 onPressed: loading ? null : onRegister,
-                child: Text(t('auth.register')),
+                primaryLabel: t('auth.register'),
+                secondaryLabel: peerT('auth.register'),
               ),
             ],
           ],

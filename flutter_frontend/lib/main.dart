@@ -18,6 +18,7 @@ import 'views/section_body_router.dart';
 import 'views/shell_widgets.dart';
 import 'views/view_factories.dart';
 import 'views/view_state_helpers.dart';
+import 'widgets/bilingual_action_button.dart';
 import 'widgets/bilingual_dropdown_field.dart';
 import 'widgets/bilingual_dropdown_options.dart';
 
@@ -713,12 +714,17 @@ class _IniyouHomeState extends State<IniyouHome> {
                           spacing: 12,
                           runSpacing: 12,
                           children: [
-                            FilledButton.tonal(
+                            // Dialog footer buttons use the shared bilingual button.
+                            // 弹窗底部按钮统一使用双语按钮组件。
+                            BilingualActionButton(
+                              variant: BilingualButtonVariant.tonal,
                               onPressed: () =>
                                   Navigator.of(dialogContext).pop(),
-                              child: const Text('取消'),
+                              primaryLabel: '取消',
+                              secondaryLabel: 'Cancel',
                             ),
-                            FilledButton(
+                            BilingualActionButton(
+                              variant: BilingualButtonVariant.filled,
                               onPressed: _loading
                                   ? null
                                   : () async {
@@ -752,7 +758,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                                         subdomain: subdomain,
                                       );
                                     },
-                              child: Text(isEditing ? '保存修改' : '创建空间'),
+                              primaryLabel: isEditing ? '保存修改' : '创建空间',
+                              secondaryLabel:
+                                  isEditing ? 'Save changes' : 'Create space',
                             ),
                           ],
                         ),
@@ -872,11 +880,14 @@ class _IniyouHomeState extends State<IniyouHome> {
                         spacing: 12,
                         runSpacing: 12,
                         children: [
-                          FilledButton.tonal(
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
                             onPressed: () => Navigator.of(dialogContext).pop(),
-                            child: const Text('取消'),
+                            primaryLabel: '取消',
+                            secondaryLabel: 'Cancel',
                           ),
-                          FilledButton(
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.filled,
                             onPressed: _loading
                                 ? null
                                 : () async {
@@ -909,7 +920,10 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       status: selectedStatus,
                                     );
                                   },
-                            child: Text(isPrivate ? '保存到私人空间' : '发布到公共空间'),
+                            primaryLabel:
+                                isPrivate ? '保存到私人空间' : '发布到公共空间',
+                            secondaryLabel:
+                                isPrivate ? 'Save to private space' : 'Publish to public space',
                           ),
                         ],
                       ),
@@ -1175,6 +1189,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     required String title,
     required String message,
     required String confirmLabel,
+    String confirmSecondaryLabel = 'Confirm',
   }) async {
     // Confirm destructive actions with a dialog.
     // 通过弹窗确认破坏性操作。
@@ -1188,13 +1203,18 @@ class _IniyouHomeState extends State<IniyouHome> {
           title: Text(title),
           content: Text(message),
           actions: [
-            TextButton(
+            // Confirm dialog actions use the shared bilingual button.
+            // 确认弹窗动作统一使用双语按钮组件。
+            BilingualActionButton(
+              variant: BilingualButtonVariant.text,
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('取消'),
+              primaryLabel: '取消',
+              secondaryLabel: 'Cancel',
             ),
-            FilledButton(
+            BilingualActionButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(confirmLabel),
+              primaryLabel: confirmLabel,
+              secondaryLabel: confirmSecondaryLabel,
             ),
           ],
         );
@@ -1288,6 +1308,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       title: '删除空间',
       message: '删除空间后，该空间下的文章、评论、点赞和转发记录都会一并删除，是否继续？',
       confirmLabel: '删除',
+      confirmSecondaryLabel: 'Delete',
     );
     if (!confirmed) {
       return;
@@ -1333,6 +1354,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       title: '删除文章',
       message: '删除文章后，关联的评论、点赞和转发记录都会一并删除，是否继续？',
       confirmLabel: '删除',
+      confirmSecondaryLabel: 'Delete',
     );
     if (!confirmed) {
       return;
@@ -1854,6 +1876,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onThemeChanged: _setTheme,
         themeOptions: _themeOptions,
         t: _t,
+        peerT: _peerT,
       );
     } else {
       content = LayoutBuilder(
@@ -2064,14 +2087,18 @@ class _IniyouHomeState extends State<IniyouHome> {
               runSpacing: 8,
               children: [
                 if (pendingFriend != null)
-                  FilledButton.tonal(
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
                     onPressed: () => _navigateTo(AppView.friends),
-                    child: const Text('查看好友'),
+                    primaryLabel: '查看好友',
+                    secondaryLabel: 'View friends',
                   ),
                 if (unreadCount > 0)
-                  FilledButton.tonal(
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
                     onPressed: () => _navigateTo(AppView.chat),
-                    child: const Text('查看聊天'),
+                    primaryLabel: '查看聊天',
+                    secondaryLabel: 'View chat',
                   ),
               ],
             ),

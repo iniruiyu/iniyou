@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
 import '../widgets/app_cards.dart';
+import '../widgets/bilingual_action_button.dart';
 
 class TopSummaryRow extends StatelessWidget {
   const TopSummaryRow({super.key, required this.width, required this.cards});
@@ -74,9 +75,12 @@ class DashboardOverviewView extends StatelessWidget {
             '公开内容会出现在公共空间，也能打开作者主页',
             '好友和聊天页面保持关系与实时消息联动',
           ],
-          trailing: FilledButton.tonal(
+          trailing: BilingualActionButton(
+            variant: BilingualButtonVariant.tonal,
+            compact: true,
             onPressed: onOpenPublicSpace,
-            child: const Text('打开空间'),
+            primaryLabel: '打开空间',
+            secondaryLabel: 'Open space',
           ),
         ),
       ],
@@ -105,11 +109,14 @@ class DashboardOverviewView extends StatelessWidget {
               '${post.authorName}: ${post.title}',
             if (publicPosts.isEmpty) '公共空间里还没有内容。',
           ],
-          trailing: FilledButton.tonal(
+          trailing: BilingualActionButton(
+            variant: BilingualButtonVariant.tonal,
+            compact: true,
             onPressed: publicPosts.isEmpty
                 ? null
                 : () => onOpenPostDetail(publicPosts.first.id),
-            child: const Text('查看详情'),
+            primaryLabel: '查看详情',
+            secondaryLabel: 'View details',
           ),
         ),
       ],
@@ -136,7 +143,9 @@ class SpaceComposerCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.detailLines,
-    required this.buttonLabel,
+    required this.buttonPrimaryLabel,
+    required this.buttonSecondaryLabel,
+    required this.buttonVariant,
     required this.onSubmit,
   });
 
@@ -144,7 +153,9 @@ class SpaceComposerCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final List<String> detailLines;
-  final String buttonLabel;
+  final String buttonPrimaryLabel;
+  final String buttonSecondaryLabel;
+  final BilingualButtonVariant buttonVariant;
   final VoidCallback onSubmit;
 
   @override
@@ -168,9 +179,11 @@ class SpaceComposerCard extends StatelessWidget {
                 ),
               ),
             if (detailLines.isNotEmpty) const SizedBox(height: 8),
-            FilledButton(
+            BilingualActionButton(
+              variant: buttonVariant,
               onPressed: loading ? null : onSubmit,
-              child: Text(buttonLabel),
+              primaryLabel: buttonPrimaryLabel,
+              secondaryLabel: buttonSecondaryLabel,
             ),
           ],
         ),
@@ -186,7 +199,9 @@ class PostComposerCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.detailLines,
-    required this.buttonLabel,
+    required this.buttonPrimaryLabel,
+    required this.buttonSecondaryLabel,
+    required this.buttonVariant,
     required this.onSubmit,
   });
 
@@ -194,7 +209,9 @@ class PostComposerCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final List<String> detailLines;
-  final String buttonLabel;
+  final String buttonPrimaryLabel;
+  final String buttonSecondaryLabel;
+  final BilingualButtonVariant buttonVariant;
   final VoidCallback onSubmit;
 
   @override
@@ -218,9 +235,11 @@ class PostComposerCard extends StatelessWidget {
                 ),
               ),
             if (detailLines.isNotEmpty) const SizedBox(height: 8),
-            FilledButton(
+            BilingualActionButton(
+              variant: buttonVariant,
               onPressed: loading ? null : onSubmit,
-              child: Text(buttonLabel),
+              primaryLabel: buttonPrimaryLabel,
+              secondaryLabel: buttonSecondaryLabel,
             ),
           ],
         ),
@@ -296,19 +315,28 @@ class SpaceListSection extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              FilledButton.tonal(
+                              BilingualActionButton(
+                                variant: BilingualButtonVariant.tonal,
+                                compact: true,
                                 onPressed: () => onEnterSpace(space),
-                                child: const Text('进入空间'),
+                                primaryLabel: '进入空间',
+                                secondaryLabel: 'Enter space',
                               ),
                               if (onEditSpace != null)
-                                FilledButton.tonal(
+                                BilingualActionButton(
+                                  variant: BilingualButtonVariant.tonal,
+                                  compact: true,
                                   onPressed: () => onEditSpace!(space),
-                                  child: const Text('编辑'),
+                                  primaryLabel: '编辑',
+                                  secondaryLabel: 'Edit',
                                 ),
                               if (onDeleteSpace != null)
-                                TextButton(
+                                BilingualActionButton(
+                                  variant: BilingualButtonVariant.text,
+                                  compact: true,
                                   onPressed: () => onDeleteSpace!(space),
-                                  child: const Text('删除'),
+                                  primaryLabel: '删除',
+                                  secondaryLabel: 'Delete',
                                 ),
                             ],
                           ),

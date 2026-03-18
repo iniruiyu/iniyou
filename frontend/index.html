@@ -237,7 +237,13 @@
                 :options="identityVisibilityOptions()"
               ></bilingual-select-field>
             </div>
-            <button class="primary" type="button" @click="saveProfile">{{ t('profile.identity.save') }}</button>
+            <bilingual-action-button
+              variant="primary"
+              type="button"
+              :primary-label="t('profile.identity.save')"
+              :secondary-label="peerLocaleText('profile.identity.save')"
+              @click="saveProfile"
+            ></bilingual-action-button>
           </form>
         </div>
         <div class="panel">
@@ -248,7 +254,13 @@
               <div class="subscription-title">{{ t('dashboard.blockchainStat') }}: {{ activeExternalAccounts.length }}</div>
               <div class="subscription-sub">{{ t('blockchain.connectedChains') }}: {{ connectedChainText }}</div>
             </div>
-            <button class="primary" type="button" @click="openProfileTab('blockchain')">{{ t('blockchain.openManager') }}</button>
+            <bilingual-action-button
+              variant="primary"
+              type="button"
+              :primary-label="t('blockchain.openManager')"
+              :secondary-label="peerLocaleText('blockchain.openManager')"
+              @click="openProfileTab('blockchain')"
+            ></bilingual-action-button>
           </div>
         </div>
       </section>
@@ -267,8 +279,20 @@
             </div>
           </div>
           <div class="space-toolbar-actions">
-            <button class="ghost" type="button" @click="openSpaceComposer('private')">{{ t('spaces.createAction') }}</button>
-            <button class="primary" type="button" @click="openPostComposer('private')">{{ t('posts.publishAction') }}</button>
+            <bilingual-action-button
+              variant="ghost"
+              type="button"
+              :primary-label="t('spaces.createAction')"
+              :secondary-label="peerLocaleText('spaces.createAction')"
+              @click="openSpaceComposer('private')"
+            ></bilingual-action-button>
+            <bilingual-action-button
+              variant="primary"
+              type="button"
+              :primary-label="t('posts.publishAction')"
+              :secondary-label="peerLocaleText('posts.publishAction')"
+              @click="openPostComposer('private')"
+            ></bilingual-action-button>
           </div>
         </div>
         <div class="space-cards">
@@ -287,9 +311,31 @@
             <div class="space-meta">@{{ space.subdomain }}</div>
             <div v-if="space.status && space.status !== 'active'" class="space-meta">{{ statusLabel(space.status) }}</div>
             <div class="space-card-actions">
-              <button class="ghost compact" type="button" @click="enterSpace(space)">{{ t('spaces.enterAction') }}</button>
-              <button class="ghost compact" type="button" @click="openSpaceEditor(space)">{{ t('spaces.editAction') }}</button>
-              <button class="ghost compact danger" type="button" @click="deleteSpace(space)">{{ t('spaces.deleteAction') }}</button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('spaces.enterAction')"
+                :secondary-label="peerLocaleText('spaces.enterAction')"
+                @click="enterSpace(space)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('spaces.editAction')"
+                :secondary-label="peerLocaleText('spaces.editAction')"
+                @click="openSpaceEditor(space)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                danger
+                type="button"
+                :primary-label="t('spaces.deleteAction')"
+                :secondary-label="peerLocaleText('spaces.deleteAction')"
+                @click="deleteSpace(space)"
+              ></bilingual-action-button>
             </div>
           </div>
         </div>
@@ -308,13 +354,51 @@
               </div>
             </div>
             <div class="post-title">{{ post.title }}</div>
-            <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
+            <bilingual-action-button
+              variant="ghost"
+              compact
+              type="button"
+              :primary-label="t('posts.openDetail')"
+              :secondary-label="peerLocaleText('posts.openDetail')"
+              @click="openPostDetail(post.id)"
+            ></bilingual-action-button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
-              <button v-if="canEditPost(post)" class="ghost compact" @click="startEditPost(post)">{{ t('posts.edit') }}</button>
-              <button v-if="canEditPost(post)" class="ghost compact danger" @click="deletePost(post)">{{ t('posts.deleteAction') }}</button>
-              <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
-              <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
+              <bilingual-action-button
+                v-if="canEditPost(post)"
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('posts.edit')"
+                :secondary-label="peerLocaleText('posts.edit')"
+                @click="startEditPost(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                v-if="canEditPost(post)"
+                variant="ghost"
+                compact
+                danger
+                type="button"
+                :primary-label="t('posts.deleteAction')"
+                :secondary-label="peerLocaleText('posts.deleteAction')"
+                @click="deletePost(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${post.likedByMe ? t('posts.unlike') : t('posts.like')} · ${post.likesCount}`"
+                :secondary-label="`${post.likedByMe ? peerLocaleText('posts.unlike') : peerLocaleText('posts.like')} · ${post.likesCount}`"
+                @click="togglePostLike(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${t('posts.share')} · ${post.sharesCount}`"
+                :secondary-label="`${peerLocaleText('posts.share')} · ${post.sharesCount}`"
+                @click="sharePost(post)"
+              ></bilingual-action-button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
             </div>
           </article>
@@ -335,8 +419,20 @@
             </div>
           </div>
           <div class="space-toolbar-actions">
-            <button class="ghost" type="button" @click="openSpaceComposer('public')">{{ t('spaces.createAction') }}</button>
-            <button class="primary" type="button" @click="openPostComposer('public')">{{ t('posts.publishAction') }}</button>
+            <bilingual-action-button
+              variant="ghost"
+              type="button"
+              :primary-label="t('spaces.createAction')"
+              :secondary-label="peerLocaleText('spaces.createAction')"
+              @click="openSpaceComposer('public')"
+            ></bilingual-action-button>
+            <bilingual-action-button
+              variant="primary"
+              type="button"
+              :primary-label="t('posts.publishAction')"
+              :secondary-label="peerLocaleText('posts.publishAction')"
+              @click="openPostComposer('public')"
+            ></bilingual-action-button>
           </div>
         </div>
         <div class="space-cards">
@@ -355,9 +451,31 @@
             <div class="space-meta">@{{ space.subdomain }}</div>
             <div v-if="space.status && space.status !== 'active'" class="space-meta">{{ statusLabel(space.status) }}</div>
             <div class="space-card-actions">
-              <button class="ghost compact" type="button" @click="enterSpace(space)">{{ t('spaces.enterAction') }}</button>
-              <button class="ghost compact" type="button" @click="openSpaceEditor(space)">{{ t('spaces.editAction') }}</button>
-              <button class="ghost compact danger" type="button" @click="deleteSpace(space)">{{ t('spaces.deleteAction') }}</button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('spaces.enterAction')"
+                :secondary-label="peerLocaleText('spaces.enterAction')"
+                @click="enterSpace(space)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('spaces.editAction')"
+                :secondary-label="peerLocaleText('spaces.editAction')"
+                @click="openSpaceEditor(space)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                danger
+                type="button"
+                :primary-label="t('spaces.deleteAction')"
+                :secondary-label="peerLocaleText('spaces.deleteAction')"
+                @click="deleteSpace(space)"
+              ></bilingual-action-button>
             </div>
           </div>
         </div>
@@ -374,16 +492,61 @@
                 <div class="post-meta">{{ t('posts.spaceLabel') }} · {{ post.spaceLabel }}</div>
                 <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
               </div>
-              <button class="ghost compact" @click="openProfile(post.userId, post.authorName)">{{ t('posts.viewAuthor') }}</button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('posts.viewAuthor')"
+                :secondary-label="peerLocaleText('posts.viewAuthor')"
+                @click="openProfile(post.userId, post.authorName)"
+              ></bilingual-action-button>
             </div>
             <div class="post-title">{{ post.title }}</div>
-            <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
+            <bilingual-action-button
+              variant="ghost"
+              compact
+              type="button"
+              :primary-label="t('posts.openDetail')"
+              :secondary-label="peerLocaleText('posts.openDetail')"
+              @click="openPostDetail(post.id)"
+            ></bilingual-action-button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
-              <button v-if="canEditPost(post)" class="ghost compact" @click="startEditPost(post)">{{ t('posts.edit') }}</button>
-              <button v-if="canEditPost(post)" class="ghost compact danger" @click="deletePost(post)">{{ t('posts.deleteAction') }}</button>
-              <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
-              <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
+              <bilingual-action-button
+                v-if="canEditPost(post)"
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('posts.edit')"
+                :secondary-label="peerLocaleText('posts.edit')"
+                @click="startEditPost(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                v-if="canEditPost(post)"
+                variant="ghost"
+                compact
+                danger
+                type="button"
+                :primary-label="t('posts.deleteAction')"
+                :secondary-label="peerLocaleText('posts.deleteAction')"
+                @click="deletePost(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${post.likedByMe ? t('posts.unlike') : t('posts.like')} · ${post.likesCount}`"
+                :secondary-label="`${post.likedByMe ? peerLocaleText('posts.unlike') : peerLocaleText('posts.like')} · ${post.likesCount}`"
+                @click="togglePostLike(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${t('posts.share')} · ${post.sharesCount}`"
+                :secondary-label="`${peerLocaleText('posts.share')} · ${post.sharesCount}`"
+                @click="sharePost(post)"
+              ></bilingual-action-button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
             </div>
             <div class="post-comments" v-if="post.comments.length > 0">
@@ -394,7 +557,14 @@
             </div>
             <div class="post-comment-form">
               <input type="text" :placeholder="t('posts.commentPlaceholder')" v-model="commentDrafts[post.id]" @keyup.enter="submitComment(post)" />
-              <button class="ghost compact" @click="submitComment(post)">{{ t('posts.commentAction') }}</button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('posts.commentAction')"
+                :secondary-label="peerLocaleText('posts.commentAction')"
+                @click="submitComment(post)"
+              ></bilingual-action-button>
             </div>
           </article>
         </div>
@@ -414,10 +584,41 @@
                 <div v-if="profileUser.id === user.id && hasBlockchainAccounts" class="post-meta">{{ t('blockchain.connectedChains') }} · {{ connectedChainText }}</div>
               </div>
               <div class="profile-actions">
-                <button class="ghost compact" @click="backToPublicFeed">{{ t('posts.backToFeed') }}</button>
-                <button v-if="activeProfileFriend()" class="ghost compact" @click="startChat(activeProfileFriend())">{{ t('posts.openChat') }}</button>
-                <button v-else-if="profileUser.relationStatus === 'pending' && profileUser.direction === 'incoming'" class="ghost compact" @click="acceptProfileFriend">{{ t('posts.acceptFriend') }}</button>
-                <button v-else-if="profileUser.id && profileUser.id !== user.id && !profileUser.relationStatus" class="ghost compact" @click="addProfileFriend">{{ t('posts.addFriend') }}</button>
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.backToFeed')"
+                  :secondary-label="peerLocaleText('posts.backToFeed')"
+                  @click="backToPublicFeed"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  v-if="activeProfileFriend()"
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.openChat')"
+                  :secondary-label="peerLocaleText('posts.openChat')"
+                  @click="startChat(activeProfileFriend())"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  v-else-if="profileUser.relationStatus === 'pending' && profileUser.direction === 'incoming'"
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.acceptFriend')"
+                  :secondary-label="peerLocaleText('posts.acceptFriend')"
+                  @click="acceptProfileFriend"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  v-else-if="profileUser.id && profileUser.id !== user.id && !profileUser.relationStatus"
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.addFriend')"
+                  :secondary-label="peerLocaleText('posts.addFriend')"
+                  @click="addProfileFriend"
+                ></bilingual-action-button>
               </div>
             </div>
           </div>
@@ -486,13 +687,51 @@
               </div>
             </div>
             <div class="post-title">{{ post.title }}</div>
-            <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
+            <bilingual-action-button
+              variant="ghost"
+              compact
+              type="button"
+              :primary-label="t('posts.openDetail')"
+              :secondary-label="peerLocaleText('posts.openDetail')"
+              @click="openPostDetail(post.id)"
+            ></bilingual-action-button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
-              <button v-if="canEditPost(post)" class="ghost compact" @click="startEditPost(post)">{{ t('posts.edit') }}</button>
-              <button v-if="canEditPost(post)" class="ghost compact danger" @click="deletePost(post)">{{ t('posts.deleteAction') }}</button>
-              <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
-              <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
+              <bilingual-action-button
+                v-if="canEditPost(post)"
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('posts.edit')"
+                :secondary-label="peerLocaleText('posts.edit')"
+                @click="startEditPost(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                v-if="canEditPost(post)"
+                variant="ghost"
+                compact
+                danger
+                type="button"
+                :primary-label="t('posts.deleteAction')"
+                :secondary-label="peerLocaleText('posts.deleteAction')"
+                @click="deletePost(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${post.likedByMe ? t('posts.unlike') : t('posts.like')} · ${post.likesCount}`"
+                :secondary-label="`${post.likedByMe ? peerLocaleText('posts.unlike') : peerLocaleText('posts.like')} · ${post.likesCount}`"
+                @click="togglePostLike(post)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${t('posts.share')} · ${post.sharesCount}`"
+                :secondary-label="`${peerLocaleText('posts.share')} · ${post.sharesCount}`"
+                @click="sharePost(post)"
+              ></bilingual-action-button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
             </div>
           </article>
@@ -509,17 +748,62 @@
                 <div class="post-meta">{{ visibilityLabel(currentPost.visibility) }} · {{ formatDateTime(currentPost.createdAt) }}</div>
               </div>
               <div class="profile-actions">
-                <button class="ghost compact" @click="backFromPostDetail">{{ t('posts.backToFeed') }}</button>
-                <button class="ghost compact" @click="openProfile(currentPost.userId, currentPost.authorName)">{{ t('posts.viewAuthor') }}</button>
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.backToFeed')"
+                  :secondary-label="peerLocaleText('posts.backToFeed')"
+                  @click="backFromPostDetail"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.viewAuthor')"
+                  :secondary-label="peerLocaleText('posts.viewAuthor')"
+                  @click="openProfile(currentPost.userId, currentPost.authorName)"
+                ></bilingual-action-button>
               </div>
             </div>
             <div class="post-title">{{ currentPost.title }}</div>
             <div class="post-content">{{ currentPost.content }}</div>
             <div class="post-actions">
-              <button v-if="canEditPost(currentPost)" class="ghost compact" @click="startEditPost(currentPost)">{{ t('posts.edit') }}</button>
-              <button v-if="canEditPost(currentPost)" class="ghost compact danger" @click="deletePost(currentPost)">{{ t('posts.deleteAction') }}</button>
-              <button class="ghost compact" @click="togglePostLike(currentPost)">{{ currentPost.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ currentPost.likesCount }}</button>
-              <button class="ghost compact" @click="sharePost(currentPost)">{{ t('posts.share') }} · {{ currentPost.sharesCount }}</button>
+              <bilingual-action-button
+                v-if="canEditPost(currentPost)"
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('posts.edit')"
+                :secondary-label="peerLocaleText('posts.edit')"
+                @click="startEditPost(currentPost)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                v-if="canEditPost(currentPost)"
+                variant="ghost"
+                compact
+                danger
+                type="button"
+                :primary-label="t('posts.deleteAction')"
+                :secondary-label="peerLocaleText('posts.deleteAction')"
+                @click="deletePost(currentPost)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${currentPost.likedByMe ? t('posts.unlike') : t('posts.like')} · ${currentPost.likesCount}`"
+                :secondary-label="`${currentPost.likedByMe ? peerLocaleText('posts.unlike') : peerLocaleText('posts.like')} · ${currentPost.likesCount}`"
+                @click="togglePostLike(currentPost)"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="`${t('posts.share')} · ${currentPost.sharesCount}`"
+                :secondary-label="`${peerLocaleText('posts.share')} · ${currentPost.sharesCount}`"
+                @click="sharePost(currentPost)"
+              ></bilingual-action-button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ currentPost.commentsCount }}</div>
             </div>
             <div v-if="canEditPost(currentPost)" class="post-composer">
@@ -546,7 +830,13 @@
                   v-model="editPostDraft.status"
                   :options="postStatusOptions()"
                 ></bilingual-select-field>
-                <button class="primary" type="button" @click="savePostEdit">{{ t('posts.editAction') }}</button>
+                <bilingual-action-button
+                  variant="primary"
+                  type="button"
+                  :primary-label="t('posts.editAction')"
+                  :secondary-label="peerLocaleText('posts.editAction')"
+                  @click="savePostEdit"
+                ></bilingual-action-button>
               </form>
             </div>
             <div class="post-comments" v-if="currentPost.comments.length > 0">
@@ -557,7 +847,14 @@
             </div>
             <div class="post-comment-form">
               <input type="text" :placeholder="t('posts.commentPlaceholder')" v-model="commentDrafts[currentPost.id]" @keyup.enter="submitComment(currentPost)" />
-              <button class="ghost compact" @click="submitComment(currentPost)">{{ t('posts.commentAction') }}</button>
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="t('posts.commentAction')"
+                :secondary-label="peerLocaleText('posts.commentAction')"
+                @click="submitComment(currentPost)"
+              ></bilingual-action-button>
             </div>
           </article>
         </div>
@@ -582,7 +879,13 @@
           ></bilingual-select-field>
           <input type="text" :placeholder="t('blockchain.addressPlaceholder')" v-model="externalAccountDraft.accountAddress" />
           <textarea class="post-textarea" :placeholder="t('blockchain.signaturePlaceholder')" v-model="externalAccountDraft.signaturePayload"></textarea>
-          <button class="primary" type="button" @click="bindExternalAccount">{{ t('blockchain.bindAction') }}</button>
+          <bilingual-action-button
+            variant="primary"
+            type="button"
+            :primary-label="t('blockchain.bindAction')"
+            :secondary-label="peerLocaleText('blockchain.bindAction')"
+            @click="bindExternalAccount"
+          ></bilingual-action-button>
         </form>
         <div class="friends-grid">
           <div class="friend-card" v-for="account in externalAccounts" :key="account.id">
@@ -593,7 +896,15 @@
               <div class="friend-status">{{ statusLabel(account.bindingStatus) }}</div>
               <div class="friend-direction">{{ t('blockchain.boundAt') }}: {{ formatDateTime(account.createdAt) }}</div>
             </div>
-            <button class="ghost" @click="removeExternalAccount(account)">{{ t('blockchain.removeAction') }}</button>
+            <bilingual-action-button
+              variant="ghost"
+              compact
+              danger
+              type="button"
+              :primary-label="t('blockchain.removeAction')"
+              :secondary-label="peerLocaleText('blockchain.removeAction')"
+              @click="removeExternalAccount(account)"
+            ></bilingual-action-button>
           </div>
         </div>
         <div v-if="externalAccounts.length === 0" class="empty-state">{{ t('blockchain.empty') }}</div>
@@ -823,6 +1134,7 @@
   <script src="components/landing-page.js"></script>
   <script src="components/bilingual-field.js"></script>
   <script src="components/bilingual-select-field.js"></script>
+  <script src="components/bilingual-action-button.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/chat_media_actions.dart';
 import '../models/app_models.dart';
+import '../widgets/bilingual_action_button.dart';
 
 class _StickerQuickItem {
   const _StickerQuickItem({required this.token, required this.label});
@@ -333,9 +334,11 @@ class _ChatViewState extends State<ChatView> {
                   ),
                 ),
                 if (widget.activeChat != null)
-                  FilledButton.tonal(
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
                     onPressed: () => widget.onStartChat(widget.activeChat!),
-                    child: const Text('刷新会话'),
+                    primaryLabel: '刷新会话',
+                    secondaryLabel: 'Refresh chat',
                   ),
               ],
             ),
@@ -570,9 +573,10 @@ class _ChatViewState extends State<ChatView> {
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton(
+            BilingualActionButton(
               onPressed: _canCompose ? widget.onSendMessage : null,
-              child: const Text('发送'),
+              primaryLabel: '发送',
+              secondaryLabel: 'Send',
             ),
           ],
         ),
@@ -620,9 +624,11 @@ class _ChatViewState extends State<ChatView> {
             ),
           ),
           const SizedBox(width: 12),
-          FilledButton.tonal(
+          BilingualActionButton(
+            variant: BilingualButtonVariant.tonal,
             onPressed: widget.loading ? null : widget.onClearAttachment,
-            child: const Text('移除'),
+            primaryLabel: '移除',
+            secondaryLabel: 'Remove',
           ),
         ],
       ),
@@ -677,12 +683,15 @@ class _ChatViewState extends State<ChatView> {
               ],
             ),
           ),
-          TextButton(
+          BilingualActionButton(
+            variant: BilingualButtonVariant.text,
+            compact: true,
             onPressed: () => openChatAttachment(
               mediaMime: message.mediaMime,
               mediaData: message.mediaData,
             ),
-            child: const Text('打开'),
+            primaryLabel: '打开',
+            secondaryLabel: 'Open',
           ),
         ],
       ),

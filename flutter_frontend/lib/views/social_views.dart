@@ -8,6 +8,7 @@ import '../controllers/chat_media_actions.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import '../widgets/app_cards.dart';
+import '../widgets/bilingual_action_button.dart';
 import '../widgets/bilingual_field.dart';
 import '../widgets/bilingual_dropdown_field.dart';
 import '../widgets/bilingual_dropdown_options.dart';
@@ -287,9 +288,12 @@ class ProfileView extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 16),
-                  FilledButton(
+                  // Profile save action uses the shared bilingual button.
+                  // 个人资料保存动作统一使用双语按钮组件。
+                  BilingualActionButton(
                     onPressed: loading ? null : onSaveProfile,
-                    child: const Text('保存身份卡 / Save identity card'),
+                    primaryLabel: '保存身份卡',
+                    secondaryLabel: 'Save identity card',
                   ),
                 ],
               ),
@@ -301,20 +305,26 @@ class ProfileView extends StatelessWidget {
             runSpacing: 12,
             children: [
               if (profile.relationStatus.isEmpty)
-                FilledButton.tonal(
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
                   onPressed: () => onAddFriend(profile.id),
-                  child: const Text('添加好友'),
+                  primaryLabel: '添加好友',
+                  secondaryLabel: 'Add friend',
                 ),
               if (profile.relationStatus == 'pending' &&
                   profile.direction == 'incoming')
-                FilledButton.tonal(
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
                   onPressed: () => onAcceptFriend(profile.id),
-                  child: const Text('接受好友'),
+                  primaryLabel: '接受好友',
+                  secondaryLabel: 'Accept friend',
                 ),
               if (profile.relationStatus == 'accepted')
-                FilledButton.tonal(
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
                   onPressed: onStartChat,
-                  child: const Text('发起聊天'),
+                  primaryLabel: '发起聊天',
+                  secondaryLabel: 'Start chat',
                 ),
             ],
           ),
@@ -523,9 +533,12 @@ class PostDetailView extends StatelessWidget {
                               onEditStatusChanged(value ?? editStatus),
                         ),
                       ),
-                      FilledButton(
+                      // Edit save action uses the shared bilingual button.
+                      // 编辑保存动作统一使用双语按钮组件。
+                      BilingualActionButton(
                         onPressed: loading ? null : onSaveEdits,
-                        child: const Text('保存修改'),
+                        primaryLabel: '保存修改',
+                        secondaryLabel: 'Save changes',
                       ),
                     ],
                   ),
@@ -590,9 +603,12 @@ class FriendsView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    FilledButton(
+                    // Search action uses the shared bilingual button.
+                    // 搜索动作统一使用双语按钮组件。
+                    BilingualActionButton(
                       onPressed: loading ? null : onSearch,
-                      child: const Text('搜索'),
+                      primaryLabel: '搜索',
+                      secondaryLabel: 'Search',
                     ),
                   ],
                 ),
@@ -611,13 +627,17 @@ class FriendsView extends StatelessWidget {
                               if (item.relationStatus.isNotEmpty)
                                 '关系: ${item.relationStatus} / ${item.direction}',
                             ],
-                            trailing: FilledButton.tonal(
+                            trailing: BilingualActionButton(
+                              variant: BilingualButtonVariant.tonal,
                               onPressed: item.relationStatus.isEmpty
                                   ? () => onAddFriend(item.id)
                                   : null,
-                              child: Text(
-                                item.relationStatus.isEmpty ? '添加好友' : '已存在关系',
-                              ),
+                              primaryLabel: item.relationStatus.isEmpty
+                                  ? '添加好友'
+                                  : '已存在关系',
+                              secondaryLabel: item.relationStatus.isEmpty
+                                  ? 'Add friend'
+                                  : 'Relationship exists',
                             ),
                           ),
                         ),
@@ -647,22 +667,28 @@ class FriendsView extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        FilledButton.tonal(
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.tonal,
                           onPressed: () => onOpenProfile(friend.id),
-                          child: const Text('主页'),
+                          primaryLabel: '主页',
+                          secondaryLabel: 'Profile',
                         ),
                         if (friend.direction == 'incoming' &&
                             friend.status == 'pending')
-                          FilledButton.tonal(
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
                             onPressed: () => onAcceptFriend(friend.id),
-                            child: const Text('接受'),
+                            primaryLabel: '接受',
+                            secondaryLabel: 'Accept',
                           )
                         else
-                          FilledButton.tonal(
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
                             onPressed: friend.status == 'accepted'
                                 ? () => onStartChat(friend)
                                 : null,
-                            child: const Text('聊天'),
+                            primaryLabel: '聊天',
+                            secondaryLabel: 'Chat',
                           ),
                       ],
                     ),
@@ -866,9 +892,11 @@ class ChatView extends StatelessWidget {
                   ),
                 ),
                 if (activeChat != null)
-                  FilledButton.tonal(
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
                     onPressed: () => onStartChat(activeChat!),
-                    child: const Text('刷新会话'),
+                    primaryLabel: '刷新会话',
+                    secondaryLabel: 'Refresh chat',
                   ),
               ],
             ),
@@ -988,9 +1016,11 @@ class ChatView extends StatelessWidget {
               label: const Text('语音'),
             ),
             if (mediaAttachment != null)
-              FilledButton.tonal(
+              BilingualActionButton(
+                variant: BilingualButtonVariant.tonal,
                 onPressed: loading ? null : onClearAttachment,
-                child: const Text('清除附件'),
+                primaryLabel: '清除附件',
+                secondaryLabel: 'Clear attachment',
               ),
           ],
         ),
@@ -1008,9 +1038,10 @@ class ChatView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton(
+            BilingualActionButton(
               onPressed: loading ? null : onSendMessage,
-              child: const Text('发送'),
+              primaryLabel: '发送',
+              secondaryLabel: 'Send',
             ),
           ],
         ),
@@ -1057,9 +1088,11 @@ class ChatView extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          FilledButton.tonal(
+          BilingualActionButton(
+            variant: BilingualButtonVariant.tonal,
             onPressed: loading ? null : onClearAttachment,
-            child: const Text('移除'),
+            primaryLabel: '移除',
+            secondaryLabel: 'Remove',
           ),
         ],
       ),
@@ -1110,12 +1143,15 @@ class ChatView extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(
+          BilingualActionButton(
+            variant: BilingualButtonVariant.text,
+            compact: true,
             onPressed: () => openChatAttachment(
               mediaMime: message.mediaMime,
               mediaData: message.mediaData,
             ),
-            child: const Text('打开'),
+            primaryLabel: '打开',
+            secondaryLabel: 'Open',
           ),
         ],
       ),

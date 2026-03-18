@@ -3959,5 +3959,6 @@ app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
 app.component('bilingual-field', window.BilingualField);
 app.component('bilingual-select-field', window.BilingualSelectField);
+app.component('bilingual-action-button', window.BilingualActionButton);
 
 app.mount('#app');

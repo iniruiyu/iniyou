@@ -35,14 +35,26 @@ window.AuthPanel = {
       <form v-if="app.authMode === 'login'" class="form auth-form">
         <input type="text" :placeholder="app.t('auth.accountPlaceholder')" v-model="app.auth.account" />
         <input type="password" :placeholder="app.t('auth.passwordPlaceholder')" v-model="app.auth.password" />
-        <button class="primary" type="button" @click="app.login()">{{ app.t('auth.login') }}</button>
+        <bilingual-action-button
+          variant="primary"
+          type="button"
+          :primary-label="app.t('auth.login')"
+          :secondary-label="app.peerLocaleText('auth.login')"
+          @click="app.login()"
+        ></bilingual-action-button>
       </form>
 
       <form v-else class="form auth-form">
         <input type="text" :placeholder="app.t('auth.emailPlaceholder')" v-model="app.auth.email" />
         <input type="text" :placeholder="app.t('auth.phonePlaceholder')" v-model="app.auth.phone" />
         <input type="password" :placeholder="app.t('auth.passwordPlaceholder')" v-model="app.auth.password" />
-        <button class="primary" type="button" @click="app.register()">{{ app.t('auth.register') }}</button>
+        <bilingual-action-button
+          variant="primary"
+          type="button"
+          :primary-label="app.t('auth.register')"
+          :secondary-label="app.peerLocaleText('auth.register')"
+          @click="app.register()"
+        ></bilingual-action-button>
       </form>
 
       <div class="auth-footnote">

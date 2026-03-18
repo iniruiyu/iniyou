@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
 import '../widgets/app_cards.dart';
+import '../widgets/bilingual_action_button.dart';
 import '../widgets/bilingual_dropdown_field.dart';
 
 class LevelsView extends StatelessWidget {
@@ -56,11 +57,12 @@ class LevelsView extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(item.text),
                   const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: active
-                        ? null
-                        : () => onActivateLevel(item.level),
-                    child: Text(active ? '当前等级' : '切换到 ${item.level}'),
+                  // Level switch action uses the shared bilingual button.
+                  // 等级切换动作统一使用双语按钮组件。
+                  BilingualActionButton(
+                    onPressed: active ? null : () => onActivateLevel(item.level),
+                    primaryLabel: active ? '当前等级' : '切换到 ${item.level}',
+                    secondaryLabel: active ? 'Current level' : 'Switch to ${item.level}',
                   ),
                 ],
               ),
@@ -250,9 +252,12 @@ class BlockchainView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                FilledButton(
+                // Bind action uses the shared bilingual button.
+                // 绑定动作统一使用双语按钮组件。
+                BilingualActionButton(
                   onPressed: loading ? null : onBind,
-                  child: const Text('绑定'),
+                  primaryLabel: '绑定',
+                  secondaryLabel: 'Bind',
                 ),
               ],
             ),
@@ -273,9 +278,11 @@ class BlockchainView extends StatelessWidget {
                       '状态: ${item.bindingStatus}',
                       item.createdAtLabel,
                     ],
-                    trailing: FilledButton.tonal(
+                    trailing: BilingualActionButton(
+                      variant: BilingualButtonVariant.text,
                       onPressed: () => onRemove(item.id),
-                      child: const Text('移除'),
+                      primaryLabel: '移除',
+                      secondaryLabel: 'Remove',
                     ),
                   ),
                 ),

@@ -261,3 +261,4 @@ new-project/
 - 2026-03-18：同步 Flutter 身份卡昵称、用户名、域名为分层双语标签 / Synced Flutter identity card nickname, username, and domain to layered bilingual labels.
 - 2026-03-18：抽出 web 与 Flutter 的双语字段组件，统一身份卡字段布局 / Extracted bilingual field components for web and Flutter to unify identity card field layout.
 - 2026-03-18：抽出 web 与 Flutter 的双语下拉组件，统一身份卡、空间、发布和设置菜单的选择框 / Extracted bilingual dropdown components for web and Flutter to unify identity card, space, publish, and settings menu select boxes.
+- 2026-03-18：抽出 web 与 Flutter 的双语按钮组件，统一登录、设置、社交、弹窗和内容发布按钮 / Extracted bilingual action button components for web and Flutter to unify login, settings, social, modal, and content publishing buttons.

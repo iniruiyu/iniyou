@@ -642,6 +642,34 @@ body {
   font-size: 12px;
 }
 
+.bilingual-action-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.08;
+}
+
+.bilingual-action-button-main {
+  display: block;
+  font-weight: 600;
+}
+
+.bilingual-action-button-sub {
+  display: block;
+  font-size: 11px;
+  line-height: 1.05;
+  opacity: 0.8;
+}
+
+.ghost.compact .bilingual-action-button-sub,
+.primary.compact .bilingual-action-button-sub {
+  font-size: 10px;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

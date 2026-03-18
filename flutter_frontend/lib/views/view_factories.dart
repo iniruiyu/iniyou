@@ -7,6 +7,7 @@ import 'chat_view.dart';
 import 'social_views.dart' hide ChatView;
 import 'view_state_helpers.dart';
 import '../widgets/app_cards.dart';
+import '../widgets/bilingual_action_button.dart';
 import '../main.dart' show ProfileTab;
 
 const blockchainChainsByProvider = {
@@ -152,7 +153,10 @@ Widget buildPrivateView({
         title: '创建私人空间',
         subtitle: '私人空间适合沉淀草稿和只对自己可见的内容。',
         detailLines: const ['创建后会自动生成二级域名，便于后续通过空间入口进入。'],
-        buttonLabel: '打开创建弹窗',
+        // 按钮统一使用双语组件 / Use the shared bilingual action button.
+        buttonPrimaryLabel: '打开创建弹窗',
+        buttonSecondaryLabel: 'Open create dialog',
+        buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenSpaceComposer,
       ),
       const SizedBox(height: 16),
@@ -165,7 +169,9 @@ Widget buildPrivateView({
             '当前空间：${activeSpace.name} · @${activeSpace.subdomain}',
           '发布后会记录所属空间，方便后续筛选和回溯。',
         ],
-        buttonLabel: '打开发布弹窗',
+        buttonPrimaryLabel: '打开发布弹窗',
+        buttonSecondaryLabel: 'Open publish dialog',
+        buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenPostComposer,
       ),
       const SizedBox(height: 16),
@@ -221,7 +227,9 @@ Widget buildPublicView({
         title: '创建公共空间',
         subtitle: '公共空间适合对外展示项目和发布公开内容。',
         detailLines: const ['创建后会生成可识别的二级域名，便于从外部直接进入。'],
-        buttonLabel: '打开创建弹窗',
+        buttonPrimaryLabel: '打开创建弹窗',
+        buttonSecondaryLabel: 'Open create dialog',
+        buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenSpaceComposer,
       ),
       const SizedBox(height: 16),
@@ -234,7 +242,9 @@ Widget buildPublicView({
             '当前空间：${activeSpace.name} · @${activeSpace.subdomain}',
           '发布时会记录所属公共空间，便于后续查看和分享。',
         ],
-        buttonLabel: '打开发布弹窗',
+        buttonPrimaryLabel: '打开发布弹窗',
+        buttonSecondaryLabel: 'Open publish dialog',
+        buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenPostComposer,
       ),
       const SizedBox(height: 16),

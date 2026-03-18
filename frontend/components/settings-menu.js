@@ -74,7 +74,14 @@ window.SettingsMenu = {
           :options="directionSelectOptions()"
         ></bilingual-select-field>
         <textarea class="lang-textarea" :placeholder="app.t('i18n.jsonPlaceholder')" v-model="app.newLanguage.json"></textarea>
-        <button class="primary settings-action" type="button" @click="app.addLanguage()">{{ app.t('i18n.addButton') }}</button>
+        <bilingual-action-button
+          variant="primary"
+          type="button"
+          class="settings-action"
+          :primary-label="app.t('i18n.addButton')"
+          :secondary-label="app.peerLocaleText('i18n.addButton')"
+          @click="app.addLanguage()"
+        ></bilingual-action-button>
       </div>
     </div>
   `,
