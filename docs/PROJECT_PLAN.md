@@ -263,3 +263,4 @@ new-project/
 - 2026-03-18：抽出 web 与 Flutter 的双语下拉组件，统一身份卡、空间、发布和设置菜单的选择框 / Extracted bilingual dropdown components for web and Flutter to unify identity card, space, publish, and settings menu select boxes.
 - 2026-03-18：抽出 web 与 Flutter 的双语按钮组件，统一登录、设置、社交、弹窗和内容发布按钮 / Extracted bilingual action button components for web and Flutter to unify login, settings, social, modal, and content publishing buttons.
 - 2026-03-18：优化 Flutter 聊天表情面板、新消息提醒卡片和主题视觉层次 / Refined the Flutter chat emoji panel, reminder card, and theme depth.
+- 2026-03-18：同步 Vue 聊天表情面板关闭交互并收紧折叠菜单按钮贴边 / Synced Vue chat emoji panel close behavior and tightened the collapsed menu button to the edge.

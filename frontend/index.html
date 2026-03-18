@@ -962,7 +962,7 @@
             </div>
           </div>
         </div>
-        <div class="chat-window">
+        <div class="chat-window" @click="closeChatQuickPanel">
           <div class="chat-header">
             <div>
               <div class="friend-name">{{ activeChat ? activeChat.name : t('chat.pickFriend') }}</div>
@@ -1003,22 +1003,57 @@
             <span class="chat-scroll-fab-text">{{ t('chat.backToBottom') }}</span>
           </button>
           <div class="chat-input">
-            <div class="chat-quick-picks">
-              <div class="chat-quick-title">{{ t('chat.quickTitle') }}</div>
-              <div class="chat-quick-grid">
+            <div
+              v-if="chatQuickPanelOpen"
+              class="chat-quick-panel"
+              @click.stop
+            >
+              <div class="chat-quick-panel-head">
+                <div class="chat-quick-panel-copy">
+                  <div class="chat-quick-title">{{ t('chat.quickPanelTitle') }}</div>
+                  <div class="chat-quick-sub">{{ t('chat.quickPanelHint') }}</div>
+                </div>
                 <button
-                  v-for="quick in chatQuickSnippets"
-                  :key="`${quick.kind}-${quick.value}`"
-                  class="ghost compact chat-quick-chip"
-                  :class="quick.kind"
+                  class="chat-quick-close"
                   type="button"
-                  :title="quick.label"
-                  :disabled="!activeChat"
-                  @click="insertChatSnippet(quick.value)"
-                >{{ quick.value }}</button>
+                  :aria-label="t('chat.quickClose')"
+                  :title="t('chat.quickClose')"
+                  @click="closeChatQuickPanel"
+                >×</button>
+              </div>
+              <div class="chat-quick-section">
+                <div class="chat-quick-section-title">{{ t('chat.quickEmojiTitle') }}</div>
+                <div class="chat-quick-grid">
+                  <button
+                    v-for="quick in chatEmojiSnippets"
+                    :key="`emoji-${quick.value}`"
+                    class="ghost compact chat-quick-chip emoji"
+                    type="button"
+                    :title="quick.label"
+                    :disabled="!activeChat"
+                    @click="insertChatSnippet(quick.value)"
+                  >{{ quick.value }}</button>
+                </div>
+              </div>
+              <div class="chat-quick-section">
+                <div class="chat-quick-section-title">{{ t('chat.quickStickerTitle') }}</div>
+                <div class="chat-quick-grid">
+                  <button
+                    v-for="quick in chatStickerSnippets"
+                    :key="`sticker-${quick.value}`"
+                    class="ghost compact chat-quick-chip sticker"
+                    type="button"
+                    :title="quick.label"
+                    :disabled="!activeChat"
+                    @click="insertChatSnippet(quick.value)"
+                  >{{ quick.value }}</button>
+                </div>
               </div>
             </div>
             <div class="chat-toolbar">
+              <button class="ghost compact" type="button" :disabled="!activeChat" @click.stop="toggleChatQuickPanel">
+                {{ chatQuickPanelOpen ? t('chat.quickClose') : t('chat.quickToggle') }}
+              </button>
               <button class="ghost compact" type="button" @click="pickChatAttachment('image')">{{ t('chat.attachImage') }}</button>
               <button class="ghost compact" type="button" @click="pickChatAttachment('video')">{{ t('chat.attachVideo') }}</button>
               <button class="ghost compact" type="button" @click="pickChatAttachment('audio')">{{ t('chat.attachAudio') }}</button>

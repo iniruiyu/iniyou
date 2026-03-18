@@ -79,11 +79,11 @@ body {
 
 .sidebar-fab {
   position: fixed;
-  left: 18px;
-  top: 18px;
+  left: 8px;
+  top: 8px;
   z-index: 60;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
   display: grid;
   place-items: center;
@@ -1118,11 +1118,11 @@ body {
   right: 24px;
   width: min(360px, calc(100vw - 48px));
   padding: 16px;
-  border-radius: 20px;
-  border: 1px solid rgba(110, 231, 255, 0.18);
-  background: rgba(8, 13, 21, 0.88);
+  border-radius: 22px;
+  border: 1px solid rgba(110, 231, 255, 0.2);
+  background: linear-gradient(135deg, rgba(12, 20, 33, 0.94), rgba(21, 35, 51, 0.9));
   backdrop-filter: blur(18px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   z-index: 30;
 }
 
@@ -1140,7 +1140,7 @@ body {
 .floating-reminder-title {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .floating-reminder-sub {
@@ -1154,7 +1154,7 @@ body {
   height: 30px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(110, 231, 255, 0.16);
+  background: linear-gradient(135deg, rgba(110, 231, 255, 0.26), rgba(255, 184, 107, 0.22));
   color: var(--primary);
   font-weight: 700;
   display: inline-flex;
@@ -1168,6 +1168,7 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+  justify-content: flex-end;
 }
 
 /* Chat layout / 聊天布局 */
@@ -1336,10 +1337,32 @@ body {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.chat-quick-picks {
+.chat-quick-panel {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 16px 16px 14px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(15, 25, 38, 0.96), rgba(26, 39, 56, 0.92));
+  border: 1px solid rgba(110, 231, 255, 0.14);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.chat-quick-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chat-quick-panel-copy {
+  min-width: 0;
+}
+
+.chat-quick-sub {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
 }
 
 .chat-quick-title {
@@ -1347,6 +1370,19 @@ body {
   font-weight: 600;
   color: var(--muted);
   letter-spacing: 0.04em;
+}
+
+.chat-quick-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-quick-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.03em;
 }
 
 .chat-quick-grid {
@@ -1371,6 +1407,25 @@ body {
   font-size: 13px;
   padding-inline: 12px;
   min-width: 72px;
+}
+
+.chat-quick-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 97, 97, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 97, 97, 0.12);
+  color: #ff8e8e;
+  font-size: 18px;
+  line-height: 1;
+  flex: 0 0 auto;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(255, 97, 97, 0.12);
+}
+
+.chat-quick-close:hover {
+  border-color: rgba(255, 97, 97, 0.5);
+  background: rgba(255, 97, 97, 0.18);
 }
 
 .chat-scroll-fab {

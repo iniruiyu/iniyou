@@ -403,6 +403,12 @@ const app = createApp({
           chat: {
             title: '会话',
             quickTitle: '常用表情 / 贴纸',
+            quickPanelTitle: '表情包面板',
+            quickPanelHint: '表情与文字表情分开显示。',
+            quickEmojiTitle: '常用表情',
+            quickStickerTitle: '文字表情',
+            quickToggle: '表情',
+            quickClose: '关闭',
             backToBottom: '回到底部',
             pickFriend: '选择好友开始聊天',
             onlineNow: '实时在线',
@@ -777,6 +783,12 @@ const app = createApp({
           chat: {
             title: 'Conversations',
             quickTitle: 'Emoji / stickers',
+            quickPanelTitle: 'Emoji panel',
+            quickPanelHint: 'Emojis and text stickers are shown separately.',
+            quickEmojiTitle: 'Emoji',
+            quickStickerTitle: 'Text stickers',
+            quickToggle: 'Emoji',
+            quickClose: 'Close',
             backToBottom: 'Back to latest',
             pickFriend: 'Select a friend to start chatting',
             onlineNow: 'Live',
@@ -1051,6 +1063,9 @@ const app = createApp({
       // Message input.
       // 输入消息。
       chatInput: '',
+      // Chat quick panel visibility.
+      // 聊天快捷面板显示状态。
+      chatQuickPanelOpen: false,
       // Quick inserts for emoji and sticker packs.
       // 表情包与贴纸快捷插入项。
       chatQuickSnippets: CHAT_QUICK_SNIPPETS,
@@ -1225,6 +1240,16 @@ const app = createApp({
         return a.name.localeCompare(b.name);
       });
     },
+    chatEmojiSnippets() {
+      // Split emoji snippets into their own panel section.
+      // 将表情片段单独拆分到独立区域。
+      return this.chatQuickSnippets.filter((item) => item.kind === 'emoji');
+    },
+    chatStickerSnippets() {
+      // Split text stickers into their own panel section.
+      // 将文字表情单独拆分到独立区域。
+      return this.chatQuickSnippets.filter((item) => item.kind === 'sticker');
+    },
     activePrivateSpace() {
       return this.resolveSpaceForVisibility('private');
     },
@@ -1256,7 +1281,9 @@ const app = createApp({
     view(nextView) {
       if (nextView === 'chat') {
         this.scrollChatHistoryToBottom(true);
+        return;
       }
+      this.closeChatQuickPanel();
     },
     'externalAccountDraft.provider'(nextProvider) {
       // Keep the selected chain aligned with the selected provider.
@@ -1795,12 +1822,18 @@ const app = createApp({
               addSuccess: '好友請求已送出。',
               acceptError: '接受好友請求失敗。',
             },
-            chat: {
-              title: '會話',
-              quickTitle: '常用表情／貼紙',
-              backToBottom: '回到底部',
-              pickFriend: '選擇好友開始聊天',
-              onlineNow: '即時在線',
+          chat: {
+            title: '會話',
+            quickTitle: '常用表情／貼紙',
+            quickPanelTitle: '表情包面板',
+            quickPanelHint: '表情與文字表情分開顯示。',
+            quickEmojiTitle: '常用表情',
+            quickStickerTitle: '文字表情',
+            quickToggle: '表情',
+            quickClose: '關閉',
+            backToBottom: '回到底部',
+            pickFriend: '選擇好友開始聊天',
+            onlineNow: '即時在線',
               inputPlaceholder: '輸入訊息...',
               send: '送出',
               loadError: '聊天記錄載入失敗。',
@@ -2492,6 +2525,16 @@ const app = createApp({
       // Toggle sidebar collapsed state.
       // 切换侧边栏折叠状态。
       this.sidebarCollapsed = !this.sidebarCollapsed;
+    },
+    toggleChatQuickPanel() {
+      // Toggle the chat quick panel instead of keeping it always visible.
+      // 切换聊天快捷面板，避免表情框一直占据输入区。
+      this.chatQuickPanelOpen = !this.chatQuickPanelOpen;
+    },
+    closeChatQuickPanel() {
+      // Close the chat quick panel when clicking outside or after sending.
+      // 点击外部或发送后收起聊天快捷面板。
+      this.chatQuickPanelOpen = false;
     },
     openProfileTab(tabKey) {
       // Open profile view with a specific tab.
@@ -3710,6 +3753,7 @@ const app = createApp({
       }
       this.view = 'chat';
       this.activeChat = friend;
+      this.closeChatQuickPanel();
       this.chatAttachment = null;
       this.chatMessages = [];
       this.chatHistoryAtBottom = true;
@@ -3861,6 +3905,7 @@ const app = createApp({
       if (!this.activeChat) {
         return;
       }
+      this.closeChatQuickPanel();
       const content = this.chatInput.trim();
       const attachment = this.chatAttachment;
       if (!content && !attachment) {
