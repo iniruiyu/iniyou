@@ -10,11 +10,12 @@
 
 - 注册、登录、登出
 - 个人资料更新
+- 昵称、用户名、域名身份卡与资料可见范围
 - 用户搜索与公开资料查看
 
 ### 2.2 空间与订阅
 
-- 私人空间、公共空间展示与创建
+- 空间统一入口下的私人/公共空间展示与创建
 - 会员等级展示
 - 订阅创建与当前订阅查看
 
@@ -44,6 +45,7 @@
 ## 3. 当前运行方式
 
 - 账号服务：`make run-account`
+- 空间服务：`make run-space`
 - 通讯服务：`make run-message`
 - 基础检查：`make test`
 - 后端构建：`make build`
@@ -57,6 +59,7 @@
 - API 文档与数据模型文档
 - 本地构建产物：
   - `build/account-service`
+  - `build/space-service`
   - `build/message-service`
 
 ## 5. 当前未覆盖项

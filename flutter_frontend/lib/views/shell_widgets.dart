@@ -24,14 +24,9 @@ List<ShellSidebarItem> buildShellSidebarItems(String Function(String key) t) {
       icon: Icons.dashboard_outlined,
     ),
     ShellSidebarItem(
-      viewKey: 'private',
-      label: t('sidebar.private'),
-      icon: Icons.lock_outline,
-    ),
-    ShellSidebarItem(
-      viewKey: 'public',
-      label: t('sidebar.public'),
-      icon: Icons.public,
+      viewKey: 'space',
+      label: t('sidebar.space'),
+      icon: Icons.space_dashboard_outlined,
     ),
     ShellSidebarItem(
       viewKey: 'friends',
@@ -97,6 +92,10 @@ class ShellSidebar extends StatelessWidget {
           InfoCard(
             title: user.displayName.isEmpty ? user.id : user.displayName,
             lines: [
+              if (user.domain.isNotEmpty)
+                '${t('sidebar.space')}: @${user.domain}',
+              if (user.username.isNotEmpty) '@${user.username}',
+              if (user.signature.isNotEmpty) user.signature,
               '${t('sidebar.level')}: ${user.level}',
               '${t('sidebar.plan')}: ${subscription?.planId.isNotEmpty == true ? subscription!.planId : 'basic'}',
               '${t('sidebar.unread')}: ${conversations.fold<int>(0, (sum, item) => sum + item.unreadCount)}',

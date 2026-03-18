@@ -29,16 +29,25 @@
 #### `users`
 
 - `id`
-- `account`
-- `username`
 - `display_name`
-- `avatar_url`
-- `bio`
+- `username`
+- `domain`
+- `signature`
+- `email`
+- `phone`
+- `age`
+- `gender`
+- `phone_visibility`
+- `email_visibility`
+- `age_visibility`
+- `gender_visibility`
 - `status`
 
 说明：
 
-- `username` 作为个人主页与二级域名入口句柄，建议仅使用英文字母和数字，且与 `spaces.subdomain` 共享同一命名空间规则 / `username` acts as the profile and subdomain handle, should be alphanumeric, and shares the same namespace rules as `spaces.subdomain`.
+- `display_name` 是用户昵称，`username` 是登录别名，`domain` 是身份卡与二级域名入口句柄 / `display_name` is the nickname, `username` is the login alias, and `domain` is the identity-card subdomain handle.
+- `username` 与 `domain` 都应仅使用英文字母和数字，且与 `spaces.subdomain` 共享同一 host label 命名空间 / `username` and `domain` should both be alphanumeric and share the same host-label namespace as `spaces.subdomain`.
+- `email`、`phone`、`age`、`gender` 等字段可根据可见范围控制对外展示 / `email`, `phone`, `age`, and `gender` are exposed according to the configured visibility scope.
 
 #### `auth_credentials`
 
@@ -122,6 +131,7 @@
 
 - `source` 用于区分用户创建空间与系统种子空间，当前约定为 `user` 或 `system`
 - `subdomain` 作为空间入口标识，需要与前端和后端保持一致
+- `spaces` 与 `posts` 由独立空间服务管理，账号服务只保留身份域数据
 
 #### `posts`
 

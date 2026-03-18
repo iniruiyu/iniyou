@@ -62,6 +62,7 @@ class IniyouApp extends StatelessWidget {
 
 enum AppView {
   dashboard,
+  space,
   privateSpace,
   publicSpace,
   profile,
@@ -96,6 +97,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   final _registerPasswordController = TextEditingController();
   final _displayNameController = TextEditingController();
   final _usernameController = TextEditingController();
+  final _domainController = TextEditingController();
+  final _signatureController = TextEditingController();
   final _publicPostTitleController = TextEditingController();
   final _publicPostContentController = TextEditingController();
   final _privatePostTitleController = TextEditingController();
@@ -143,6 +146,10 @@ class _IniyouHomeState extends State<IniyouHome> {
   String _privatePostStatus = 'draft';
   String _externalProvider = 'evm';
   String _externalChain = 'ethereum';
+  String _phoneVisibility = 'private';
+  String _emailVisibility = 'private';
+  String _ageVisibility = 'private';
+  String _genderVisibility = 'private';
   String _editPostVisibility = 'public';
   String _editPostStatus = 'published';
   AppView _view = AppView.dashboard;
@@ -189,6 +196,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _registerPasswordController,
       _displayNameController,
       _usernameController,
+      _domainController,
+      _signatureController,
       _publicPostTitleController,
       _publicPostContentController,
       _privatePostTitleController,
@@ -452,8 +461,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<bool> _applyHostRouteFromCurrentHost() async {
-    // Route a username subdomain to the matching profile once per session.
-    // 将用户名子域名在每个会话中仅路由一次到对应个人主页。
+    // Route the current host label to a profile once per session.
+    // 将当前主机标识在每个会话中仅路由一次到对应个人主页。
     if (_hostRouteApplied || _user == null) {
       return false;
     }
@@ -467,12 +476,18 @@ class _IniyouHomeState extends State<IniyouHome> {
       return false;
     }
     try {
-      await _loadProfileByUsername(label, quiet: true);
+      await _loadProfileByDomain(label, quiet: true);
       _hostRouteApplied = true;
       return true;
     } catch (_) {
-      _hostRouteApplied = true;
-      return false;
+      try {
+        await _loadProfileByUsername(label, quiet: true);
+        _hostRouteApplied = true;
+        return true;
+      } catch (_) {
+        _hostRouteApplied = true;
+        return false;
+      }
     }
   }
 
@@ -932,11 +947,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     setState(() {
-      _view = space.type == 'private'
-          ? AppView.privateSpace
-          : AppView.publicSpace;
-      _flash =
-          '${space.type == 'private' ? '已进入私人空间' : '已进入公共空间'} · @${space.subdomain}';
+      _view = AppView.space;
+      _flash = '已进入空间 · @${space.subdomain}';
       _error = null;
     });
   }
@@ -971,6 +983,12 @@ class _IniyouHomeState extends State<IniyouHome> {
     final dashboard = await AppActions.loadDashboard(_api);
     _displayNameController.text = dashboard.user.displayName;
     _usernameController.text = dashboard.user.username;
+    _domainController.text = dashboard.user.domain;
+    _signatureController.text = dashboard.user.signature;
+    _phoneVisibility = dashboard.user.phoneVisibility;
+    _emailVisibility = dashboard.user.emailVisibility;
+    _ageVisibility = dashboard.user.ageVisibility;
+    _genderVisibility = dashboard.user.genderVisibility;
 
     if (!mounted) {
       return;
@@ -1080,7 +1098,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       _view = AppView.dashboard;
       _flash = null;
       _error = null;
+      _displayNameController.clear();
       _usernameController.clear();
+      _domainController.clear();
+      _signatureController.clear();
+      _phoneVisibility = 'private';
+      _emailVisibility = 'private';
+      _ageVisibility = 'private';
+      _genderVisibility = 'private';
     });
     await prefs.remove(_activePrivateSpaceKey);
     await prefs.remove(_activePublicSpaceKey);
@@ -1244,11 +1269,8 @@ class _IniyouHomeState extends State<IniyouHome> {
           return;
         }
         setState(() {
-          _view = type == 'private'
-              ? AppView.privateSpace
-              : AppView.publicSpace;
-          _flash =
-              '${type == 'private' ? '已创建私人空间' : '已创建公共空间'} · @${result.space.subdomain}';
+          _view = AppView.space;
+          _flash = '已创建空间 · @${result.space.subdomain}';
         });
         return;
       }
@@ -1268,7 +1290,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         return;
       }
       setState(() {
-        _view = type == 'private' ? AppView.privateSpace : AppView.publicSpace;
+        _view = AppView.space;
         _flash = '空间已更新 · @${updated.subdomain}';
       });
     });
@@ -1308,9 +1330,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         _editPostVisibility = 'public';
         _editPostStatus = 'published';
         if (_view == AppView.postDetail) {
-          _view = space.type == 'private'
-              ? AppView.privateSpace
-              : AppView.publicSpace;
+          _view = AppView.space;
         }
       }
       await _refreshAll();
@@ -1343,9 +1363,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         _editPostVisibility = 'public';
         _editPostStatus = 'published';
         if (_view == AppView.postDetail) {
-          _view = post.visibility == 'private'
-              ? AppView.privateSpace
-              : AppView.publicSpace;
+          _view = AppView.space;
         }
       }
       await _refreshAll();
@@ -1391,9 +1409,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         return;
       }
       setState(() {
-        _view = visibility == 'public'
-            ? AppView.publicSpace
-            : AppView.privateSpace;
+        _view = AppView.space;
         _flash = visibility == 'public' ? '公共内容已发布' : '私人内容已保存';
       });
     });
@@ -1489,6 +1505,37 @@ class _IniyouHomeState extends State<IniyouHome> {
   }) async {
     Future<void> action() async {
       final profile = await _api.fetchUserProfileByUsername(username);
+      final ownProfile = _user?.id == profile.id;
+      final posts = await _api.listUserPosts(
+        profile.id,
+        visibility: ownProfile ? 'all' : 'public',
+        limit: 50,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _profileUser = profile;
+        _profilePosts = posts;
+        _view = AppView.profile;
+      });
+    }
+
+    if (quiet) {
+      try {
+        await action();
+      } catch (_) {}
+      return;
+    }
+    await action();
+  }
+
+  Future<void> _loadProfileByDomain(
+    String domain, {
+    bool quiet = false,
+  }) async {
+    Future<void> action() async {
+      final profile = await _api.fetchUserProfileByDomain(domain);
       final ownProfile = _user?.id == profile.id;
       final posts = await _api.listUserPosts(
         profile.id,
@@ -1700,31 +1747,50 @@ class _IniyouHomeState extends State<IniyouHome> {
   Future<void> _saveProfile() async {
     final displayName = _displayNameController.text.trim();
     final username = _usernameController.text.trim().toLowerCase();
+    final domain = _domainController.text.trim().toLowerCase();
+    final signature = _signatureController.text.trim();
     if (displayName.isEmpty) {
-      setState(() => _error = '展示名称不能为空');
+      setState(() => _error = '昵称不能为空');
       return;
     }
-    if (username.isEmpty) {
-      setState(() => _error = '用户名不能为空');
+    if (domain.isEmpty) {
+      setState(() => _error = '域名不能为空');
       return;
     }
-    if (!_isValidSpaceSubdomain(username)) {
+    if (username.isNotEmpty && !_isValidSpaceSubdomain(username)) {
       setState(() => _error = '用户名只能包含英文字母和数字，且最长 63 个字符');
+      return;
+    }
+    if (!_isValidSpaceSubdomain(domain)) {
+      setState(() => _error = '域名只能包含英文字母和数字，且最长 63 个字符');
       return;
     }
     await _runBusy(() async {
       _user = await _api.updateProfile(
         displayName: displayName,
         username: username,
+        domain: domain,
+        signature: signature,
+        phoneVisibility: _phoneVisibility,
+        emailVisibility: _emailVisibility,
+        ageVisibility: _ageVisibility,
+        genderVisibility: _genderVisibility,
       );
+      _displayNameController.text = _user?.displayName ?? displayName;
       _usernameController.text = _user?.username ?? username;
+      _domainController.text = _user?.domain ?? domain;
+      _signatureController.text = _user?.signature ?? signature;
+      _phoneVisibility = _user?.phoneVisibility ?? _phoneVisibility;
+      _emailVisibility = _user?.emailVisibility ?? _emailVisibility;
+      _ageVisibility = _user?.ageVisibility ?? _ageVisibility;
+      _genderVisibility = _user?.genderVisibility ?? _genderVisibility;
       if (_profileUser?.id == _user?.id) {
         _profileUser = UserProfileItem.fromCurrentUser(_user!);
       }
       if (!mounted) {
         return;
       }
-      setState(() => _flash = '资料已更新');
+      setState(() => _flash = '身份卡已更新');
     });
   }
 
@@ -1822,12 +1888,15 @@ class _IniyouHomeState extends State<IniyouHome> {
             _publicPosts,
             activePublicSpace?.id,
           );
+          final identityHandle = _user!.domain.isNotEmpty
+              ? _user!.domain
+              : _user!.username;
           return AuthenticatedShellView(
             userLabel: _user!.displayName.isEmpty
-                ? (_user!.username.isEmpty ? _user!.id : '@${_user!.username}')
-                : (_user!.username.isEmpty
+                ? (identityHandle.isEmpty ? _user!.id : '@$identityHandle')
+                : (identityHandle.isEmpty
                       ? _user!.displayName
-                      : '${_user!.displayName} · @${_user!.username}'),
+                      : '${_user!.displayName} · @$identityHandle'),
             pageTitle: pageTitleForView(
               _view,
               profileUser: _profileUser,
@@ -1903,8 +1972,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 顶部导航用于快速切换视图。
     final items = [
       (AppView.dashboard, _t('sidebar.dashboard')),
-      (AppView.privateSpace, _t('sidebar.private')),
-      (AppView.publicSpace, _t('sidebar.public')),
+      (AppView.space, _t('sidebar.space')),
       (AppView.friends, _t('sidebar.friends')),
       (AppView.profile, _t('sidebar.profile')),
       (AppView.chat, _t('sidebar.chat')),
@@ -2049,7 +2117,38 @@ class _IniyouHomeState extends State<IniyouHome> {
         publicPosts: dashboardPublicPosts,
         activePrivateSpace: activePrivateSpace,
         activePublicSpace: activePublicSpace,
-        onOpenPublicSpace: () => _navigateTo(AppView.publicSpace),
+        onOpenPublicSpace: () => _navigateTo(AppView.space),
+        onOpenPostDetail: _openPostDetail,
+      ),
+      space: buildSpaceView(
+        loading: _loading,
+        spaces: _spaces,
+        privatePosts: filteredPrivatePosts,
+        publicPosts: filteredPublicPosts,
+        user: _user,
+        commentControllerFor: (postId) =>
+            _commentControllers.putIfAbsent(postId, TextEditingController.new),
+        onOpenPrivateSpaceComposer: () =>
+            _openSpaceComposer(defaultType: 'private'),
+        onOpenPublicSpaceComposer: () =>
+            _openSpaceComposer(defaultType: 'public'),
+        onOpenPrivatePostComposer: () => _openPostComposer(
+          visibility: 'private',
+          activeSpace: activePrivateSpace,
+        ),
+        onOpenPublicPostComposer: () => _openPostComposer(
+          visibility: 'public',
+          activeSpace: activePublicSpace,
+        ),
+        onEnterSpace: _enterSpace,
+        onEditSpace: (space) =>
+            _openSpaceComposer(defaultType: space.type, space: space),
+        onDeleteSpace: _deleteSpace,
+        onToggleLike: _toggleLike,
+        onSharePost: _sharePost,
+        onCommentPost: _comment,
+        onDeletePost: _deletePost,
+        onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
       ),
       privateSpace: buildPrivateView(
@@ -2112,12 +2211,26 @@ class _IniyouHomeState extends State<IniyouHome> {
         onActivatePlan: _activatePlan,
         displayNameController: _displayNameController,
         usernameController: _usernameController,
+        domainController: _domainController,
+        signatureController: _signatureController,
+        phoneVisibility: _phoneVisibility,
+        emailVisibility: _emailVisibility,
+        ageVisibility: _ageVisibility,
+        genderVisibility: _genderVisibility,
         loading: _loading,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
         profileTab: _profileTab,
         onProfileTabChanged: _setProfileTab,
         onSaveProfile: _saveProfile,
+        onPhoneVisibilityChanged: (value) =>
+            setState(() => _phoneVisibility = value),
+        onEmailVisibilityChanged: (value) =>
+            setState(() => _emailVisibility = value),
+        onAgeVisibilityChanged: (value) =>
+            setState(() => _ageVisibility = value),
+        onGenderVisibilityChanged: (value) =>
+            setState(() => _genderVisibility = value),
         onAddFriend: _addFriend,
         onAcceptFriend: _acceptFriend,
         onStartChat: _startChat,

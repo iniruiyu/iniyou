@@ -43,6 +43,7 @@
 - 输出前端设计图，统一存放在 `docs/design/`
 - 在设计确认后再进入前端工程搭建
 - 建立多语言界面基线，覆盖首批内建语言与后续扩展机制
+- 建立账号身份卡与空间单入口基线，账号服务与空间服务按职责拆分
 
 ### 4.2 前端职责范围
 
@@ -69,6 +70,7 @@
 - 列表页
 - 详情页
 - 表单页
+- 身份卡编辑页
 - 空间进入与空间上下文页
 - 空间创建与发布弹窗
 - 全局导航与响应式布局规则
@@ -124,6 +126,7 @@
 
 - 用户注册与登录
 - 用户基础资料
+- 用户身份卡、域名登录与资料可见范围
 - 空间创建、进入与空间内内容发布
 - 文章发布与浏览
 - 点赞、评论、转发
@@ -161,7 +164,7 @@
 - 点赞
 - 评论
 - 转发
-- 空间创建、空间进入与空间内内容浏览
+- 空间创建、空间进入与空间内内容浏览，统一使用“空间”作为入口名称
 
 ### 7.3 后续扩展
 
@@ -252,3 +255,5 @@ new-project/
 - 2026-03-18：补充 Vue 聊天页全高壳层，避免长消息列表遮挡发送按钮 / Added a full-height Vue chat shell to keep the send box visible with long histories.
 - 2026-03-18：补充 Vue 聊天页回到底部浮动按钮并美化滚动条 / Added a back-to-bottom floating button and polished the chat scrollbar in the Vue view.
 - 2026-03-18：补充用户名作为个人主页与二级域名入口的统一句柄 / Added username as the unified handle for profile and subdomain routing.
+- 2026-03-18：拆分账号服务与空间服务，并补充域名身份卡与资料可见范围 / Split account and space services, and added domain identity cards with profile visibility scopes.
+- 2026-03-18：统一前端空间入口为“空间”，合并私人/公共空间展示 / Unified the frontend space entry as "Space" and merged private/public space presentation.

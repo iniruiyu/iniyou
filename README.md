@@ -1,6 +1,6 @@
 # iniyou
 
-`iniyou` 是一个包含账号、社交内容、聊天和链上账号扩展能力的项目仓库。当前仓库同时保存规划文档和已落地实现，后续开发以本仓库为唯一主线。
+`iniyou` 是一个包含账号、空间、社交内容、聊天和链上账号扩展能力的项目仓库。当前仓库同时保存规划文档和已落地实现，后续开发以本仓库为唯一主线。
 
 当前前端采取双实现并存策略：
 
@@ -9,7 +9,7 @@
 
 ## 项目结构
 
-- `backend/`: Golang 后端，包含 `account-service` 和 `message-service`
+- `backend/`: Golang 后端，包含 `account-service`、`space-service` 和 `message-service`
 - `frontend/`: 原生 HTML、CSS、JavaScript 前端页面（Legacy Web）
 - `flutter_frontend/`: Flutter 前端工程（Web 优先，可继续扩展桌面/移动端）
   - 当前已按 `api/`、`controllers/`、`models/`、`widgets/`、`views/` 分层
@@ -36,7 +36,7 @@ cp .env.example .env
 - `DB_DSN`: PostgreSQL 连接串
 - `JWT_SECRET`: 登录签名密钥
 - `TOKEN_TTL_MIN`: 登录态有效时间（分钟）
-- `SERVICE_PORT`: 可选；账号服务默认 `8080`，通讯服务默认 `8081`
+- `SERVICE_PORT`: 可选；账号服务默认 `8080`，空间服务默认 `8082`，通讯服务默认 `8081`
 
 ## 本地启动
 
@@ -47,7 +47,13 @@ cp .env.example .env
 make run-account
 ```
 
-3. 在另一个终端运行通讯服务：
+3. 在另一个终端运行空间服务：
+
+```bash
+make run-space
+```
+
+4. 在另一个终端运行通讯服务：
 
 ```bash
 make run-message
@@ -70,8 +76,9 @@ make run-flutter-web
 说明：
 
 - 账号服务默认监听 `http://localhost:8080`
+- 空间服务默认监听 `http://localhost:8082`
 - 通讯服务默认监听 `http://localhost:8081`
-- 两套前端默认直接请求上述两个本地服务
+- 两套前端默认直接请求上述三个本地服务
 - Flutter 前端默认入口为 [`flutter_frontend/lib/main.dart`](/root/new-project/flutter_frontend/lib/main.dart)
 - Flutter 当前主要视图文件位于 [`flutter_frontend/lib/views`](/root/new-project/flutter_frontend/lib/views)
 
@@ -116,6 +123,7 @@ make smoke
 构建产物输出到 `build/`：
 
 - `build/account-service`
+- `build/space-service`
 - `build/message-service`
 
 ## 关键文档

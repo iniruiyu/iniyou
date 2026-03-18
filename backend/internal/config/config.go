@@ -20,6 +20,8 @@ func Load(serviceName string) Config {
 	port := getenv("SERVICE_PORT", "8080")
 	if serviceName == "message" {
 		port = getenv("SERVICE_PORT", "8081")
+	} else if serviceName == "space" {
+		port = getenv("SERVICE_PORT", "8082")
 	}
 
 	// Token TTL in minutes.

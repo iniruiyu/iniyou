@@ -6,6 +6,7 @@ import 'settings_views.dart';
 import 'chat_view.dart';
 import 'social_views.dart' hide ChatView;
 import 'view_state_helpers.dart';
+import '../widgets/app_cards.dart';
 import '../main.dart' show ProfileTab;
 
 const blockchainChainsByProvider = {
@@ -44,6 +45,83 @@ Widget buildDashboardView({
     activePublicSpace: activePublicSpace,
     onOpenPublicSpace: onOpenPublicSpace,
     onOpenPostDetail: onOpenPostDetail,
+  );
+}
+
+Widget buildSpaceView({
+  required bool loading,
+  required List<SpaceItem> spaces,
+  required List<PostItem> privatePosts,
+  required List<PostItem> publicPosts,
+  required CurrentUser? user,
+  required TextEditingController Function(String postId) commentControllerFor,
+  required VoidCallback onOpenPrivateSpaceComposer,
+  required VoidCallback onOpenPublicSpaceComposer,
+  required VoidCallback onOpenPrivatePostComposer,
+  required VoidCallback onOpenPublicPostComposer,
+  required ValueChanged<SpaceItem> onEnterSpace,
+  required ValueChanged<SpaceItem> onEditSpace,
+  required ValueChanged<SpaceItem> onDeleteSpace,
+  required ValueChanged<PostItem> onToggleLike,
+  required ValueChanged<PostItem> onSharePost,
+  required ValueChanged<PostItem> onCommentPost,
+  required ValueChanged<PostItem> onDeletePost,
+  required ValueChanged<String> onOpenProfile,
+  required ValueChanged<String> onOpenPostDetail,
+}) {
+  // Combine private and public space entry points into one page.
+  // 将私人空间与公共空间入口合并到同一页面。
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      InfoCard(
+        title: '空间总览',
+        lines: const [
+          '在同一页面管理自己的空间、公共空间与内容发布。',
+          '域名身份和空间二级域名都可以直接作为入口。',
+        ],
+      ),
+      const SizedBox(height: 16),
+      buildPrivateView(
+        loading: loading,
+        activeSpace: firstSpaceOfType(spaces, 'private'),
+        spaces: spaces,
+        privatePosts: privatePosts,
+        user: user,
+        commentControllerFor: commentControllerFor,
+        onOpenSpaceComposer: onOpenPrivateSpaceComposer,
+        onOpenPostComposer: onOpenPrivatePostComposer,
+        onEnterSpace: onEnterSpace,
+        onEditSpace: onEditSpace,
+        onDeleteSpace: onDeleteSpace,
+        onToggleLike: onToggleLike,
+        onSharePost: onSharePost,
+        onCommentPost: onCommentPost,
+        onDeletePost: onDeletePost,
+        onOpenProfile: onOpenProfile,
+        onOpenPostDetail: onOpenPostDetail,
+      ),
+      const SizedBox(height: 24),
+      buildPublicView(
+        loading: loading,
+        activeSpace: firstSpaceOfType(spaces, 'public'),
+        spaces: spaces,
+        publicPosts: publicPosts,
+        user: user,
+        commentControllerFor: commentControllerFor,
+        onOpenSpaceComposer: onOpenPublicSpaceComposer,
+        onOpenPostComposer: onOpenPublicPostComposer,
+        onEnterSpace: onEnterSpace,
+        onEditSpace: onEditSpace,
+        onDeleteSpace: onDeleteSpace,
+        onToggleLike: onToggleLike,
+        onSharePost: onSharePost,
+        onCommentPost: onCommentPost,
+        onDeletePost: onDeletePost,
+        onOpenProfile: onOpenProfile,
+        onOpenPostDetail: onOpenPostDetail,
+      ),
+    ],
   );
 }
 
@@ -197,11 +275,21 @@ Widget buildProfileView({
   required ValueChanged<String> onActivatePlan,
   required TextEditingController displayNameController,
   required TextEditingController usernameController,
+  required TextEditingController domainController,
+  required TextEditingController signatureController,
+  required String phoneVisibility,
+  required String emailVisibility,
+  required String ageVisibility,
+  required String genderVisibility,
   required bool loading,
   required TextEditingController Function(String postId) commentControllerFor,
   required ProfileTab profileTab,
   required ValueChanged<ProfileTab> onProfileTabChanged,
   required VoidCallback onSaveProfile,
+  required ValueChanged<String> onPhoneVisibilityChanged,
+  required ValueChanged<String> onEmailVisibilityChanged,
+  required ValueChanged<String> onAgeVisibilityChanged,
+  required ValueChanged<String> onGenderVisibilityChanged,
   required ValueChanged<String> onAddFriend,
   required ValueChanged<String> onAcceptFriend,
   required ValueChanged<FriendItem> onStartChat,
@@ -221,6 +309,12 @@ Widget buildProfileView({
     connectedChains: connectedChains(externalAccounts),
     displayNameController: displayNameController,
     usernameController: usernameController,
+    domainController: domainController,
+    signatureController: signatureController,
+    phoneVisibility: phoneVisibility,
+    emailVisibility: emailVisibility,
+    ageVisibility: ageVisibility,
+    genderVisibility: genderVisibility,
     loading: loading,
     commentControllerFor: commentControllerFor,
     profileTab: profileTab,
@@ -229,6 +323,10 @@ Widget buildProfileView({
     onActivateLevel: onActivateLevel,
     onActivatePlan: onActivatePlan,
     onSaveProfile: onSaveProfile,
+    onPhoneVisibilityChanged: onPhoneVisibilityChanged,
+    onEmailVisibilityChanged: onEmailVisibilityChanged,
+    onAgeVisibilityChanged: onAgeVisibilityChanged,
+    onGenderVisibilityChanged: onGenderVisibilityChanged,
     onAddFriend: onAddFriend,
     onAcceptFriend: onAcceptFriend,
     onStartChat: () {

@@ -18,7 +18,15 @@ class CurrentUser {
     required this.email,
     required this.phone,
     required this.username,
+    required this.domain,
     required this.displayName,
+    required this.signature,
+    required this.age,
+    required this.gender,
+    required this.phoneVisibility,
+    required this.emailVisibility,
+    required this.ageVisibility,
+    required this.genderVisibility,
     required this.level,
     required this.status,
   });
@@ -27,7 +35,15 @@ class CurrentUser {
   final String email;
   final String phone;
   final String username;
+  final String domain;
   final String displayName;
+  final String signature;
+  final int? age;
+  final String gender;
+  final String phoneVisibility;
+  final String emailVisibility;
+  final String ageVisibility;
+  final String genderVisibility;
   final String level;
   final String status;
 
@@ -37,7 +53,15 @@ class CurrentUser {
       email: (json['email'] ?? '').toString(),
       phone: (json['phone'] ?? '').toString(),
       username: (json['username'] ?? '').toString(),
+      domain: (json['domain'] ?? '').toString(),
       displayName: (json['display_name'] ?? '').toString(),
+      signature: (json['signature'] ?? '').toString(),
+      age: json['age'] is int ? json['age'] as int : int.tryParse((json['age'] ?? '').toString()),
+      gender: (json['gender'] ?? '').toString(),
+      phoneVisibility: (json['phone_visibility'] ?? 'private').toString(),
+      emailVisibility: (json['email_visibility'] ?? 'private').toString(),
+      ageVisibility: (json['age_visibility'] ?? 'private').toString(),
+      genderVisibility: (json['gender_visibility'] ?? 'private').toString(),
       level: (json['level'] ?? 'basic').toString(),
       status: (json['status'] ?? 'active').toString(),
     );
@@ -49,8 +73,12 @@ class UserProfileItem {
     required this.id,
     required this.displayName,
     required this.username,
+    required this.domain,
+    required this.signature,
     required this.email,
     required this.phone,
+    required this.age,
+    required this.gender,
     required this.status,
     required this.relationStatus,
     required this.direction,
@@ -59,8 +87,12 @@ class UserProfileItem {
   final String id;
   final String displayName;
   final String username;
+  final String domain;
+  final String signature;
   final String email;
   final String phone;
+  final int? age;
+  final String gender;
   final String status;
   final String relationStatus;
   final String direction;
@@ -70,8 +102,12 @@ class UserProfileItem {
       id: (json['user_id'] ?? '').toString(),
       displayName: (json['display_name'] ?? '').toString(),
       username: (json['username'] ?? '').toString(),
+      domain: (json['domain'] ?? '').toString(),
+      signature: (json['signature'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
       phone: (json['phone'] ?? '').toString(),
+      age: json['age'] is int ? json['age'] as int : int.tryParse((json['age'] ?? '').toString()),
+      gender: (json['gender'] ?? '').toString(),
       status: (json['status'] ?? 'active').toString(),
       relationStatus: (json['relation_status'] ?? '').toString(),
       direction: (json['direction'] ?? '').toString(),
@@ -83,8 +119,12 @@ class UserProfileItem {
       id: user.id,
       displayName: user.displayName,
       username: user.username,
+      domain: user.domain,
+      signature: user.signature,
       email: user.email,
       phone: user.phone,
+      age: user.age,
+      gender: user.gender,
       status: user.status,
       relationStatus: '',
       direction: '',

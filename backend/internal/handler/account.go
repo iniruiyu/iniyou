@@ -59,8 +59,14 @@ type externalAccountRequest struct {
 }
 
 type updateProfileRequest struct {
-	DisplayName string `json:"display_name"`
-	Username    string `json:"username"`
+	DisplayName      string `json:"display_name"`
+	Username         string `json:"username"`
+	Domain           string `json:"domain"`
+	Signature        string `json:"signature"`
+	PhoneVisibility  string `json:"phone_visibility"`
+	EmailVisibility  string `json:"email_visibility"`
+	AgeVisibility    string `json:"age_visibility"`
+	GenderVisibility string `json:"gender_visibility"`
 }
 
 func (h *AccountHandler) Register(c *gin.Context) {
@@ -121,13 +127,21 @@ func (h *AccountHandler) Me(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"user_id":      user.ID,
-		"email":        user.Email,
-		"phone":        user.Phone,
-		"username":     user.Username,
-		"display_name": user.DisplayName,
-		"level":        user.Level,
-		"status":       user.Status,
+		"user_id":           user.ID,
+		"email":             user.Email,
+		"phone":             user.Phone,
+		"username":          user.Username,
+		"domain":            user.Domain,
+		"display_name":      user.DisplayName,
+		"signature":         user.Signature,
+		"age":               user.Age,
+		"gender":            user.Gender,
+		"phone_visibility":  user.PhoneVisibility,
+		"email_visibility":  user.EmailVisibility,
+		"age_visibility":    user.AgeVisibility,
+		"gender_visibility": user.GenderVisibility,
+		"level":             user.Level,
+		"status":            user.Status,
 	})
 }
 
@@ -140,15 +154,34 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	user, err := service.UpdateProfile(h.DB, uid, req.DisplayName, req.Username)
+	user, err := service.UpdateProfile(
+		h.DB,
+		uid,
+		req.DisplayName,
+		req.Username,
+		req.Domain,
+		req.Signature,
+		req.PhoneVisibility,
+		req.EmailVisibility,
+		req.AgeVisibility,
+		req.GenderVisibility,
+	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"user_id":      user.ID,
-		"display_name": user.DisplayName,
-		"username":     user.Username,
+		"user_id":           user.ID,
+		"display_name":      user.DisplayName,
+		"username":          user.Username,
+		"domain":            user.Domain,
+		"signature":         user.Signature,
+		"age":               user.Age,
+		"gender":            user.Gender,
+		"phone_visibility":  user.PhoneVisibility,
+		"email_visibility":  user.EmailVisibility,
+		"age_visibility":    user.AgeVisibility,
+		"gender_visibility": user.GenderVisibility,
 	})
 }
 
@@ -276,6 +309,18 @@ func (h *AccountHandler) UserProfileByUsername(c *gin.Context) {
 	// 返回指定用户名的公开资料信息。
 	uid := c.GetString("user_id")
 	item, err := service.GetPublicUserProfileByUsername(h.DB, uid, c.Param("username"))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, item)
+}
+
+func (h *AccountHandler) UserProfileByDomain(c *gin.Context) {
+	// Return public profile information for a specific domain handle.
+	// 返回指定域名身份句柄的公开资料信息。
+	uid := c.GetString("user_id")
+	item, err := service.GetPublicUserProfileByDomain(h.DB, uid, c.Param("domain"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return

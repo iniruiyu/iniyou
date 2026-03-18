@@ -104,23 +104,25 @@ String pageTitleForView(
   switch (view) {
     case AppView.dashboard:
       return t('page.dashboard');
+    case AppView.space:
+      return t('page.space');
     case AppView.privateSpace:
-      if (activePrivateSpace?.name.isNotEmpty == true) {
-        return '${t('page.private')} · ${activePrivateSpace!.name}';
-      }
-      return t('page.private');
     case AppView.publicSpace:
-      if (activePublicSpace?.name.isNotEmpty == true) {
-        return '${t('page.public')} · ${activePublicSpace!.name}';
+      final activeSpace = activePublicSpace ?? activePrivateSpace;
+      if (activeSpace?.name.isNotEmpty == true) {
+        return '${t('page.space')} · ${activeSpace!.name}';
       }
-      return t('page.public');
+      return t('page.space');
     case AppView.profile:
       if (profileUser?.displayName.isNotEmpty == true &&
-          profileUser?.username.isNotEmpty == true) {
-        return '${profileUser!.displayName} · @${profileUser.username}';
+          profileUser?.domain.isNotEmpty == true) {
+        return '${profileUser!.displayName} · @${profileUser.domain}';
       }
       if (profileUser?.displayName.isNotEmpty == true) {
         return profileUser!.displayName;
+      }
+      if (profileUser?.domain.isNotEmpty == true) {
+        return '@${profileUser!.domain}';
       }
       if (profileUser?.username.isNotEmpty == true) {
         return '@${profileUser!.username}';
@@ -152,16 +154,15 @@ String pageSubtitleForView(
   switch (view) {
     case AppView.dashboard:
       return t('subtitle.dashboard');
+    case AppView.space:
+      return t('subtitle.space');
     case AppView.privateSpace:
-      if (activePrivateSpace?.subdomain.isNotEmpty == true) {
-        return '${t('subtitle.private')} · @${activePrivateSpace!.subdomain}';
-      }
-      return t('subtitle.private');
     case AppView.publicSpace:
-      if (activePublicSpace?.subdomain.isNotEmpty == true) {
-        return '${t('subtitle.public')} · @${activePublicSpace!.subdomain}';
+      final activeSpace = activePublicSpace ?? activePrivateSpace;
+      if (activeSpace?.subdomain.isNotEmpty == true) {
+        return '${t('subtitle.space')} · @${activeSpace!.subdomain}';
       }
-      return t('subtitle.public');
+      return t('subtitle.space');
     case AppView.profile:
       return t('subtitle.profile');
     case AppView.postDetail:
@@ -181,19 +182,19 @@ String pageSubtitleForView(
 
 String sidebarViewKey(AppView view) {
   if (view == AppView.postDetail) {
-    return 'public';
+    return 'space';
   }
   switch (view) {
     case AppView.dashboard:
       return 'dashboard';
+    case AppView.space:
     case AppView.privateSpace:
-      return 'private';
     case AppView.publicSpace:
-      return 'public';
+      return 'space';
     case AppView.profile:
       return 'profile';
     case AppView.postDetail:
-      return 'public';
+      return 'space';
     case AppView.levels:
       return 'profile';
     case AppView.subscription:
@@ -211,10 +212,10 @@ AppView appViewFromKey(String key) {
   switch (key) {
     case 'dashboard':
       return AppView.dashboard;
+    case 'space':
     case 'private':
-      return AppView.privateSpace;
     case 'public':
-      return AppView.publicSpace;
+      return AppView.space;
     case 'profile':
       return AppView.profile;
     case 'levels':

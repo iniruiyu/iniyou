@@ -58,6 +58,7 @@
 - `PUT /api/v1/me`
 - `GET /api/v1/users/search`
 - `GET /api/v1/users/username/{username}/profile`
+- `GET /api/v1/users/domain/{domain}/profile`
 - `PATCH /api/v1/users/{id}`
 - `GET /api/v1/users/{id}`
 - `GET /api/v1/users/{id}/profile`
@@ -68,6 +69,11 @@
 - `POST /api/v1/spaces`
 - `PATCH /api/v1/spaces/{id}`
 - `DELETE /api/v1/spaces/{id}`
+
+说明：
+
+- 空间与内容接口由独立的 `space-service` 提供，默认监听 `http://localhost:8082/api/v1`
+- 账号服务仅保留身份、资料与账号管理接口，空间归属与内容上下文由空间服务维护
 
 ### 5.4 钱包、会员、权益
 
@@ -125,31 +131,35 @@
 - `POST /api/v1/login`
 - 用途：用户登录并获取认证态
 - 请求字段建议：`account`, `password`
-- 说明：`account` 可以是邮箱、手机号或用户名
+- 说明：`account` 可以是邮箱、手机号、用户名或域名
 
 ### 6.2.1 个人资料更新
 
 - `PUT /api/v1/me`
-- 用途：修改当前用户的展示名称和用户名
-- 请求字段建议：`display_name`, `username`
+- 用途：修改当前用户的昵称、用户名、域名、签名和资料可见范围
+- 请求字段建议：`display_name`, `username`, `domain`, `signature`, `phone_visibility`, `email_visibility`, `age_visibility`, `gender_visibility`
 - 说明：
   - `username` 仅允许英文字母和数字，且需要全局唯一
   - `username` 同时作为个人主页和二级域名入口句柄
+  - `domain` 仅允许英文字母和数字，且需要全局唯一
+  - `domain` 同时作为身份卡、登录入口与二级域名句柄
 
 ### 6.3 搜索用户
 
 - `GET /api/v1/users/search?q=keyword`
 - 用途：按展示名、邮箱、手机号或用户 ID 搜索用户
-- 返回字段建议：`user_id`, `display_name`, `username`, `email`, `phone`, `relation_status`, `direction`
+- 返回字段建议：`user_id`, `display_name`, `username`, `domain`, `signature`, `email`, `phone`, `age`, `gender`, `relation_status`, `direction`
 - 说明：用户名同样应参与搜索与展示，便于按子域名句柄反查用户
 
 ### 6.4 用户公开资料
 
 - `GET /api/v1/users/{id}/profile`
 - 用途：获取作者主页所需的公开资料与当前关系状态
-- 返回字段建议：`user_id`, `display_name`, `username`, `email`, `phone`, `status`, `relation_status`, `direction`
+- 返回字段建议：`user_id`, `display_name`, `username`, `domain`, `signature`, `email`, `phone`, `age`, `gender`, `status`, `relation_status`, `direction`
 - `GET /api/v1/users/username/{username}/profile`
 - 用途：通过用户名或二级域名句柄获取同一份作者公开资料
+- `GET /api/v1/users/domain/{domain}/profile`
+- 用途：通过域名身份卡句柄获取同一份作者公开资料
 
 ### 6.5 用户文章列表
 
@@ -275,7 +285,7 @@
 - 前端联动建议：
   - 空间列表页用于选择当前进入的空间
   - 空间卡片应展示 `subdomain`，并将其作为子域名入口标识
-  - 公共空间和私人空间都应支持从卡片进入后再发布内容
+  - 空间页应在进入后统一展示私人/公共分区，并在当前空间上下文内发布内容
 
 - `POST /api/v1/spaces`
 - 用途：创建新的私人空间或公共空间

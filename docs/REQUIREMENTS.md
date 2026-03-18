@@ -52,8 +52,9 @@
 
 - 用户体系需要作为核心基础能力
 - 钱包、会员、权益需要与账号体系关联，但保留独立扩展空间
-- 每个用户都可以设置唯一用户名，用户名由英文字母和数字组成，可作为个人主页和二级域名入口 / Each user can set a unique alphanumeric username used for profile and subdomain routing.
-- 登录时支持邮箱、手机号或用户名 / Login supports email, phone, or username.
+- 每个用户都可以设置唯一用户名，用户名由英文字母和数字组成，可作为个人主页和登录别名入口 / Each user can set a unique alphanumeric username used for profile and login alias routing.
+- 每个用户都可以设置唯一域名，域名由英文字母和数字组成，作为身份卡与登录入口；昵称与域名需要分开维护，手机号、年龄、性别、邮箱等个人信息字段需要支持可见范围控制 / Each user can set a unique alphanumeric domain handle used as the identity card and login entry; nickname must stay separate from the domain, and personal fields such as phone, age, gender, and email need visibility scopes.
+- 登录时支持邮箱、手机号、用户名或域名 / Login supports email, phone, username, or domain.
 
 细化功能：
 
@@ -79,11 +80,12 @@
 
 - 社交能力是首批核心业务之一
 - 内容、互动和聊天能力后续可能继续拆分细化
-- 空间能力属于社交内容的入口层，公共空间必须先进入再浏览或发布
+- 空间能力属于社交内容的入口层，内容浏览和发布必须先进入对应空间上下文
+- 空间能力由独立空间服务提供，账号服务只保留身份与资料相关的核心字段
 - 创建空间时需要生成稳定的二级域名标识，方便后续通过子域名进入空间
 - 文章发布需要记录所属空间，便于页面展示当前上下文
 - 空间名称与二级域名需要独立维护，二级域名前缀只能使用英文字母和数字，且最长 63 个字符
-- 用户名和空间二级域名都应限制为 63 个字符，保证可直接作为 DNS 子域名使用 / Usernames and space subdomains should both be limited to 63 characters so they can be used directly as DNS subdomains.
+- 用户名、域名和空间二级域名都应限制为 63 个字符，保证可直接作为 DNS 子域名使用 / Usernames, domains, and space subdomains should all be limited to 63 characters so they can be used directly as DNS subdomains.
 - 个人空间列表只展示当前用户创建的空间，不再自动生成默认空间
 
 细化功能：
@@ -91,6 +93,7 @@
 - 创建私人空间
 - 创建公共空间
 - 通过二级域名进入空间
+- 通过域名进入个人主页 / Enter the author page through the domain handle
 - 修改空间名称
 - 修改空间二级域名
 - 删除空间
@@ -115,7 +118,8 @@
 - 空间创建入口需要同时支持私人空间和公共空间
 - 空间列表需要展示空间名称、类型和二级域名
 - 空间卡片需要支持进入、改名、改域名和删除
-- 进入公共空间后，发布和查看内容都应记录在该空间上下文中
+- 空间页面需要合并展示私人空间和公共空间，统一使用“空间”作为入口名称
+- 进入空间后，发布和查看内容都应记录在该空间上下文中
 - 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
 - 文章卡片需要支持删除当前用户自己的内容
 

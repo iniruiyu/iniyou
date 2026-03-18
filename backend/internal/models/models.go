@@ -5,16 +5,24 @@ import "time"
 type User struct {
 	// User core profile.
 	// 用户核心信息。
-	ID           string  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Email        *string `gorm:"uniqueIndex"`
-	Phone        *string `gorm:"uniqueIndex"`
-	Username     *string `gorm:"type:varchar(63);uniqueIndex"`
-	DisplayName  string  `gorm:"type:varchar(80);default:''"`
-	PasswordHash string
-	Level        string `gorm:"type:varchar(20);default:basic"`
-	Status       string `gorm:"type:varchar(20);default:active"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID               string  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Email            *string `gorm:"uniqueIndex"`
+	Phone            *string `gorm:"uniqueIndex"`
+	Username         *string `gorm:"type:varchar(63);uniqueIndex"`
+	Domain           *string `gorm:"type:varchar(63);uniqueIndex"`
+	DisplayName      string  `gorm:"type:varchar(80);default:''"`
+	Signature        string  `gorm:"type:text;default:''"`
+	Age              *int    `gorm:"default:null"`
+	Gender           *string `gorm:"type:varchar(20);default:null"`
+	PhoneVisibility  string  `gorm:"type:varchar(20);default:private"`
+	EmailVisibility  string  `gorm:"type:varchar(20);default:private"`
+	AgeVisibility    string  `gorm:"type:varchar(20);default:private"`
+	GenderVisibility string  `gorm:"type:varchar(20);default:private"`
+	PasswordHash     string
+	Level            string `gorm:"type:varchar(20);default:basic"`
+	Status           string `gorm:"type:varchar(20);default:active"`
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 type Space struct {

@@ -1,7 +1,7 @@
 # 账号服务设计文档
 
 ## 1. 项目概述
-本项目是一个使用 Go 语言实现的账号服务微服务，提供用户注册、登录、鉴权、账号管理等能力。服务采用 Gin 作为 HTTP 通讯框架，使用 GORM 访问 PostgreSQL 数据库。服务可以接入“reddit 加速”（作为外部加速/代理或资源加速层），用于提升特定外部依赖的访问效率。
+本项目是一个使用 Go 语言实现的账号服务微服务，提供用户注册、登录、鉴权、账号管理等能力。账号服务只保留用户名、域名、密码、手机号、签名、状态等身份字段，个人资料字段通过可见范围控制。空间能力已拆分到独立的 `space-service`。服务采用 Gin 作为 HTTP 通讯框架，使用 GORM 访问 PostgreSQL 数据库。服务可以接入“reddit 加速”（作为外部加速/代理或资源加速层），用于提升特定外部依赖的访问效率。
 
 ## 2. 技术栈
 - 语言：Go
@@ -13,6 +13,8 @@
 ## 3. 目标与非目标
 ### 3.1 目标
 - 提供账号相关的核心能力：注册、登录、登出、重置密码、账号信息管理。
+- 提供域名身份卡能力，支持用户名与域名分离，并允许通过域名登录。
+- 提供个人资料可见范围控制，满足手机号、年龄、性别、邮箱等字段的公开范围配置。
 - 统一鉴权入口，支持 JWT/Session（可配置）。
 - 规范的错误码与响应格式。
 - 可水平扩展，满足高并发场景。
@@ -20,6 +22,7 @@
 
 ### 3.2 非目标
 - 不包含复杂的社交关系、推荐等业务。
+- 不负责空间、内容、评论与转发的业务规则，这些能力由独立空间服务负责。
 - 不负责客户端实现。
 
 ## 4. 系统架构
@@ -46,7 +49,7 @@
   - 密码加密存储（bcrypt/argon2）
 
 ### 5.2 用户登录
-- 输入：账号 + 密码
+- 输入：账号 + 密码（账号可为邮箱、手机号、用户名或域名）
 - 输出：Token
 - 处理：
   - 校验账号存在
@@ -61,12 +64,24 @@
 - 查询用户资料
 - 修改资料
 - 密码修改
+- 域名身份卡管理
+- 个人资料可见范围管理
 
 ## 6. 数据库设计（PostgreSQL）
 ### 6.1 users 表
 - id (uuid, pk)
 - email (unique, nullable)
 - phone (unique, nullable)
+- username (unique, nullable, alphanumeric host label)
+- domain (unique, nullable, alphanumeric host label)
+- display_name
+- signature
+- age
+- gender
+- phone_visibility
+- email_visibility
+- age_visibility
+- gender_visibility
 - password_hash
 - status (active/disabled)
 - created_at
@@ -85,6 +100,7 @@
 - GET  /api/v1/me
 - PUT  /api/v1/me
 - POST /api/v1/password/reset
+- GET  /api/v1/users/domain/{domain}/profile
 
 ## 8. 安全与合规
 - 密码不明文存储，采用安全哈希

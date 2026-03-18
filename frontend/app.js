@@ -36,6 +36,9 @@ const app = createApp({
       // API base URL.
       // 接口基础地址。
       apiBase: 'http://localhost:8080/api/v1',
+      // Space service API base URL.
+      // 空间服务接口基础地址。
+      spaceApiBase: 'http://localhost:8082/api/v1',
       // Message service API base URL.
       // 通讯服务接口基础地址。
       messageApiBase: 'http://localhost:8081/api/v1',
@@ -84,8 +87,8 @@ const app = createApp({
       // 国际化字典，可在运行时追加新语言。
       translations: {
         'zh-CN': {
-          htmlTitle: '账号服务 · 私人空间与公共空间',
-          brandSub: '私人 + 公共空间',
+          htmlTitle: '账号服务 · 身份卡与空间',
+          brandSub: '身份卡 + 空间',
           landing: {
             heroPill: '登录或注册后进入工作台',
             heroTitle: '先完成账号流程，再进入首页与工作台。',
@@ -111,6 +114,27 @@ const app = createApp({
             customize: '界面与语言',
           },
           profile: {
+            identity: {
+              title: '身份卡',
+              sub: '昵称和域名分开维护，域名用于登录和子域名入口。',
+              nickname: '用户昵称',
+              username: '用户名',
+              domain: '域名',
+              signature: '签名',
+              phoneVisibility: '手机号可见范围',
+              emailVisibility: '邮箱可见范围',
+              ageVisibility: '年龄可见范围',
+              genderVisibility: '性别可见范围',
+              visibility: {
+                public: '公开',
+                friends: '仅好友可见',
+                private: '仅自己可见',
+              },
+              domainHint: '域名只能使用英文字母和数字，长度不超过 63，并作为身份卡和登录入口。',
+              domainRequired: '请输入域名。',
+              domainError: '域名只能包含英文字母和数字，且最长 63 个字符。',
+              save: '保存身份卡',
+            },
             tabs: {
               levels: '会员等级',
               subscription: '订阅',
@@ -151,8 +175,7 @@ const app = createApp({
           nav: {
             auth: '登录 / 注册',
             dashboard: '账号主页',
-            private: '私人空间',
-            public: '公共空间',
+            space: '空间',
             profile: '用户主页',
             postDetail: '文章详情',
             levels: '会员等级',
@@ -177,8 +200,7 @@ const app = createApp({
           pageTitle: {
             auth: '登录 / 注册',
             dashboard: '账号主页',
-            private: '私人空间',
-            public: '公共空间',
+            space: '空间',
             profile: '用户主页',
             postDetail: '文章详情',
             levels: '会员等级',
@@ -188,10 +210,9 @@ const app = createApp({
             chat: '实时聊天',
           },
           pageSub: {
-            auth: '快速进入你的私人空间与公共空间',
+            auth: '快速进入你的身份卡与空间',
             dashboard: '账户摘要与空间信息',
-            private: '沉淀个人内容',
-            public: '展示公共内容与连接',
+            space: '管理你的私人空间、公共空间与内容',
             profile: '查看作者的公开内容与互动记录',
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
@@ -202,10 +223,10 @@ const app = createApp({
           },
           auth: {
             welcomeTitle: '欢迎回来',
-            welcomeSub: '登录后进入你的私人空间与公共空间。',
+            welcomeSub: '登录后进入你的身份卡与空间。',
             createTitle: '创建新账号',
             createSub: '加入会员体系，解锁更大空间与更多互动。',
-            accountPlaceholder: '邮箱 / 手机 / 用户名',
+            accountPlaceholder: '邮箱 / 手机 / 用户名 / 域名',
             passwordPlaceholder: '密码',
             emailPlaceholder: '邮箱',
             phonePlaceholder: '手机号',
@@ -229,7 +250,7 @@ const app = createApp({
             profileSub: '更新展示名称和用户名，主页与聊天窗口会同步显示。',
             blockchainTitle: '链上扩展',
             blockchainSub: '已绑定链上账号会在这里汇总，便于后续资产与身份联动。',
-            displayNamePlaceholder: '输入展示名称',
+            displayNamePlaceholder: '输入昵称',
             usernamePlaceholder: '输入用户名',
             usernameHint: '仅允许英文字母和数字，长度不超过 63，并作为二级域名使用。',
             usernameRequired: '请输入用户名。',
@@ -307,7 +328,7 @@ const app = createApp({
             privateLabel: '仅自己可见',
             publicLabel: '公开',
             viewAuthor: '查看作者主页',
-            backToFeed: '返回公共内容流',
+            backToFeed: '返回空间',
             articleCount: '文章数',
             openChat: '发起聊天',
             addFriend: '添加好友',
@@ -362,7 +383,7 @@ const app = createApp({
           friends: {
             title: '好友',
             chat: '聊天',
-            searchPlaceholder: '输入展示名、用户名、邮箱、手机号或用户 ID',
+            searchPlaceholder: '输入展示名、用户名、域名、邮箱、手机号或用户 ID',
             searchAction: '搜索用户',
             addAction: '发送请求',
             acceptAction: '接受',
@@ -459,6 +480,27 @@ const app = createApp({
             customize: 'Language & interface',
           },
           profile: {
+            identity: {
+              title: 'Identity Card',
+              sub: 'Keep nickname and domain separate. The domain is your login handle and subdomain entry.',
+              nickname: 'Nickname',
+              username: 'Username',
+              domain: 'Domain',
+              signature: 'Signature',
+              phoneVisibility: 'Phone visibility',
+              emailVisibility: 'Email visibility',
+              ageVisibility: 'Age visibility',
+              genderVisibility: 'Gender visibility',
+              visibility: {
+                public: 'Public',
+                friends: 'Friends only',
+                private: 'Only me',
+              },
+              domainHint: 'Use letters and numbers only, up to 63 characters. The domain is your identity card and login handle.',
+              domainRequired: 'Domain is required.',
+              domainError: 'The domain may contain letters and numbers only, up to 63 characters.',
+              save: 'Save Identity Card',
+            },
             tabs: {
               levels: 'Membership',
               subscription: 'Subscription',
@@ -499,6 +541,7 @@ const app = createApp({
           nav: {
             auth: 'Sign In / Sign Up',
             dashboard: 'Dashboard',
+            space: 'Space',
             private: 'Private Space',
             public: 'Public Space',
             profile: 'Profile',
@@ -525,6 +568,7 @@ const app = createApp({
           pageTitle: {
             auth: 'Sign In / Sign Up',
             dashboard: 'Dashboard',
+            space: 'Space',
             private: 'Private Space',
             public: 'Public Space',
             profile: 'Profile',
@@ -538,6 +582,7 @@ const app = createApp({
           pageSub: {
             auth: 'Enter your private and public spaces quickly',
             dashboard: 'Account summary and space insights',
+            space: 'Manage your spaces and content in one place',
             private: 'Keep personal content organized',
             public: 'Showcase content and connect',
             profile: 'Browse this author\'s public posts and activity',
@@ -553,7 +598,7 @@ const app = createApp({
             welcomeSub: 'Sign in to access your private and public spaces.',
             createTitle: 'Create Account',
             createSub: 'Join membership plans and unlock larger spaces.',
-            accountPlaceholder: 'Email / Phone / Username',
+            accountPlaceholder: 'Email / Phone / Username / Domain',
             passwordPlaceholder: 'Password',
             emailPlaceholder: 'Email',
             phonePlaceholder: 'Phone',
@@ -577,7 +622,7 @@ const app = createApp({
             profileSub: 'Update your display name and username for the dashboard and chat header.',
             blockchainTitle: 'Blockchain Extension',
             blockchainSub: 'Bound blockchain accounts are summarized here for future identity and asset linkage.',
-              displayNamePlaceholder: 'Enter display name',
+            displayNamePlaceholder: 'Enter nickname',
               usernamePlaceholder: 'Enter username',
               usernameHint: 'Letters and numbers only, up to 63 characters, and used as the subdomain handle.',
               usernameRequired: 'Username is required.',
@@ -655,7 +700,7 @@ const app = createApp({
             privateLabel: 'Private',
             publicLabel: 'Public',
             viewAuthor: 'View Profile',
-            backToFeed: 'Back to Feed',
+            backToFeed: 'Back to Space',
             articleCount: 'Posts',
             openChat: 'Open Chat',
             addFriend: 'Add Friend',
@@ -710,7 +755,7 @@ const app = createApp({
           friends: {
             title: 'Friends',
             chat: 'Chat',
-            searchPlaceholder: 'Enter display name, username, email, phone, or user ID',
+            searchPlaceholder: 'Enter display name, username, domain, email, phone, or user ID',
             searchAction: 'Search Users',
             addAction: 'Send Request',
             acceptAction: 'Accept',
@@ -789,6 +834,16 @@ const app = createApp({
         id: 'u-1001',
         name: 'Lan Yu',
         username: 'lanyu',
+        domain: 'lanyu01',
+        signature: 'Build with calm focus.',
+        age: '',
+        gender: '',
+        email: '',
+        phone: '',
+        phoneVisibility: 'private',
+        emailVisibility: 'private',
+        ageVisibility: 'private',
+        genderVisibility: 'private',
         level: 'Premium',
         planKey: 'monthly',
       },
@@ -831,6 +886,12 @@ const app = createApp({
       profileDraft: {
         displayName: '',
         username: '',
+        domain: '',
+        signature: '',
+        phoneVisibility: 'private',
+        emailVisibility: 'private',
+        ageVisibility: 'private',
+        genderVisibility: 'private',
       },
       // Space modal state.
       // 空间弹窗状态。
@@ -891,7 +952,13 @@ const app = createApp({
         id: '',
         name: '',
         username: '',
+        domain: '',
         secondary: '',
+        signature: '',
+        age: '',
+        gender: '',
+        email: '',
+        phone: '',
         relationStatus: '',
         direction: '',
       },
@@ -1018,12 +1085,14 @@ const app = createApp({
         return this.currentPost.title;
       }
       if (this.view === 'profile' && this.profileUser.name) {
-        return this.profileUser.username
-          ? `${this.profileUser.name} · @${this.profileUser.username}`
-          : this.profileUser.name;
+        const handle = this.profileUser.domain || this.profileUser.username;
+        return handle ? `${this.profileUser.name} · @${handle}` : this.profileUser.name;
       }
-      if (this.view === 'profile' && this.profileUser.username) {
-        return `@${this.profileUser.username}`;
+      if (this.view === 'profile' && (this.profileUser.domain || this.profileUser.username)) {
+        return `@${this.profileUser.domain || this.profileUser.username}`;
+      }
+      if (this.view === 'space') {
+        return this.t('pageTitle.space');
       }
       if (this.view === 'private' && this.activePrivateSpace) {
         const label = this.localizedSpaceText('name', this.activePrivateSpace);
@@ -1045,11 +1114,14 @@ const app = createApp({
           ? `${this.t('pageSub.postDetail')} · ${this.currentPost.spaceLabel}`
           : this.t('pageSub.postDetail');
       }
-      if (this.view === 'profile' && this.profileUser.username) {
-        return `@${this.profileUser.username}`;
+      if (this.view === 'profile' && (this.profileUser.domain || this.profileUser.username)) {
+        return `@${this.profileUser.domain || this.profileUser.username}`;
       }
       if (this.view === 'profile' && this.profileUser.name) {
         return this.t('posts.profileFeedSub');
+      }
+      if (this.view === 'space') {
+        return this.t('pageSub.space');
       }
       if (this.view === 'private' && this.activePrivateSpace?.subdomain) {
         return `${this.t('pageSub.private')} · @${this.activePrivateSpace.subdomain}`;
@@ -1503,6 +1575,7 @@ const app = createApp({
             nav: {
               auth: '登入 / 註冊',
               dashboard: '帳號主頁',
+              space: '空間',
               private: '私人空間',
               public: '公共空間',
               levels: '會員等級',
@@ -1513,12 +1586,33 @@ const app = createApp({
               collapse: '收合導航',
               expand: '展開導航',
             },
-            profile: {
-              tabs: {
-                levels: '會員等級',
-                subscription: '訂閱',
-                blockchain: '鏈上帳號',
+          profile: {
+            identity: {
+              title: '身分卡',
+              sub: '暱稱和域名分開維護，域名用於登入和子網域入口。',
+              nickname: '使用者暱稱',
+              username: '使用者名稱',
+              domain: '域名',
+              signature: '簽名',
+              phoneVisibility: '手機可見範圍',
+              emailVisibility: '信箱可見範圍',
+              ageVisibility: '年齡可見範圍',
+              genderVisibility: '性別可見範圍',
+              visibility: {
+                public: '公開',
+                friends: '僅好友可見',
+                private: '僅自己可見',
               },
+              domainHint: '域名只能使用英文字母和數字，長度不超過 63，並作為身分卡和登入入口。',
+              domainRequired: '請輸入域名。',
+              domainError: '域名只能包含英文字母和數字，且最長 63 個字元。',
+              save: '儲存身分卡',
+            },
+            tabs: {
+              levels: '會員等級',
+              subscription: '訂閱',
+              blockchain: '鏈上帳號',
+            },
             },
             ws: {
               statusLabel: '連線狀態',
@@ -1534,6 +1628,7 @@ const app = createApp({
             pageTitle: {
               auth: '登入 / 註冊',
               dashboard: '帳號主頁',
+              space: '空間',
               private: '私人空間',
               public: '公共空間',
               levels: '會員等級',
@@ -1545,6 +1640,7 @@ const app = createApp({
             pageSub: {
               auth: '快速進入你的私人空間與公共空間',
               dashboard: '帳戶摘要與空間資訊',
+              space: '在同一個入口管理私人空間、公共空間與內容',
               private: '沉澱個人內容',
               public: '展示公共內容與連結',
               levels: '選擇適合你的會員等級',
@@ -1558,7 +1654,7 @@ const app = createApp({
               welcomeSub: '登入後進入你的私人空間與公共空間。',
               createTitle: '建立新帳號',
               createSub: '加入會員體系，解鎖更大空間與更多互動。',
-              accountPlaceholder: '信箱 / 手機 / 使用者名稱',
+              accountPlaceholder: '信箱 / 手機 / 使用者名稱 / 域名',
               passwordPlaceholder: '密碼',
               emailPlaceholder: '信箱',
               phonePlaceholder: '手機號碼',
@@ -1582,7 +1678,7 @@ const app = createApp({
               profileSub: '更新顯示名稱與使用者名稱，主頁與聊天視窗會同步顯示。',
               blockchainTitle: '鏈上擴展',
               blockchainSub: '已綁定的鏈上帳號會在此彙總，便於後續資產與身份聯動。',
-              displayNamePlaceholder: '輸入顯示名稱',
+              displayNamePlaceholder: '輸入暱稱',
               usernamePlaceholder: '輸入使用者名稱',
               usernameHint: '僅允許英文字母和數字，長度不超過 63，並作為子網域使用。',
               usernameRequired: '請輸入使用者名稱。',
@@ -1634,6 +1730,7 @@ const app = createApp({
               shareError: '轉發失敗，請稍後重試。',
               privateLabel: '僅自己可見',
               publicLabel: '公開',
+              backToFeed: '返回空間',
             },
             subscription: {
               title: '訂閱管理',
@@ -1667,7 +1764,7 @@ const app = createApp({
               connectedChains: '已連接鏈',
             },
             friends: {
-              searchPlaceholder: '輸入顯示名稱、使用者名稱、信箱、手機號碼或使用者 ID',
+              searchPlaceholder: '輸入顯示名稱、使用者名稱、域名、信箱、手機號碼或使用者 ID',
               searchAction: '搜尋使用者',
               addAction: '送出請求',
               acceptAction: '接受',
@@ -1795,7 +1892,20 @@ const app = createApp({
       this.spaces = [];
       this.posts = [];
       this.privatePosts = [];
-      this.profileUser = { id: '', name: '', username: '', secondary: '', relationStatus: '', direction: '' };
+      this.profileUser = {
+        id: '',
+        name: '',
+        username: '',
+        domain: '',
+        secondary: '',
+        signature: '',
+        age: '',
+        gender: '',
+        email: '',
+        phone: '',
+        relationStatus: '',
+        direction: '',
+      };
       this.profilePosts = [];
       this.currentPost = null;
       this.spaceModalOpen = false;
@@ -1826,6 +1936,22 @@ const app = createApp({
       this.activePublicSpaceId = '';
       this.profileDraft.displayName = '';
       this.profileDraft.username = '';
+      this.profileDraft.domain = '';
+      this.profileDraft.signature = '';
+      this.profileDraft.phoneVisibility = 'private';
+      this.profileDraft.emailVisibility = 'private';
+      this.profileDraft.ageVisibility = 'private';
+      this.profileDraft.genderVisibility = 'private';
+      this.user.domain = '';
+      this.user.signature = '';
+      this.user.age = '';
+      this.user.gender = '';
+      this.user.email = '';
+      this.user.phone = '';
+      this.user.phoneVisibility = 'private';
+      this.user.emailVisibility = 'private';
+      this.user.ageVisibility = 'private';
+      this.user.genderVisibility = 'private';
       this.hostRouteApplied = false;
       this.auth.account = '';
       this.auth.password = '';
@@ -1842,7 +1968,7 @@ const app = createApp({
     friendSecondary(friend) {
       // Render the best available secondary contact text.
       // 渲染可用的次级联系信息。
-      return friend.secondary || friend.id;
+      return friend.secondary || friend.domain || friend.username || friend.id;
     },
     searchResultActionLabel(result) {
       // Render the action label for a user search result.
@@ -2402,9 +2528,25 @@ const app = createApp({
       this.user.id = data.user_id || this.user.id;
       this.user.name = data.display_name || this.user.name;
       this.user.username = data.username || this.user.username;
+      this.user.domain = data.domain || this.user.domain;
+      this.user.signature = data.signature ?? this.user.signature ?? '';
+      this.user.age = data.age ?? this.user.age ?? '';
+      this.user.gender = data.gender ?? this.user.gender ?? '';
+      this.user.email = data.email ?? this.user.email ?? '';
+      this.user.phone = data.phone ?? this.user.phone ?? '';
+      this.user.phoneVisibility = data.phone_visibility || this.user.phoneVisibility || 'private';
+      this.user.emailVisibility = data.email_visibility || this.user.emailVisibility || 'private';
+      this.user.ageVisibility = data.age_visibility || this.user.ageVisibility || 'private';
+      this.user.genderVisibility = data.gender_visibility || this.user.genderVisibility || 'private';
       this.user.level = data.level || this.user.level;
       this.profileDraft.displayName = data.display_name || '';
       this.profileDraft.username = data.username || this.profileDraft.username || '';
+      this.profileDraft.domain = data.domain || this.profileDraft.domain || '';
+      this.profileDraft.signature = data.signature ?? this.profileDraft.signature ?? '';
+      this.profileDraft.phoneVisibility = data.phone_visibility || this.profileDraft.phoneVisibility || 'private';
+      this.profileDraft.emailVisibility = data.email_visibility || this.profileDraft.emailVisibility || 'private';
+      this.profileDraft.ageVisibility = data.age_visibility || this.profileDraft.ageVisibility || 'private';
+      this.profileDraft.genderVisibility = data.gender_visibility || this.profileDraft.genderVisibility || 'private';
     },
     async loadSpaces() {
       // Load spaces from server.
@@ -2412,7 +2554,7 @@ const app = createApp({
       if (!this.token) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/spaces`, {
+      const res = await fetch(`${this.spaceApiBase}/spaces`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
       if (!res.ok) {
@@ -2476,7 +2618,7 @@ const app = createApp({
       if (!this.token) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts?visibility=public&limit=50`, {
+      const res = await fetch(`${this.spaceApiBase}/posts?visibility=public&limit=50`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
       if (!res.ok) {
@@ -2493,7 +2635,7 @@ const app = createApp({
       if (!this.token || !this.user.id) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/users/${this.user.id}/posts?visibility=all&limit=50`, {
+      const res = await fetch(`${this.spaceApiBase}/users/${this.user.id}/posts?visibility=all&limit=50`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
       if (!res.ok) {
@@ -2516,16 +2658,26 @@ const app = createApp({
       if (profileRes.ok) {
         const profile = await profileRes.json();
         const profileSecondary = [
+          profile.domain ? `@${profile.domain}` : '',
           profile.username ? `@${profile.username}` : '',
+          profile.signature || '',
           profile.email || '',
           profile.phone || '',
+          profile.age ?? '',
+          profile.gender || '',
           profile.user_id || userID,
         ].filter(Boolean).join(' · ');
         this.profileUser = {
           id: profile.user_id || userID,
           name: profile.display_name || fallbackName || userID,
           username: profile.username || '',
+          domain: profile.domain || '',
           secondary: profileSecondary,
+          signature: profile.signature || '',
+          age: profile.age ?? '',
+          gender: profile.gender || '',
+          email: profile.email || '',
+          phone: profile.phone || '',
           relationStatus: profile.relation_status || '',
           direction: profile.direction || '',
         };
@@ -2534,7 +2686,13 @@ const app = createApp({
           id: userID,
           name: fallbackName || userID,
           username: '',
+          domain: '',
           secondary: userID,
+          signature: '',
+          age: '',
+          gender: '',
+          email: '',
+          phone: '',
           relationStatus: '',
           direction: '',
         };
@@ -2559,6 +2717,23 @@ const app = createApp({
       this.profileTab = 'levels';
       this.view = 'profile';
     },
+    async openProfileByDomain(domain) {
+      // Resolve a domain identity card into the corresponding profile.
+      // 将域名身份卡解析为对应的个人主页。
+      if (!this.token || !domain) {
+        return false;
+      }
+      const encoded = encodeURIComponent(String(domain).trim().toLowerCase());
+      const res = await fetch(`${this.apiBase}/users/domain/${encoded}/profile`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return false;
+      }
+      const profile = await res.json();
+      await this.openProfile(profile.user_id || '', profile.display_name || '');
+      return true;
+    },
     async openProfileByUsername(username) {
       // Resolve a username subdomain into the corresponding profile.
       // 将用户名子域名解析为对应的个人主页。
@@ -2577,8 +2752,8 @@ const app = createApp({
       return true;
     },
     async applyHostRouteFromHost() {
-      // Route subdomain-hosted username pages once per session.
-      // 每个会话仅路由一次基于子域名的用户名主页。
+      // Route subdomain-hosted identity pages once per session.
+      // 每个会话仅路由一次基于子域名的身份主页。
       if (this.hostRouteApplied || !this.token) {
         return false;
       }
@@ -2592,6 +2767,9 @@ const app = createApp({
         return false;
       }
       this.hostRouteApplied = true;
+      if (await this.openProfileByDomain(label)) {
+        return true;
+      }
       return this.openProfileByUsername(label);
     },
     async openPostDetail(postID) {
@@ -2600,7 +2778,7 @@ const app = createApp({
       if (!this.token || !postID) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts/${postID}`, {
+      const res = await fetch(`${this.spaceApiBase}/posts/${postID}`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
       if (!res.ok) {
@@ -2624,14 +2802,14 @@ const app = createApp({
       this.view = 'postDetail';
     },
     backFromPostDetail() {
-      // Return from detail view to public feed.
-      // 从详情页返回公共内容流。
-      this.view = this.currentPost?.visibility === 'private' ? 'private' : 'public';
+      // Return from detail view to the combined space feed.
+      // 从详情页返回合并后的空间内容流。
+      this.view = 'space';
     },
     backToPublicFeed() {
-      // Return from profile view to public feed.
-      // 从用户主页返回公共内容流。
-      this.view = 'public';
+      // Return from profile view to the combined space feed.
+      // 从用户主页返回合并后的空间内容流。
+      this.view = 'space';
     },
     async refreshActiveProfile() {
       // Refresh profile data when the profile page is open.
@@ -2676,7 +2854,7 @@ const app = createApp({
         this.setError(this.t('posts.spaceRequired'));
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts`, {
+      const res = await fetch(`${this.spaceApiBase}/posts`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -2698,7 +2876,7 @@ const app = createApp({
       const selectedSpace = this.findSpaceById(spaceId);
       if (selectedSpace) {
         this.setActiveSpace(selectedSpace);
-        this.view = selectedSpace.type === 'private' ? 'private' : 'public';
+        this.view = 'space';
       }
       this.postDraft.title = '';
       this.postDraft.content = '';
@@ -2746,7 +2924,7 @@ const app = createApp({
         this.setError(this.t('posts.spaceRequired'));
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts/${this.editPostDraft.id}`, {
+      const res = await fetch(`${this.spaceApiBase}/posts/${this.editPostDraft.id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -2776,7 +2954,7 @@ const app = createApp({
       if (!this.token || !post) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts/${post.id}/likes`, {
+      const res = await fetch(`${this.spaceApiBase}/posts/${post.id}/likes`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${this.token}` },
       });
@@ -2797,7 +2975,7 @@ const app = createApp({
       if (!this.token || !post || !content.trim()) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts/${post.id}/comments`, {
+      const res = await fetch(`${this.spaceApiBase}/posts/${post.id}/comments`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -2825,7 +3003,7 @@ const app = createApp({
       if (!this.token || !post) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts/${post.id}/shares`, {
+      const res = await fetch(`${this.spaceApiBase}/posts/${post.id}/shares`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${this.token}` },
       });
@@ -2840,11 +3018,12 @@ const app = createApp({
       }
     },
     async saveProfile() {
-      // Persist display name and username changes to the account service.
-      // 将展示名称和用户名修改保存到账号服务。
+      // Persist identity card changes to the account service.
+      // 将身份卡变更保存到账号服务。
       this.clearFeedback();
       const displayName = this.profileDraft.displayName.trim();
       const username = this.profileDraft.username.trim().toLowerCase();
+      const domain = this.profileDraft.domain.trim().toLowerCase();
       if (!this.token || !displayName) {
         this.setError(this.t('dashboard.saveError'));
         return;
@@ -2857,6 +3036,14 @@ const app = createApp({
         this.setError(this.t('dashboard.usernameError'));
         return;
       }
+      if (!domain) {
+        this.setError(this.t('profile.identity.domainRequired'));
+        return;
+      }
+      if (!this.isValidSpaceSubdomain(domain)) {
+        this.setError(this.t('profile.identity.domainError'));
+        return;
+      }
       const res = await fetch(`${this.apiBase}/me`, {
         method: 'PUT',
         headers: {
@@ -2866,6 +3053,12 @@ const app = createApp({
         body: JSON.stringify({
           display_name: displayName,
           username,
+          domain,
+          signature: this.profileDraft.signature.trim(),
+          phone_visibility: this.profileDraft.phoneVisibility,
+          email_visibility: this.profileDraft.emailVisibility,
+          age_visibility: this.profileDraft.ageVisibility,
+          gender_visibility: this.profileDraft.genderVisibility,
         }),
       });
       if (!res.ok) {
@@ -2969,7 +3162,7 @@ const app = createApp({
           this.setError(this.t('spaces.subdomainRequired'));
           return;
         }
-        const res = await fetch(`${this.apiBase}/spaces/${this.spaceDraft.id}`, {
+        const res = await fetch(`${this.spaceApiBase}/spaces/${this.spaceDraft.id}`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${this.token}`,
@@ -2989,12 +3182,12 @@ const app = createApp({
         const updatedSpace = this.mapSpaceItem(item);
         await this.loadSpaces();
         this.setActiveSpace(updatedSpace);
-        this.view = updatedSpace.type === 'private' ? 'private' : 'public';
+        this.view = 'space';
         this.closeSpaceComposer();
         this.setFlash(this.t('spaces.editSuccess'));
         return;
       }
-      const res = await fetch(`${this.apiBase}/spaces`, {
+      const res = await fetch(`${this.spaceApiBase}/spaces`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -3015,7 +3208,7 @@ const app = createApp({
       const createdSpace = this.mapSpaceItem(item);
       await this.loadSpaces();
       this.setActiveSpace(createdSpace);
-      this.view = createdSpace.type === 'private' ? 'private' : 'public';
+      this.view = 'space';
       this.closeSpaceComposer();
       this.setFlash(this.t('spaces.createSuccess'));
     },
@@ -3031,7 +3224,7 @@ const app = createApp({
       if (!confirmed) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/spaces/${space.id}`, {
+      const res = await fetch(`${this.spaceApiBase}/spaces/${space.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${this.token}` },
       });
@@ -3075,14 +3268,14 @@ const app = createApp({
           spaceId: '',
         };
         if (this.view === 'postDetail') {
-          this.view = space.type === 'private' ? 'private' : 'public';
+          this.view = 'space';
         }
       }
       await this.loadSpaces();
       await this.loadPosts();
       await this.loadPrivatePosts();
       if (this.view === 'profile' && this.profileUser.id === this.user.id) {
-        await this.loadProfile(this.profileUser.id, this.profileUser.name);
+        await this.openProfile(this.profileUser.id, this.profileUser.name);
       }
       this.setFlash(this.t('spaces.deleteSuccess'));
     },
@@ -3098,7 +3291,7 @@ const app = createApp({
       if (!confirmed) {
         return;
       }
-      const res = await fetch(`${this.apiBase}/posts/${post.id}`, {
+      const res = await fetch(`${this.spaceApiBase}/posts/${post.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${this.token}` },
       });
@@ -3128,13 +3321,13 @@ const app = createApp({
           spaceId: '',
         };
         if (this.view === 'postDetail') {
-          this.view = post.visibility === 'private' ? 'private' : 'public';
+          this.view = 'space';
         }
       }
       await this.loadPosts();
       await this.loadPrivatePosts();
       if (this.view === 'profile' && this.profileUser.id === this.user.id) {
-        await this.loadProfile(this.profileUser.id, this.profileUser.name);
+        await this.openProfile(this.profileUser.id, this.profileUser.name);
       }
       this.setFlash(this.t('posts.deleteSuccess'));
     },
@@ -3154,14 +3347,24 @@ const app = createApp({
       if (Array.isArray(data.items)) {
         this.friends = data.items.map((item) => ({
           id: item.friend_id,
-          name: item.display_name || item.email || item.phone || item.friend_id,
+          name: item.display_name || item.domain || item.username || item.email || item.phone || item.friend_id,
           username: item.username || '',
+          domain: item.domain || '',
+          signature: item.signature || '',
           secondary: [
+            item.domain ? `@${item.domain}` : '',
             item.username ? `@${item.username}` : '',
+            item.signature || '',
+            item.age ?? '',
+            item.gender || '',
             item.email || '',
             item.phone || '',
             item.friend_id || '',
           ].filter(Boolean).join(' · '),
+          age: item.age ?? '',
+          gender: item.gender || '',
+          email: item.email || '',
+          phone: item.phone || '',
           status: item.status || 'offline',
           direction: item.direction || 'outgoing',
           createdAt: item.created_at || '',
@@ -3195,14 +3398,24 @@ const app = createApp({
       this.friendSearchResults = Array.isArray(data.items)
         ? data.items.map((item) => ({
             id: item.user_id,
-            name: item.display_name || item.email || item.phone || item.user_id,
+            name: item.display_name || item.domain || item.username || item.email || item.phone || item.user_id,
             username: item.username || '',
+            domain: item.domain || '',
+            signature: item.signature || '',
             secondary: [
+              item.domain ? `@${item.domain}` : '',
               item.username ? `@${item.username}` : '',
+              item.signature || '',
+              item.age ?? '',
+              item.gender || '',
               item.email || '',
               item.phone || '',
               item.user_id || '',
             ].filter(Boolean).join(' · '),
+            age: item.age ?? '',
+            gender: item.gender || '',
+            email: item.email || '',
+            phone: item.phone || '',
             relationStatus: item.relation_status || '',
             direction: item.direction || '',
           }))

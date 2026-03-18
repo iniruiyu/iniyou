@@ -70,13 +70,13 @@ class DashboardOverviewView extends StatelessWidget {
         InfoCard(
           title: '快捷入口',
           lines: const [
-            '进入私人空间沉淀草稿和私人内容',
-            '进入公共空间发布文章和打开作者主页',
+            '进入空间管理草稿、公开内容和空间入口',
+            '公开内容会出现在公共空间，也能打开作者主页',
             '好友和聊天页面保持关系与实时消息联动',
           ],
           trailing: FilledButton.tonal(
             onPressed: onOpenPublicSpace,
-            child: const Text('打开公共空间'),
+            child: const Text('打开空间'),
           ),
         ),
       ],
@@ -94,7 +94,7 @@ class DashboardOverviewView extends StatelessWidget {
               '当前公共：${activePublicSpace!.name} · @${activePublicSpace!.subdomain}',
             for (final space in spaces.take(4))
               '${space.type.toUpperCase()} · ${space.name} · @${space.subdomain}',
-            if (spaces.isEmpty) '当前还没有空间，先创建你的私人或公共空间。',
+            if (spaces.isEmpty) '当前还没有空间，先创建一个空间。',
           ],
         ),
         const SizedBox(height: 16),

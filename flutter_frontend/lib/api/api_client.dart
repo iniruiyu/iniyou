@@ -9,6 +9,10 @@ class ApiClient {
     'ACCOUNT_API_BASE',
     defaultValue: 'http://localhost:8080/api/v1',
   );
+  static const String spaceBase = String.fromEnvironment(
+    'SPACE_API_BASE',
+    defaultValue: 'http://localhost:8082/api/v1',
+  );
   static const String messageBase = String.fromEnvironment(
     'MESSAGE_API_BASE',
     defaultValue: 'http://localhost:8081/api/v1',
@@ -57,16 +61,29 @@ class ApiClient {
   Future<CurrentUser> updateProfile({
     required String displayName,
     required String username,
+    required String domain,
+    required String signature,
+    String phoneVisibility = '',
+    String emailVisibility = '',
+    String ageVisibility = '',
+    String genderVisibility = '',
   }) async =>
       CurrentUser.fromJson(
         await _put(accountBase, '/me', {
           'display_name': displayName,
           'username': username,
+          'domain': domain,
+          'signature': signature,
+          if (phoneVisibility.isNotEmpty) 'phone_visibility': phoneVisibility,
+          if (emailVisibility.isNotEmpty) 'email_visibility': emailVisibility,
+          if (ageVisibility.isNotEmpty) 'age_visibility': ageVisibility,
+          if (genderVisibility.isNotEmpty)
+            'gender_visibility': genderVisibility,
         }),
       );
 
   Future<List<SpaceItem>> listSpaces() async =>
-      _list(await _get(accountBase, '/spaces'), SpaceItem.fromJson);
+      _list(await _get(spaceBase, '/spaces'), SpaceItem.fromJson);
 
   Future<SpaceItem> createSpace({
     required String type,
@@ -80,7 +97,7 @@ class ApiClient {
       'description': description,
       if ((subdomain ?? '').trim().isNotEmpty) 'subdomain': subdomain!.trim(),
     };
-    return SpaceItem.fromJson(await _post(accountBase, '/spaces', body));
+    return SpaceItem.fromJson(await _post(spaceBase, '/spaces', body));
   }
 
   Future<SpaceItem> updateSpace({
@@ -90,7 +107,7 @@ class ApiClient {
     required String subdomain,
   }) async {
     return SpaceItem.fromJson(
-      await _patch(accountBase, '/spaces/$id', {
+      await _patch(spaceBase, '/spaces/$id', {
         'name': name,
         'description': description,
         'subdomain': subdomain,
@@ -99,7 +116,7 @@ class ApiClient {
   }
 
   Future<void> deleteSpace(String id) async {
-    await _delete(accountBase, '/spaces/$id');
+    await _delete(spaceBase, '/spaces/$id');
   }
 
   Future<List<PostItem>> listPosts({
@@ -107,7 +124,7 @@ class ApiClient {
     int limit = 50,
   }) async {
     return _list(
-      await _get(accountBase, '/posts?visibility=$visibility&limit=$limit'),
+      await _get(spaceBase, '/posts?visibility=$visibility&limit=$limit'),
       PostItem.fromJson,
     );
   }
@@ -119,7 +136,7 @@ class ApiClient {
   }) async {
     return _list(
       await _get(
-        accountBase,
+        spaceBase,
         '/users/$userId/posts?visibility=$visibility&limit=$limit',
       ),
       PostItem.fromJson,
@@ -127,7 +144,7 @@ class ApiClient {
   }
 
   Future<PostItem> getPost(String id) async =>
-      PostItem.fromJson(await _get(accountBase, '/posts/$id'));
+      PostItem.fromJson(await _get(spaceBase, '/posts/$id'));
 
   Future<PostItem> createPost({
     required String title,
@@ -143,7 +160,7 @@ class ApiClient {
       'status': status,
       if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
     };
-    return PostItem.fromJson(await _post(accountBase, '/posts', body));
+    return PostItem.fromJson(await _post(spaceBase, '/posts', body));
   }
 
   Future<PostItem> updatePost({
@@ -161,23 +178,23 @@ class ApiClient {
       'status': status,
       if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
     };
-    return PostItem.fromJson(await _patch(accountBase, '/posts/$id', body));
+    return PostItem.fromJson(await _patch(spaceBase, '/posts/$id', body));
   }
 
   Future<void> deletePost(String id) async {
-    await _delete(accountBase, '/posts/$id');
+    await _delete(spaceBase, '/posts/$id');
   }
 
   Future<PostItem> toggleLike(String id) async =>
-      PostItem.fromJson(await _post(accountBase, '/posts/$id/likes', {}));
+      PostItem.fromJson(await _post(spaceBase, '/posts/$id/likes', {}));
 
   Future<PostItem> commentPost(String id, String content) async =>
       PostItem.fromJson(
-        await _post(accountBase, '/posts/$id/comments', {'content': content}),
+        await _post(spaceBase, '/posts/$id/comments', {'content': content}),
       );
 
   Future<PostItem> sharePost(String id) async =>
-      PostItem.fromJson(await _post(accountBase, '/posts/$id/shares', {}));
+      PostItem.fromJson(await _post(spaceBase, '/posts/$id/shares', {}));
 
   Future<List<FriendItem>> listFriends() async =>
       _list(await _get(accountBase, '/friends'), FriendItem.fromJson);
@@ -203,6 +220,14 @@ class ApiClient {
         await _get(
           accountBase,
           '/users/username/${Uri.encodeComponent(username)}/profile',
+        ),
+      );
+
+  Future<UserProfileItem> fetchUserProfileByDomain(String domain) async =>
+      UserProfileItem.fromJson(
+        await _get(
+          accountBase,
+          '/users/domain/${Uri.encodeComponent(domain)}/profile',
         ),
       );
 

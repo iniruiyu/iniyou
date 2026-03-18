@@ -59,6 +59,7 @@
 - 模块设计要支持用户域、社交域和区块链账号扩展解耦演进
 - 优先选择纯 Go 驱动和纯 Go 工具链，降低构建、部署和跨平台成本
 - 应保持 handler、service、repository、model 的职责清晰
+- 账号域与空间域必须拆分为独立服务：`account-service` 负责身份、登录、资料与可见范围，`space-service` 负责空间、文章、评论、点赞与转发
 
 ## 6. 前端架构边界
 
@@ -122,10 +123,11 @@
 - 资源命名使用复数名词
 - 返回结构保持统一
 - 错误结构保持统一
+- 账号域与空间域采用不同服务入口与不同端口，前端通过配置区分账号服务与空间服务
 - 空间采用稳定的 `subdomain` 作为入口标识，文章采用 `space_id` 记录归属空间
 - 前端可根据当前子域名自动识别空间上下文，创建与发布动作必须显式携带当前空间信息
 - 空间名称与二级域名彼此独立，二级域名前缀只允许英文字母和数字，且最长 63 个字符
-- 用户名与空间二级域名共享同一英数字 host label 命名空间，用户名既是登录别名也是个人主页入口句柄 / Username and space subdomains share the same alphanumeric host-label namespace; the username is both a login alias and a profile entry handle.
+- 用户名与域名共享同一英数字 host label 命名空间，用户名作为登录别名，域名作为身份卡与登录入口句柄 / Username and domain share the same alphanumeric host-label namespace; username is the login alias, and domain is the identity-card and login-entry handle.
 - 个人空间列表只展示 `source=user` 的空间，历史默认空间通过 `source=system` 隐藏
 - 空间编辑、空间删除与文章删除均通过 REST 资源操作完成
 - 数据模型需预留扩展字段
@@ -190,3 +192,7 @@
 
 - 为空间体系补充 `subdomain` 入口标识和 `space_id` 内容归属约束 / Added `subdomain` entry keys and `space_id` ownership constraints for the space system.
 - 补充空间名称与二级域名解耦、个人列表仅展示用户创建空间、以及空间/文章删除的资源化约束 / Added decoupled space naming, user-created-only personal lists, and resource-based deletion constraints for spaces and posts.
+
+### 2026-03-18
+
+- 拆分账号服务与空间服务，并把域名升级为身份卡入口 / Split account and space services, and promoted the domain handle to the identity-card entry.

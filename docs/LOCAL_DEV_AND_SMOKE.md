@@ -29,10 +29,11 @@ createdb account_service
 
 - 账号服务自动迁移：
   - `users`
-  - `spaces`
   - `subscriptions`
   - `external_accounts`
   - `friends`
+- 空间服务自动迁移：
+  - `spaces`
   - `posts`
   - `comments`
   - `post_likes`
@@ -52,7 +53,17 @@ make run-account
 
 - `http://localhost:8080`
 
-### 4.2 启动通讯服务
+### 4.2 启动空间服务
+
+```bash
+make run-space
+```
+
+默认地址：
+
+- `http://localhost:8082`
+
+### 4.3 启动通讯服务
 
 ```bash
 make run-message
@@ -62,7 +73,7 @@ make run-message
 
 - `http://localhost:8081`
 
-### 4.3 打开前端页面
+### 4.4 打开前端页面
 
 直接打开：
 
@@ -74,10 +85,10 @@ make run-message
 
 1. 注册第一个账号
 2. 注册第二个账号
-3. 更新展示名称
+3. 更新昵称、用户名、域名和资料可见范围
 4. 搜索用户并建立好友关系
 5. 进入聊天页发送消息
-6. 发布公共文章
+6. 进入空间并发布公共文章
 7. 打开作者主页与文章详情
 8. 绑定一个链上账号并检查主页摘要是否更新
 

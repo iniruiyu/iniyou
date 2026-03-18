@@ -30,6 +30,8 @@ type FriendView struct {
 	FriendID    string    `json:"friend_id"`
 	DisplayName string    `json:"display_name"`
 	Username    string    `json:"username,omitempty"`
+	Domain      string    `json:"domain,omitempty"`
+	Signature   string    `json:"signature,omitempty"`
 	Email       *string   `json:"email"`
 	Phone       *string   `json:"phone"`
 	Status      string    `json:"status"`
@@ -43,8 +45,12 @@ type UserSearchView struct {
 	UserID         string  `json:"user_id"`
 	DisplayName    string  `json:"display_name"`
 	Username       string  `json:"username,omitempty"`
+	Domain         string  `json:"domain,omitempty"`
+	Signature      string  `json:"signature,omitempty"`
 	Email          *string `json:"email"`
 	Phone          *string `json:"phone"`
+	Age            *int    `json:"age,omitempty"`
+	Gender         *string `json:"gender,omitempty"`
 	RelationStatus string  `json:"relation_status,omitempty"`
 	Direction      string  `json:"direction,omitempty"`
 }
@@ -55,8 +61,12 @@ type PublicUserProfileView struct {
 	UserID         string  `json:"user_id"`
 	DisplayName    string  `json:"display_name"`
 	Username       string  `json:"username,omitempty"`
+	Domain         string  `json:"domain,omitempty"`
+	Signature      string  `json:"signature,omitempty"`
 	Email          *string `json:"email"`
 	Phone          *string `json:"phone"`
+	Age            *int    `json:"age,omitempty"`
+	Gender         *string `json:"gender,omitempty"`
 	Status         string  `json:"status"`
 	RelationStatus string  `json:"relation_status,omitempty"`
 	Direction      string  `json:"direction,omitempty"`
@@ -108,6 +118,21 @@ func GetUserByUsername(db *gorm.DB, username string) (models.User, error) {
 	return user, nil
 }
 
+func GetUserByDomain(db *gorm.DB, domain string) (models.User, error) {
+	// Fetch user by domain handle.
+	// 根据域名身份句柄获取用户信息。
+	domain = strings.ToLower(strings.TrimSpace(domain))
+	if domain == "" {
+		return models.User{}, gorm.ErrRecordNotFound
+	}
+
+	var user models.User
+	if err := db.First(&user, "LOWER(COALESCE(domain, '')) = ?", domain).Error; err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}
+
 func Register(db *gorm.DB, email string, phone string, password string) (models.User, error) {
 	// Register a new user with email or phone.
 	// 使用邮箱或手机号注册新用户。
@@ -147,6 +172,10 @@ func Register(db *gorm.DB, email string, phone string, password string) (models.
 			return err
 		}
 		user.Username = &username
+		user.Domain = &username
+		if err := tx.Model(&user).Update("domain", username).Error; err != nil {
+			return err
+		}
 		return nil
 	}); err != nil {
 		return models.User{}, err
@@ -155,8 +184,8 @@ func Register(db *gorm.DB, email string, phone string, password string) (models.
 }
 
 func Login(db *gorm.DB, account string, password string) (models.User, error) {
-	// Login using email, phone, or username + password.
-	// 使用邮箱、手机号或用户名 + 密码登录。
+	// Login using email, phone, username, or domain + password.
+	// 使用邮箱、手机号、用户名或域名 + 密码登录。
 	if account == "" || password == "" {
 		return models.User{}, ErrInvalidCredentials
 	}
@@ -165,6 +194,7 @@ func Login(db *gorm.DB, account string, password string) (models.User, error) {
 	if err := db.Where("email = ?", account).
 		Or("phone = ?", account).
 		Or("LOWER(COALESCE(username, '')) = ?", normalizedUsername).
+		Or("LOWER(COALESCE(domain, '')) = ?", normalizedUsername).
 		First(&user).Error; err != nil {
 		return models.User{}, ErrInvalidCredentials
 	}
@@ -174,13 +204,25 @@ func Login(db *gorm.DB, account string, password string) (models.User, error) {
 	return user, nil
 }
 
-func UpdateProfile(db *gorm.DB, userID string, displayName string, username string) (models.User, error) {
-	// Update user profile fields, including the user handle.
-	// 更新用户资料字段，并同步用户用户名。
+func UpdateProfile(
+	db *gorm.DB,
+	userID string,
+	displayName string,
+	username string,
+	domain string,
+	signature string,
+	phoneVisibility string,
+	emailVisibility string,
+	ageVisibility string,
+	genderVisibility string,
+) (models.User, error) {
+	// Update user profile fields, including the identity handles.
+	// 更新用户资料字段，并同步身份句柄。
 	displayName = strings.TrimSpace(displayName)
 	if displayName == "" {
 		return models.User{}, errors.New("display name required")
 	}
+	signature = strings.TrimSpace(signature)
 	var user models.User
 	if err := db.First(&user, "id = ?", userID).Error; err != nil {
 		return models.User{}, err
@@ -194,6 +236,16 @@ func UpdateProfile(db *gorm.DB, userID string, displayName string, username stri
 			username = ""
 		}
 	}
+	domain = strings.TrimSpace(domain)
+	if domain == "" {
+		if user.Domain != nil && strings.TrimSpace(*user.Domain) != "" {
+			domain = strings.TrimSpace(*user.Domain)
+		} else if username != "" {
+			domain = username
+		} else {
+			domain = ""
+		}
+	}
 
 	resolvedUsername := ""
 	if username != "" {
@@ -203,12 +255,36 @@ func UpdateProfile(db *gorm.DB, userID string, displayName string, username stri
 			return models.User{}, err
 		}
 	}
+	resolvedDomain := ""
+	if domain != "" {
+		var err error
+		resolvedDomain, err = normalizeAndValidateUsername(db, domain, userID)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
 
 	updates := map[string]any{
 		"display_name": displayName,
+		"signature":    signature,
 	}
 	if resolvedUsername != "" {
 		updates["username"] = resolvedUsername
+	}
+	if resolvedDomain != "" {
+		updates["domain"] = resolvedDomain
+	}
+	if strings.TrimSpace(phoneVisibility) != "" {
+		updates["phone_visibility"] = normalizeProfileVisibility(phoneVisibility)
+	}
+	if strings.TrimSpace(emailVisibility) != "" {
+		updates["email_visibility"] = normalizeProfileVisibility(emailVisibility)
+	}
+	if strings.TrimSpace(ageVisibility) != "" {
+		updates["age_visibility"] = normalizeProfileVisibility(ageVisibility)
+	}
+	if strings.TrimSpace(genderVisibility) != "" {
+		updates["gender_visibility"] = normalizeProfileVisibility(genderVisibility)
 	}
 	if err := db.Model(&models.User{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
 		return models.User{}, err
@@ -242,8 +318,8 @@ func normalizeHostLabel(value string) string {
 }
 
 func buildUniqueHostLabel(db *gorm.DB, base string, excludeUserID string, excludeSpaceID string) (string, error) {
-	// Generate a unique host label within the shared user/space namespace.
-	// 在用户与空间共享的命名空间中生成唯一主机标识。
+	// Generate a unique host label within the shared user/domain/space namespace.
+	// 在用户、域名与空间共享的命名空间中生成唯一主机标识。
 	base = normalizeHostLabel(base)
 	if base == "" {
 		return "", errors.New("host label required")
@@ -285,10 +361,10 @@ func buildUniqueHostLabel(db *gorm.DB, base string, excludeUserID string, exclud
 }
 
 func isHostLabelAvailable(db *gorm.DB, label string, excludeUserID string, excludeSpaceID string) (bool, error) {
-	// Check whether a username or space subdomain is already in use.
-	// 检查用户名或空间二级域名是否已被占用。
+	// Check whether a username, domain, or space subdomain is already in use.
+	// 检查用户名、域名或空间二级域名是否已被占用。
 	var userCount int64
-	userQuery := db.Model(&models.User{}).Where("LOWER(COALESCE(username, '')) = ?", label)
+	userQuery := db.Model(&models.User{}).Where("LOWER(COALESCE(username, '')) = ? OR LOWER(COALESCE(domain, '')) = ?", label, label)
 	if excludeUserID != "" {
 		userQuery = userQuery.Where("id <> ?", excludeUserID)
 	}
@@ -311,31 +387,31 @@ func isHostLabelAvailable(db *gorm.DB, label string, excludeUserID string, exclu
 }
 
 func normalizeAndValidateUsername(db *gorm.DB, requested string, excludeUserID string) (string, error) {
-	// Normalize a requested username and ensure it is available.
-	// 规范化请求的用户名并检查是否可用。
+	// Normalize a requested username/domain handle and ensure it is available.
+	// 规范化请求的用户名/域名句柄并检查是否可用。
 	requested = strings.ToLower(strings.TrimSpace(requested))
 	if requested == "" {
-		return "", errors.New("username required")
+		return "", errors.New("username or domain required")
 	}
 	if len(requested) > 63 {
-		return "", errors.New("username too long")
+		return "", errors.New("username or domain too long")
 	}
 	if !usernamePattern.MatchString(requested) {
-		return "", errors.New("username may only contain letters and numbers")
+		return "", errors.New("username or domain may only contain letters and numbers")
 	}
 	available, err := isHostLabelAvailable(db, requested, excludeUserID, "")
 	if err != nil {
 		return "", err
 	}
 	if !available {
-		return "", errors.New("username already exists")
+		return "", errors.New("username or domain already exists")
 	}
 	return requested, nil
 }
 
 func buildUserUsername(db *gorm.DB, userID string, seed string) (string, error) {
-	// Build a stable username for a user and keep it unique across host labels.
-	// 为用户构建稳定用户名，并确保与主机标识命名空间唯一。
+	// Build a stable username handle and keep it unique across host labels.
+	// 为用户构建稳定的用户名句柄，并确保与主机标识命名空间唯一。
 	base := normalizeHostLabel(seed)
 	if base == "" {
 		base = "u" + normalizeHostLabel(strings.ReplaceAll(userID, "-", ""))
@@ -597,11 +673,11 @@ func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSea
 
 	likeQuery := "%" + strings.ToLower(query) + "%"
 	var users []models.User
-	if err := db.Select("id", "display_name", "username", "email", "phone").
+	if err := db.Select("id").
 		Where("id <> ?", userID).
 		Where(
-			"LOWER(display_name) LIKE ? OR LOWER(COALESCE(username, '')) LIKE ? OR LOWER(COALESCE(email, '')) LIKE ? OR LOWER(COALESCE(phone, '')) LIKE ? OR CAST(id AS TEXT) LIKE ?",
-			likeQuery, likeQuery, likeQuery, likeQuery, "%"+query+"%",
+			"LOWER(display_name) LIKE ? OR LOWER(COALESCE(username, '')) LIKE ? OR LOWER(COALESCE(domain, '')) LIKE ? OR LOWER(COALESCE(email, '')) LIKE ? OR LOWER(COALESCE(phone, '')) LIKE ? OR LOWER(COALESCE(signature, '')) LIKE ? OR CAST(id AS TEXT) LIKE ?",
+			likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, "%"+query+"%",
 		).
 		Order("created_at desc").
 		Limit(limit).
@@ -609,45 +685,24 @@ func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSea
 		return nil, err
 	}
 
-	peerIDs := make([]string, 0, len(users))
-	for _, user := range users {
-		peerIDs = append(peerIDs, user.ID)
-	}
-
-	relationsByPeer := map[string]models.Friend{}
-	if len(peerIDs) > 0 {
-		var relations []models.Friend
-		if err := db.Where(
-			"(user_id = ? AND friend_id IN ?) OR (friend_id = ? AND user_id IN ?)",
-			userID, peerIDs, userID, peerIDs,
-		).Find(&relations).Error; err != nil {
-			return nil, err
-		}
-		for _, relation := range relations {
-			peerID := relation.FriendID
-			if relation.FriendID == userID {
-				peerID = relation.UserID
-			}
-			relationsByPeer[peerID] = relation
-		}
-	}
-
 	items := make([]UserSearchView, 0, len(users))
 	for _, user := range users {
-		item := UserSearchView{
-			UserID:      user.ID,
-			DisplayName: user.DisplayName,
-			Username:    stringValue(user.Username),
-			Email:       user.Email,
-			Phone:       user.Phone,
+		view, err := GetPublicUserProfile(db, userID, user.ID)
+		if err != nil {
+			continue
 		}
-		if relation, ok := relationsByPeer[user.ID]; ok {
-			item.RelationStatus = relation.Status
-			if relation.UserID == userID {
-				item.Direction = "outgoing"
-			} else {
-				item.Direction = "incoming"
-			}
+		item := UserSearchView{
+			UserID:         view.UserID,
+			DisplayName:    view.DisplayName,
+			Username:       view.Username,
+			Domain:         view.Domain,
+			Signature:      view.Signature,
+			Email:          view.Email,
+			Phone:          view.Phone,
+			Age:            view.Age,
+			Gender:         view.Gender,
+			RelationStatus: view.RelationStatus,
+			Direction:      view.Direction,
 		}
 		items = append(items, item)
 	}
@@ -665,14 +720,19 @@ func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (Pu
 		UserID:      user.ID,
 		DisplayName: fallbackDisplayName(user),
 		Username:    stringValue(user.Username),
-		Email:       user.Email,
-		Phone:       user.Phone,
+		Domain:      stringValue(user.Domain),
+		Signature:   strings.TrimSpace(user.Signature),
 		Status:      user.Status,
 	}
 	if viewerID == "" || viewerID == targetUserID {
+		view.Email = user.Email
+		view.Phone = user.Phone
+		view.Age = user.Age
+		view.Gender = user.Gender
 		return view, nil
 	}
 
+	isFriend := false
 	var relation models.Friend
 	if err := db.Where(
 		"(user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
@@ -684,8 +744,21 @@ func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (Pu
 		} else {
 			view.Direction = "incoming"
 		}
+		isFriend = relation.Status == "accepted"
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return PublicUserProfileView{}, err
+	}
+	if isProfileFieldVisible(user.EmailVisibility, isFriend) {
+		view.Email = user.Email
+	}
+	if isProfileFieldVisible(user.PhoneVisibility, isFriend) {
+		view.Phone = user.Phone
+	}
+	if isProfileFieldVisible(user.AgeVisibility, isFriend) {
+		view.Age = user.Age
+	}
+	if isProfileFieldVisible(user.GenderVisibility, isFriend) {
+		view.Gender = user.Gender
 	}
 	return view, nil
 }
@@ -700,11 +773,47 @@ func GetPublicUserProfileByUsername(db *gorm.DB, viewerID string, username strin
 	return GetPublicUserProfile(db, viewerID, user.ID)
 }
 
+func GetPublicUserProfileByDomain(db *gorm.DB, viewerID string, domain string) (PublicUserProfileView, error) {
+	// Load a user's public profile by domain handle.
+	// 根据域名身份句柄加载用户公开资料。
+	user, err := GetUserByDomain(db, domain)
+	if err != nil {
+		return PublicUserProfileView{}, err
+	}
+	return GetPublicUserProfile(db, viewerID, user.ID)
+}
+
+func normalizeProfileVisibility(raw string) string {
+	// Normalize field visibility labels used by profile privacy controls.
+	// 规范化资料隐私控制中使用的可见范围标签。
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "public":
+		return "public"
+	case "friends":
+		return "friends"
+	default:
+		return "private"
+	}
+}
+
+func isProfileFieldVisible(raw string, isFriend bool) bool {
+	// Decide whether a profile field can be exposed to another viewer.
+	// 判断资料字段是否可以向其他查看者公开。
+	switch normalizeProfileVisibility(raw) {
+	case "public":
+		return true
+	case "friends":
+		return isFriend
+	default:
+		return false
+	}
+}
+
 func EnsureUserUsernames(db *gorm.DB) error {
-	// Backfill usernames for users that do not have one yet.
-	// 为尚未设置用户名的用户回填默认用户名。
+	// Backfill usernames and domains for users that do not have them yet.
+	// 为尚未设置用户名和域名的用户回填默认值。
 	var users []models.User
-	if err := db.Where("COALESCE(username, '') = ''").Order("created_at asc").Find(&users).Error; err != nil {
+	if err := db.Where("COALESCE(username, '') = '' OR COALESCE(domain, '') = ''").Order("created_at asc").Find(&users).Error; err != nil {
 		return err
 	}
 	for _, user := range users {
@@ -713,6 +822,9 @@ func EnsureUserUsernames(db *gorm.DB) error {
 			return err
 		}
 		if err := db.Model(&models.User{}).Where("id = ?", user.ID).Update("username", username).Error; err != nil {
+			return err
+		}
+		if err := db.Model(&models.User{}).Where("id = ?", user.ID).Update("domain", username).Error; err != nil {
 			return err
 		}
 	}
@@ -763,7 +875,7 @@ func resolveFriendID(db *gorm.DB, userID string, friendID string, account string
 	}
 
 	var user models.User
-	if err := db.Select("id").Where("id = ? OR email = ? OR phone = ? OR LOWER(COALESCE(username, '')) = ?", lookup, lookup, lookup, strings.ToLower(lookup)).First(&user).Error; err != nil {
+	if err := db.Select("id").Where("id = ? OR email = ? OR phone = ? OR LOWER(COALESCE(username, '')) = ? OR LOWER(COALESCE(domain, '')) = ?", lookup, lookup, lookup, strings.ToLower(lookup), strings.ToLower(lookup)).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", errors.New("friend account not found")
 		}
@@ -801,9 +913,11 @@ func ListFriends(db *gorm.DB, userID string) ([]FriendView, error) {
 		}
 
 		var friendUser models.User
-		if err := db.Select("id", "display_name", "username", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
+		if err := db.Select("id", "display_name", "username", "domain", "signature", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
 			item.DisplayName = friendUser.DisplayName
 			item.Username = stringValue(friendUser.Username)
+			item.Domain = stringValue(friendUser.Domain)
+			item.Signature = strings.TrimSpace(friendUser.Signature)
 			item.Email = friendUser.Email
 			item.Phone = friendUser.Phone
 		}

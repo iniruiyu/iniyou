@@ -25,17 +25,11 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	if err := database.AutoMigrate(&models.User{}, &models.Space{}, &models.Subscription{}, &models.ExternalAccount{}, &models.Friend{}); err != nil {
-		log.Fatalf("db migrate error: %v", err)
-	}
-	if err := database.AutoMigrate(&models.Post{}, &models.Comment{}, &models.PostLike{}, &models.PostShare{}); err != nil {
+	if err := database.AutoMigrate(&models.User{}, &models.Subscription{}, &models.ExternalAccount{}, &models.Friend{}); err != nil {
 		log.Fatalf("db migrate error: %v", err)
 	}
 	if err := service.EnsureUserUsernames(database); err != nil {
 		log.Fatalf("username backfill error: %v", err)
-	}
-	if err := service.MarkLegacySystemSpaces(database); err != nil {
-		log.Fatalf("legacy space migration error: %v", err)
 	}
 
 	h := &handler.AccountHandler{
@@ -43,7 +37,6 @@ func main() {
 		JWTSecret: cfg.JWTSecret,
 		TokenTTL:  int64(cfg.TokenTTL / time.Minute),
 	}
-	postHandler := &handler.PostHandler{DB: database}
 
 	// HTTP router.
 	// HTTP 路由。
@@ -77,19 +70,7 @@ func main() {
 	authGroup.GET("/users/search", h.SearchUsers)
 	authGroup.GET("/users/:id/profile", h.UserProfile)
 	authGroup.GET("/users/username/:username/profile", h.UserProfileByUsername)
-	authGroup.GET("/spaces", h.ListSpaces)
-	authGroup.POST("/spaces", h.CreateSpace)
-	authGroup.PATCH("/spaces/:id", h.UpdateSpace)
-	authGroup.DELETE("/spaces/:id", h.DeleteSpace)
-	authGroup.GET("/posts", postHandler.ListPosts)
-	authGroup.GET("/posts/:id", postHandler.GetPost)
-	authGroup.GET("/users/:id/posts", postHandler.ListUserPosts)
-	authGroup.POST("/posts", postHandler.CreatePost)
-	authGroup.PATCH("/posts/:id", postHandler.UpdatePost)
-	authGroup.DELETE("/posts/:id", postHandler.DeletePost)
-	authGroup.POST("/posts/:id/likes", postHandler.ToggleLike)
-	authGroup.POST("/posts/:id/comments", postHandler.AddComment)
-	authGroup.POST("/posts/:id/shares", postHandler.Share)
+	authGroup.GET("/users/domain/:domain/profile", h.UserProfileByDomain)
 	authGroup.GET("/friends", h.ListFriends)
 	authGroup.POST("/friends", h.AddFriend)
 	authGroup.POST("/friends/accept", h.AcceptFriend)

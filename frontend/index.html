@@ -40,13 +40,9 @@
           <span class="nav-icon">DB</span>
           <span class="nav-label">{{ t('nav.dashboard') }}</span>
         </button>
-        <button class="nav-item" data-icon="PR" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">
-          <span class="nav-icon">PR</span>
-          <span class="nav-label">{{ t('nav.private') }}</span>
-        </button>
-        <button class="nav-item" data-icon="PU" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">
-          <span class="nav-icon">PU</span>
-          <span class="nav-label">{{ t('nav.public') }}</span>
+        <button class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="view = 'space'">
+          <span class="nav-icon">SP</span>
+          <span class="nav-label">{{ t('nav.space') }}</span>
         </button>
         <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
           <span class="nav-icon-shell">
@@ -97,6 +93,7 @@
             <div class="avatar"></div>
             <div>
               <div class="profile-name">{{ user.name }}</div>
+              <div class="profile-level">{{ user.domain ? `@${user.domain}` : (user.username ? `@${user.username}` : user.id) }}</div>
               <div class="profile-level">{{ localizedLevelName }} · {{ localizedPlan }}</div>
             </div>
             <settings-menu :app="appContext"></settings-menu>
@@ -183,14 +180,45 @@
           </div>
         </div>
         <div class="panel">
-          <h2>{{ t('dashboard.profileTitle') }}</h2>
-          <p>{{ t('dashboard.profileSub') }}</p>
+          <h2>{{ t('profile.identity.title') }}</h2>
+          <p>{{ t('profile.identity.sub') }}</p>
           <form class="form">
+            <label>{{ t('profile.identity.nickname') }}</label>
             <input type="text" :placeholder="t('dashboard.displayNamePlaceholder')" v-model="profileDraft.displayName" />
+            <label>{{ t('profile.identity.username') }}</label>
             <!-- Username field / 用户名字段：用于个人主页和二级域名入口 -->
             <input type="text" :placeholder="t('dashboard.usernamePlaceholder')" v-model="profileDraft.username" maxlength="63" autocomplete="username" />
             <div class="form-hint">{{ t('dashboard.usernameHint') }}</div>
-            <button class="primary" type="button" @click="saveProfile">{{ t('dashboard.saveProfile') }}</button>
+            <label>{{ t('profile.identity.domain') }}</label>
+            <input type="text" :placeholder="t('profile.identity.domain')" v-model="profileDraft.domain" maxlength="63" autocomplete="username" />
+            <div class="form-hint">{{ t('profile.identity.domainHint') }}</div>
+            <label>{{ t('profile.identity.signature') }}</label>
+            <textarea class="post-textarea" :placeholder="t('profile.identity.signature')" v-model="profileDraft.signature"></textarea>
+            <label>{{ t('profile.identity.phoneVisibility') }}</label>
+            <select v-model="profileDraft.phoneVisibility">
+              <option value="public">{{ t('profile.identity.visibility.public') }}</option>
+              <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
+              <option value="private">{{ t('profile.identity.visibility.private') }}</option>
+            </select>
+            <label>{{ t('profile.identity.emailVisibility') }}</label>
+            <select v-model="profileDraft.emailVisibility">
+              <option value="public">{{ t('profile.identity.visibility.public') }}</option>
+              <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
+              <option value="private">{{ t('profile.identity.visibility.private') }}</option>
+            </select>
+            <label>{{ t('profile.identity.ageVisibility') }}</label>
+            <select v-model="profileDraft.ageVisibility">
+              <option value="public">{{ t('profile.identity.visibility.public') }}</option>
+              <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
+              <option value="private">{{ t('profile.identity.visibility.private') }}</option>
+            </select>
+            <label>{{ t('profile.identity.genderVisibility') }}</label>
+            <select v-model="profileDraft.genderVisibility">
+              <option value="public">{{ t('profile.identity.visibility.public') }}</option>
+              <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
+              <option value="private">{{ t('profile.identity.visibility.private') }}</option>
+            </select>
+            <button class="primary" type="button" @click="saveProfile">{{ t('profile.identity.save') }}</button>
           </form>
         </div>
         <div class="panel">
@@ -206,7 +234,7 @@
         </div>
       </section>
 
-      <section v-if="view === 'private'" class="panel">
+      <section v-if="view === 'space' || view === 'private'" class="panel">
         <h2>{{ t('spaces.privateTitle') }}</h2>
         <p>{{ t('spaces.privateSub') }}</p>
         <div class="space-toolbar">
@@ -274,7 +302,7 @@
         </div>
       </section>
 
-      <section v-if="view === 'public'" class="panel">
+      <section v-if="view === 'space' || view === 'public'" class="panel">
         <h2>{{ t('spaces.publicTitle') }}</h2>
         <p>{{ t('spaces.publicSub') }}</p>
         <div class="space-toolbar">

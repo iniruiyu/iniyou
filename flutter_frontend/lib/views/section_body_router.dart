@@ -5,6 +5,7 @@ import '../main.dart' show AppView;
 Widget sectionBodyForView(
   AppView view, {
   required Widget dashboard,
+  required Widget space,
   required Widget privateSpace,
   required Widget publicSpace,
   required Widget profile,
@@ -18,10 +19,10 @@ Widget sectionBodyForView(
   switch (view) {
     case AppView.dashboard:
       return dashboard;
+    case AppView.space:
     case AppView.privateSpace:
-      return privateSpace;
     case AppView.publicSpace:
-      return publicSpace;
+      return space;
     case AppView.profile:
       return profile;
     case AppView.postDetail:

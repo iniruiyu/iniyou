@@ -21,6 +21,12 @@ class ProfileView extends StatelessWidget {
     required this.connectedChains,
     required this.displayNameController,
     required this.usernameController,
+    required this.domainController,
+    required this.signatureController,
+    required this.phoneVisibility,
+    required this.emailVisibility,
+    required this.ageVisibility,
+    required this.genderVisibility,
     required this.loading,
     required this.commentControllerFor,
     required this.profileTab,
@@ -29,6 +35,10 @@ class ProfileView extends StatelessWidget {
     required this.onActivateLevel,
     required this.onActivatePlan,
     required this.onSaveProfile,
+    required this.onPhoneVisibilityChanged,
+    required this.onEmailVisibilityChanged,
+    required this.onAgeVisibilityChanged,
+    required this.onGenderVisibilityChanged,
     required this.onAddFriend,
     required this.onAcceptFriend,
     required this.onStartChat,
@@ -48,6 +58,12 @@ class ProfileView extends StatelessWidget {
   final List<String> connectedChains;
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
+  final TextEditingController domainController;
+  final TextEditingController signatureController;
+  final String phoneVisibility;
+  final String emailVisibility;
+  final String ageVisibility;
+  final String genderVisibility;
   final bool loading;
   final TextEditingController Function(String postId) commentControllerFor;
   // Current profile tab.
@@ -66,6 +82,10 @@ class ProfileView extends StatelessWidget {
   // 激活订阅方案回调。
   final ValueChanged<String> onActivatePlan;
   final VoidCallback onSaveProfile;
+  final ValueChanged<String> onPhoneVisibilityChanged;
+  final ValueChanged<String> onEmailVisibilityChanged;
+  final ValueChanged<String> onAgeVisibilityChanged;
+  final ValueChanged<String> onGenderVisibilityChanged;
   final ValueChanged<String> onAddFriend;
   final ValueChanged<String> onAcceptFriend;
   final VoidCallback onStartChat;
@@ -98,9 +118,13 @@ class ProfileView extends StatelessWidget {
           title: profile.displayName,
           lines: [
             '用户 ID: ${profile.id}',
+            if (profile.domain.isNotEmpty) '域名身份: @${profile.domain}',
             if (profile.username.isNotEmpty) '用户名: @${profile.username}',
+            if (profile.signature.isNotEmpty) '签名: ${profile.signature}',
             if (profile.email.isNotEmpty) '邮箱: ${profile.email}',
             if (profile.phone.isNotEmpty) '手机号: ${profile.phone}',
+            if (profile.age != null) '年龄: ${profile.age}',
+            if (profile.gender.isNotEmpty) '性别: ${profile.gender}',
             '状态: ${profile.status}',
             if (!isOwnProfile && profile.relationStatus.isNotEmpty)
               '关系: ${profile.relationStatus} / ${profile.direction}',
@@ -120,20 +144,21 @@ class ProfileView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '更新资料 / Update profile',
+                    '身份卡 / Identity card',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: displayNameController,
                     decoration: const InputDecoration(
-                      labelText: 'Display name / 展示名称',
+                      labelText: '昵称 / Nickname',
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: usernameController,
-                    // Username handle / 用户名句柄：需要与子域名路由保持一致。
+                    // Username handle / 用户名句柄：保留为可选账号标识。
+                    // Username is kept as an optional account handle.
                     maxLength: 63,
                     decoration: const InputDecoration(
                       labelText: 'Username / 用户名',
@@ -141,10 +166,146 @@ class ProfileView extends StatelessWidget {
                           'Letters and numbers only, up to 63 characters / 仅允许英文字母和数字，长度不超过 63',
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: domainController,
+                    // Domain handle / 域名句柄：用于二级域名与登录入口。
+                    // Domain identity / 域名身份：用于二级域名与登录。
+                    maxLength: 63,
+                    decoration: const InputDecoration(
+                      labelText: 'Domain / 域名',
+                      helperText:
+                          '域名会作为身份卡和登录入口 / Domain is used as identity card and login handle',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: signatureController,
+                    decoration: const InputDecoration(
+                      labelText: 'Signature / 签名',
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      SizedBox(
+                        width: 180,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: phoneVisibility,
+                          decoration: const InputDecoration(
+                            labelText: '手机号可见范围 / Phone visibility',
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'public',
+                              child: Text('公开 / Public'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'friends',
+                              child: Text('好友可见 / Friends'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'private',
+                              child: Text('仅自己 / Only me'),
+                            ),
+                          ],
+                          onChanged: (value) => onPhoneVisibilityChanged(
+                            value ?? phoneVisibility,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 180,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: emailVisibility,
+                          decoration: const InputDecoration(
+                            labelText: '邮箱可见范围 / Email visibility',
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'public',
+                              child: Text('公开 / Public'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'friends',
+                              child: Text('好友可见 / Friends'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'private',
+                              child: Text('仅自己 / Only me'),
+                            ),
+                          ],
+                          onChanged: (value) => onEmailVisibilityChanged(
+                            value ?? emailVisibility,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 180,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: ageVisibility,
+                          decoration: const InputDecoration(
+                            labelText: '年龄可见范围 / Age visibility',
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'public',
+                              child: Text('公开 / Public'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'friends',
+                              child: Text('好友可见 / Friends'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'private',
+                              child: Text('仅自己 / Only me'),
+                            ),
+                          ],
+                          onChanged: (value) => onAgeVisibilityChanged(
+                            value ?? ageVisibility,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 180,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: genderVisibility,
+                          decoration: const InputDecoration(
+                            labelText: '性别可见范围 / Gender visibility',
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'public',
+                              child: Text('公开 / Public'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'friends',
+                              child: Text('好友可见 / Friends'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'private',
+                              child: Text('仅自己 / Only me'),
+                            ),
+                          ],
+                          onChanged: (value) => onGenderVisibilityChanged(
+                            value ?? genderVisibility,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '域名与昵称分离，域名会用于二级域名路由和登录入口。',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: loading ? null : onSaveProfile,
-                    child: const Text('保存 / Save'),
+                    child: const Text('保存身份卡 / Save identity card'),
                   ),
                 ],
               ),
