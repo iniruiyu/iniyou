@@ -187,115 +187,127 @@ class ProfileView extends StatelessWidget {
                     maxLines: 3,
                   ),
                   const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: phoneVisibility,
-                          decoration: const InputDecoration(
-                            labelText: '手机号可见范围 / Phone visibility',
+                  // Responsive visibility grid / 可见范围响应式网格：宽屏两列、窄屏单列，避免双语标签挤压。
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final fieldWidth = constraints.maxWidth >= 720
+                          ? (constraints.maxWidth - 12) / 2
+                          : constraints.maxWidth;
+                      return Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          SizedBox(
+                            width: fieldWidth,
+                            child: DropdownButtonFormField<String>(
+                              initialValue: phoneVisibility,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: '手机号可见范围 / Phone visibility',
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'public',
+                                  child: Text('公开 / Public'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'friends',
+                                  child: Text('好友可见 / Friends'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'private',
+                                  child: Text('仅自己 / Only me'),
+                                ),
+                              ],
+                              onChanged: (value) => onPhoneVisibilityChanged(
+                                value ?? phoneVisibility,
+                              ),
+                            ),
                           ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'public',
-                              child: Text('公开 / Public'),
+                          SizedBox(
+                            width: fieldWidth,
+                            child: DropdownButtonFormField<String>(
+                              initialValue: emailVisibility,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: '邮箱可见范围 / Email visibility',
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'public',
+                                  child: Text('公开 / Public'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'friends',
+                                  child: Text('好友可见 / Friends'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'private',
+                                  child: Text('仅自己 / Only me'),
+                                ),
+                              ],
+                              onChanged: (value) => onEmailVisibilityChanged(
+                                value ?? emailVisibility,
+                              ),
                             ),
-                            DropdownMenuItem(
-                              value: 'friends',
-                              child: Text('好友可见 / Friends'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'private',
-                              child: Text('仅自己 / Only me'),
-                            ),
-                          ],
-                          onChanged: (value) => onPhoneVisibilityChanged(
-                            value ?? phoneVisibility,
                           ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: emailVisibility,
-                          decoration: const InputDecoration(
-                            labelText: '邮箱可见范围 / Email visibility',
+                          SizedBox(
+                            width: fieldWidth,
+                            child: DropdownButtonFormField<String>(
+                              initialValue: ageVisibility,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: '年龄可见范围 / Age visibility',
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'public',
+                                  child: Text('公开 / Public'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'friends',
+                                  child: Text('好友可见 / Friends'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'private',
+                                  child: Text('仅自己 / Only me'),
+                                ),
+                              ],
+                              onChanged: (value) => onAgeVisibilityChanged(
+                                value ?? ageVisibility,
+                              ),
+                            ),
                           ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'public',
-                              child: Text('公开 / Public'),
+                          SizedBox(
+                            width: fieldWidth,
+                            child: DropdownButtonFormField<String>(
+                              initialValue: genderVisibility,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: '性别可见范围 / Gender visibility',
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'public',
+                                  child: Text('公开 / Public'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'friends',
+                                  child: Text('好友可见 / Friends'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'private',
+                                  child: Text('仅自己 / Only me'),
+                                ),
+                              ],
+                              onChanged: (value) => onGenderVisibilityChanged(
+                                value ?? genderVisibility,
+                              ),
                             ),
-                            DropdownMenuItem(
-                              value: 'friends',
-                              child: Text('好友可见 / Friends'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'private',
-                              child: Text('仅自己 / Only me'),
-                            ),
-                          ],
-                          onChanged: (value) => onEmailVisibilityChanged(
-                            value ?? emailVisibility,
                           ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: ageVisibility,
-                          decoration: const InputDecoration(
-                            labelText: '年龄可见范围 / Age visibility',
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'public',
-                              child: Text('公开 / Public'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'friends',
-                              child: Text('好友可见 / Friends'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'private',
-                              child: Text('仅自己 / Only me'),
-                            ),
-                          ],
-                          onChanged: (value) => onAgeVisibilityChanged(
-                            value ?? ageVisibility,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: genderVisibility,
-                          decoration: const InputDecoration(
-                            labelText: '性别可见范围 / Gender visibility',
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'public',
-                              child: Text('公开 / Public'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'friends',
-                              child: Text('好友可见 / Friends'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'private',
-                              child: Text('仅自己 / Only me'),
-                            ),
-                          ],
-                          onChanged: (value) => onGenderVisibilityChanged(
-                            value ?? genderVisibility,
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
                   Text(
