@@ -1535,6 +1535,17 @@ const app = createApp({
       const fallback = this.getByPath(this.translations['zh-CN'], key);
       return typeof fallback === 'string' ? fallback : key;
     },
+    peerLocaleText(key) {
+      // Show the counterpart language beside the active one.
+      // 在当前语言旁展示另一种语言，避免双语文案挤在同一行。
+      const peerLocale = this.locale === 'en-US' ? 'zh-CN' : 'en-US';
+      const peerValue = this.getByPath(this.translations[peerLocale], key);
+      if (typeof peerValue === 'string') {
+        return peerValue;
+      }
+      const fallback = this.getByPath(this.translations['zh-CN'], key);
+      return typeof fallback === 'string' ? fallback : '';
+    },
     getByPath(obj, path) {
       if (!obj || !path) {
         return null;

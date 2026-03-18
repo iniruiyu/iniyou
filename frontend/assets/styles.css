@@ -529,6 +529,42 @@ body {
   gap: 12px;
 }
 
+.identity-form {
+  gap: 16px;
+}
+
+.identity-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.identity-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.identity-label-main {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.identity-label-sub {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.identity-visibility-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .form input {
   background: var(--surface-soft);
   border: 1px solid var(--border);
@@ -564,6 +600,12 @@ body {
   padding: 12px;
   color: var(--text);
   font-size: 14px;
+}
+
+.identity-field input,
+.identity-field textarea,
+.identity-field select {
+  width: 100%;
 }
 
 .primary {
@@ -1944,6 +1986,10 @@ button:disabled {
     align-items: stretch;
     flex-wrap: wrap;
     width: 100%;
+  }
+
+  .identity-visibility-grid {
+    grid-template-columns: 1fr;
   }
 
   /* Responsive nav stacking / 响应式导航堆叠 */
