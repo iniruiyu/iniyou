@@ -253,6 +253,13 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   String _t(String key) => AppI18n.tr(_languageCode, key);
 
+  String _peerT(String key) {
+    // Resolve the counterpart language for bilingual labels.
+    // 解析双语标签的另一种语言，保持主副语言分层展示。
+    final peerLanguageCode = _languageCode == 'en-US' ? 'zh-CN' : 'en-US';
+    return AppI18n.tr(peerLanguageCode, key);
+  }
+
   int get _unreadMessageCount =>
       _conversations.fold<int>(0, (sum, item) => sum + item.unreadCount);
 
@@ -2241,6 +2248,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
         t: _t,
+        peerT: _peerT,
       ),
       postDetail: buildPostDetailView(
         user: _user,

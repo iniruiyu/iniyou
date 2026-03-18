@@ -300,6 +300,7 @@ Widget buildProfileView({
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
   required String Function(String key) t,
+  required String Function(String key) peerT,
 }) {
   return ProfileView(
     user: user,
@@ -346,6 +347,7 @@ Widget buildProfileView({
     onOpenProfile: onOpenProfile,
     onOpenPostDetail: onOpenPostDetail,
     t: t,
+    peerT: peerT,
   );
 }
 

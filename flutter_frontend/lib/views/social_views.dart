@@ -49,6 +49,7 @@ class ProfileView extends StatelessWidget {
     required this.onOpenProfile,
     required this.onOpenPostDetail,
     required this.t,
+    required this.peerT,
   });
 
   final CurrentUser? user;
@@ -96,6 +97,7 @@ class ProfileView extends StatelessWidget {
   final ValueChanged<String> onOpenProfile;
   final ValueChanged<String> onOpenPostDetail;
   final String Function(String key) t;
+  final String Function(String key) peerT;
 
   @override
   Widget build(BuildContext context) {
@@ -148,43 +150,75 @@ class ProfileView extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: displayNameController,
-                    decoration: const InputDecoration(
-                      labelText: '昵称 / Nickname',
+                  _buildIdentityField(
+                    context,
+                    primaryLabel: t('profile.identity.nickname'),
+                    secondaryLabel: peerT('profile.identity.nickname'),
+                    child: TextField(
+                      controller: displayNameController,
+                      decoration: InputDecoration(
+                        hintText: t('dashboard.displayNamePlaceholder'),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: usernameController,
+                  _buildIdentityField(
+                    context,
                     // Username handle / 用户名句柄：保留为可选账号标识。
-                    // Username is kept as an optional account handle.
-                    maxLength: 63,
-                    decoration: const InputDecoration(
-                      labelText: 'Username / 用户名',
-                      helperText:
-                          'Letters and numbers only, up to 63 characters / 仅允许英文字母和数字，长度不超过 63',
+                    primaryLabel: t('profile.identity.username'),
+                    secondaryLabel: peerT('profile.identity.username'),
+                    child: TextField(
+                      controller: usernameController,
+                      maxLength: 63,
+                      buildCounter: (
+                        BuildContext context, {
+                        required int currentLength,
+                        required bool isFocused,
+                        required int? maxLength,
+                      }) =>
+                          null,
+                      decoration: InputDecoration(
+                        hintText: t('dashboard.usernamePlaceholder'),
+                        helperText:
+                            'Letters and numbers only, up to 63 characters / 仅允许英文字母和数字，长度不超过 63',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: domainController,
+                  _buildIdentityField(
+                    context,
                     // Domain handle / 域名句柄：用于二级域名与登录入口。
                     // Domain identity / 域名身份：用于二级域名与登录。
-                    maxLength: 63,
-                    decoration: const InputDecoration(
-                      labelText: 'Domain / 域名',
-                      helperText:
-                          '域名会作为身份卡和登录入口 / Domain is used as identity card and login handle',
+                    primaryLabel: t('profile.identity.domain'),
+                    secondaryLabel: peerT('profile.identity.domain'),
+                    child: TextField(
+                      controller: domainController,
+                      maxLength: 63,
+                      buildCounter: (
+                        BuildContext context, {
+                        required int currentLength,
+                        required bool isFocused,
+                        required int? maxLength,
+                      }) =>
+                          null,
+                      decoration: InputDecoration(
+                        helperText:
+                            '域名会作为身份卡和登录入口 / Domain is used as identity card and login handle',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: signatureController,
-                    decoration: const InputDecoration(
-                      labelText: 'Signature / 签名',
+                  _buildIdentityField(
+                    context,
+                    primaryLabel: t('profile.identity.signature'),
+                    secondaryLabel: peerT('profile.identity.signature'),
+                    child: TextField(
+                      controller: signatureController,
+                      decoration: InputDecoration(
+                        hintText: t('profile.identity.signature'),
+                      ),
+                      maxLines: 3,
                     ),
-                    maxLines: 3,
                   ),
                   const SizedBox(height: 16),
                   // Responsive visibility grid / 可见范围响应式网格：宽屏两列、窄屏单列，避免双语标签挤压。
@@ -199,109 +233,121 @@ class ProfileView extends StatelessWidget {
                         children: [
                           SizedBox(
                             width: fieldWidth,
-                            child: DropdownButtonFormField<String>(
-                              initialValue: phoneVisibility,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: '手机号可见范围 / Phone visibility',
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'public',
-                                  child: Text('公开 / Public'),
+                            child: _buildIdentityField(
+                              context,
+                              primaryLabel: t('profile.identity.phoneVisibility'),
+                              secondaryLabel: peerT('profile.identity.phoneVisibility'),
+                              child: DropdownButtonFormField<String>(
+                                initialValue: phoneVisibility,
+                                isExpanded: true,
+                                decoration: const InputDecoration(),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'public',
+                                    child: Text('公开 / Public'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'friends',
+                                    child: Text('好友可见 / Friends'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'private',
+                                    child: Text('仅自己 / Only me'),
+                                  ),
+                                ],
+                                onChanged: (value) => onPhoneVisibilityChanged(
+                                  value ?? phoneVisibility,
                                 ),
-                                DropdownMenuItem(
-                                  value: 'friends',
-                                  child: Text('好友可见 / Friends'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'private',
-                                  child: Text('仅自己 / Only me'),
-                                ),
-                              ],
-                              onChanged: (value) => onPhoneVisibilityChanged(
-                                value ?? phoneVisibility,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: fieldWidth,
-                            child: DropdownButtonFormField<String>(
-                              initialValue: emailVisibility,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: '邮箱可见范围 / Email visibility',
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'public',
-                                  child: Text('公开 / Public'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'friends',
-                                  child: Text('好友可见 / Friends'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'private',
-                                  child: Text('仅自己 / Only me'),
-                                ),
-                              ],
-                              onChanged: (value) => onEmailVisibilityChanged(
-                                value ?? emailVisibility,
                               ),
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: DropdownButtonFormField<String>(
-                              initialValue: ageVisibility,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: '年龄可见范围 / Age visibility',
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'public',
-                                  child: Text('公开 / Public'),
+                            child: _buildIdentityField(
+                              context,
+                              primaryLabel: t('profile.identity.emailVisibility'),
+                              secondaryLabel: peerT('profile.identity.emailVisibility'),
+                              child: DropdownButtonFormField<String>(
+                                initialValue: emailVisibility,
+                                isExpanded: true,
+                                decoration: const InputDecoration(),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'public',
+                                    child: Text('公开 / Public'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'friends',
+                                    child: Text('好友可见 / Friends'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'private',
+                                    child: Text('仅自己 / Only me'),
+                                  ),
+                                ],
+                                onChanged: (value) => onEmailVisibilityChanged(
+                                  value ?? emailVisibility,
                                 ),
-                                DropdownMenuItem(
-                                  value: 'friends',
-                                  child: Text('好友可见 / Friends'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'private',
-                                  child: Text('仅自己 / Only me'),
-                                ),
-                              ],
-                              onChanged: (value) => onAgeVisibilityChanged(
-                                value ?? ageVisibility,
                               ),
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: DropdownButtonFormField<String>(
-                              initialValue: genderVisibility,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: '性别可见范围 / Gender visibility',
+                            child: _buildIdentityField(
+                              context,
+                              primaryLabel: t('profile.identity.ageVisibility'),
+                              secondaryLabel: peerT('profile.identity.ageVisibility'),
+                              child: DropdownButtonFormField<String>(
+                                initialValue: ageVisibility,
+                                isExpanded: true,
+                                decoration: const InputDecoration(),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'public',
+                                    child: Text('公开 / Public'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'friends',
+                                    child: Text('好友可见 / Friends'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'private',
+                                    child: Text('仅自己 / Only me'),
+                                  ),
+                                ],
+                                onChanged: (value) => onAgeVisibilityChanged(
+                                  value ?? ageVisibility,
+                                ),
                               ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'public',
-                                  child: Text('公开 / Public'),
+                            ),
+                          ),
+                          SizedBox(
+                            width: fieldWidth,
+                            child: _buildIdentityField(
+                              context,
+                              primaryLabel: t('profile.identity.genderVisibility'),
+                              secondaryLabel: peerT('profile.identity.genderVisibility'),
+                              child: DropdownButtonFormField<String>(
+                                initialValue: genderVisibility,
+                                isExpanded: true,
+                                decoration: const InputDecoration(),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'public',
+                                    child: Text('公开 / Public'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'friends',
+                                    child: Text('好友可见 / Friends'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'private',
+                                    child: Text('仅自己 / Only me'),
+                                  ),
+                                ],
+                                onChanged: (value) => onGenderVisibilityChanged(
+                                  value ?? genderVisibility,
                                 ),
-                                DropdownMenuItem(
-                                  value: 'friends',
-                                  child: Text('好友可见 / Friends'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'private',
-                                  child: Text('仅自己 / Only me'),
-                                ),
-                              ],
-                              onChanged: (value) => onGenderVisibilityChanged(
-                                value ?? genderVisibility,
                               ),
                             ),
                           ),
@@ -440,6 +486,36 @@ class ProfileView extends StatelessWidget {
       ],
     );
   }
+}
+
+// Reusable bilingual field wrapper / 可复用双语字段包裹：将主标签、副标签和输入控件分层展示。
+Widget _buildIdentityField(
+  BuildContext context, {
+  required String primaryLabel,
+  required String secondaryLabel,
+  required Widget child,
+}) {
+  final theme = Theme.of(context);
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        primaryLabel,
+        style: theme.textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        secondaryLabel,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: 8),
+      child,
+    ],
+  );
 }
 
 class PostDetailView extends StatelessWidget {

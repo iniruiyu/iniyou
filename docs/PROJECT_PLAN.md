@@ -258,3 +258,4 @@ new-project/
 - 2026-03-18：拆分账号服务与空间服务，并补充域名身份卡与资料可见范围 / Split account and space services, and added domain identity cards with profile visibility scopes.
 - 2026-03-18：统一前端空间入口为“空间”，合并私人/公共空间展示 / Unified the frontend space entry as "Space" and merged private/public space presentation.
 - 2026-03-18：同步 Flutter 身份卡可见范围为响应式双列布局，避免双语标签挤压 / Synced Flutter identity card visibility controls to a responsive two-column layout and avoided bilingual label crowding.
+- 2026-03-18：同步 Flutter 身份卡昵称、用户名、域名为分层双语标签 / Synced Flutter identity card nickname, username, and domain to layered bilingual labels.
