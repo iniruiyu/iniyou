@@ -13,6 +13,7 @@ class PostCard extends StatelessWidget {
     this.onOpenAuthor,
     this.onOpenDetail,
     this.onEdit,
+    this.onDelete,
   });
 
   final PostItem post;
@@ -23,6 +24,7 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onOpenAuthor;
   final VoidCallback? onOpenDetail;
   final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +47,12 @@ class PostCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),
+                      if (post.spaceLabel.isNotEmpty)
+                        Text(
+                          post.spaceLabel,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      if (post.spaceLabel.isNotEmpty) const SizedBox(height: 4),
                       Text(
                         '${post.visibility} · ${post.status} · ${post.createdAtLabel}',
                         style: Theme.of(context).textTheme.bodySmall,
@@ -71,6 +79,8 @@ class PostCard extends StatelessWidget {
                         onPressed: onEdit,
                         child: const Text('编辑'),
                       ),
+                    if (onDelete != null)
+                      TextButton(onPressed: onDelete, child: const Text('删除')),
                   ],
                 ),
               ],

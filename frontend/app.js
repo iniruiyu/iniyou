@@ -1,5 +1,32 @@
 const { createApp } = Vue;
 
+// Persisted active space keys.
+// 持久化的当前空间键。
+const ACTIVE_PRIVATE_SPACE_KEY = 'iniyou_active_private_space';
+const ACTIVE_PUBLIC_SPACE_KEY = 'iniyou_active_public_space';
+
+// Quick chat presets for emoji/sticker insertion.
+// 聊天快捷预设，便于插入表情与贴纸。
+const CHAT_QUICK_SNIPPETS = [
+  { kind: 'emoji', value: '😀', label: '😀' },
+  { kind: 'emoji', value: '😂', label: '😂' },
+  { kind: 'emoji', value: '🥳', label: '🥳' },
+  { kind: 'emoji', value: '👍', label: '👍' },
+  { kind: 'emoji', value: '❤️', label: '❤️' },
+  { kind: 'emoji', value: '🔥', label: '🔥' },
+  { kind: 'sticker', value: '【开心】', label: '开心' },
+  { kind: 'sticker', value: '【加油】', label: '加油' },
+  { kind: 'sticker', value: '【收到】', label: '收到' },
+  { kind: 'sticker', value: '【抱抱】', label: '抱抱' },
+  { kind: 'sticker', value: '【赞】', label: '点赞' },
+  { kind: 'sticker', value: '【感谢】', label: '感谢' },
+];
+const CHAT_STICKER_TOKENS = new Set(
+  CHAT_QUICK_SNIPPETS.filter((item) => item.kind === 'sticker').map(
+    (item) => item.value,
+  ),
+);
+
 const app = createApp({
   data() {
     return {
@@ -30,6 +57,12 @@ const app = createApp({
       // Current profile tab.
       // 当前个人主页选项卡。
       profileTab: 'levels',
+      // Active private space ID.
+      // 当前私人空间 ID。
+      activePrivateSpaceId: '',
+      // Active public space ID.
+      // 当前公共空间 ID。
+      activePublicSpaceId: '',
       // Theme selection.
       // 皮肤主题选择。
       theme: 'midnight',
@@ -113,6 +146,7 @@ const app = createApp({
           common: {
             guest: '访客',
             notAvailable: '--',
+            cancel: '取消',
           },
           nav: {
             auth: '登录 / 注册',
@@ -171,7 +205,7 @@ const app = createApp({
             welcomeSub: '登录后进入你的私人空间与公共空间。',
             createTitle: '创建新账号',
             createSub: '加入会员体系，解锁更大空间与更多互动。',
-            accountPlaceholder: '邮箱 / 手机',
+            accountPlaceholder: '邮箱 / 手机 / 用户名',
             passwordPlaceholder: '密码',
             emailPlaceholder: '邮箱',
             phonePlaceholder: '手机号',
@@ -192,10 +226,14 @@ const app = createApp({
             spaceSummaryTitle: '空间摘要',
             spaceSummarySub: '私人空间用于沉淀，公共空间用于分享。',
             profileTitle: '资料设置',
-            profileSub: '更新展示名称，主页与聊天窗口会同步显示。',
+            profileSub: '更新展示名称和用户名，主页与聊天窗口会同步显示。',
             blockchainTitle: '链上扩展',
             blockchainSub: '已绑定链上账号会在这里汇总，便于后续资产与身份联动。',
             displayNamePlaceholder: '输入展示名称',
+            usernamePlaceholder: '输入用户名',
+            usernameHint: '仅允许英文字母和数字，长度不超过 63，并作为二级域名使用。',
+            usernameRequired: '请输入用户名。',
+            usernameError: '用户名只能包含英文字母和数字，且最长 63 个字符。',
             saveProfile: '保存资料',
             saveSuccess: '资料已更新',
             saveError: '资料更新失败，请稍后重试。',
@@ -206,12 +244,30 @@ const app = createApp({
             publicTitle: '公共空间',
             publicSub: '分享内容、展示项目、连接更多人。',
             createTitle: '创建空间',
-            createSub: '新增一个私人空间或公共空间。',
+            createSub: '名称和二级域名可以独立设置，留空时会自动生成。',
+            editTitle: '编辑空间',
+            editSub: '修改名称、描述和二级域名，名称和域名互不关联。',
+            typeLabel: '空间类型',
             namePlaceholder: '空间名称',
             descPlaceholder: '空间描述',
+            subdomainLabel: '二级域名',
+            subdomainHint: '仅允许英文字母和数字，长度不超过 63，留空时后端会自动生成。',
+            subdomainEditHint: '仅允许英文字母和数字，长度不超过 63。',
             createAction: '创建空间',
+            editAction: '编辑空间',
+            saveAction: '保存修改',
+            currentLabel: '当前空间',
+            enterAction: '进入空间',
             createSuccess: '空间已创建',
             createError: '空间创建失败，请检查名称后重试。',
+            editSuccess: '空间已更新。',
+            editError: '空间更新失败，请稍后重试。',
+            deleteAction: '删除空间',
+            deleteConfirm: '删除空间后，该空间及其内容都会被移除，是否继续？',
+            deleteSuccess: '空间已删除。',
+            deleteError: '空间删除失败，请稍后重试。',
+            subdomainRequired: '编辑空间时二级域名不能为空。',
+            subdomainError: '二级域名只能包含英文字母和数字，且最长 63 个字符。',
             type: {
               private: '私人',
               public: '公共',
@@ -227,8 +283,14 @@ const app = createApp({
             titlePlaceholder: '文章标题',
             contentPlaceholder: '写点什么，分享给大家...',
             publishAction: '发布文章',
+            visibilityLabel: '可见性',
+            spaceLabel: '所属空间',
+            spaceRequired: '请先进入或创建对应空间。',
             publishSuccess: '文章已发布。',
             publishError: '文章发布失败，请稍后重试。',
+            privateEmpty: '当前空间里还没有文章。',
+            publicEmpty: '公共内容流里还没有文章，先发布第一篇吧。',
+            profileEmpty: '该作者还没有公开文章。',
             empty: '公共内容流还没有文章，先发布第一篇吧。',
             like: '点赞',
             unlike: '取消点赞',
@@ -238,6 +300,10 @@ const app = createApp({
             commentError: '评论失败，请稍后重试。',
             share: '转发',
             shareError: '转发失败，请稍后重试。',
+            deleteAction: '删除文章',
+            deleteConfirm: '删除文章后，相关评论、点赞和转发也会被移除，是否继续？',
+            deleteSuccess: '文章已删除。',
+            deleteError: '文章删除失败，请稍后重试。',
             privateLabel: '仅自己可见',
             publicLabel: '公开',
             viewAuthor: '查看作者主页',
@@ -296,7 +362,7 @@ const app = createApp({
           friends: {
             title: '好友',
             chat: '聊天',
-            searchPlaceholder: '输入展示名、邮箱、手机号或用户 ID',
+            searchPlaceholder: '输入展示名、用户名、邮箱、手机号或用户 ID',
             searchAction: '搜索用户',
             addAction: '发送请求',
             acceptAction: '接受',
@@ -313,6 +379,8 @@ const app = createApp({
           },
           chat: {
             title: '会话',
+            quickTitle: '常用表情 / 贴纸',
+            backToBottom: '回到底部',
             pickFriend: '选择好友开始聊天',
             onlineNow: '实时在线',
             latest: '最近消息',
@@ -321,6 +389,16 @@ const app = createApp({
             loadError: '聊天记录加载失败。',
             emptyConversation: '当前会话还没有消息。',
             sendError: '聊天服务未连接，请先建立连接。',
+            attachImage: '图片',
+            attachVideo: '视频',
+            attachAudio: '语音',
+            clearAttachment: '清除附件',
+            attachmentHint: '附件会先压缩，7天后自动删除。',
+            openAttachment: '打开附件',
+            mediaImage: '图片',
+            mediaVideo: '视频',
+            mediaAudio: '语音',
+            mediaFile: '文件',
           },
           plans: {
             basic: '基础会员',
@@ -416,6 +494,7 @@ const app = createApp({
           common: {
             guest: 'Guest',
             notAvailable: '--',
+            cancel: 'Cancel',
           },
           nav: {
             auth: 'Sign In / Sign Up',
@@ -474,7 +553,7 @@ const app = createApp({
             welcomeSub: 'Sign in to access your private and public spaces.',
             createTitle: 'Create Account',
             createSub: 'Join membership plans and unlock larger spaces.',
-            accountPlaceholder: 'Email / Phone',
+            accountPlaceholder: 'Email / Phone / Username',
             passwordPlaceholder: 'Password',
             emailPlaceholder: 'Email',
             phonePlaceholder: 'Phone',
@@ -495,10 +574,14 @@ const app = createApp({
             spaceSummaryTitle: 'Space Summary',
             spaceSummarySub: 'Private spaces for focus, public spaces for sharing.',
             profileTitle: 'Profile Settings',
-            profileSub: 'Update your display name for the dashboard and chat header.',
+            profileSub: 'Update your display name and username for the dashboard and chat header.',
             blockchainTitle: 'Blockchain Extension',
             blockchainSub: 'Bound blockchain accounts are summarized here for future identity and asset linkage.',
-            displayNamePlaceholder: 'Enter display name',
+              displayNamePlaceholder: 'Enter display name',
+              usernamePlaceholder: 'Enter username',
+              usernameHint: 'Letters and numbers only, up to 63 characters, and used as the subdomain handle.',
+              usernameRequired: 'Username is required.',
+              usernameError: 'Username may contain letters and numbers only, up to 63 characters.',
             saveProfile: 'Save Profile',
             saveSuccess: 'Profile updated',
             saveError: 'Profile update failed. Try again later.',
@@ -509,12 +592,30 @@ const app = createApp({
             publicTitle: 'Public Space',
             publicSub: 'Share updates, showcase projects, and connect widely.',
             createTitle: 'Create Space',
-            createSub: 'Add a new private or public space.',
+            createSub: 'Name and subdomain are independent; leave the subdomain blank to auto-generate one.',
+            editTitle: 'Edit Space',
+            editSub: 'Rename the space and change its subdomain independently.',
+            typeLabel: 'Space Type',
             namePlaceholder: 'Space name',
-            descPlaceholder: 'Space description',
+              descPlaceholder: 'Space description',
+              subdomainLabel: 'Subdomain',
+              subdomainHint: 'Letters and numbers only, up to 63 characters; leave blank to auto-generate.',
+              subdomainEditHint: 'Letters and numbers only, up to 63 characters.',
             createAction: 'Create Space',
+            editAction: 'Edit Space',
+            saveAction: 'Save Changes',
+            currentLabel: 'Current Space',
+            enterAction: 'Enter Space',
             createSuccess: 'Space created',
             createError: 'Space creation failed. Check the name and try again.',
+            editSuccess: 'Space updated.',
+            editError: 'Space update failed. Try again later.',
+            deleteAction: 'Delete Space',
+            deleteConfirm: 'Deleting this space will remove the space and everything inside it. Continue?',
+            deleteSuccess: 'Space deleted.',
+            deleteError: 'Space deletion failed. Try again later.',
+            subdomainRequired: 'A subdomain is required when editing a space.',
+            subdomainError: 'The subdomain may contain letters and numbers only, up to 63 characters.',
             type: {
               private: 'Private',
               public: 'Public',
@@ -530,8 +631,14 @@ const app = createApp({
             titlePlaceholder: 'Post title',
             contentPlaceholder: 'Write something to share...',
             publishAction: 'Publish Post',
+            visibilityLabel: 'Visibility',
+            spaceLabel: 'Space',
+            spaceRequired: 'Please enter or create the matching space first.',
             publishSuccess: 'Post published.',
             publishError: 'Publishing failed. Try again later.',
+            privateEmpty: 'No posts in this space yet.',
+            publicEmpty: 'The public feed is empty. Publish the first post.',
+            profileEmpty: 'This author has no public posts yet.',
             empty: 'The public feed is empty. Publish the first post.',
             like: 'Like',
             unlike: 'Unlike',
@@ -541,6 +648,10 @@ const app = createApp({
             commentError: 'Comment failed. Try again later.',
             share: 'Share',
             shareError: 'Sharing failed. Try again later.',
+            deleteAction: 'Delete Post',
+            deleteConfirm: 'Deleting this post will also remove comments, likes, and shares. Continue?',
+            deleteSuccess: 'Post deleted.',
+            deleteError: 'Deleting the post failed. Try again later.',
             privateLabel: 'Private',
             publicLabel: 'Public',
             viewAuthor: 'View Profile',
@@ -599,7 +710,7 @@ const app = createApp({
           friends: {
             title: 'Friends',
             chat: 'Chat',
-            searchPlaceholder: 'Enter display name, email, phone, or user ID',
+            searchPlaceholder: 'Enter display name, username, email, phone, or user ID',
             searchAction: 'Search Users',
             addAction: 'Send Request',
             acceptAction: 'Accept',
@@ -616,6 +727,8 @@ const app = createApp({
           },
           chat: {
             title: 'Conversations',
+            quickTitle: 'Emoji / stickers',
+            backToBottom: 'Back to latest',
             pickFriend: 'Select a friend to start chatting',
             onlineNow: 'Live',
             latest: 'Latest',
@@ -624,6 +737,16 @@ const app = createApp({
             loadError: 'Failed to load chat history.',
             emptyConversation: 'There are no messages in this conversation yet.',
             sendError: 'Chat service is not connected yet.',
+            attachImage: 'Image',
+            attachVideo: 'Video',
+            attachAudio: 'Voice',
+            clearAttachment: 'Clear attachment',
+            attachmentHint: 'Attachments are compressed and auto-delete after 7 days.',
+            openAttachment: 'Open attachment',
+            mediaImage: 'Image',
+            mediaVideo: 'Video',
+            mediaAudio: 'Voice',
+            mediaFile: 'File',
           },
           plans: {
             basic: 'Basic',
@@ -665,6 +788,7 @@ const app = createApp({
       user: {
         id: 'u-1001',
         name: 'Lan Yu',
+        username: 'lanyu',
         level: 'Premium',
         planKey: 'monthly',
       },
@@ -706,14 +830,23 @@ const app = createApp({
       // 资料编辑表单。
       profileDraft: {
         displayName: '',
+        username: '',
       },
+      // Space modal state.
+      // 空间弹窗状态。
+      spaceModalOpen: false,
       // Space creation form.
       // 空间创建表单。
       spaceDraft: {
+        id: '',
         type: 'private',
         name: '',
         description: '',
+        subdomain: '',
       },
+      // Post modal state.
+      // 文章弹窗状态。
+      postModalOpen: false,
       // Lightweight feedback text.
       // 轻量反馈文本。
       flashMessage: '',
@@ -732,12 +865,16 @@ const app = createApp({
         {
           id: 's1',
           type: 'private',
+          subdomain: 'idea-vault',
+          status: 'active',
           name: { 'zh-CN': '灵感仓库', 'en-US': 'Idea Vault' },
           desc: { 'zh-CN': '只属于我的草稿与想法收纳处。', 'en-US': 'A private place for drafts and ideas.' },
         },
         {
           id: 's2',
           type: 'public',
+          subdomain: 'shareboard',
+          status: 'active',
           name: { 'zh-CN': '分享计划', 'en-US': 'Shareboard' },
           desc: { 'zh-CN': '公开更新项目进度与成果。', 'en-US': 'Post public progress updates and results.' },
         },
@@ -753,6 +890,7 @@ const app = createApp({
       profileUser: {
         id: '',
         name: '',
+        username: '',
         secondary: '',
         relationStatus: '',
         direction: '',
@@ -770,6 +908,7 @@ const app = createApp({
         content: '',
         visibility: 'public',
         status: 'published',
+        spaceId: '',
       },
       // Post edit form.
       // 文章编辑表单。
@@ -779,6 +918,7 @@ const app = createApp({
         content: '',
         visibility: 'public',
         status: 'published',
+        spaceId: '',
       },
       // Per-post comment drafts.
       // 每篇文章的评论草稿。
@@ -840,9 +980,24 @@ const app = createApp({
       // Message input.
       // 输入消息。
       chatInput: '',
-      // Conversation list summaries.
-      // 会话列表摘要。
-      chatSummaries: [],
+      // Quick inserts for emoji and sticker packs.
+      // 表情包与贴纸快捷插入项。
+      chatQuickSnippets: CHAT_QUICK_SNIPPETS,
+      // Current chat attachment draft.
+      // 当前聊天附件草稿。
+      chatAttachment: null,
+        // Cached object URLs for decoded chat media.
+        // 解码后的聊天媒体对象 URL 缓存。
+        chatMediaUrls: [],
+        // Whether the history viewport is already near the latest message.
+        // 历史视口是否已经接近最新消息。
+        chatHistoryAtBottom: true,
+        // Conversation list summaries.
+        // 会话列表摘要。
+        chatSummaries: [],
+      // Whether the current host route has already been applied.
+      // 当前主机路由是否已经应用。
+      hostRouteApplied: false,
     };
   },
   computed: {
@@ -863,16 +1018,44 @@ const app = createApp({
         return this.currentPost.title;
       }
       if (this.view === 'profile' && this.profileUser.name) {
-        return this.profileUser.name;
+        return this.profileUser.username
+          ? `${this.profileUser.name} · @${this.profileUser.username}`
+          : this.profileUser.name;
+      }
+      if (this.view === 'profile' && this.profileUser.username) {
+        return `@${this.profileUser.username}`;
+      }
+      if (this.view === 'private' && this.activePrivateSpace) {
+        const label = this.localizedSpaceText('name', this.activePrivateSpace);
+        if (label) {
+          return `${this.t('pageTitle.private')} · ${label}`;
+        }
+      }
+      if (this.view === 'public' && this.activePublicSpace) {
+        const label = this.localizedSpaceText('name', this.activePublicSpace);
+        if (label) {
+          return `${this.t('pageTitle.public')} · ${label}`;
+        }
       }
       return this.t(`pageTitle.${this.view}`) || this.t('pageTitle.dashboard');
     },
     pageSub() {
       if (this.view === 'postDetail' && this.currentPost) {
-        return this.t('pageSub.postDetail');
+        return this.currentPost.spaceLabel
+          ? `${this.t('pageSub.postDetail')} · ${this.currentPost.spaceLabel}`
+          : this.t('pageSub.postDetail');
+      }
+      if (this.view === 'profile' && this.profileUser.username) {
+        return `@${this.profileUser.username}`;
       }
       if (this.view === 'profile' && this.profileUser.name) {
         return this.t('posts.profileFeedSub');
+      }
+      if (this.view === 'private' && this.activePrivateSpace?.subdomain) {
+        return `${this.t('pageSub.private')} · @${this.activePrivateSpace.subdomain}`;
+      }
+      if (this.view === 'public' && this.activePublicSpace?.subdomain) {
+        return `${this.t('pageSub.public')} · @${this.activePublicSpace.subdomain}`;
       }
       return this.t(`pageSub.${this.view}`) || '';
     },
@@ -912,6 +1095,26 @@ const app = createApp({
     acceptedFriends() {
       return this.friends.filter((friend) => friend.status === 'accepted');
     },
+    pendingIncomingFriends() {
+      return this.friends.filter(
+        (friend) => friend.status === 'pending' && friend.direction === 'incoming',
+      );
+    },
+    pendingFriendCount() {
+      return this.pendingIncomingFriends.length;
+    },
+    topPendingFriend() {
+      return this.pendingIncomingFriends
+        .slice()
+        .sort((a, b) => {
+          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (aTime !== bTime) {
+            return bTime - aTime;
+          }
+          return a.name.localeCompare(b.name);
+        })[0] || null;
+    },
     chatEntries() {
       return this.acceptedFriends.map((friend) => {
         const summary = this.chatSummaries.find((item) => item.peerId === friend.id);
@@ -922,6 +1125,8 @@ const app = createApp({
         return {
           ...friend,
           lastMessage: summary?.lastMessage || '',
+          lastMessageType: summary?.lastMessageType || 'text',
+          lastMessagePreview: summary?.lastMessagePreview || summary?.lastMessage || '',
           lastAt,
           unreadCount: summary?.unreadCount || 0,
         };
@@ -944,6 +1149,18 @@ const app = createApp({
         return a.name.localeCompare(b.name);
       });
     },
+    activePrivateSpace() {
+      return this.resolveSpaceForVisibility('private');
+    },
+    activePublicSpace() {
+      return this.resolveSpaceForVisibility('public');
+    },
+    visiblePrivatePosts() {
+      return this.postsForSpace(this.privatePosts, this.activePrivateSpace?.id || '');
+    },
+    visiblePublicPosts() {
+      return this.postsForSpace(this.posts, this.activePublicSpace?.id || '');
+    },
     privateSpaces() {
       return this.spaces.filter((s) => s.type === 'private');
     },
@@ -960,6 +1177,11 @@ const app = createApp({
       document.documentElement.dir = this.localeDirection;
       document.title = this.t('htmlTitle');
     },
+    view(nextView) {
+      if (nextView === 'chat') {
+        this.scrollChatHistoryToBottom(true);
+      }
+    },
     'externalAccountDraft.provider'(nextProvider) {
       // Keep the selected chain aligned with the selected provider.
       // 让选中的链始终与当前提供方保持一致。
@@ -970,6 +1192,252 @@ const app = createApp({
     },
   },
   methods: {
+    // Space and post payload helpers.
+    // 空间与文章载荷辅助方法。
+    mapCommentItem(comment) {
+      return {
+        id: comment.id,
+        authorName: comment.author_name,
+        content: comment.content,
+        createdAt: comment.created_at,
+      };
+    },
+    mapPostItem(item) {
+      const spaceName = item.space_name || '';
+      const spaceSubdomain = item.space_subdomain || '';
+      const spaceType = item.space_type || '';
+      const spaceLabel = spaceName && spaceSubdomain
+        ? `${spaceName} · @${spaceSubdomain}`
+        : spaceName || spaceSubdomain || spaceType || item.visibility || '';
+      return {
+        id: item.id,
+        userId: item.user_id,
+        spaceId: item.space_id || '',
+        spaceName,
+        spaceSubdomain,
+        spaceType,
+        spaceLabel,
+        authorName: item.author_name,
+        title: item.title,
+        content: item.content,
+        status: item.status || 'published',
+        visibility: item.visibility || 'public',
+        likesCount: Number(item.likes_count || 0),
+        commentsCount: Number(item.comments_count || 0),
+        sharesCount: Number(item.shares_count || 0),
+        likedByMe: Boolean(item.liked_by_me),
+        createdAt: item.created_at,
+        comments: Array.isArray(item.comments)
+          ? item.comments.map((comment) => this.mapCommentItem(comment))
+          : [],
+      };
+    },
+    mapSpaceItem(item) {
+      const name = item.name || '';
+      const subdomain = item.subdomain || '';
+      const spaceLabel = subdomain ? `${name} · @${subdomain}` : name;
+      return {
+        id: item.id,
+        type: item.type || 'private',
+        subdomain,
+        status: item.status || 'active',
+        name: {
+          'zh-CN': item.name || '',
+          'en-US': item.name || '',
+          'zh-TW': item.name || '',
+        },
+        desc: {
+          'zh-CN': item.description || '',
+          'en-US': item.description || '',
+          'zh-TW': item.description || '',
+        },
+        createdAt: item.created_at || '',
+        updatedAt: item.updated_at || '',
+        spaceLabel,
+      };
+    },
+    findSpaceById(spaceId) {
+      if (!spaceId) {
+        return null;
+      }
+      return this.spaces.find((space) => space.id === spaceId) || null;
+    },
+    postsForSpace(posts, spaceId) {
+      if (!spaceId) {
+        return posts;
+      }
+      return posts.filter((post) => post.spaceId === spaceId);
+    },
+    normalizeSpaceSlug(value) {
+      // Normalize a free-form string into a subdomain-safe slug.
+      // 将自由文本规范化为适合二级域名的 slug。
+      const lower = String(value || '').trim().toLowerCase();
+      if (!lower) {
+        return '';
+      }
+      const buffer = [];
+      for (const rune of lower) {
+        const code = rune.codePointAt(0);
+        const isLetter = code >= 0x61 && code <= 0x7a;
+        const isDigit = code >= 0x30 && code <= 0x39;
+        if (isLetter || isDigit) {
+          buffer.push(rune);
+        }
+      }
+      return buffer.join('');
+    },
+    suggestSpaceSubdomain(name, type) {
+      // Suggest a readable subdomain from the space name.
+      // 根据空间名称建议一个可读的二级域名。
+      return this.normalizeSpaceSlug(name).slice(0, 63);
+    },
+    isValidSpaceSubdomain(value) {
+      // Validate the subdomain format before sending it to the server.
+      // 在提交到服务端前校验二级域名格式。
+      return /^[a-z0-9]{1,63}$/.test(String(value || '').trim().toLowerCase());
+    },
+    hostSubdomainLabel() {
+      // Extract the leading host label for subdomain routing.
+      // 提取用于子域名路由的首个主机标识。
+      const host = (window.location.hostname || '').toLowerCase();
+      if (!host || host === 'localhost' || host === '127.0.0.1') {
+        return '';
+      }
+      const parts = host.split('.').filter(Boolean);
+      if (parts.length < 3 && !host.endsWith('.localhost')) {
+        return '';
+      }
+      const label = parts[0];
+      if (!label || label === 'www') {
+        return '';
+      }
+      return label;
+    },
+    spaceFromHost() {
+      // Try to map the current host subdomain to a known space.
+      // 尝试把当前主机的子域名映射到已知空间。
+      const label = this.hostSubdomainLabel();
+      if (!label) {
+        return null;
+      }
+      return this.spaces.find((space) => space.subdomain?.toLowerCase() === label) || null;
+    },
+    resolveSpaceForVisibility(visibility, preferredSpaceId = '') {
+      // Resolve the active space for a visibility scope.
+      // 为可见性范围解析当前空间。
+      const type = visibility === 'private' ? 'private' : 'public';
+      const preferred = this.findSpaceById(preferredSpaceId);
+      if (preferred && preferred.type === type) {
+        return preferred;
+      }
+      const activeId = type === 'private' ? this.activePrivateSpaceId : this.activePublicSpaceId;
+      const active = this.findSpaceById(activeId);
+      if (active && active.type === type) {
+        return active;
+      }
+      const hostSpace = this.spaceFromHost();
+      if (hostSpace && hostSpace.type === type) {
+        return hostSpace;
+      }
+      return this.spaces.find((space) => space.type === type) || null;
+    },
+    selectedSpaceIdForVisibility(visibility, preferredSpaceId = '') {
+      const space = this.resolveSpaceForVisibility(visibility, preferredSpaceId);
+      return space ? space.id : '';
+    },
+    persistActiveSpace(storageKey, spaceId) {
+      if (spaceId) {
+        localStorage.setItem(storageKey, spaceId);
+        return;
+      }
+      localStorage.removeItem(storageKey);
+    },
+    syncActiveSpaces() {
+      // Keep active spaces aligned with the current data set.
+      // 让当前空间与最新空间列表保持同步。
+      const privateSpace = this.resolveSpaceForVisibility('private', this.activePrivateSpaceId);
+      const publicSpace = this.resolveSpaceForVisibility('public', this.activePublicSpaceId);
+      this.activePrivateSpaceId = privateSpace ? privateSpace.id : '';
+      this.activePublicSpaceId = publicSpace ? publicSpace.id : '';
+      this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, this.activePrivateSpaceId);
+      this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, this.activePublicSpaceId);
+    },
+    setActiveSpace(space) {
+      // Persist the selected space without changing the current page.
+      // 仅保存当前空间选择，不直接切换页面。
+      if (!space) {
+        return;
+      }
+      if (space.type === 'private') {
+        this.activePrivateSpaceId = space.id;
+        this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, space.id);
+        return;
+      }
+      this.activePublicSpaceId = space.id;
+      this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, space.id);
+    },
+    enterSpace(space) {
+      // Enter a space and switch to the matching page.
+      // 进入空间并切换到对应页面。
+      if (!space) {
+        return;
+      }
+      this.setActiveSpace(space);
+      this.view = space.type === 'private' ? 'private' : 'public';
+    },
+    openSpaceComposer(type) {
+      // Open the space composer dialog in create mode.
+      // 以创建模式打开空间弹窗。
+      this.spaceDraft.id = '';
+      this.spaceDraft.type = type === 'public' ? 'public' : 'private';
+      this.spaceDraft.name = '';
+      this.spaceDraft.description = '';
+      this.spaceDraft.subdomain = '';
+      this.spaceModalOpen = true;
+    },
+    openSpaceEditor(space) {
+      // Open the space composer dialog in edit mode.
+      // 以编辑模式打开空间弹窗。
+      if (!space || !space.id) {
+        return;
+      }
+      this.spaceDraft.id = space.id;
+      this.spaceDraft.type = space.type === 'public' ? 'public' : 'private';
+      this.spaceDraft.name = this.localizedSpaceText('name', space);
+      this.spaceDraft.description = this.localizedSpaceText('desc', space);
+      this.spaceDraft.subdomain = space.subdomain || '';
+      if (!this.spaceDraft.subdomain.trim()) {
+        this.spaceDraft.subdomain = this.suggestSpaceSubdomain(this.spaceDraft.name, this.spaceDraft.type);
+      }
+      this.spaceModalOpen = true;
+    },
+    closeSpaceComposer() {
+      // Close the space modal and reset its draft state.
+      // 关闭空间弹窗并重置草稿状态。
+      this.spaceModalOpen = false;
+      this.spaceDraft.id = '';
+      this.spaceDraft.type = 'private';
+      this.spaceDraft.name = '';
+      this.spaceDraft.description = '';
+      this.spaceDraft.subdomain = '';
+    },
+    openPostComposer(visibility) {
+      // Open the post composer dialog.
+      // 打开文章发布弹窗。
+      const targetVisibility = visibility === 'private' ? 'private' : 'public';
+      const activeSpaceId = this.selectedSpaceIdForVisibility(targetVisibility, this.postDraft.spaceId);
+      const activeSpace = this.findSpaceById(activeSpaceId);
+      if (!activeSpace) {
+        this.setError(this.t('posts.spaceRequired'));
+        return;
+      }
+      this.postDraft.visibility = targetVisibility;
+      this.postDraft.spaceId = activeSpace.id;
+      this.postModalOpen = true;
+    },
+    closePostComposer() {
+      this.postModalOpen = false;
+    },
     getLanguageMeta(code) {
       // Normalize language metadata for built-in and runtime locales.
       // 统一处理内建语言与运行时语言的元数据。
@@ -1031,7 +1499,7 @@ const app = createApp({
           JSON.parse(JSON.stringify(this.translations['zh-CN'])),
           {
             htmlTitle: '帳號服務 · 私人空間與公共空間',
-            common: { guest: '訪客' },
+            common: { guest: '訪客', cancel: '取消' },
             nav: {
               auth: '登入 / 註冊',
               dashboard: '帳號主頁',
@@ -1090,7 +1558,7 @@ const app = createApp({
               welcomeSub: '登入後進入你的私人空間與公共空間。',
               createTitle: '建立新帳號',
               createSub: '加入會員體系，解鎖更大空間與更多互動。',
-              accountPlaceholder: '信箱 / 手機',
+              accountPlaceholder: '信箱 / 手機 / 使用者名稱',
               passwordPlaceholder: '密碼',
               emailPlaceholder: '信箱',
               phonePlaceholder: '手機號碼',
@@ -1111,10 +1579,14 @@ const app = createApp({
               spaceSummaryTitle: '空間摘要',
               spaceSummarySub: '私人空間用於沉澱，公共空間用於分享。',
               profileTitle: '資料設定',
-              profileSub: '更新顯示名稱，主頁與聊天視窗會同步顯示。',
+              profileSub: '更新顯示名稱與使用者名稱，主頁與聊天視窗會同步顯示。',
               blockchainTitle: '鏈上擴展',
               blockchainSub: '已綁定的鏈上帳號會在此彙總，便於後續資產與身份聯動。',
               displayNamePlaceholder: '輸入顯示名稱',
+              usernamePlaceholder: '輸入使用者名稱',
+              usernameHint: '僅允許英文字母和數字，長度不超過 63，並作為子網域使用。',
+              usernameRequired: '請輸入使用者名稱。',
+              usernameError: '使用者名稱只能包含英文字母和數字，且最長 63 個字元。',
               saveProfile: '儲存資料',
               saveSuccess: '資料已更新',
               saveError: '資料更新失敗，請稍後重試。',
@@ -1124,11 +1596,19 @@ const app = createApp({
               publicSub: '分享內容、展示專案、連結更多人。',
               createTitle: '建立空間',
               createSub: '新增一個私人空間或公共空間。',
+              typeLabel: '空間類型',
               namePlaceholder: '空間名稱',
               descPlaceholder: '空間描述',
+              subdomainLabel: '二級網域',
+              subdomainHint: '僅允許英文字母和數字，長度不超過 63，留空時後端會自動生成。',
+              subdomainEditHint: '僅允許英文字母和數字，長度不超過 63。',
               createAction: '建立空間',
+              currentLabel: '目前空間',
+              enterAction: '進入空間',
               createSuccess: '空間已建立',
               createError: '空間建立失敗，請檢查名稱後重試。',
+              subdomainRequired: '編輯空間時二級網域不能為空。',
+              subdomainError: '二級網域只能包含英文字母和數字，且最長 63 個字元。',
               type: { private: '私人', public: '公共' },
             },
             posts: {
@@ -1137,8 +1617,14 @@ const app = createApp({
               titlePlaceholder: '文章標題',
               contentPlaceholder: '寫點什麼，分享給大家...',
               publishAction: '發布文章',
+              visibilityLabel: '可見性',
+              spaceLabel: '所屬空間',
+              spaceRequired: '請先進入或建立對應空間。',
               publishSuccess: '文章已發布。',
               publishError: '文章發布失敗，請稍後重試。',
+              privateEmpty: '目前空間裡還沒有文章。',
+              publicEmpty: '公共內容流裡還沒有文章，先發布第一篇吧。',
+              profileEmpty: '該作者還沒有公開文章。',
               empty: '公共內容流還沒有文章，先發布第一篇吧。',
               unlike: '取消按讚',
               commentPlaceholder: '寫下你的評論...',
@@ -1181,7 +1667,7 @@ const app = createApp({
               connectedChains: '已連接鏈',
             },
             friends: {
-              searchPlaceholder: '輸入顯示名稱、信箱、手機號碼或使用者 ID',
+              searchPlaceholder: '輸入顯示名稱、使用者名稱、信箱、手機號碼或使用者 ID',
               searchAction: '搜尋使用者',
               addAction: '送出請求',
               acceptAction: '接受',
@@ -1197,6 +1683,8 @@ const app = createApp({
             },
             chat: {
               title: '會話',
+              quickTitle: '常用表情／貼紙',
+              backToBottom: '回到底部',
               pickFriend: '選擇好友開始聊天',
               onlineNow: '即時在線',
               inputPlaceholder: '輸入訊息...',
@@ -1204,6 +1692,16 @@ const app = createApp({
               loadError: '聊天記錄載入失敗。',
               emptyConversation: '目前會話還沒有訊息。',
               sendError: '聊天服務尚未連線，請先建立連線。',
+              attachImage: '圖片',
+              attachVideo: '影片',
+              attachAudio: '語音',
+              clearAttachment: '清除附件',
+              attachmentHint: '附件會先壓縮，7天後自動刪除。',
+              openAttachment: '開啟附件',
+              mediaImage: '圖片',
+              mediaVideo: '影片',
+              mediaAudio: '語音',
+              mediaFile: '檔案',
             },
             plans: {
               basic: '基礎會員',
@@ -1294,16 +1792,25 @@ const app = createApp({
         solana: ['solana'],
         tron: ['tron'],
       };
+      this.spaces = [];
       this.posts = [];
       this.privatePosts = [];
-      this.profileUser = { id: '', name: '', secondary: '', relationStatus: '', direction: '' };
+      this.profileUser = { id: '', name: '', username: '', secondary: '', relationStatus: '', direction: '' };
       this.profilePosts = [];
       this.currentPost = null;
+      this.spaceModalOpen = false;
+      this.postModalOpen = false;
+      this.spaceDraft.id = '';
+      this.spaceDraft.type = 'private';
+      this.spaceDraft.name = '';
+      this.spaceDraft.description = '';
+      this.spaceDraft.subdomain = '';
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
       this.postDraft.status = 'published';
-      this.editPostDraft = { id: '', title: '', content: '', visibility: 'public', status: 'published' };
+      this.postDraft.spaceId = '';
+      this.editPostDraft = { id: '', title: '', content: '', visibility: 'public', status: 'published', spaceId: '' };
       this.commentDrafts = {};
       this.friends = [];
       this.newFriendQuery = '';
@@ -1311,11 +1818,20 @@ const app = createApp({
       this.friendSearchPerformed = false;
       this.chatMessages = [];
       this.chatSummaries = [];
+      this.revokeChatMediaUrls();
+      this.chatAttachment = null;
+      this.chatHistoryAtBottom = true;
       this.activeChat = null;
+      this.activePrivateSpaceId = '';
+      this.activePublicSpaceId = '';
       this.profileDraft.displayName = '';
+      this.profileDraft.username = '';
+      this.hostRouteApplied = false;
       this.auth.account = '';
       this.auth.password = '';
       localStorage.removeItem('token');
+      localStorage.removeItem(ACTIVE_PRIVATE_SPACE_KEY);
+      localStorage.removeItem(ACTIVE_PUBLIC_SPACE_KEY);
     },
     statusLabel(status) {
       return this.t(`statuses.${status}`) || status;
@@ -1386,6 +1902,23 @@ const app = createApp({
         minute: '2-digit',
       });
     },
+    formatByteSize(bytes) {
+      // Format attachment sizes for the draft card.
+      // 为附件草稿卡片格式化文件大小。
+      const value = Number(bytes || 0);
+      if (!Number.isFinite(value) || value <= 0) {
+        return '0 B';
+      }
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let size = value;
+      let unitIndex = 0;
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex += 1;
+      }
+      const precision = unitIndex === 0 || size >= 10 ? 0 : 1;
+      return `${size.toFixed(precision)} ${units[unitIndex]}`;
+    },
     localizedSpaceText(field, item) {
       return item[field][this.locale] || item[field]['zh-CN'] || '';
     },
@@ -1419,6 +1952,267 @@ const app = createApp({
         return message.content;
       }
       return message.content[this.locale] || message.content['zh-CN'] || '';
+    },
+    isStickerMessage(message) {
+      const content = this.localizedMessageContent(message).trim();
+      return String(message?.messageType || '').toLowerCase() === 'text' &&
+        CHAT_STICKER_TOKENS.has(content);
+    },
+    messageMediaLabel(message) {
+      const type = String(message?.messageType || '').toLowerCase();
+      if (type === 'image') {
+        return this.t('chat.mediaImage');
+      }
+      if (type === 'video') {
+        return this.t('chat.mediaVideo');
+      }
+      if (type === 'audio') {
+        return this.t('chat.mediaAudio');
+      }
+      return this.t('chat.mediaFile');
+    },
+    insertChatSnippet(snippet) {
+      // Append an emoji or sticker snippet into the composer.
+      // 将表情或贴纸片段追加到输入框。
+      const value = String(snippet || '');
+      if (!value) {
+        return;
+      }
+      this.chatInput = `${this.chatInput || ''}${value}`;
+      this.$nextTick(() => {
+        const input = this.$refs.chatInput;
+        if (input && typeof input.focus === 'function') {
+          input.focus();
+        }
+      });
+    },
+    updateChatHistoryScrollState(history) {
+      // Track whether the message viewport is already near the latest message.
+      // 判断消息视口是否已经接近最新消息。
+      if (!history) {
+        this.chatHistoryAtBottom = true;
+        return true;
+      }
+      const maxScrollTop = Math.max(0, history.scrollHeight - history.clientHeight);
+      const atBottom = maxScrollTop - history.scrollTop <= 24;
+      this.chatHistoryAtBottom = atBottom;
+      return atBottom;
+    },
+    handleChatHistoryScroll(event) {
+      // Update the scroll hint while the user reads older messages.
+      // 用户查看更早消息时更新滚动提示状态。
+      this.updateChatHistoryScrollState(event?.target || this.$refs.chatHistory);
+    },
+    scrollChatHistoryToBottom(immediate = false) {
+      // Keep the latest message visible after load/send events.
+      // 在加载或发送后保持最新消息可见。
+      this.$nextTick(() => {
+        const history = this.$refs.chatHistory;
+        if (!history) {
+          this.chatHistoryAtBottom = true;
+          return;
+        }
+        const targetTop = Math.max(0, history.scrollHeight - history.clientHeight);
+        if (immediate || typeof history.scrollTo !== 'function') {
+          history.scrollTop = targetTop;
+          this.updateChatHistoryScrollState(history);
+          return;
+        }
+        history.scrollTo({
+          top: targetTop,
+          behavior: 'smooth',
+        });
+        this.chatHistoryAtBottom = true;
+      });
+    },
+    revokeChatMediaUrls() {
+      // Release blob URLs created for message previews.
+      // 释放用于消息预览的 Blob URL。
+      if (Array.isArray(this.chatMediaUrls)) {
+        this.chatMediaUrls.forEach((url) => {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (_error) {}
+        });
+      }
+      this.chatMediaUrls = [];
+    },
+    base64ToBytes(base64) {
+      // Decode a base64 payload into bytes.
+      // 将 base64 载荷解码为字节数组。
+      const normalized = String(base64 || '').trim();
+      if (!normalized) {
+        return null;
+      }
+      try {
+        const binary = atob(normalized);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) {
+          bytes[index] = binary.charCodeAt(index);
+        }
+        return bytes;
+      } catch (_error) {
+        return null;
+      }
+    },
+    bytesToBase64(bytes) {
+      // Encode bytes into a base64 payload.
+      // 将字节数组编码为 base64 载荷。
+      if (!bytes || !bytes.length) {
+        return '';
+      }
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let index = 0; index < bytes.length; index += chunkSize) {
+        binary += String.fromCharCode(
+          ...bytes.subarray(index, index + chunkSize),
+        );
+      }
+      return btoa(binary);
+    },
+    async compressAttachmentBytes(bytes) {
+      // Compress attachment bytes with gzip when the browser supports it.
+      // 当浏览器支持时使用 gzip 压缩附件字节。
+      if (!bytes || !bytes.length || typeof CompressionStream !== 'function') {
+        return bytes;
+      }
+      try {
+        const stream = new Blob([bytes]).stream().pipeThrough(
+          new CompressionStream('gzip'),
+        );
+        const buffer = await new Response(stream).arrayBuffer();
+        return new Uint8Array(buffer);
+      } catch (_error) {
+        return bytes;
+      }
+    },
+    async decompressAttachmentBytes(bytes) {
+      // Decompress attachment bytes when the browser exposes DecompressionStream.
+      // 当浏览器提供 DecompressionStream 时解压附件字节。
+      if (!bytes || !bytes.length || typeof DecompressionStream !== 'function') {
+        return bytes;
+      }
+      try {
+        const stream = new Blob([bytes]).stream().pipeThrough(
+          new DecompressionStream('gzip'),
+        );
+        const buffer = await new Response(stream).arrayBuffer();
+        return new Uint8Array(buffer);
+      } catch (_error) {
+        return bytes;
+      }
+    },
+    normalizeAttachmentType(messageType, mime, fileName) {
+      // Normalize attachment type from the requested type or file metadata.
+      // 根据请求类型或文件元数据规范附件类型。
+      const normalized = String(messageType || '').toLowerCase().trim();
+      if (
+        normalized === 'text' ||
+        normalized === 'image' ||
+        normalized === 'video' ||
+        normalized === 'audio'
+      ) {
+        return normalized;
+      }
+      const safeMime = String(mime || '').toLowerCase();
+      if (safeMime.startsWith('image/')) {
+        return 'image';
+      }
+      if (safeMime.startsWith('video/')) {
+        return 'video';
+      }
+      if (safeMime.startsWith('audio/')) {
+        return 'audio';
+      }
+      const lower = String(fileName || '').toLowerCase();
+      if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(lower)) {
+        return 'image';
+      }
+      if (/\.(mp4|mov|webm|m4v|mkv)$/i.test(lower)) {
+        return 'video';
+      }
+      if (/\.(mp3|wav|ogg|m4a|aac)$/i.test(lower)) {
+        return 'audio';
+      }
+      return 'text';
+    },
+    inferAttachmentMime(messageType, fileName, declaredMime = '') {
+      // Infer a specific MIME type so media previews can be rendered reliably.
+      // 推断具体 MIME 类型，便于稳定渲染媒体预览。
+      const safeMime = String(declaredMime || '').trim();
+      if (safeMime && !safeMime.includes('*') && safeMime !== 'application/octet-stream') {
+        return safeMime;
+      }
+      const lower = String(fileName || '').toLowerCase();
+      if (lower.endsWith('.png')) {
+        return 'image/png';
+      }
+      if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+        return 'image/jpeg';
+      }
+      if (lower.endsWith('.gif')) {
+        return 'image/gif';
+      }
+      if (lower.endsWith('.webp')) {
+        return 'image/webp';
+      }
+      if (lower.endsWith('.mp4')) {
+        return 'video/mp4';
+      }
+      if (lower.endsWith('.mov')) {
+        return 'video/quicktime';
+      }
+      if (lower.endsWith('.webm')) {
+        return 'video/webm';
+      }
+      if (lower.endsWith('.m4v')) {
+        return 'video/x-m4v';
+      }
+      if (lower.endsWith('.mkv')) {
+        return 'video/x-matroska';
+      }
+      if (lower.endsWith('.mp3')) {
+        return 'audio/mpeg';
+      }
+      if (lower.endsWith('.wav')) {
+        return 'audio/wav';
+      }
+      if (lower.endsWith('.ogg')) {
+        return 'audio/ogg';
+      }
+      if (lower.endsWith('.m4a')) {
+        return 'audio/mp4';
+      }
+      if (lower.endsWith('.aac')) {
+        return 'audio/aac';
+      }
+      if (messageType === 'image') {
+        return 'image/png';
+      }
+      if (messageType === 'video') {
+        return 'video/mp4';
+      }
+      if (messageType === 'audio') {
+        return 'audio/mpeg';
+      }
+      return 'application/octet-stream';
+    },
+    async buildChatMediaUrl(mediaData, mediaMime, messageType, fileName = '') {
+      // Build a browser-safe object URL for the decoded media bytes.
+      // 为解码后的媒体字节构建浏览器可用的对象 URL。
+      const bytes = this.base64ToBytes(mediaData);
+      if (!bytes) {
+        return '';
+      }
+      const decodedBytes = await this.decompressAttachmentBytes(bytes);
+      const mime = this.inferAttachmentMime(messageType, fileName, mediaMime);
+      try {
+        const url = URL.createObjectURL(new Blob([decodedBytes], { type: mime }));
+        this.chatMediaUrls.push(url);
+        return url;
+      } catch (_error) {
+        return '';
+      }
     },
     addLanguage() {
       // Add a new language at runtime.
@@ -1521,6 +2315,9 @@ const app = createApp({
       if (this.token) {
         localStorage.setItem('token', this.token);
         await this.loadMe();
+        if (!this.token) {
+          return;
+        }
         await this.loadSpaces();
         await this.loadSubscription();
         await this.loadExternalAccounts();
@@ -1533,7 +2330,10 @@ const app = createApp({
         } else {
           await this.loadUnread();
         }
-        this.view = 'dashboard';
+        const routedToProfile = await this.applyHostRouteFromHost();
+        if (!routedToProfile) {
+          this.view = 'dashboard';
+        }
         this.settingsOpen = false;
       }
     },
@@ -1562,6 +2362,9 @@ const app = createApp({
       if (this.token) {
         localStorage.setItem('token', this.token);
         await this.loadMe();
+        if (!this.token) {
+          return;
+        }
         await this.loadSpaces();
         await this.loadSubscription();
         await this.loadExternalAccounts();
@@ -1574,7 +2377,10 @@ const app = createApp({
         } else {
           await this.loadUnread();
         }
-        this.view = 'dashboard';
+        const routedToProfile = await this.applyHostRouteFromHost();
+        if (!routedToProfile) {
+          this.view = 'dashboard';
+        }
         this.settingsOpen = false;
       }
     },
@@ -1595,8 +2401,10 @@ const app = createApp({
       const data = await res.json();
       this.user.id = data.user_id || this.user.id;
       this.user.name = data.display_name || this.user.name;
+      this.user.username = data.username || this.user.username;
       this.user.level = data.level || this.user.level;
       this.profileDraft.displayName = data.display_name || '';
+      this.profileDraft.username = data.username || this.profileDraft.username || '';
     },
     async loadSpaces() {
       // Load spaces from server.
@@ -1612,18 +2420,8 @@ const app = createApp({
       }
       const data = await res.json();
       if (Array.isArray(data.items)) {
-        this.spaces = data.items.map((item) => ({
-          id: item.id,
-          type: item.type,
-          name: {
-            'zh-CN': item.name,
-            'en-US': item.name,
-          },
-          desc: {
-            'zh-CN': item.description,
-            'en-US': item.description,
-          },
-        }));
+        this.spaces = data.items.map((item) => this.mapSpaceItem(item));
+        this.syncActiveSpaces();
       }
     },
     async loadSubscription() {
@@ -1686,27 +2484,7 @@ const app = createApp({
       }
       const data = await res.json();
       if (Array.isArray(data.items)) {
-        this.posts = data.items.map((item) => ({
-          id: item.id,
-          userId: item.user_id,
-          authorName: item.author_name,
-          title: item.title,
-          content: item.content,
-          visibility: item.visibility,
-          likesCount: Number(item.likes_count || 0),
-          commentsCount: Number(item.comments_count || 0),
-          sharesCount: Number(item.shares_count || 0),
-          likedByMe: Boolean(item.liked_by_me),
-          createdAt: item.created_at,
-          comments: Array.isArray(item.comments)
-            ? item.comments.map((comment) => ({
-                id: comment.id,
-                authorName: comment.author_name,
-                content: comment.content,
-                createdAt: comment.created_at,
-              }))
-            : [],
-        }));
+        this.posts = data.items.map((item) => this.mapPostItem(item));
       }
     },
     async loadPrivatePosts() {
@@ -1723,27 +2501,7 @@ const app = createApp({
       }
       const data = await res.json();
       if (Array.isArray(data.items)) {
-        this.privatePosts = data.items.map((item) => ({
-          id: item.id,
-          userId: item.user_id,
-          authorName: item.author_name,
-          title: item.title,
-          content: item.content,
-          visibility: item.visibility,
-          likesCount: Number(item.likes_count || 0),
-          commentsCount: Number(item.comments_count || 0),
-          sharesCount: Number(item.shares_count || 0),
-          likedByMe: Boolean(item.liked_by_me),
-          createdAt: item.created_at,
-          comments: Array.isArray(item.comments)
-            ? item.comments.map((comment) => ({
-                id: comment.id,
-                authorName: comment.author_name,
-                content: comment.content,
-                createdAt: comment.created_at,
-              }))
-            : [],
-        }));
+        this.privatePosts = data.items.map((item) => this.mapPostItem(item));
       }
     },
     async openProfile(userID, fallbackName = '') {
@@ -1757,10 +2515,17 @@ const app = createApp({
       });
       if (profileRes.ok) {
         const profile = await profileRes.json();
+        const profileSecondary = [
+          profile.username ? `@${profile.username}` : '',
+          profile.email || '',
+          profile.phone || '',
+          profile.user_id || userID,
+        ].filter(Boolean).join(' · ');
         this.profileUser = {
           id: profile.user_id || userID,
           name: profile.display_name || fallbackName || userID,
-          secondary: profile.email || profile.phone || profile.user_id || userID,
+          username: profile.username || '',
+          secondary: profileSecondary,
           relationStatus: profile.relation_status || '',
           direction: profile.direction || '',
         };
@@ -1768,6 +2533,7 @@ const app = createApp({
         this.profileUser = {
           id: userID,
           name: fallbackName || userID,
+          username: '',
           secondary: userID,
           relationStatus: '',
           direction: '',
@@ -1781,27 +2547,7 @@ const app = createApp({
       }
       const data = await res.json();
       this.profilePosts = Array.isArray(data.items)
-        ? data.items.map((item) => ({
-            id: item.id,
-            userId: item.user_id,
-            authorName: item.author_name,
-            title: item.title,
-            content: item.content,
-            visibility: item.visibility,
-            likesCount: Number(item.likes_count || 0),
-            commentsCount: Number(item.comments_count || 0),
-            sharesCount: Number(item.shares_count || 0),
-            likedByMe: Boolean(item.liked_by_me),
-            createdAt: item.created_at,
-            comments: Array.isArray(item.comments)
-              ? item.comments.map((comment) => ({
-                  id: comment.id,
-                  authorName: comment.author_name,
-                  content: comment.content,
-                  createdAt: comment.created_at,
-                }))
-              : [],
-          }))
+        ? data.items.map((item) => this.mapPostItem(item))
         : [];
       if (this.profilePosts[0]?.authorName) {
         this.profileUser.name = this.profilePosts[0].authorName;
@@ -1812,6 +2558,41 @@ const app = createApp({
       // 重置为个人主页的会员等级标签。
       this.profileTab = 'levels';
       this.view = 'profile';
+    },
+    async openProfileByUsername(username) {
+      // Resolve a username subdomain into the corresponding profile.
+      // 将用户名子域名解析为对应的个人主页。
+      if (!this.token || !username) {
+        return false;
+      }
+      const encoded = encodeURIComponent(String(username).trim().toLowerCase());
+      const res = await fetch(`${this.apiBase}/users/username/${encoded}/profile`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return false;
+      }
+      const profile = await res.json();
+      await this.openProfile(profile.user_id || '', profile.display_name || '');
+      return true;
+    },
+    async applyHostRouteFromHost() {
+      // Route subdomain-hosted username pages once per session.
+      // 每个会话仅路由一次基于子域名的用户名主页。
+      if (this.hostRouteApplied || !this.token) {
+        return false;
+      }
+      const label = this.hostSubdomainLabel();
+      if (!label) {
+        this.hostRouteApplied = true;
+        return false;
+      }
+      if (this.spaceFromHost()) {
+        this.hostRouteApplied = true;
+        return false;
+      }
+      this.hostRouteApplied = true;
+      return this.openProfileByUsername(label);
     },
     async openPostDetail(postID) {
       // Open a single post detail page.
@@ -1826,40 +2607,26 @@ const app = createApp({
         return;
       }
       const item = await res.json();
-      this.currentPost = {
-        id: item.id,
-        userId: item.user_id,
-        authorName: item.author_name,
-        title: item.title,
-        content: item.content,
-        visibility: item.visibility,
-        likesCount: Number(item.likes_count || 0),
-        commentsCount: Number(item.comments_count || 0),
-        sharesCount: Number(item.shares_count || 0),
-        likedByMe: Boolean(item.liked_by_me),
-        createdAt: item.created_at,
-        comments: Array.isArray(item.comments)
-          ? item.comments.map((comment) => ({
-              id: comment.id,
-              authorName: comment.author_name,
-              content: comment.content,
-              createdAt: comment.created_at,
-            }))
-          : [],
-      };
+      this.currentPost = this.mapPostItem(item);
+      const selectedSpaceId = this.selectedSpaceIdForVisibility(item.visibility, item.space_id);
+      const selectedSpace = this.findSpaceById(selectedSpaceId);
+      if (selectedSpace) {
+        this.setActiveSpace(selectedSpace);
+      }
       this.editPostDraft = {
         id: item.id,
         title: item.title,
         content: item.content,
         visibility: item.visibility,
         status: item.status || 'published',
+        spaceId: selectedSpaceId,
       };
       this.view = 'postDetail';
     },
     backFromPostDetail() {
       // Return from detail view to public feed.
       // 从详情页返回公共内容流。
-      this.view = 'public';
+      this.view = this.currentPost?.visibility === 'private' ? 'private' : 'public';
     },
     backToPublicFeed() {
       // Return from profile view to public feed.
@@ -1904,6 +2671,11 @@ const app = createApp({
       if (!this.token || !this.postDraft.title.trim() || !this.postDraft.content.trim()) {
         return;
       }
+      const spaceId = this.selectedSpaceIdForVisibility(this.postDraft.visibility, this.postDraft.spaceId);
+      if (!spaceId) {
+        this.setError(this.t('posts.spaceRequired'));
+        return;
+      }
       const res = await fetch(`${this.apiBase}/posts`, {
         method: 'POST',
         headers: {
@@ -1915,16 +2687,24 @@ const app = createApp({
           content: this.postDraft.content.trim(),
           visibility: this.postDraft.visibility,
           status: this.postDraft.status,
+          space_id: spaceId,
         }),
       });
       if (!res.ok) {
         this.setError(this.t('posts.publishError'));
         return;
       }
+      this.postDraft.spaceId = spaceId;
+      const selectedSpace = this.findSpaceById(spaceId);
+      if (selectedSpace) {
+        this.setActiveSpace(selectedSpace);
+        this.view = selectedSpace.type === 'private' ? 'private' : 'public';
+      }
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
       this.postDraft.status = 'published';
+      this.postModalOpen = false;
       await this.loadPosts();
       await this.loadPrivatePosts();
       if (this.currentPost?.id) {
@@ -1932,18 +2712,25 @@ const app = createApp({
       }
       this.setFlash(this.t('posts.publishSuccess'));
     },
-    startEditPost(post) {
+    async startEditPost(post) {
       // Load an existing post into the edit form.
       // 将已有文章载入编辑表单。
       if (!this.canEditPost(post)) {
         return;
       }
+      await this.openPostDetail(post.id);
+      const selectedPost = this.currentPost || post;
+      const spaceId = this.selectedSpaceIdForVisibility(
+        selectedPost.visibility,
+        selectedPost.spaceId,
+      );
       this.editPostDraft = {
-        id: post.id,
-        title: post.title,
-        content: post.content,
-        visibility: post.visibility,
-        status: post.status || 'published',
+        id: selectedPost.id,
+        title: selectedPost.title,
+        content: selectedPost.content,
+        visibility: selectedPost.visibility,
+        status: selectedPost.status || 'published',
+        spaceId,
       };
       this.view = 'postDetail';
     },
@@ -1952,6 +2739,11 @@ const app = createApp({
       // 保存当前文章编辑表单。
       this.clearFeedback();
       if (!this.token || !this.editPostDraft.id || !this.editPostDraft.title.trim() || !this.editPostDraft.content.trim()) {
+        return;
+      }
+      const spaceId = this.selectedSpaceIdForVisibility(this.editPostDraft.visibility, this.editPostDraft.spaceId);
+      if (!spaceId) {
+        this.setError(this.t('posts.spaceRequired'));
         return;
       }
       const res = await fetch(`${this.apiBase}/posts/${this.editPostDraft.id}`, {
@@ -1965,6 +2757,7 @@ const app = createApp({
           content: this.editPostDraft.content.trim(),
           visibility: this.editPostDraft.visibility,
           status: this.editPostDraft.status,
+          space_id: spaceId,
         }),
       });
       if (!res.ok) {
@@ -2047,10 +2840,21 @@ const app = createApp({
       }
     },
     async saveProfile() {
-      // Persist display name changes to the account service.
-      // 将展示名称修改保存到账号服务。
+      // Persist display name and username changes to the account service.
+      // 将展示名称和用户名修改保存到账号服务。
       this.clearFeedback();
-      if (!this.token || !this.profileDraft.displayName.trim()) {
+      const displayName = this.profileDraft.displayName.trim();
+      const username = this.profileDraft.username.trim().toLowerCase();
+      if (!this.token || !displayName) {
+        this.setError(this.t('dashboard.saveError'));
+        return;
+      }
+      if (!username) {
+        this.setError(this.t('dashboard.usernameRequired'));
+        return;
+      }
+      if (!this.isValidSpaceSubdomain(username)) {
+        this.setError(this.t('dashboard.usernameError'));
         return;
       }
       const res = await fetch(`${this.apiBase}/me`, {
@@ -2060,7 +2864,8 @@ const app = createApp({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          display_name: this.profileDraft.displayName.trim(),
+          display_name: displayName,
+          username,
         }),
       });
       if (!res.ok) {
@@ -2148,10 +2953,45 @@ const app = createApp({
       this.setFlash(this.t('blockchain.removeSuccess'));
     },
     async createSpace() {
-      // Create a new private/public space from the current form.
-      // 根据当前表单创建新的私人/公共空间。
+      // Create or update a private/public space from the current form.
+      // 根据当前表单创建或更新私人/公共空间。
       this.clearFeedback();
       if (!this.token || !this.spaceDraft.name.trim()) {
+        return;
+      }
+      const subdomain = this.spaceDraft.subdomain.trim().toLowerCase();
+      if (subdomain && !this.isValidSpaceSubdomain(subdomain)) {
+        this.setError(this.t('spaces.subdomainError'));
+        return;
+      }
+      if (this.spaceDraft.id) {
+        if (!subdomain) {
+          this.setError(this.t('spaces.subdomainRequired'));
+          return;
+        }
+        const res = await fetch(`${this.apiBase}/spaces/${this.spaceDraft.id}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: this.spaceDraft.name.trim(),
+            description: this.spaceDraft.description.trim(),
+            subdomain,
+          }),
+        });
+        if (!res.ok) {
+          this.setError(this.t('spaces.editError'));
+          return;
+        }
+        const item = await res.json();
+        const updatedSpace = this.mapSpaceItem(item);
+        await this.loadSpaces();
+        this.setActiveSpace(updatedSpace);
+        this.view = updatedSpace.type === 'private' ? 'private' : 'public';
+        this.closeSpaceComposer();
+        this.setFlash(this.t('spaces.editSuccess'));
         return;
       }
       const res = await fetch(`${this.apiBase}/spaces`, {
@@ -2164,16 +3004,139 @@ const app = createApp({
           type: this.spaceDraft.type,
           name: this.spaceDraft.name.trim(),
           description: this.spaceDraft.description.trim(),
+          ...(subdomain ? { subdomain } : {}),
         }),
       });
       if (!res.ok) {
         this.setError(this.t('spaces.createError'));
         return;
       }
-      this.spaceDraft.name = '';
-      this.spaceDraft.description = '';
+      const item = await res.json();
+      const createdSpace = this.mapSpaceItem(item);
       await this.loadSpaces();
+      this.setActiveSpace(createdSpace);
+      this.view = createdSpace.type === 'private' ? 'private' : 'public';
+      this.closeSpaceComposer();
       this.setFlash(this.t('spaces.createSuccess'));
+    },
+    async deleteSpace(space) {
+      // Delete a space and all content that belongs to it.
+      // 删除一个空间以及其下属全部内容。
+      this.clearFeedback();
+      if (!this.token || !space || !space.id) {
+        return;
+      }
+      const label = this.localizedSpaceText('name', space) || space.subdomain || space.id;
+      const confirmed = window.confirm(`${this.t('spaces.deleteConfirm')}\n${label}`);
+      if (!confirmed) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/spaces/${space.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        this.setError(this.t('spaces.deleteError'));
+        return;
+      }
+      const relatedPostIds = new Set([
+        ...this.posts.filter((post) => post.spaceId === space.id).map((post) => post.id),
+        ...this.privatePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
+        ...this.profilePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
+        ...(this.currentPost && this.currentPost.spaceId === space.id ? [this.currentPost.id] : []),
+      ]);
+      relatedPostIds.forEach((postId) => {
+        delete this.commentDrafts[postId];
+      });
+      if (this.postDraft.spaceId === space.id) {
+        this.postDraft.spaceId = '';
+      }
+      if (this.editPostDraft.spaceId === space.id) {
+        this.editPostDraft = {
+          id: '',
+          title: '',
+          content: '',
+          visibility: 'public',
+          status: 'published',
+          spaceId: '',
+        };
+      }
+      if (this.spaceDraft.id === space.id) {
+        this.closeSpaceComposer();
+      }
+      if (this.currentPost && this.currentPost.spaceId === space.id) {
+        this.currentPost = null;
+        this.editPostDraft = {
+          id: '',
+          title: '',
+          content: '',
+          visibility: 'public',
+          status: 'published',
+          spaceId: '',
+        };
+        if (this.view === 'postDetail') {
+          this.view = space.type === 'private' ? 'private' : 'public';
+        }
+      }
+      await this.loadSpaces();
+      await this.loadPosts();
+      await this.loadPrivatePosts();
+      if (this.view === 'profile' && this.profileUser.id === this.user.id) {
+        await this.loadProfile(this.profileUser.id, this.profileUser.name);
+      }
+      this.setFlash(this.t('spaces.deleteSuccess'));
+    },
+    async deletePost(post) {
+      // Delete a social post and its interaction history.
+      // 删除一篇社交文章及其互动记录。
+      this.clearFeedback();
+      if (!this.token || !post || !post.id) {
+        return;
+      }
+      const label = post.title || post.id;
+      const confirmed = window.confirm(`${this.t('posts.deleteConfirm')}\n${label}`);
+      if (!confirmed) {
+        return;
+      }
+      const res = await fetch(`${this.apiBase}/posts/${post.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        this.setError(this.t('posts.deleteError'));
+        return;
+      }
+      delete this.commentDrafts[post.id];
+      if (this.editPostDraft.id === post.id) {
+        this.editPostDraft = {
+          id: '',
+          title: '',
+          content: '',
+          visibility: 'public',
+          status: 'published',
+          spaceId: '',
+        };
+      }
+      if (this.currentPost && this.currentPost.id === post.id) {
+        this.currentPost = null;
+        this.editPostDraft = {
+          id: '',
+          title: '',
+          content: '',
+          visibility: 'public',
+          status: 'published',
+          spaceId: '',
+        };
+        if (this.view === 'postDetail') {
+          this.view = post.visibility === 'private' ? 'private' : 'public';
+        }
+      }
+      await this.loadPosts();
+      await this.loadPrivatePosts();
+      if (this.view === 'profile' && this.profileUser.id === this.user.id) {
+        await this.loadProfile(this.profileUser.id, this.profileUser.name);
+      }
+      this.setFlash(this.t('posts.deleteSuccess'));
     },
     async loadFriends() {
       // Load friend list from server.
@@ -2192,7 +3155,13 @@ const app = createApp({
         this.friends = data.items.map((item) => ({
           id: item.friend_id,
           name: item.display_name || item.email || item.phone || item.friend_id,
-          secondary: item.email || item.phone || item.friend_id,
+          username: item.username || '',
+          secondary: [
+            item.username ? `@${item.username}` : '',
+            item.email || '',
+            item.phone || '',
+            item.friend_id || '',
+          ].filter(Boolean).join(' · '),
           status: item.status || 'offline',
           direction: item.direction || 'outgoing',
           createdAt: item.created_at || '',
@@ -2227,7 +3196,13 @@ const app = createApp({
         ? data.items.map((item) => ({
             id: item.user_id,
             name: item.display_name || item.email || item.phone || item.user_id,
-            secondary: item.email || item.phone || item.user_id,
+            username: item.username || '',
+            secondary: [
+              item.username ? `@${item.username}` : '',
+              item.email || '',
+              item.phone || '',
+              item.user_id || '',
+            ].filter(Boolean).join(' · '),
             relationStatus: item.relation_status || '',
             direction: item.direction || '',
           }))
@@ -2238,34 +3213,65 @@ const app = createApp({
       // Load chat history for the selected friend.
       // 加载当前好友的历史会话。
       if (!this.token || !friendID) {
+        this.revokeChatMediaUrls();
         this.chatMessages = [];
+        this.chatHistoryAtBottom = true;
         return;
       }
+      this.revokeChatMediaUrls();
       this.chatMessages = [];
+      this.chatHistoryAtBottom = true;
       const params = new URLSearchParams({ peer_id: friendID, limit: '100' });
       const res = await fetch(`${this.messageApiBase}/messages?${params.toString()}`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
       if (!res.ok) {
         this.setError(this.t('chat.loadError'));
+        this.chatHistoryAtBottom = true;
         return;
       }
       const data = await res.json();
-      if (Array.isArray(data.items)) {
-        this.chatMessages = data.items.map((item) => ({
-          // Support snake_case and camelCase message payloads.
-          // 兼容下划线与驼峰字段的消息数据。
-          id: item.id || item.ID,
-          from: item.sender_id || item.SenderID || item.from,
-          content: {
-            'zh-CN': item.content || item.Content || '',
-            'en-US': item.content || item.Content || '',
-          },
-          time: this.formatChatTime(item.created_at || item.CreatedAt || item.createdAt),
-        }));
-      }
-      await this.loadUnread();
-    },
+        if (Array.isArray(data.items)) {
+          this.chatMessages = await Promise.all(
+            data.items.map(async (item) => {
+            // Support snake_case and camelCase message payloads.
+            // 兼容下划线与驼峰字段的消息数据。
+            const messageType = String(
+              item.message_type || item.MessageType || item.messageType || 'text',
+            ).toLowerCase();
+            const mediaName = item.media_name || item.MediaName || '';
+            const mediaMime = item.media_mime || item.MediaMime || '';
+            const mediaData = item.media_data || item.MediaData || '';
+            const mediaUrl = mediaData
+              ? await this.buildChatMediaUrl(
+                  mediaData,
+                  mediaMime,
+                  messageType,
+                  mediaName,
+                )
+              : '';
+            return {
+              id: item.id || item.ID,
+              from: item.sender_id || item.SenderID || item.from,
+              to: item.receiver_id || item.ReceiverID || item.to || '',
+              messageType,
+              content: item.content || item.Content || '',
+              mediaName,
+              mediaMime,
+              mediaData,
+              mediaUrl,
+              readAt: item.read_at || item.ReadAt || item.readAt || '',
+              expiresAt: item.expires_at || item.ExpiresAt || item.expiresAt || '',
+              time: this.formatChatTime(
+                item.created_at || item.CreatedAt || item.createdAt,
+              ),
+              };
+            }),
+          );
+        }
+        this.scrollChatHistoryToBottom(true);
+        await this.loadUnread();
+      },
     async loadConversationSummaries() {
       // Load conversation previews for the current user.
       // 加载当前用户的会话预览列表。
@@ -2282,10 +3288,13 @@ const app = createApp({
       const data = await res.json();
       this.chatSummaries = Array.isArray(data.items)
         ? data.items.map((item) => ({
-            peerId: item.peer_id,
-            lastMessage: item.last_message,
-            lastAt: item.last_at,
-            unreadCount: Number(item.unread_count || 0),
+            peerId: item.peer_id || item.peerId || '',
+            lastMessage: item.last_message || item.lastMessage || '',
+            lastMessageType: item.last_message_type || item.lastMessageType || 'text',
+            lastMessagePreview:
+              item.last_message_preview || item.lastMessagePreview || item.last_message || item.lastMessage || '',
+            lastAt: item.last_at || item.lastAt || '',
+            unreadCount: Number(item.unread_count || item.unreadCount || 0),
           }))
         : [];
     },
@@ -2379,8 +3388,103 @@ const app = createApp({
       }
       this.view = 'chat';
       this.activeChat = friend;
+      this.chatAttachment = null;
       this.chatMessages = [];
+      this.chatHistoryAtBottom = true;
       await this.loadConversation(friend.id);
+    },
+    async pickChatAttachment(messageType) {
+      // Pick, compress, and stage a chat attachment for the active conversation.
+      // 为当前会话选择、压缩并挂载聊天附件。
+      if (!this.activeChat) {
+        this.setError('请先选择聊天对象');
+        return;
+      }
+      const normalizedType = String(messageType || '').toLowerCase().trim();
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept =
+        normalizedType === 'image'
+          ? 'image/*'
+          : normalizedType === 'video'
+          ? 'video/*'
+          : normalizedType === 'audio'
+          ? 'audio/*'
+          : '*/*';
+      input.multiple = false;
+      input.style.display = 'none';
+
+      const selected = await new Promise((resolve) => {
+        const cleanup = () => {
+          input.removeEventListener('change', onChange);
+          window.removeEventListener('focus', onFocus);
+          if (input.parentNode) {
+            input.parentNode.removeChild(input);
+          }
+        };
+        const onChange = async () => {
+          cleanup();
+          const file = input.files && input.files[0] ? input.files[0] : null;
+          if (!file) {
+            resolve(null);
+            return;
+          }
+          try {
+            const rawBytes = new Uint8Array(await file.arrayBuffer());
+            const mime = this.inferAttachmentMime(
+              normalizedType,
+              file.name,
+              file.type || '',
+            );
+            const attachmentType = this.normalizeAttachmentType(
+              normalizedType,
+              mime,
+              file.name,
+            );
+            const compressedBytes = await this.compressAttachmentBytes(rawBytes);
+            resolve({
+              messageType: attachmentType,
+              mediaName: file.name,
+              mediaMime: mime,
+              mediaData: this.bytesToBase64(compressedBytes),
+              originalSizeBytes: rawBytes.length,
+            });
+          } catch (_error) {
+            resolve(null);
+          }
+        };
+        const onFocus = () => {
+          window.setTimeout(() => {
+            if (!input.files || input.files.length === 0) {
+              cleanup();
+              resolve(null);
+            }
+          }, 250);
+        };
+        input.addEventListener('change', onChange);
+        window.addEventListener('focus', onFocus, { once: true });
+        document.body.appendChild(input);
+        input.click();
+      });
+
+      if (!selected) {
+        return;
+      }
+      this.chatAttachment = selected;
+      this.view = 'chat';
+    },
+    clearChatAttachment() {
+      // Clear the staged chat attachment.
+      // 清空已挂载的聊天附件。
+      this.chatAttachment = null;
+    },
+    openChatAttachment(message) {
+      // Open a decoded chat attachment in a new tab.
+      // 在新标签页打开已解码的聊天附件。
+      if (!message || !message.mediaUrl) {
+        return;
+      }
+      window.open(message.mediaUrl, '_blank');
     },
     connectWs() {
       // Create websocket connection.
@@ -2432,12 +3536,22 @@ const app = createApp({
       // Send message to active friend.
       // 发送消息给当前好友。
       this.clearFeedback();
-      if (!this.chatInput.trim() || !this.activeChat) {
+      if (!this.activeChat) {
+        return;
+      }
+      const content = this.chatInput.trim();
+      const attachment = this.chatAttachment;
+      if (!content && !attachment) {
         return;
       }
       const message = {
         peer_id: this.activeChat.id,
-        content: this.chatInput.trim(),
+        content,
+        message_type: attachment?.messageType || 'text',
+        media_name: attachment?.mediaName || '',
+        media_mime: attachment?.mediaMime || '',
+        media_data: attachment?.mediaData || '',
+        expires_in_minutes: attachment ? 7 * 24 * 60 : 0,
       };
       const res = await fetch(`${this.messageApiBase}/messages`, {
         method: 'POST',
@@ -2452,6 +3566,7 @@ const app = createApp({
         return;
       }
       this.chatInput = '';
+      this.chatAttachment = null;
       await this.refreshActiveConversation();
     },
   },
@@ -2478,6 +3593,8 @@ const app = createApp({
       this.theme = savedTheme;
     }
     this.applyTheme();
+    this.activePrivateSpaceId = localStorage.getItem(ACTIVE_PRIVATE_SPACE_KEY) || '';
+    this.activePublicSpaceId = localStorage.getItem(ACTIVE_PUBLIC_SPACE_KEY) || '';
 
     // Load token from storage.
     // 从本地存储读取 token。
@@ -2485,19 +3602,25 @@ const app = createApp({
     if (stored) {
       this.token = stored;
       this.view = 'dashboard';
-      this.loadMe().then(() => {
-        this.loadSpaces();
-        this.loadSubscription();
-        this.loadExternalAccounts();
-        this.loadPosts();
-        this.loadPrivatePosts();
-        return this.loadFriends();
-      }).then(() => {
-        this.loadConversationSummaries();
+      this.loadMe().then(async () => {
+        if (!this.token) {
+          return;
+        }
+        await this.loadSpaces();
+        await this.loadSubscription();
+        await this.loadExternalAccounts();
+        await this.loadPosts();
+        await this.loadPrivatePosts();
+        await this.loadFriends();
+        await this.loadConversationSummaries();
         if (this.activeChat) {
-          this.loadConversation(this.activeChat.id);
+          await this.loadConversation(this.activeChat.id);
         } else {
-          this.loadUnread();
+          await this.loadUnread();
+        }
+        const routedToProfile = await this.applyHostRouteFromHost();
+        if (!routedToProfile) {
+          this.view = 'dashboard';
         }
       });
     }
@@ -2505,6 +3628,7 @@ const app = createApp({
   },
   beforeUnmount() {
     document.removeEventListener('click', this.handleDocumentClick);
+    this.revokeChatMediaUrls();
   },
 });
 

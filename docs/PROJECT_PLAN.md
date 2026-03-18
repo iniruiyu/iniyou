@@ -69,6 +69,8 @@
 - 列表页
 - 详情页
 - 表单页
+- 空间进入与空间上下文页
+- 空间创建与发布弹窗
 - 全局导航与响应式布局规则
 
 ## 5. 后端规划
@@ -122,9 +124,12 @@
 
 - 用户注册与登录
 - 用户基础资料
+- 空间创建、进入与空间内内容发布
 - 文章发布与浏览
 - 点赞、评论、转发
 - 基础聊天
+- 聊天媒体附件、未读角标与好友提醒
+- 聊天全屏布局、历史滚动、回到底部按钮与表情/贴纸快捷插入
 
 ### 6.2 第二阶段：资产与权益
 
@@ -156,6 +161,7 @@
 - 点赞
 - 评论
 - 转发
+- 空间创建、空间进入与空间内内容浏览
 
 ### 7.3 后续扩展
 
@@ -239,3 +245,10 @@ new-project/
 
 - 2026-03-17：同步双前端导航与个人主页结构调整 / Synced dual-frontend navigation and profile structure updates.
 - 2026-03-17：收敛首批语言范围并保留 RTL 扩展 / Reduced built-in language scope while reserving RTL extension.
+- 2026-03-18：补充空间子域名、空间上下文与弹窗式创建路径 / Added space subdomain, active space context, and modal-based creation flow.
+- 2026-03-18：补充空间改名、改域名、删除与文章删除能力 / Added space rename, subdomain change, deletion, and post deletion capabilities.
+- 2026-03-18：启动聊天媒体附件、过期清理与双端提醒布局优化 / Started chat media attachments, expiry cleanup, and dual-end reminder layout refinement.
+- 2026-03-18：完成聊天全屏布局、历史滚动与表情/贴纸快捷入口 / Completed full-screen chat layout, history scrolling, and emoji/sticker quick-entry support.
+- 2026-03-18：补充 Vue 聊天页全高壳层，避免长消息列表遮挡发送按钮 / Added a full-height Vue chat shell to keep the send box visible with long histories.
+- 2026-03-18：补充 Vue 聊天页回到底部浮动按钮并美化滚动条 / Added a back-to-bottom floating button and polished the chat scrollbar in the Vue view.
+- 2026-03-18：补充用户名作为个人主页与二级域名入口的统一句柄 / Added username as the unified handle for profile and subdomain routing.

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"regexp"
@@ -16,9 +17,11 @@ import (
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
 var (
-	evmAddressPattern    = regexp.MustCompile(`^0x[0-9a-fA-F]{40}$`)
-	solanaAddressPattern = regexp.MustCompile(`^[1-9A-HJ-NP-Za-km-z]{32,44}$`)
-	tronAddressPattern   = regexp.MustCompile(`^T[1-9A-HJ-NP-Za-km-z]{33}$`)
+	evmAddressPattern     = regexp.MustCompile(`^0x[0-9a-fA-F]{40}$`)
+	solanaAddressPattern  = regexp.MustCompile(`^[1-9A-HJ-NP-Za-km-z]{32,44}$`)
+	tronAddressPattern    = regexp.MustCompile(`^T[1-9A-HJ-NP-Za-km-z]{33}$`)
+	spaceSubdomainPattern = regexp.MustCompile(`^[a-z0-9]+$`)
+	usernamePattern       = regexp.MustCompile(`^[a-z0-9]+$`)
 )
 
 type FriendView struct {
@@ -26,6 +29,7 @@ type FriendView struct {
 	// 提供给接口层使用的好友关系视图。
 	FriendID    string    `json:"friend_id"`
 	DisplayName string    `json:"display_name"`
+	Username    string    `json:"username,omitempty"`
 	Email       *string   `json:"email"`
 	Phone       *string   `json:"phone"`
 	Status      string    `json:"status"`
@@ -38,6 +42,7 @@ type UserSearchView struct {
 	// 用于添加好友的用户搜索结果。
 	UserID         string  `json:"user_id"`
 	DisplayName    string  `json:"display_name"`
+	Username       string  `json:"username,omitempty"`
 	Email          *string `json:"email"`
 	Phone          *string `json:"phone"`
 	RelationStatus string  `json:"relation_status,omitempty"`
@@ -49,6 +54,7 @@ type PublicUserProfileView struct {
 	// 面向作者主页的公开用户资料。
 	UserID         string  `json:"user_id"`
 	DisplayName    string  `json:"display_name"`
+	Username       string  `json:"username,omitempty"`
 	Email          *string `json:"email"`
 	Phone          *string `json:"phone"`
 	Status         string  `json:"status"`
@@ -87,6 +93,21 @@ func GetUser(db *gorm.DB, userID string) (models.User, error) {
 	return user, nil
 }
 
+func GetUserByUsername(db *gorm.DB, username string) (models.User, error) {
+	// Fetch user by username.
+	// 根据用户名获取用户信息。
+	username = strings.ToLower(strings.TrimSpace(username))
+	if username == "" {
+		return models.User{}, gorm.ErrRecordNotFound
+	}
+
+	var user models.User
+	if err := db.First(&user, "LOWER(COALESCE(username, '')) = ?", username).Error; err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}
+
 func Register(db *gorm.DB, email string, phone string, password string) (models.User, error) {
 	// Register a new user with email or phone.
 	// 使用邮箱或手机号注册新用户。
@@ -112,17 +133,21 @@ func Register(db *gorm.DB, email string, phone string, password string) (models.
 		user.Phone = &phone
 	}
 
-	// Create user and default spaces in a transaction.
-	// 在事务内创建用户及默认空间。
+	// Create the user record in a transaction.
+	// 在事务内创建用户记录。
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&user).Error; err != nil {
 			return err
 		}
-		defaultSpaces := []models.Space{
-			{UserID: user.ID, Type: "private", Name: "我的私人空间", Description: "默认私人空间"},
-			{UserID: user.ID, Type: "public", Name: "我的公共空间", Description: "默认公共空间"},
+		username, err := buildUserUsername(tx, user.ID, "")
+		if err != nil {
+			return err
 		}
-		return tx.Create(&defaultSpaces).Error
+		if err := tx.Model(&user).Update("username", username).Error; err != nil {
+			return err
+		}
+		user.Username = &username
+		return nil
 	}); err != nil {
 		return models.User{}, err
 	}
@@ -130,13 +155,17 @@ func Register(db *gorm.DB, email string, phone string, password string) (models.
 }
 
 func Login(db *gorm.DB, account string, password string) (models.User, error) {
-	// Login using email or phone + password.
-	// 使用邮箱或手机号 + 密码登录。
+	// Login using email, phone, or username + password.
+	// 使用邮箱、手机号或用户名 + 密码登录。
 	if account == "" || password == "" {
 		return models.User{}, ErrInvalidCredentials
 	}
+	normalizedUsername := strings.ToLower(strings.TrimSpace(account))
 	var user models.User
-	if err := db.Where("email = ?", account).Or("phone = ?", account).First(&user).Error; err != nil {
+	if err := db.Where("email = ?", account).
+		Or("phone = ?", account).
+		Or("LOWER(COALESCE(username, '')) = ?", normalizedUsername).
+		First(&user).Error; err != nil {
 		return models.User{}, ErrInvalidCredentials
 	}
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
@@ -145,31 +174,205 @@ func Login(db *gorm.DB, account string, password string) (models.User, error) {
 	return user, nil
 }
 
-func UpdateProfile(db *gorm.DB, userID string, displayName string) (models.User, error) {
-	// Update user profile fields.
-	// 更新用户资料字段。
+func UpdateProfile(db *gorm.DB, userID string, displayName string, username string) (models.User, error) {
+	// Update user profile fields, including the user handle.
+	// 更新用户资料字段，并同步用户用户名。
 	displayName = strings.TrimSpace(displayName)
 	if displayName == "" {
 		return models.User{}, errors.New("display name required")
 	}
-	if err := db.Model(&models.User{}).Where("id = ?", userID).Update("display_name", displayName).Error; err != nil {
+	var user models.User
+	if err := db.First(&user, "id = ?", userID).Error; err != nil {
+		return models.User{}, err
+	}
+
+	username = strings.TrimSpace(username)
+	if username == "" {
+		if user.Username != nil && strings.TrimSpace(*user.Username) != "" {
+			username = strings.TrimSpace(*user.Username)
+		} else {
+			username = ""
+		}
+	}
+
+	resolvedUsername := ""
+	if username != "" {
+		var err error
+		resolvedUsername, err = normalizeAndValidateUsername(db, username, userID)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
+
+	updates := map[string]any{
+		"display_name": displayName,
+	}
+	if resolvedUsername != "" {
+		updates["username"] = resolvedUsername
+	}
+	if err := db.Model(&models.User{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
 		return models.User{}, err
 	}
 	return GetUser(db, userID)
 }
 
-func CreateSpace(db *gorm.DB, userID string, spaceType string, name string, desc string) (models.Space, error) {
+func normalizeHostLabel(value string) string {
+	// Convert arbitrary text into a lowercase alphanumeric host label.
+	// 将任意文本转换为小写英数字主机标识。
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return ""
+	}
+
+	var builder strings.Builder
+	for _, r := range value {
+		switch {
+		case r >= 'a' && r <= 'z':
+			builder.WriteRune(r)
+		case r >= '0' && r <= '9':
+			builder.WriteRune(r)
+		}
+	}
+
+	label := strings.TrimSpace(builder.String())
+	if label == "" {
+		return ""
+	}
+	return label
+}
+
+func buildUniqueHostLabel(db *gorm.DB, base string, excludeUserID string, excludeSpaceID string) (string, error) {
+	// Generate a unique host label within the shared user/space namespace.
+	// 在用户与空间共享的命名空间中生成唯一主机标识。
+	base = normalizeHostLabel(base)
+	if base == "" {
+		return "", errors.New("host label required")
+	}
+	if len(base) > 63 {
+		base = base[:63]
+	}
+
+	available, err := isHostLabelAvailable(db, base, excludeUserID, excludeSpaceID)
+	if err != nil {
+		return "", err
+	}
+	if available {
+		return base, nil
+	}
+
+	prefix := base
+	if len(prefix) > 57 {
+		prefix = prefix[:57]
+	}
+	for attempt := 0; attempt < 8; attempt++ {
+		suffix, err := randomHexString(3)
+		if err != nil {
+			return "", err
+		}
+		candidate := prefix + suffix
+		if len(candidate) > 63 {
+			candidate = candidate[:63]
+		}
+		available, err := isHostLabelAvailable(db, candidate, excludeUserID, excludeSpaceID)
+		if err != nil {
+			return "", err
+		}
+		if available {
+			return candidate, nil
+		}
+	}
+	return "", errors.New("failed to generate host label")
+}
+
+func isHostLabelAvailable(db *gorm.DB, label string, excludeUserID string, excludeSpaceID string) (bool, error) {
+	// Check whether a username or space subdomain is already in use.
+	// 检查用户名或空间二级域名是否已被占用。
+	var userCount int64
+	userQuery := db.Model(&models.User{}).Where("LOWER(COALESCE(username, '')) = ?", label)
+	if excludeUserID != "" {
+		userQuery = userQuery.Where("id <> ?", excludeUserID)
+	}
+	if err := userQuery.Count(&userCount).Error; err != nil {
+		return false, err
+	}
+	if userCount > 0 {
+		return false, nil
+	}
+
+	var spaceCount int64
+	spaceQuery := db.Model(&models.Space{}).Where("subdomain = ?", label)
+	if excludeSpaceID != "" {
+		spaceQuery = spaceQuery.Where("id <> ?", excludeSpaceID)
+	}
+	if err := spaceQuery.Count(&spaceCount).Error; err != nil {
+		return false, err
+	}
+	return spaceCount == 0, nil
+}
+
+func normalizeAndValidateUsername(db *gorm.DB, requested string, excludeUserID string) (string, error) {
+	// Normalize a requested username and ensure it is available.
+	// 规范化请求的用户名并检查是否可用。
+	requested = strings.ToLower(strings.TrimSpace(requested))
+	if requested == "" {
+		return "", errors.New("username required")
+	}
+	if len(requested) > 63 {
+		return "", errors.New("username too long")
+	}
+	if !usernamePattern.MatchString(requested) {
+		return "", errors.New("username may only contain letters and numbers")
+	}
+	available, err := isHostLabelAvailable(db, requested, excludeUserID, "")
+	if err != nil {
+		return "", err
+	}
+	if !available {
+		return "", errors.New("username already exists")
+	}
+	return requested, nil
+}
+
+func buildUserUsername(db *gorm.DB, userID string, seed string) (string, error) {
+	// Build a stable username for a user and keep it unique across host labels.
+	// 为用户构建稳定用户名，并确保与主机标识命名空间唯一。
+	base := normalizeHostLabel(seed)
+	if base == "" {
+		base = "u" + normalizeHostLabel(strings.ReplaceAll(userID, "-", ""))
+	}
+	if base == "" {
+		base = "user"
+	}
+	return buildUniqueHostLabel(db, base, userID, "")
+}
+
+func CreateSpace(db *gorm.DB, userID string, spaceType string, name string, desc string, subdomain string) (models.Space, error) {
 	// Create a private/public space for a user.
 	// 为用户创建私人/公共空间。
 	spaceType = strings.ToLower(strings.TrimSpace(spaceType))
 	name = strings.TrimSpace(name)
+	desc = strings.TrimSpace(desc)
 	if spaceType != "private" && spaceType != "public" {
 		return models.Space{}, errors.New("space type must be private or public")
 	}
 	if name == "" {
 		return models.Space{}, errors.New("space name required")
 	}
-	space := models.Space{UserID: userID, Type: spaceType, Name: name, Description: desc}
+
+	resolvedSubdomain, err := buildSpaceSubdomain(db, userID, spaceType, name, subdomain)
+	if err != nil {
+		return models.Space{}, err
+	}
+
+	space := models.Space{
+		UserID:      userID,
+		Type:        spaceType,
+		Source:      "user",
+		Subdomain:   resolvedSubdomain,
+		Name:        name,
+		Description: desc,
+		Status:      "active",
+	}
 	if err := db.Create(&space).Error; err != nil {
 		return models.Space{}, err
 	}
@@ -180,15 +383,207 @@ func ListSpaces(db *gorm.DB, userID string) ([]models.Space, error) {
 	// List spaces of a user.
 	// 列出用户的空间。
 	var spaces []models.Space
-	if err := db.Where("user_id = ?", userID).Find(&spaces).Error; err != nil {
+	if err := db.Where("user_id = ? AND COALESCE(source, '') <> ?", userID, "system").Order("created_at asc").Find(&spaces).Error; err != nil {
 		return nil, err
 	}
 	return spaces, nil
 }
 
+func buildSpaceSubdomain(db *gorm.DB, userID string, spaceType string, name string, requested string) (string, error) {
+	// Normalize or generate a stable subdomain for a space.
+	// 为空间规范化或生成稳定的二级域名。
+	requested = strings.ToLower(strings.TrimSpace(requested))
+	if requested != "" {
+		if len(requested) > 63 {
+			return "", errors.New("space subdomain too long")
+		}
+		if !spaceSubdomainPattern.MatchString(requested) {
+			return "", errors.New("space subdomain may only contain letters and numbers")
+		}
+		available, err := isSpaceSubdomainAvailable(db, requested, "")
+		if err != nil {
+			return "", err
+		}
+		if !available {
+			return "", errors.New("space subdomain already exists")
+		}
+		return requested, nil
+	}
+
+	base := normalizeSpaceSubdomain(name)
+	if base == "" {
+		base = normalizeSpaceSubdomain(spaceType)
+	}
+	if base == "" {
+		base = "space"
+	}
+	if len(base) > 57 {
+		base = base[:57]
+	}
+
+	for attempt := 0; attempt < 8; attempt++ {
+		suffix, err := randomHexString(3)
+		if err != nil {
+			return "", err
+		}
+		candidate := fmt.Sprintf("%s%s", base, suffix)
+		available, err := isSpaceSubdomainAvailable(db, candidate, "")
+		if err != nil {
+			return "", err
+		}
+		if available {
+			return candidate, nil
+		}
+	}
+
+	return "", errors.New("failed to generate space subdomain")
+}
+
+func normalizeSpaceSubdomain(value string) string {
+	// Convert free-form text into a lowercase alphanumeric slug.
+	// 将自由文本转换为小写的英文字母和数字 slug。
+	return normalizeHostLabel(value)
+}
+
+func randomHexString(byteCount int) (string, error) {
+	// Generate a short random hex suffix for subdomain uniqueness.
+	// 生成用于二级域名唯一化的短随机十六进制后缀。
+	if byteCount < 1 {
+		byteCount = 1
+	}
+	buf := make([]byte, byteCount)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", buf), nil
+}
+
+func isSpaceSubdomainAvailable(db *gorm.DB, subdomain string, excludeSpaceID string) (bool, error) {
+	// Check whether a subdomain is already in use.
+	// 检查二级域名是否已经被占用。
+	return isHostLabelAvailable(db, subdomain, "", excludeSpaceID)
+}
+
+func firstSpaceByType(db *gorm.DB, userID string, spaceType string) (models.Space, error) {
+	// Load the earliest space of a specific type for fallback usage.
+	// 加载指定类型的最早空间，作为回退选择。
+	var space models.Space
+	if err := db.Where("user_id = ? AND type = ? AND COALESCE(source, '') <> ?", userID, spaceType, "system").Order("created_at asc").First(&space).Error; err != nil {
+		return models.Space{}, err
+	}
+	return space, nil
+}
+
+func loadOwnedSpaceByID(db *gorm.DB, userID string, spaceID string) (models.Space, error) {
+	// Load a space owned by the current user.
+	// 加载当前用户拥有的空间。
+	var space models.Space
+	if err := db.Where("id = ? AND user_id = ?", spaceID, userID).First(&space).Error; err != nil {
+		return models.Space{}, err
+	}
+	return space, nil
+}
+
+func UpdateSpace(db *gorm.DB, userID string, spaceID string, name string, desc string, subdomain string) (models.Space, error) {
+	// Update an existing space owned by the current user.
+	// 更新当前用户拥有的空间。
+	name = strings.TrimSpace(name)
+	desc = strings.TrimSpace(desc)
+	subdomain = strings.TrimSpace(subdomain)
+	if name == "" {
+		return models.Space{}, errors.New("space name required")
+	}
+	if subdomain == "" {
+		return models.Space{}, errors.New("space subdomain required")
+	}
+
+	var space models.Space
+	if err := db.First(&space, "id = ? AND user_id = ?", spaceID, userID).Error; err != nil {
+		return models.Space{}, err
+	}
+
+	resolvedSubdomain, err := normalizeAndValidateSpaceSubdomain(db, subdomain, space.ID)
+	if err != nil {
+		return models.Space{}, err
+	}
+
+	updates := map[string]any{
+		"name":        name,
+		"description": desc,
+		"subdomain":   resolvedSubdomain,
+		"updated_at":  time.Now(),
+	}
+	if err := db.Model(&space).Updates(updates).Error; err != nil {
+		return models.Space{}, err
+	}
+	if err := db.First(&space, "id = ?", space.ID).Error; err != nil {
+		return models.Space{}, err
+	}
+	return space, nil
+}
+
+func normalizeAndValidateSpaceSubdomain(db *gorm.DB, requested string, excludeSpaceID string) (string, error) {
+	// Normalize a requested subdomain and ensure it is available.
+	// 规范化请求的二级域名并检查是否可用。
+	requested = strings.ToLower(strings.TrimSpace(requested))
+	if requested == "" {
+		return "", errors.New("space subdomain required")
+	}
+	if len(requested) > 63 {
+		return "", errors.New("space subdomain too long")
+	}
+	if !spaceSubdomainPattern.MatchString(requested) {
+		return "", errors.New("space subdomain may only contain letters and numbers")
+	}
+	available, err := isHostLabelAvailable(db, requested, "", excludeSpaceID)
+	if err != nil {
+		return "", err
+	}
+	if !available {
+		return "", errors.New("space subdomain already exists")
+	}
+	return requested, nil
+}
+
+func DeleteSpace(db *gorm.DB, userID string, spaceID string) error {
+	// Delete one owned space and all its posts.
+	// 删除一个空间及其下属全部文章。
+	return db.Transaction(func(tx *gorm.DB) error {
+		var space models.Space
+		if err := tx.First(&space, "id = ? AND user_id = ?", spaceID, userID).Error; err != nil {
+			return err
+		}
+
+		var posts []models.Post
+		if err := tx.Select("id").Where("space_id = ? AND user_id = ?", spaceID, userID).Find(&posts).Error; err != nil {
+			return err
+		}
+		postIDs := make([]string, 0, len(posts))
+		for _, post := range posts {
+			postIDs = append(postIDs, post.ID)
+		}
+		if err := deletePostCascade(tx, postIDs); err != nil {
+			return err
+		}
+		if err := tx.Delete(&space).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func MarkLegacySystemSpaces(db *gorm.DB) error {
+	// Mark legacy seeded spaces by their original name and subdomain pattern.
+	// 按旧版默认名称和二级域名特征标记历史种子空间。
+	return db.Model(&models.Space{}).
+		Where("((name = ? AND subdomain LIKE ?) OR (name = ? AND subdomain LIKE ?))",
+			"我的私人空间", "private-%", "我的公共空间", "public-%").
+		Update("source", "system").Error
+}
+
 func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSearchView, error) {
-	// Search users by display name, email, phone, or user id.
-	// 按展示名、邮箱、手机号或用户 ID 搜索用户。
+	// Search users by display name, username, email, phone, or user id.
+	// 按展示名、用户名、邮箱、手机号或用户 ID 搜索用户。
 	query = strings.TrimSpace(query)
 	if query == "" {
 		return []UserSearchView{}, nil
@@ -202,11 +597,11 @@ func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSea
 
 	likeQuery := "%" + strings.ToLower(query) + "%"
 	var users []models.User
-	if err := db.Select("id", "display_name", "email", "phone").
+	if err := db.Select("id", "display_name", "username", "email", "phone").
 		Where("id <> ?", userID).
 		Where(
-			"LOWER(display_name) LIKE ? OR LOWER(COALESCE(email, '')) LIKE ? OR LOWER(COALESCE(phone, '')) LIKE ? OR CAST(id AS TEXT) LIKE ?",
-			likeQuery, likeQuery, likeQuery, "%"+query+"%",
+			"LOWER(display_name) LIKE ? OR LOWER(COALESCE(username, '')) LIKE ? OR LOWER(COALESCE(email, '')) LIKE ? OR LOWER(COALESCE(phone, '')) LIKE ? OR CAST(id AS TEXT) LIKE ?",
+			likeQuery, likeQuery, likeQuery, likeQuery, "%"+query+"%",
 		).
 		Order("created_at desc").
 		Limit(limit).
@@ -242,6 +637,7 @@ func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSea
 		item := UserSearchView{
 			UserID:      user.ID,
 			DisplayName: user.DisplayName,
+			Username:    stringValue(user.Username),
 			Email:       user.Email,
 			Phone:       user.Phone,
 		}
@@ -268,6 +664,7 @@ func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (Pu
 	view := PublicUserProfileView{
 		UserID:      user.ID,
 		DisplayName: fallbackDisplayName(user),
+		Username:    stringValue(user.Username),
 		Email:       user.Email,
 		Phone:       user.Phone,
 		Status:      user.Status,
@@ -291,6 +688,35 @@ func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (Pu
 		return PublicUserProfileView{}, err
 	}
 	return view, nil
+}
+
+func GetPublicUserProfileByUsername(db *gorm.DB, viewerID string, username string) (PublicUserProfileView, error) {
+	// Load a user's public profile by username.
+	// 根据用户名加载用户公开资料。
+	user, err := GetUserByUsername(db, username)
+	if err != nil {
+		return PublicUserProfileView{}, err
+	}
+	return GetPublicUserProfile(db, viewerID, user.ID)
+}
+
+func EnsureUserUsernames(db *gorm.DB) error {
+	// Backfill usernames for users that do not have one yet.
+	// 为尚未设置用户名的用户回填默认用户名。
+	var users []models.User
+	if err := db.Where("COALESCE(username, '') = ''").Order("created_at asc").Find(&users).Error; err != nil {
+		return err
+	}
+	for _, user := range users {
+		username, err := buildUserUsername(db, user.ID, fallbackDisplayName(user))
+		if err != nil {
+			return err
+		}
+		if err := db.Model(&models.User{}).Where("id = ?", user.ID).Update("username", username).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func AddFriend(db *gorm.DB, userID string, friendID string, account string) (models.Friend, error) {
@@ -337,7 +763,7 @@ func resolveFriendID(db *gorm.DB, userID string, friendID string, account string
 	}
 
 	var user models.User
-	if err := db.Select("id").Where("id = ? OR email = ? OR phone = ?", lookup, lookup, lookup).First(&user).Error; err != nil {
+	if err := db.Select("id").Where("id = ? OR email = ? OR phone = ? OR LOWER(COALESCE(username, '')) = ?", lookup, lookup, lookup, strings.ToLower(lookup)).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", errors.New("friend account not found")
 		}
@@ -375,8 +801,9 @@ func ListFriends(db *gorm.DB, userID string) ([]FriendView, error) {
 		}
 
 		var friendUser models.User
-		if err := db.Select("id", "display_name", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
+		if err := db.Select("id", "display_name", "username", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
 			item.DisplayName = friendUser.DisplayName
+			item.Username = stringValue(friendUser.Username)
 			item.Email = friendUser.Email
 			item.Phone = friendUser.Phone
 		}
@@ -571,6 +998,15 @@ func RemoveExternalAccount(db *gorm.DB, userID string, externalAccountID string)
 		"binding_status": "revoked",
 		"updated_at":     time.Now(),
 	}).Error
+}
+
+func stringValue(value *string) string {
+	// Safely unwrap a nullable string pointer.
+	// 安全解包可空字符串指针。
+	if value == nil {
+		return ""
+	}
+	return strings.TrimSpace(*value)
 }
 
 func normalizeExternalAccountBinding(provider string, chain string, accountAddress string, signaturePayload string) (string, string, string, string, string, error) {

@@ -1,5 +1,10 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:archive/archive.dart';
+
+import '../controllers/chat_media_actions.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import '../widgets/app_cards.dart';
@@ -15,6 +20,7 @@ class ProfileView extends StatelessWidget {
     required this.subscription,
     required this.connectedChains,
     required this.displayNameController,
+    required this.usernameController,
     required this.loading,
     required this.commentControllerFor,
     required this.profileTab,
@@ -29,6 +35,7 @@ class ProfileView extends StatelessWidget {
     required this.onToggleLike,
     required this.onSharePost,
     required this.onCommentPost,
+    required this.onDeletePost,
     required this.onOpenProfile,
     required this.onOpenPostDetail,
     required this.t,
@@ -40,6 +47,7 @@ class ProfileView extends StatelessWidget {
   final SubscriptionItem? subscription;
   final List<String> connectedChains;
   final TextEditingController displayNameController;
+  final TextEditingController usernameController;
   final bool loading;
   final TextEditingController Function(String postId) commentControllerFor;
   // Current profile tab.
@@ -64,6 +72,7 @@ class ProfileView extends StatelessWidget {
   final ValueChanged<PostItem> onToggleLike;
   final ValueChanged<PostItem> onSharePost;
   final ValueChanged<PostItem> onCommentPost;
+  final ValueChanged<PostItem> onDeletePost;
   final ValueChanged<String> onOpenProfile;
   final ValueChanged<String> onOpenPostDetail;
   final String Function(String key) t;
@@ -79,10 +88,9 @@ class ProfileView extends StatelessWidget {
     final hasBlockchain = connectedChains.isNotEmpty;
     // Ensure blockchain tab is hidden when there are no accounts.
     // 链上账号为空时隐藏对应选项卡。
-    final effectiveTab =
-        !hasBlockchain && profileTab == ProfileTab.blockchain
-            ? ProfileTab.levels
-            : profileTab;
+    final effectiveTab = !hasBlockchain && profileTab == ProfileTab.blockchain
+        ? ProfileTab.levels
+        : profileTab;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -90,6 +98,7 @@ class ProfileView extends StatelessWidget {
           title: profile.displayName,
           lines: [
             '用户 ID: ${profile.id}',
+            if (profile.username.isNotEmpty) '用户名: @${profile.username}',
             if (profile.email.isNotEmpty) '邮箱: ${profile.email}',
             if (profile.phone.isNotEmpty) '手机号: ${profile.phone}',
             '状态: ${profile.status}',
@@ -110,18 +119,32 @@ class ProfileView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('更新展示名', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    '更新资料 / Update profile',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: displayNameController,
                     decoration: const InputDecoration(
-                      labelText: 'Display name',
+                      labelText: 'Display name / 展示名称',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: usernameController,
+                    // Username handle / 用户名句柄：需要与子域名路由保持一致。
+                    maxLength: 63,
+                    decoration: const InputDecoration(
+                      labelText: 'Username / 用户名',
+                      helperText:
+                          'Letters and numbers only, up to 63 characters / 仅允许英文字母和数字，长度不超过 63',
                     ),
                   ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: loading ? null : onSaveProfile,
-                    child: const Text('保存'),
+                    child: const Text('保存 / Save'),
                   ),
                 ],
               ),
@@ -152,7 +175,9 @@ class ProfileView extends StatelessWidget {
           ),
         const SizedBox(height: 16),
         Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Wrap(
@@ -237,6 +262,7 @@ class ProfileView extends StatelessWidget {
           onOpenAuthor: onOpenProfile,
           onOpenDetail: onOpenPostDetail,
           canEditPost: (post) => user != null && post.userId == user!.id,
+          onDeletePost: onDeletePost,
         ),
       ],
     );
@@ -261,6 +287,7 @@ class PostDetailView extends StatelessWidget {
     required this.onComment,
     required this.onOpenAuthor,
     required this.onSaveEdits,
+    this.onDeletePost,
   });
 
   final CurrentUser? user;
@@ -278,6 +305,7 @@ class PostDetailView extends StatelessWidget {
   final VoidCallback onComment;
   final VoidCallback onOpenAuthor;
   final VoidCallback onSaveEdits;
+  final VoidCallback? onDeletePost;
 
   @override
   Widget build(BuildContext context) {
@@ -297,6 +325,7 @@ class PostDetailView extends StatelessWidget {
           onShare: onShare,
           onComment: onComment,
           onOpenAuthor: onOpenAuthor,
+          onDelete: isOwnPost ? onDeletePost : null,
         ),
         const SizedBox(height: 16),
         if (isOwnPost)
@@ -528,11 +557,15 @@ class ChatView extends StatelessWidget {
     required this.acceptedFriends,
     required this.conversations,
     required this.messages,
+    required this.pendingFriendCount,
+    required this.chatAttachment,
     required this.chatComposerController,
     required this.loading,
     required this.findFriend,
     required this.onStartChat,
     required this.onSendMessage,
+    required this.onPickAttachment,
+    required this.onClearAttachment,
   });
 
   final double width;
@@ -541,24 +574,77 @@ class ChatView extends StatelessWidget {
   final List<FriendItem> acceptedFriends;
   final List<ConversationItem> conversations;
   final List<ChatMessage> messages;
+  final int pendingFriendCount;
+  final ChatAttachmentDraft? chatAttachment;
   final TextEditingController chatComposerController;
   final bool loading;
   final FriendItem? Function(String id) findFriend;
   final ValueChanged<FriendItem> onStartChat;
   final VoidCallback onSendMessage;
+  final Future<void> Function(String messageType) onPickAttachment;
+  final VoidCallback onClearAttachment;
 
   @override
   Widget build(BuildContext context) {
     final compact = width < 1100;
-    final listPane = Card(
+    final listPane = _buildListPane(context);
+    final chatPane = _buildChatPane(context);
+
+    if (compact) {
+      return Column(children: [listPane, const SizedBox(height: 16), chatPane]);
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(width: 380, child: listPane),
+        const SizedBox(width: 16),
+        Expanded(child: chatPane),
+      ],
+    );
+  }
+
+  Widget _buildListPane(BuildContext context) {
+    final totalUnread = conversations.fold<int>(
+      0,
+      (sum, item) => sum + item.unreadCount,
+    );
+    return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('最近会话', style: Theme.of(context).textTheme.titleLarge),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '最近会话',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                if (totalUnread > 0)
+                  Badge(
+                    isLabelVisible: true,
+                    label: Text(totalUnread > 99 ? '99+' : '$totalUnread'),
+                    child: const Icon(Icons.mark_chat_unread_outlined),
+                  ),
+              ],
+            ),
             const SizedBox(height: 12),
+            if (pendingFriendCount > 0)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text('有 $pendingFriendCount 个好友请求待处理。'),
+              ),
+            if (pendingFriendCount > 0) const SizedBox(height: 12),
             if (conversations.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(bottom: 12),
@@ -569,21 +655,44 @@ class ChatView extends StatelessWidget {
               if (friend == null) {
                 return const SizedBox.shrink();
               }
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(friend.displayName),
-                subtitle: Text(item.lastMessage),
-                trailing: item.unreadCount > 0
-                    ? CircleAvatar(
-                        radius: 12,
-                        child: Text('${item.unreadCount}'),
-                      )
-                    : null,
-                onTap: () => onStartChat(friend),
+              final isSelected = activeChat?.id == friend.id;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.transparent,
+                  ),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 4,
+                  ),
+                  title: Text(friend.displayName),
+                  subtitle: Text(
+                    item.lastMessagePreview.isNotEmpty
+                        ? item.lastMessagePreview
+                        : item.lastMessage,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: item.hasUnread
+                      ? CircleAvatar(
+                          radius: 12,
+                          child: Text('${item.unreadCount}'),
+                        )
+                      : null,
+                  selected: isSelected,
+                  onTap: () => onStartChat(friend),
+                ),
               );
             }),
             const Divider(height: 24),
             Text('好友', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
             ...acceptedFriends.map(
               (friend) => ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -597,21 +706,51 @@ class ChatView extends StatelessWidget {
         ),
       ),
     );
+  }
 
-    final chatPane = Card(
+  Widget _buildChatPane(BuildContext context) {
+    final mediaAttachment = chatAttachment;
+    final height = width < 1100 ? 420.0 : 520.0;
+    return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              activeChat?.displayName ?? '选择一个好友开始聊天',
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activeChat?.displayName ?? '选择一个好友开始聊天',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        activeChat?.secondary ?? '选择左侧好友后会加载历史消息。',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                if (activeChat != null)
+                  FilledButton.tonal(
+                    onPressed: () => onStartChat(activeChat!),
+                    child: const Text('刷新会话'),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
+            if (mediaAttachment != null) ...[
+              _buildAttachmentDraft(context, mediaAttachment),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
-              height: 460,
+              height: height,
               child: activeChat == null
                   ? const Center(child: Text('选择左侧好友后会加载历史消息并接入 WebSocket。'))
                   : ListView.separated(
@@ -624,28 +763,62 @@ class ChatView extends StatelessWidget {
                           alignment: mine
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 420),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: mine
-                                  ? const Color(0xFF1D6F87)
-                                  : const Color(0xFF192535),
-                              borderRadius: BorderRadius.circular(16),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: width < 1100 ? width * 0.82 : 460,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item.content),
-                                const SizedBox(height: 6),
-                                Text(
-                                  item.createdAtLabel,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white70,
-                                  ),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: mine
+                                    ? const Color(0xFF1D6F87)
+                                    : const Color(0xFF192535),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: mine
+                                      ? const Color(
+                                          0xFF2FD0FF,
+                                        ).withValues(alpha: 0.4)
+                                      : Colors.white10,
                                 ),
-                              ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (item.hasMedia) ...[
+                                    _buildMediaMessage(context, item),
+                                    if (item.content.isNotEmpty)
+                                      const SizedBox(height: 10),
+                                  ],
+                                  if (item.content.isNotEmpty)
+                                    Text(
+                                      item.content,
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 4,
+                                    children: [
+                                      Text(
+                                        item.createdAtLabel,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      if (item.expiresAt != null)
+                                        Text(
+                                          '临时消息 · ${formatDateTime(item.expiresAt!)} 自动删除',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -653,37 +826,189 @@ class ChatView extends StatelessWidget {
                     ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: chatComposerController,
-                    decoration: const InputDecoration(labelText: '输入消息'),
-                    onSubmitted: (_) => onSendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: loading ? null : onSendMessage,
-                  child: const Text('发送'),
-                ),
-              ],
-            ),
+            _buildComposer(context, mediaAttachment),
           ],
         ),
       ),
     );
+  }
 
-    if (compact) {
-      return Column(children: [listPane, const SizedBox(height: 16), chatPane]);
-    }
-    return Row(
+  Widget _buildComposer(
+    BuildContext context,
+    ChatAttachmentDraft? mediaAttachment,
+  ) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 360, child: listPane),
-        const SizedBox(width: 16),
-        Expanded(child: chatPane),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton.tonalIcon(
+              onPressed: loading ? null : () => onPickAttachment('image'),
+              icon: const Icon(Icons.image_outlined),
+              label: const Text('图片'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: loading ? null : () => onPickAttachment('video'),
+              icon: const Icon(Icons.video_library_outlined),
+              label: const Text('视频'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: loading ? null : () => onPickAttachment('audio'),
+              icon: const Icon(Icons.mic_none_outlined),
+              label: const Text('语音'),
+            ),
+            if (mediaAttachment != null)
+              FilledButton.tonal(
+                onPressed: loading ? null : onClearAttachment,
+                child: const Text('清除附件'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: chatComposerController,
+                minLines: 1,
+                maxLines: 5,
+                decoration: const InputDecoration(labelText: '输入消息或附件说明'),
+                onSubmitted: (_) => onSendMessage(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton(
+              onPressed: loading ? null : onSendMessage,
+              child: const Text('发送'),
+            ),
+          ],
+        ),
       ],
     );
+  }
+
+  Widget _buildAttachmentDraft(
+    BuildContext context,
+    ChatAttachmentDraft attachment,
+  ) {
+    final icon = switch (attachment.messageType) {
+      'image' => Icons.image_outlined,
+      'video' => Icons.video_library_outlined,
+      'audio' => Icons.mic_none_outlined,
+      _ => Icons.attach_file,
+    };
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  attachment.mediaName,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${attachment.messageType} · ${attachment.sizeLabel} · 7天后自动删除',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton.tonal(
+            onPressed: loading ? null : onClearAttachment,
+            child: const Text('移除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMediaMessage(BuildContext context, ChatMessage message) {
+    final bytes = _decodeMediaBytes(message.mediaData);
+    if (message.isImage && bytes != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Image.memory(bytes, fit: BoxFit.cover),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            message.isVideo
+                ? Icons.video_library_outlined
+                : message.isAudio
+                ? Icons.mic_none_outlined
+                : Icons.image_outlined,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message.mediaLabel,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message.mediaMime.isNotEmpty
+                      ? message.mediaMime
+                      : message.messageType,
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => openChatAttachment(
+              mediaMime: message.mediaMime,
+              mediaData: message.mediaData,
+            ),
+            child: const Text('打开'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Uint8List? _decodeMediaBytes(String mediaData) {
+    if (mediaData.isEmpty) {
+      return null;
+    }
+    try {
+      // Decode and inflate the compressed attachment payload.
+      // 解码并展开已压缩的附件载荷。
+      final rawBytes = Uint8List.fromList(base64Decode(mediaData));
+      try {
+        return Uint8List.fromList(GZipDecoder().decodeBytes(rawBytes));
+      } catch (_) {
+        return rawBytes;
+      }
+    } catch (_) {
+      return null;
+    }
   }
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -32,6 +33,13 @@ type spaceRequest struct {
 	Type        string `json:"type"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Subdomain   string `json:"subdomain"`
+}
+
+type updateSpaceRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Subdomain   string `json:"subdomain"`
 }
 
 type friendRequest struct {
@@ -52,6 +60,7 @@ type externalAccountRequest struct {
 
 type updateProfileRequest struct {
 	DisplayName string `json:"display_name"`
+	Username    string `json:"username"`
 }
 
 func (h *AccountHandler) Register(c *gin.Context) {
@@ -115,6 +124,7 @@ func (h *AccountHandler) Me(c *gin.Context) {
 		"user_id":      user.ID,
 		"email":        user.Email,
 		"phone":        user.Phone,
+		"username":     user.Username,
 		"display_name": user.DisplayName,
 		"level":        user.Level,
 		"status":       user.Status,
@@ -130,7 +140,7 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	user, err := service.UpdateProfile(h.DB, uid, req.DisplayName)
+	user, err := service.UpdateProfile(h.DB, uid, req.DisplayName, req.Username)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -138,6 +148,7 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"user_id":      user.ID,
 		"display_name": user.DisplayName,
+		"username":     user.Username,
 	})
 }
 
@@ -162,12 +173,48 @@ func (h *AccountHandler) CreateSpace(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	space, err := service.CreateSpace(h.DB, uid, req.Type, req.Name, req.Description)
+	space, err := service.CreateSpace(h.DB, uid, req.Type, req.Name, req.Description, req.Subdomain)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, space)
+}
+
+func (h *AccountHandler) UpdateSpace(c *gin.Context) {
+	// Update an owned space.
+	// 更新当前用户拥有的空间。
+	uid := c.GetString("user_id")
+	var req updateSpaceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+	space, err := service.UpdateSpace(h.DB, uid, c.Param("id"), req.Name, req.Description, req.Subdomain)
+	if err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, space)
+}
+
+func (h *AccountHandler) DeleteSpace(c *gin.Context) {
+	// Delete an owned space.
+	// 删除当前用户拥有的空间。
+	uid := c.GetString("user_id")
+	if err := service.DeleteSpace(h.DB, uid, c.Param("id")); err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 func (h *AccountHandler) ListFriends(c *gin.Context) {
@@ -217,6 +264,18 @@ func (h *AccountHandler) UserProfile(c *gin.Context) {
 	// 返回指定用户的公开资料信息。
 	uid := c.GetString("user_id")
 	item, err := service.GetPublicUserProfile(h.DB, uid, c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, item)
+}
+
+func (h *AccountHandler) UserProfileByUsername(c *gin.Context) {
+	// Return public profile information for a specific username.
+	// 返回指定用户名的公开资料信息。
+	uid := c.GetString("user_id")
+	item, err := service.GetPublicUserProfileByUsername(h.DB, uid, c.Param("username"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return

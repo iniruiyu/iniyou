@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -19,6 +20,7 @@ type createPostRequest struct {
 	Content    string `json:"content"`
 	Visibility string `json:"visibility"`
 	Status     string `json:"status"`
+	SpaceID    string `json:"space_id"`
 }
 
 type commentRequest struct {
@@ -82,7 +84,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	item, err := service.CreatePostWithStatus(h.DB, uid, req.Title, req.Content, req.Visibility, req.Status)
+	item, err := service.CreatePostWithStatus(h.DB, uid, req.Title, req.Content, req.Visibility, req.Status, req.SpaceID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -99,12 +101,27 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	item, err := service.UpdatePost(h.DB, uid, c.Param("id"), req.Title, req.Content, req.Visibility, req.Status)
+	item, err := service.UpdatePost(h.DB, uid, c.Param("id"), req.Title, req.Content, req.Visibility, req.Status, req.SpaceID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, item)
+}
+
+func (h *PostHandler) DeletePost(c *gin.Context) {
+	// Delete a social post owned by the current user.
+	// 删除当前用户拥有的社交文章。
+	uid := c.GetString("user_id")
+	if err := service.DeletePost(h.DB, uid, c.Param("id")); err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 func (h *PostHandler) ToggleLike(c *gin.Context) {

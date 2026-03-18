@@ -310,6 +310,5 @@ class AppI18n {
       'subtitle.friends': '搜尋用戶、發起好友請求並處理待接受關係。',
       'subtitle.chat': '查看會話摘要並發送即時訊息。',
     },
-
   };
 }

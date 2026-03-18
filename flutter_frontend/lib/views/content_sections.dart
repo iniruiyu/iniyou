@@ -35,6 +35,8 @@ class DashboardOverviewView extends StatelessWidget {
     required this.user,
     required this.spaces,
     required this.publicPosts,
+    required this.activePrivateSpace,
+    required this.activePublicSpace,
     required this.onOpenPublicSpace,
     required this.onOpenPostDetail,
   });
@@ -43,6 +45,8 @@ class DashboardOverviewView extends StatelessWidget {
   final CurrentUser user;
   final List<SpaceItem> spaces;
   final List<PostItem> publicPosts;
+  final SpaceItem? activePrivateSpace;
+  final SpaceItem? activePublicSpace;
   final VoidCallback onOpenPublicSpace;
   final ValueChanged<String> onOpenPostDetail;
 
@@ -84,9 +88,13 @@ class DashboardOverviewView extends StatelessWidget {
         InfoCard(
           title: '空间摘要',
           lines: [
+            if (activePrivateSpace != null)
+              '当前私人：${activePrivateSpace!.name} · @${activePrivateSpace!.subdomain}',
+            if (activePublicSpace != null)
+              '当前公共：${activePublicSpace!.name} · @${activePublicSpace!.subdomain}',
             for (final space in spaces.take(4))
-              '${space.type.toUpperCase()} · ${space.name}',
-            if (spaces.isEmpty) '当前还没有空间，注册后会自动创建默认空间。',
+              '${space.type.toUpperCase()} · ${space.name} · @${space.subdomain}',
+            if (spaces.isEmpty) '当前还没有空间，先创建你的私人或公共空间。',
           ],
         ),
         const SizedBox(height: 16),
@@ -124,25 +132,23 @@ class DashboardOverviewView extends StatelessWidget {
 class SpaceComposerCard extends StatelessWidget {
   const SpaceComposerCard({
     super.key,
-    required this.type,
     required this.loading,
-    required this.nameController,
-    required this.descriptionController,
+    required this.title,
+    required this.subtitle,
+    required this.detailLines,
+    required this.buttonLabel,
     required this.onSubmit,
   });
 
-  final String type;
   final bool loading;
-  final TextEditingController nameController;
-  final TextEditingController descriptionController;
+  final String title;
+  final String subtitle;
+  final List<String> detailLines;
+  final String buttonLabel;
   final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
-    final title = type == 'private' ? '创建私人空间' : '创建公共空间';
-    final subtitle = type == 'private'
-        ? '私人空间适合沉淀草稿和只对自己可见的内容。'
-        : '公共空间适合对外展示项目和发布公开内容。';
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
@@ -154,19 +160,17 @@ class SpaceComposerCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(subtitle),
             const SizedBox(height: 16),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: '空间名称'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(labelText: '空间描述'),
-            ),
-            const SizedBox(height: 16),
+            if (detailLines.isNotEmpty)
+              ...detailLines.map(
+                (line) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(line),
+                ),
+              ),
+            if (detailLines.isNotEmpty) const SizedBox(height: 8),
             FilledButton(
               onPressed: loading ? null : onSubmit,
-              child: const Text('创建空间'),
+              child: Text(buttonLabel),
             ),
           ],
         ),
@@ -181,20 +185,16 @@ class PostComposerCard extends StatelessWidget {
     required this.loading,
     required this.title,
     required this.subtitle,
-    required this.titleController,
-    required this.contentController,
-    required this.status,
-    required this.onStatusChanged,
+    required this.detailLines,
+    required this.buttonLabel,
     required this.onSubmit,
   });
 
   final bool loading;
   final String title;
   final String subtitle;
-  final TextEditingController titleController;
-  final TextEditingController contentController;
-  final String status;
-  final ValueChanged<String> onStatusChanged;
+  final List<String> detailLines;
+  final String buttonLabel;
   final VoidCallback onSubmit;
 
   @override
@@ -210,40 +210,17 @@ class PostComposerCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(subtitle),
             const SizedBox(height: 16),
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: '标题'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: contentController,
-              minLines: 4,
-              maxLines: 8,
-              decoration: const InputDecoration(labelText: '内容'),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: status,
-                    decoration: const InputDecoration(labelText: '状态'),
-                    items: const [
-                      DropdownMenuItem(value: 'published', child: Text('已发布')),
-                      DropdownMenuItem(value: 'draft', child: Text('草稿')),
-                      DropdownMenuItem(value: 'hidden', child: Text('隐藏')),
-                    ],
-                    onChanged: (value) => onStatusChanged(value ?? status),
-                  ),
+            if (detailLines.isNotEmpty)
+              ...detailLines.map(
+                (line) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(line),
                 ),
-                FilledButton(
-                  onPressed: loading ? null : onSubmit,
-                  child: const Text('提交'),
-                ),
-              ],
+              ),
+            if (detailLines.isNotEmpty) const SizedBox(height: 8),
+            FilledButton(
+              onPressed: loading ? null : onSubmit,
+              child: Text(buttonLabel),
             ),
           ],
         ),
@@ -257,10 +234,18 @@ class SpaceListSection extends StatelessWidget {
     super.key,
     required this.title,
     required this.spaces,
+    required this.activeSpaceId,
+    required this.onEnterSpace,
+    this.onEditSpace,
+    this.onDeleteSpace,
   });
 
   final String title;
   final List<SpaceItem> spaces;
+  final String? activeSpaceId;
+  final ValueChanged<SpaceItem> onEnterSpace;
+  final ValueChanged<SpaceItem>? onEditSpace;
+  final ValueChanged<SpaceItem>? onDeleteSpace;
 
   @override
   Widget build(BuildContext context) {
@@ -276,9 +261,60 @@ class SpaceListSection extends StatelessWidget {
               .map(
                 (space) => SizedBox(
                   width: 320,
-                  child: InfoCard(
-                    title: space.name,
-                    lines: [space.description, '类型: ${space.type}'],
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  space.name,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                              ),
+                              if (space.id == activeSpaceId)
+                                const Chip(label: Text('当前')),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(space.description),
+                          const SizedBox(height: 8),
+                          Text('类型: ${space.type}'),
+                          const SizedBox(height: 4),
+                          Text('二级域名: @${space.subdomain}'),
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              FilledButton.tonal(
+                                onPressed: () => onEnterSpace(space),
+                                child: const Text('进入空间'),
+                              ),
+                              if (onEditSpace != null)
+                                FilledButton.tonal(
+                                  onPressed: () => onEditSpace!(space),
+                                  child: const Text('编辑'),
+                                ),
+                              if (onDeleteSpace != null)
+                                TextButton(
+                                  onPressed: () => onDeleteSpace!(space),
+                                  child: const Text('删除'),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               )
@@ -306,6 +342,7 @@ class PostStreamSection extends StatelessWidget {
     required this.onOpenAuthor,
     required this.onOpenDetail,
     required this.canEditPost,
+    this.onDeletePost,
   });
 
   final List<PostItem> posts;
@@ -317,6 +354,7 @@ class PostStreamSection extends StatelessWidget {
   final ValueChanged<String> onOpenAuthor;
   final ValueChanged<String> onOpenDetail;
   final bool Function(PostItem post) canEditPost;
+  final ValueChanged<PostItem>? onDeletePost;
 
   @override
   Widget build(BuildContext context) {
@@ -336,6 +374,9 @@ class PostStreamSection extends StatelessWidget {
             onOpenDetail: () => onOpenDetail(posts[index].id),
             onEdit: canEditPost(posts[index])
                 ? () => onOpenDetail(posts[index].id)
+                : null,
+            onDelete: canEditPost(posts[index]) && onDeletePost != null
+                ? () => onDeletePost!(posts[index])
                 : null,
           ),
           if (index < posts.length - 1) const SizedBox(height: 16),

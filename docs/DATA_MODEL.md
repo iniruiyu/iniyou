@@ -30,10 +30,15 @@
 
 - `id`
 - `account`
+- `username`
 - `display_name`
 - `avatar_url`
 - `bio`
 - `status`
+
+说明：
+
+- `username` 作为个人主页与二级域名入口句柄，建议仅使用英文字母和数字，且与 `spaces.subdomain` 共享同一命名空间规则 / `username` acts as the profile and subdomain handle, should be alphanumeric, and shares the same namespace rules as `spaces.subdomain`.
 
 #### `auth_credentials`
 
@@ -100,16 +105,35 @@
 - `expired_at`
 - `status`
 
-### 4.3 内容与互动域
+### 4.3 空间与内容域
+
+#### `spaces`
+
+- `id`
+- `user_id`
+- `type`
+- `source`
+- `subdomain`
+- `name`
+- `description`
+- `status`
+
+说明：
+
+- `source` 用于区分用户创建空间与系统种子空间，当前约定为 `user` 或 `system`
+- `subdomain` 作为空间入口标识，需要与前端和后端保持一致
 
 #### `posts`
 
 - `id`
 - `user_id`
+- `space_id`
 - `title`
 - `content`
 - `status`
 - `visibility`
+
+### 4.4 内容与互动域
 
 #### `comments`
 
@@ -135,7 +159,7 @@
 - `share_type`
 - `status`
 
-### 4.4 聊天域
+### 4.5 聊天域
 
 #### `chat_conversations`
 
@@ -159,7 +183,11 @@
 - `sender_user_id`
 - `message_type`
 - `content`
+- `media_name`
+- `media_mime`
+- `media_data`
 - `sent_at`
+- `expires_at`
 - `status`
 
 #### `message_reads`
@@ -169,7 +197,7 @@
 - `user_id`
 - `read_at`
 
-### 4.5 外部身份扩展域
+### 4.6 外部身份扩展域
 
 #### `external_accounts`
 
@@ -192,6 +220,7 @@
 - `users` 与 `user_benefits` 为一对多关系
 - `benefits` 与 `user_benefits` 为一对多关系
 - `users` 与 `posts` 为一对多关系
+- `spaces` 与 `posts` 为一对多关系
 - `posts` 与 `comments` 为一对多关系
 - `posts` 与 `post_likes` 为一对多关系
 - `posts` 与 `post_shares` 为一对多关系
@@ -200,6 +229,12 @@
 - `chat_messages` 与 `message_reads` 为一对多关系
 - `users` 与 `external_accounts` 为一对多关系
 
+说明：
+
+- `message_type` 用于区分 `text`、`image`、`video`、`audio`
+- `media_data` 建议保存前端压缩后的 base64 payload，便于双端直接渲染
+- `expires_at` 为空表示长期保存；不为空时由后台定期清理，过期即删除
+
 ## 6. 当前版本最小必需实体
 
 ### 6.1 P0
@@ -207,6 +242,7 @@
 - `users`
 - `auth_credentials`
 - `user_profiles`
+- `spaces`
 - `posts`
 - `comments`
 - `post_likes`
@@ -230,8 +266,12 @@
 ## 7. 索引建议
 
 - `users.account` 唯一索引
+- `users.username` 唯一索引
+- `spaces.subdomain` 唯一索引
+- `spaces(user_id, type)` 普通索引
 - `wallets.user_id` 唯一索引
 - `posts.user_id` 普通索引
+- `posts.space_id` 普通索引
 - `comments.post_id` 普通索引
 - `post_likes(post_id, user_id)` 唯一索引
 - `chat_participants(conversation_id, user_id)` 唯一索引
@@ -261,3 +301,15 @@
 ### 2026-03-12
 
 - 细化 `external_accounts` 字段，补充 `chain` 与绑定状态表达
+
+### 2026-03-18
+
+- 细化 `chat_messages` 字段，补充媒体消息载荷与过期时间 / Expanded `chat_messages` with media payload and expiry time.
+
+### 2026-03-18
+
+- 新增 `spaces` 实体，补充 `subdomain` 作为空间二级域名标识 / Added the `spaces` entity and its `subdomain` as the second-level domain key.
+- 补充 `spaces.source`，用于区分用户创建空间与系统种子空间 / Added `spaces.source` to distinguish user-created spaces from system seeded spaces.
+- 为 `posts` 增加 `space_id`，用于记录文章所属空间 / Added `space_id` to `posts` to record content ownership by space.
+- 补充空间与内容之间的一对多关系与索引建议 / Added the one-to-many relation and index guidance between spaces and posts.
+- 补充 `users.username` 作为个人主页与二级域名入口句柄 / Added `users.username` as the profile and subdomain handle.

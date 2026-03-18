@@ -8,6 +8,7 @@ type User struct {
 	ID           string  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Email        *string `gorm:"uniqueIndex"`
 	Phone        *string `gorm:"uniqueIndex"`
+	Username     *string `gorm:"type:varchar(63);uniqueIndex"`
 	DisplayName  string  `gorm:"type:varchar(80);default:''"`
 	PasswordHash string
 	Level        string `gorm:"type:varchar(20);default:basic"`
@@ -17,15 +18,18 @@ type User struct {
 }
 
 type Space struct {
-	// Private or public space.
-	// 私人或公共空间。
-	ID          string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserID      string `gorm:"index"`
-	Type        string `gorm:"type:varchar(20)"`
-	Name        string `gorm:"type:varchar(100)"`
-	Description string `gorm:"type:text"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// Space metadata with subdomain entry support.
+	// 支持二级域名入口的空间元数据。
+	ID          string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	UserID      string    `gorm:"index" json:"user_id"`
+	Type        string    `gorm:"type:varchar(20)" json:"type"`
+	Source      string    `gorm:"type:varchar(20);default:user" json:"source,omitempty"`
+	Subdomain   string    `gorm:"type:varchar(120);uniqueIndex" json:"subdomain"`
+	Name        string    `gorm:"type:varchar(100)" json:"name"`
+	Description string    `gorm:"type:text" json:"description"`
+	Status      string    `gorm:"type:varchar(20);default:active" json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type Subscription struct {
@@ -67,12 +71,19 @@ type Friend struct {
 type Message struct {
 	// Chat message.
 	// 聊天消息。
-	ID         string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	SenderID   string `gorm:"index"`
-	ReceiverID string `gorm:"index"`
-	Content    string `gorm:"type:text"`
-	CreatedAt  time.Time
-	ReadAt     *time.Time
+	// Message payload metadata.
+	// 消息载荷元数据。
+	ID          string     `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	SenderID    string     `gorm:"index" json:"sender_id"`
+	ReceiverID  string     `gorm:"index" json:"receiver_id"`
+	MessageType string     `gorm:"type:varchar(20);default:text;index" json:"message_type"`
+	Content     string     `gorm:"type:text" json:"content"`
+	MediaName   string     `gorm:"type:varchar(255);default:''" json:"media_name"`
+	MediaMime   string     `gorm:"type:varchar(120);default:''" json:"media_mime"`
+	MediaData   string     `gorm:"type:text" json:"media_data,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	ReadAt      *time.Time `gorm:"index" json:"read_at,omitempty"`
+	ExpiresAt   *time.Time `gorm:"index" json:"expires_at,omitempty"`
 }
 
 type Post struct {
@@ -80,6 +91,7 @@ type Post struct {
 	// 社交文章内容。
 	ID         string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID     string `gorm:"index"`
+	SpaceID    string `gorm:"type:uuid;index"`
 	Title      string `gorm:"type:varchar(160)"`
 	Content    string `gorm:"type:text"`
 	Status     string `gorm:"type:varchar(20);default:published"`

@@ -92,6 +92,7 @@
 
 ### 8.3 社交域
 
+- space
 - post
 - comment
 - like
@@ -110,7 +111,7 @@
 ## 9. 模块化约束
 
 - 用户域需覆盖账号系统、登录注册、钱包、会员、权益
-- 社交域需覆盖聊天、文章发布、浏览、点赞、评论、转发
+- 社交域需覆盖空间、聊天、文章发布、浏览、点赞、评论、转发
 - 区块链账号接入作为后续扩展域预留，不在首版强耦合到核心账号体系
 - 接口、服务、数据模型尽量按领域拆分，避免后续扩展时跨模块牵连过大
 - 首版实现应避免将 Web、Windows、移动端逻辑直接耦合在单一前端实现中
@@ -121,6 +122,12 @@
 - 资源命名使用复数名词
 - 返回结构保持统一
 - 错误结构保持统一
+- 空间采用稳定的 `subdomain` 作为入口标识，文章采用 `space_id` 记录归属空间
+- 前端可根据当前子域名自动识别空间上下文，创建与发布动作必须显式携带当前空间信息
+- 空间名称与二级域名彼此独立，二级域名前缀只允许英文字母和数字，且最长 63 个字符
+- 用户名与空间二级域名共享同一英数字 host label 命名空间，用户名既是登录别名也是个人主页入口句柄 / Username and space subdomains share the same alphanumeric host-label namespace; the username is both a login alias and a profile entry handle.
+- 个人空间列表只展示 `source=user` 的空间，历史默认空间通过 `source=system` 隐藏
+- 空间编辑、空间删除与文章删除均通过 REST 资源操作完成
 - 数据模型需预留扩展字段
 - 数据库设计需兼容 MySQL 与 PostgreSQL
 - API 变更以 `docs/API_SPEC.md` 为准同步维护
@@ -132,6 +139,7 @@
 - 如标准库、Flutter 官方能力、Vue 3 官方生态、Gin、Gorm 已能满足需求，则不再扩展
 - 如确需引入，必须先评估必要性、维护成本、许可证和替代方案
 - 如依赖需要启用 CGO，应默认视为高成本方案，需单独记录原因
+- 聊天媒体能力优先使用浏览器原生文件处理、压缩与预览能力，以及现有纯 Go / Flutter 基础库，避免为了附件功能额外引入媒体 SDK
 
 ## 12. 第三方库登记表
 
@@ -173,3 +181,12 @@
 - 补充前端、后端边界与模块划分建议
 - 补充架构变更规则
 - 补充 API 文档与数据模型文档协同规则
+
+### 2026-03-18
+
+- 明确聊天媒体附件优先采用浏览器原生能力与现有基础库实现 / Preferred browser-native media handling and existing base libraries for chat attachments.
+
+### 2026-03-18
+
+- 为空间体系补充 `subdomain` 入口标识和 `space_id` 内容归属约束 / Added `subdomain` entry keys and `space_id` ownership constraints for the space system.
+- 补充空间名称与二级域名解耦、个人列表仅展示用户创建空间、以及空间/文章删除的资源化约束 / Added decoupled space naming, user-created-only personal lists, and resource-based deletion constraints for spaces and posts.

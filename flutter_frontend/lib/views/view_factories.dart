@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import 'settings_views.dart';
-import 'social_views.dart';
+import 'chat_view.dart';
+import 'social_views.dart' hide ChatView;
 import 'view_state_helpers.dart';
 import '../main.dart' show ProfileTab;
 
@@ -29,6 +30,8 @@ Widget buildDashboardView({
   required CurrentUser user,
   required List<SpaceItem> spaces,
   required List<PostItem> publicPosts,
+  required SpaceItem? activePrivateSpace,
+  required SpaceItem? activePublicSpace,
   required VoidCallback onOpenPublicSpace,
   required ValueChanged<String> onOpenPostDetail,
 }) {
@@ -37,6 +40,8 @@ Widget buildDashboardView({
     user: user,
     spaces: spaces,
     publicPosts: publicPosts,
+    activePrivateSpace: activePrivateSpace,
+    activePublicSpace: activePublicSpace,
     onOpenPublicSpace: onOpenPublicSpace,
     onOpenPostDetail: onOpenPostDetail,
   );
@@ -44,21 +49,20 @@ Widget buildDashboardView({
 
 Widget buildPrivateView({
   required bool loading,
-  required TextEditingController spaceNameController,
-  required TextEditingController spaceDescriptionController,
-  required TextEditingController privatePostTitleController,
-  required TextEditingController privatePostContentController,
-  required String privatePostStatus,
+  required SpaceItem? activeSpace,
   required List<SpaceItem> spaces,
   required List<PostItem> privatePosts,
   required CurrentUser? user,
   required TextEditingController Function(String postId) commentControllerFor,
-  required ValueChanged<String> onPrivateStatusChanged,
-  required VoidCallback onCreatePrivateSpace,
-  required VoidCallback onPublishPrivatePost,
+  required VoidCallback onOpenSpaceComposer,
+  required VoidCallback onOpenPostComposer,
+  required ValueChanged<SpaceItem> onEnterSpace,
+  required ValueChanged<SpaceItem> onEditSpace,
+  required ValueChanged<SpaceItem> onDeleteSpace,
   required ValueChanged<PostItem> onToggleLike,
   required ValueChanged<PostItem> onSharePost,
   required ValueChanged<PostItem> onCommentPost,
+  required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
 }) {
@@ -66,25 +70,35 @@ Widget buildPrivateView({
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       SpaceComposerCard(
-        type: 'private',
         loading: loading,
-        nameController: spaceNameController,
-        descriptionController: spaceDescriptionController,
-        onSubmit: onCreatePrivateSpace,
+        title: '创建私人空间',
+        subtitle: '私人空间适合沉淀草稿和只对自己可见的内容。',
+        detailLines: const ['创建后会自动生成二级域名，便于后续通过空间入口进入。'],
+        buttonLabel: '打开创建弹窗',
+        onSubmit: onOpenSpaceComposer,
       ),
       const SizedBox(height: 16),
       PostComposerCard(
         loading: loading,
         title: '发布私人内容',
         subtitle: '私人内容仅自己可见，适合草稿、笔记和内部记录。',
-        titleController: privatePostTitleController,
-        contentController: privatePostContentController,
-        status: privatePostStatus,
-        onStatusChanged: onPrivateStatusChanged,
-        onSubmit: onPublishPrivatePost,
+        detailLines: [
+          if (activeSpace != null)
+            '当前空间：${activeSpace.name} · @${activeSpace.subdomain}',
+          '发布后会记录所属空间，方便后续筛选和回溯。',
+        ],
+        buttonLabel: '打开发布弹窗',
+        onSubmit: onOpenPostComposer,
       ),
       const SizedBox(height: 16),
-      SpaceListSection(title: '私人空间列表', spaces: privateSpaces(spaces)),
+      SpaceListSection(
+        title: '私人空间列表',
+        spaces: privateSpaces(spaces),
+        activeSpaceId: activeSpace?.id,
+        onEnterSpace: onEnterSpace,
+        onEditSpace: onEditSpace,
+        onDeleteSpace: onDeleteSpace,
+      ),
       const SizedBox(height: 16),
       PostStreamSection(
         posts: privatePosts,
@@ -96,6 +110,7 @@ Widget buildPrivateView({
         onOpenAuthor: onOpenProfile,
         onOpenDetail: onOpenPostDetail,
         canEditPost: (post) => user != null && post.userId == user.id,
+        onDeletePost: onDeletePost,
       ),
     ],
   );
@@ -103,21 +118,20 @@ Widget buildPrivateView({
 
 Widget buildPublicView({
   required bool loading,
-  required TextEditingController spaceNameController,
-  required TextEditingController spaceDescriptionController,
-  required TextEditingController publicPostTitleController,
-  required TextEditingController publicPostContentController,
-  required String publicPostStatus,
+  required SpaceItem? activeSpace,
   required List<SpaceItem> spaces,
   required List<PostItem> publicPosts,
   required CurrentUser? user,
   required TextEditingController Function(String postId) commentControllerFor,
-  required ValueChanged<String> onPublicStatusChanged,
-  required VoidCallback onCreatePublicSpace,
-  required VoidCallback onPublishPublicPost,
+  required VoidCallback onOpenSpaceComposer,
+  required VoidCallback onOpenPostComposer,
+  required ValueChanged<SpaceItem> onEnterSpace,
+  required ValueChanged<SpaceItem> onEditSpace,
+  required ValueChanged<SpaceItem> onDeleteSpace,
   required ValueChanged<PostItem> onToggleLike,
   required ValueChanged<PostItem> onSharePost,
   required ValueChanged<PostItem> onCommentPost,
+  required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
 }) {
@@ -125,25 +139,35 @@ Widget buildPublicView({
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       SpaceComposerCard(
-        type: 'public',
         loading: loading,
-        nameController: spaceNameController,
-        descriptionController: spaceDescriptionController,
-        onSubmit: onCreatePublicSpace,
+        title: '创建公共空间',
+        subtitle: '公共空间适合对外展示项目和发布公开内容。',
+        detailLines: const ['创建后会生成可识别的二级域名，便于从外部直接进入。'],
+        buttonLabel: '打开创建弹窗',
+        onSubmit: onOpenSpaceComposer,
       ),
       const SizedBox(height: 16),
       PostComposerCard(
         loading: loading,
         title: '发布公共内容',
         subtitle: '公开文章会出现在公共空间和作者主页。',
-        titleController: publicPostTitleController,
-        contentController: publicPostContentController,
-        status: publicPostStatus,
-        onStatusChanged: onPublicStatusChanged,
-        onSubmit: onPublishPublicPost,
+        detailLines: [
+          if (activeSpace != null)
+            '当前空间：${activeSpace.name} · @${activeSpace.subdomain}',
+          '发布时会记录所属公共空间，便于后续查看和分享。',
+        ],
+        buttonLabel: '打开发布弹窗',
+        onSubmit: onOpenPostComposer,
       ),
       const SizedBox(height: 16),
-      SpaceListSection(title: '公共空间列表', spaces: publicSpaces(spaces)),
+      SpaceListSection(
+        title: '公共空间列表',
+        spaces: publicSpaces(spaces),
+        activeSpaceId: activeSpace?.id,
+        onEnterSpace: onEnterSpace,
+        onEditSpace: onEditSpace,
+        onDeleteSpace: onDeleteSpace,
+      ),
       const SizedBox(height: 16),
       PostStreamSection(
         posts: publicPosts,
@@ -155,6 +179,7 @@ Widget buildPublicView({
         onOpenAuthor: onOpenProfile,
         onOpenDetail: onOpenPostDetail,
         canEditPost: (post) => user != null && post.userId == user.id,
+        onDeletePost: onDeletePost,
       ),
     ],
   );
@@ -171,6 +196,7 @@ Widget buildProfileView({
   required ValueChanged<String> onActivateLevel,
   required ValueChanged<String> onActivatePlan,
   required TextEditingController displayNameController,
+  required TextEditingController usernameController,
   required bool loading,
   required TextEditingController Function(String postId) commentControllerFor,
   required ProfileTab profileTab,
@@ -182,6 +208,7 @@ Widget buildProfileView({
   required ValueChanged<PostItem> onToggleLike,
   required ValueChanged<PostItem> onSharePost,
   required ValueChanged<PostItem> onCommentPost,
+  required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
   required String Function(String key) t,
@@ -193,6 +220,7 @@ Widget buildProfileView({
     subscription: subscription,
     connectedChains: connectedChains(externalAccounts),
     displayNameController: displayNameController,
+    usernameController: usernameController,
     loading: loading,
     commentControllerFor: commentControllerFor,
     profileTab: profileTab,
@@ -216,6 +244,7 @@ Widget buildProfileView({
     onToggleLike: onToggleLike,
     onSharePost: onSharePost,
     onCommentPost: onCommentPost,
+    onDeletePost: onDeletePost,
     onOpenProfile: onOpenProfile,
     onOpenPostDetail: onOpenPostDetail,
     t: t,
@@ -238,6 +267,7 @@ Widget buildPostDetailView({
   required ValueChanged<PostItem> onCommentPost,
   required ValueChanged<String> onOpenProfile,
   required VoidCallback onSaveEdits,
+  required VoidCallback? onDeletePost,
 }) {
   final post = currentPost;
   return PostDetailView(
@@ -276,6 +306,7 @@ Widget buildPostDetailView({
       }
     },
     onSaveEdits: onSaveEdits,
+    onDeletePost: onDeletePost,
   );
 }
 
@@ -358,10 +389,14 @@ Widget buildChatView({
   required List<FriendItem> friends,
   required List<ConversationItem> conversations,
   required List<ChatMessage> messages,
+  required int pendingFriendCount,
+  required ChatAttachmentDraft? chatAttachment,
   required TextEditingController chatComposerController,
   required bool loading,
   required ValueChanged<FriendItem> onStartChat,
   required VoidCallback onSendMessage,
+  required Future<void> Function(String messageType) onPickAttachment,
+  required VoidCallback onClearAttachment,
 }) {
   return ChatView(
     width: width,
@@ -370,10 +405,14 @@ Widget buildChatView({
     acceptedFriends: acceptedFriends(friends),
     conversations: conversations,
     messages: messages,
+    pendingFriendCount: pendingFriendCount,
+    chatAttachment: chatAttachment,
     chatComposerController: chatComposerController,
     loading: loading,
     findFriend: (id) => findFriendById(id, friends),
     onStartChat: onStartChat,
     onSendMessage: onSendMessage,
+    onPickAttachment: onPickAttachment,
+    onClearAttachment: onClearAttachment,
   );
 }

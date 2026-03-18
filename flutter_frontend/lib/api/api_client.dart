@@ -54,9 +54,15 @@ class ApiClient {
   Future<CurrentUser> fetchMe() async =>
       CurrentUser.fromJson(await _get(accountBase, '/me'));
 
-  Future<CurrentUser> updateProfile(String displayName) async =>
+  Future<CurrentUser> updateProfile({
+    required String displayName,
+    required String username,
+  }) async =>
       CurrentUser.fromJson(
-        await _put(accountBase, '/me', {'display_name': displayName}),
+        await _put(accountBase, '/me', {
+          'display_name': displayName,
+          'username': username,
+        }),
       );
 
   Future<List<SpaceItem>> listSpaces() async =>
@@ -66,14 +72,34 @@ class ApiClient {
     required String type,
     required String name,
     required String description,
+    String? subdomain,
+  }) async {
+    final body = {
+      'type': type,
+      'name': name,
+      'description': description,
+      if ((subdomain ?? '').trim().isNotEmpty) 'subdomain': subdomain!.trim(),
+    };
+    return SpaceItem.fromJson(await _post(accountBase, '/spaces', body));
+  }
+
+  Future<SpaceItem> updateSpace({
+    required String id,
+    required String name,
+    required String description,
+    required String subdomain,
   }) async {
     return SpaceItem.fromJson(
-      await _post(accountBase, '/spaces', {
-        'type': type,
+      await _patch(accountBase, '/spaces/$id', {
         'name': name,
         'description': description,
+        'subdomain': subdomain,
       }),
     );
+  }
+
+  Future<void> deleteSpace(String id) async {
+    await _delete(accountBase, '/spaces/$id');
   }
 
   Future<List<PostItem>> listPosts({
@@ -108,15 +134,16 @@ class ApiClient {
     required String content,
     required String visibility,
     required String status,
+    String? spaceId,
   }) async {
-    return PostItem.fromJson(
-      await _post(accountBase, '/posts', {
-        'title': title,
-        'content': content,
-        'visibility': visibility,
-        'status': status,
-      }),
-    );
+    final body = {
+      'title': title,
+      'content': content,
+      'visibility': visibility,
+      'status': status,
+      if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
+    };
+    return PostItem.fromJson(await _post(accountBase, '/posts', body));
   }
 
   Future<PostItem> updatePost({
@@ -125,15 +152,20 @@ class ApiClient {
     required String content,
     required String visibility,
     required String status,
+    String? spaceId,
   }) async {
-    return PostItem.fromJson(
-      await _patch(accountBase, '/posts/$id', {
-        'title': title,
-        'content': content,
-        'visibility': visibility,
-        'status': status,
-      }),
-    );
+    final body = {
+      'title': title,
+      'content': content,
+      'visibility': visibility,
+      'status': status,
+      if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
+    };
+    return PostItem.fromJson(await _patch(accountBase, '/posts/$id', body));
+  }
+
+  Future<void> deletePost(String id) async {
+    await _delete(accountBase, '/posts/$id');
   }
 
   Future<PostItem> toggleLike(String id) async =>
@@ -166,6 +198,14 @@ class ApiClient {
         await _get(accountBase, '/users/$userId/profile'),
       );
 
+  Future<UserProfileItem> fetchUserProfileByUsername(String username) async =>
+      UserProfileItem.fromJson(
+        await _get(
+          accountBase,
+          '/users/username/${Uri.encodeComponent(username)}/profile',
+        ),
+      );
+
   Future<void> addFriend(String friendId) async {
     await _post(accountBase, '/friends', {'friend_id': friendId});
   }
@@ -187,10 +227,23 @@ class ApiClient {
     );
   }
 
-  Future<void> sendMessage(String peerId, String content) async {
+  Future<void> sendMessage({
+    required String peerId,
+    String content = '',
+    String messageType = 'text',
+    String mediaName = '',
+    String mediaMime = '',
+    String mediaData = '',
+    int expiresInMinutes = 0,
+  }) async {
     await _post(messageBase, '/messages', {
       'peer_id': peerId,
       'content': content,
+      'message_type': messageType,
+      'media_name': mediaName,
+      'media_mime': mediaMime,
+      'media_data': mediaData,
+      'expires_in_minutes': expiresInMinutes,
     });
   }
 

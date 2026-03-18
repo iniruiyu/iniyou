@@ -57,6 +57,7 @@ class ShellSidebar extends StatelessWidget {
     required this.user,
     required this.subscription,
     required this.conversations,
+    required this.pendingFriendCount,
     required this.selectedViewKey,
     required this.items,
     required this.onNavigate,
@@ -66,6 +67,7 @@ class ShellSidebar extends StatelessWidget {
   final CurrentUser user;
   final SubscriptionItem? subscription;
   final List<ConversationItem> conversations;
+  final int pendingFriendCount;
   final String selectedViewKey;
   final List<ShellSidebarItem> items;
   final ValueChanged<String> onNavigate;
@@ -103,6 +105,15 @@ class ShellSidebar extends StatelessWidget {
           const SizedBox(height: 18),
           ...items.map((item) {
             final selected = selectedViewKey == item.viewKey;
+            final unreadCount = item.viewKey == 'chat'
+                ? conversations.fold<int>(
+                    0,
+                    (sum, conversation) => sum + conversation.unreadCount,
+                  )
+                : 0;
+            final badgeCount = item.viewKey == 'friends'
+                ? pendingFriendCount
+                : unreadCount;
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: FilledButton.tonal(
@@ -119,9 +130,16 @@ class ShellSidebar extends StatelessWidget {
                 onPressed: () => onNavigate(item.viewKey),
                 child: Row(
                   children: [
-                    Icon(item.icon, size: 18),
+                    Badge(
+                      isLabelVisible: badgeCount > 0,
+                      label: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                      child: Icon(item.icon, size: 18),
+                    ),
                     const SizedBox(width: 10),
-                    Text(item.label),
+                    Expanded(child: Text(item.label)),
                   ],
                 ),
               ),
@@ -229,10 +247,7 @@ class ThemeOption {
   final String labelKey;
 }
 
-enum SettingsActionType {
-  language,
-  theme,
-}
+enum SettingsActionType { language, theme }
 
 class SettingsAction {
   const SettingsAction(this.type, this.value);

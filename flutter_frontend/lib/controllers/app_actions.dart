@@ -67,6 +67,13 @@ class PostPublishBundle {
   final List<PostItem> posts;
 }
 
+class SpaceCreateBundle {
+  const SpaceCreateBundle({required this.space, required this.spaces});
+
+  final SpaceItem space;
+  final List<SpaceItem> spaces;
+}
+
 class SubscriptionBundle {
   const SubscriptionBundle({required this.subscription, required this.user});
 
@@ -128,14 +135,20 @@ class AppActions {
     return PostDetailBundle(post: await api.getPost(postId));
   }
 
-  static Future<List<SpaceItem>> createSpaceAndReload(
+  static Future<SpaceCreateBundle> createSpaceAndReload(
     ApiClient api, {
     required String type,
     required String name,
     required String description,
+    String? subdomain,
   }) async {
-    await api.createSpace(type: type, name: name, description: description);
-    return api.listSpaces();
+    final created = await api.createSpace(
+      type: type,
+      name: name,
+      description: description,
+      subdomain: subdomain,
+    );
+    return SpaceCreateBundle(space: created, spaces: await api.listSpaces());
   }
 
   static Future<PostPublishBundle> createPostAndReload(
@@ -144,12 +157,14 @@ class AppActions {
     required String content,
     required String visibility,
     required String status,
+    String? spaceId,
   }) async {
     final post = await api.createPost(
       title: title,
       content: content,
       visibility: visibility,
       status: status,
+      spaceId: spaceId,
     );
     return PostPublishBundle(
       post: post,
@@ -198,9 +213,22 @@ class AppActions {
   static Future<ChatBundle> sendMessageAndReload(
     ApiClient api, {
     required String peerId,
-    required String content,
+    String content = '',
+    String messageType = 'text',
+    String mediaName = '',
+    String mediaMime = '',
+    String mediaData = '',
+    int expiresInMinutes = 0,
   }) async {
-    await api.sendMessage(peerId, content);
+    await api.sendMessage(
+      peerId: peerId,
+      content: content,
+      messageType: messageType,
+      mediaName: mediaName,
+      mediaMime: mediaMime,
+      mediaData: mediaData,
+      expiresInMinutes: expiresInMinutes,
+    );
     final results = await Future.wait([
       api.listMessages(peerId),
       api.listConversations(),

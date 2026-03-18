@@ -110,7 +110,7 @@ class SubscriptionView extends StatelessWidget {
             PlanCard(
               planId: 'basic',
               title: 'Basic',
-              features: const ['公共内容流', '基础资料', '默认空间'],
+              features: const ['公共内容流', '基础资料', '自定义空间'],
               isLoading: loading,
               onActivate: onActivatePlan,
             ),

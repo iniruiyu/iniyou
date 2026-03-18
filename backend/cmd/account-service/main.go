@@ -12,6 +12,7 @@ import (
 	"account-service/internal/handler"
 	"account-service/internal/middleware"
 	"account-service/internal/models"
+	"account-service/internal/service"
 )
 
 func main() {
@@ -29,6 +30,12 @@ func main() {
 	}
 	if err := database.AutoMigrate(&models.Post{}, &models.Comment{}, &models.PostLike{}, &models.PostShare{}); err != nil {
 		log.Fatalf("db migrate error: %v", err)
+	}
+	if err := service.EnsureUserUsernames(database); err != nil {
+		log.Fatalf("username backfill error: %v", err)
+	}
+	if err := service.MarkLegacySystemSpaces(database); err != nil {
+		log.Fatalf("legacy space migration error: %v", err)
 	}
 
 	h := &handler.AccountHandler{
@@ -69,13 +76,17 @@ func main() {
 	authGroup.PUT("/me", h.UpdateMe)
 	authGroup.GET("/users/search", h.SearchUsers)
 	authGroup.GET("/users/:id/profile", h.UserProfile)
+	authGroup.GET("/users/username/:username/profile", h.UserProfileByUsername)
 	authGroup.GET("/spaces", h.ListSpaces)
 	authGroup.POST("/spaces", h.CreateSpace)
+	authGroup.PATCH("/spaces/:id", h.UpdateSpace)
+	authGroup.DELETE("/spaces/:id", h.DeleteSpace)
 	authGroup.GET("/posts", postHandler.ListPosts)
 	authGroup.GET("/posts/:id", postHandler.GetPost)
 	authGroup.GET("/users/:id/posts", postHandler.ListUserPosts)
 	authGroup.POST("/posts", postHandler.CreatePost)
 	authGroup.PATCH("/posts/:id", postHandler.UpdatePost)
+	authGroup.DELETE("/posts/:id", postHandler.DeletePost)
 	authGroup.POST("/posts/:id/likes", postHandler.ToggleLike)
 	authGroup.POST("/posts/:id/comments", postHandler.AddComment)
 	authGroup.POST("/posts/:id/shares", postHandler.Share)

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -30,6 +31,21 @@ func main() {
 
 	hub := ws.NewHub()
 	h := &handler.MessageHandler{DB: database, JWTSecret: cfg.JWTSecret, Hub: hub}
+
+	// Remove expired messages once on startup and then on a fixed interval.
+	// 启动时先清理一次过期消息，之后再按固定间隔定时清理。
+	if err := h.CleanupExpiredMessages(); err != nil {
+		log.Printf("initial message cleanup error: %v", err)
+	}
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := h.CleanupExpiredMessages(); err != nil {
+				log.Printf("scheduled message cleanup error: %v", err)
+			}
+		}
+	}()
 
 	// HTTP router (WS only in this service).
 	// HTTP 路由（仅 WebSocket）。

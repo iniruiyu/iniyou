@@ -15,12 +15,40 @@ List<FriendItem> acceptedFriends(List<FriendItem> friends) {
   return friends.where((item) => item.status == 'accepted').toList();
 }
 
+SpaceItem? findSpaceById(List<SpaceItem> spaces, String? id) {
+  if (id == null || id.isEmpty) {
+    return null;
+  }
+  for (final space in spaces) {
+    if (space.id == id) {
+      return space;
+    }
+  }
+  return null;
+}
+
+SpaceItem? firstSpaceOfType(List<SpaceItem> spaces, String type) {
+  for (final space in spaces) {
+    if (space.type == type) {
+      return space;
+    }
+  }
+  return null;
+}
+
 List<SpaceItem> privateSpaces(List<SpaceItem> spaces) {
   return spaces.where((space) => space.type == 'private').toList();
 }
 
 List<SpaceItem> publicSpaces(List<SpaceItem> spaces) {
   return spaces.where((space) => space.type == 'public').toList();
+}
+
+List<PostItem> postsForSpace(List<PostItem> posts, String? spaceId) {
+  if (spaceId == null || spaceId.isEmpty) {
+    return posts;
+  }
+  return posts.where((post) => post.spaceId == spaceId).toList();
 }
 
 List<String> connectedChains(List<ExternalAccountItem> externalAccounts) {
@@ -69,19 +97,35 @@ String pageTitleForView(
   AppView view, {
   UserProfileItem? profileUser,
   PostItem? currentPost,
+  SpaceItem? activePrivateSpace,
+  SpaceItem? activePublicSpace,
   required String Function(String key) t,
 }) {
   switch (view) {
     case AppView.dashboard:
       return t('page.dashboard');
     case AppView.privateSpace:
+      if (activePrivateSpace?.name.isNotEmpty == true) {
+        return '${t('page.private')} · ${activePrivateSpace!.name}';
+      }
       return t('page.private');
     case AppView.publicSpace:
+      if (activePublicSpace?.name.isNotEmpty == true) {
+        return '${t('page.public')} · ${activePublicSpace!.name}';
+      }
       return t('page.public');
     case AppView.profile:
-      return profileUser?.displayName.isNotEmpty == true
-          ? profileUser!.displayName
-          : t('page.profile');
+      if (profileUser?.displayName.isNotEmpty == true &&
+          profileUser?.username.isNotEmpty == true) {
+        return '${profileUser!.displayName} · @${profileUser.username}';
+      }
+      if (profileUser?.displayName.isNotEmpty == true) {
+        return profileUser!.displayName;
+      }
+      if (profileUser?.username.isNotEmpty == true) {
+        return '@${profileUser!.username}';
+      }
+      return t('page.profile');
     case AppView.postDetail:
       return currentPost?.title.isNotEmpty == true
           ? currentPost!.title
@@ -101,14 +145,22 @@ String pageTitleForView(
 
 String pageSubtitleForView(
   AppView view, {
+  SpaceItem? activePrivateSpace,
+  SpaceItem? activePublicSpace,
   required String Function(String key) t,
 }) {
   switch (view) {
     case AppView.dashboard:
       return t('subtitle.dashboard');
     case AppView.privateSpace:
+      if (activePrivateSpace?.subdomain.isNotEmpty == true) {
+        return '${t('subtitle.private')} · @${activePrivateSpace!.subdomain}';
+      }
       return t('subtitle.private');
     case AppView.publicSpace:
+      if (activePublicSpace?.subdomain.isNotEmpty == true) {
+        return '${t('subtitle.public')} · @${activePublicSpace!.subdomain}';
+      }
       return t('subtitle.public');
     case AppView.profile:
       return t('subtitle.profile');

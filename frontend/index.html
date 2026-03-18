@@ -49,11 +49,17 @@
           <span class="nav-label">{{ t('nav.public') }}</span>
         </button>
         <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
-          <span class="nav-icon">FR</span>
+          <span class="nav-icon-shell">
+            <span class="nav-icon">FR</span>
+            <span v-if="pendingFriendCount" class="nav-badge">{{ pendingFriendCount > 99 ? '99+' : pendingFriendCount }}</span>
+          </span>
           <span class="nav-label">{{ t('nav.friends') }}</span>
         </button>
         <button class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
-          <span class="nav-icon">CH</span>
+          <span class="nav-icon-shell">
+            <span class="nav-icon">CH</span>
+            <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+          </span>
           <span class="nav-label">{{ t('nav.chat') }}</span>
         </button>
         <button class="nav-item" data-icon="ME" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">
@@ -80,7 +86,7 @@
     </button>
 
     <!-- Main content / 主内容 -->
-    <main class="main">
+    <main class="main" :class="{ 'chat-shell': view === 'chat' }">
       <header class="topbar">
         <div>
           <div class="page-title">{{ pageTitle }}</div>
@@ -101,6 +107,32 @@
 
       <div v-if="flashMessage" class="banner banner-success">{{ flashMessage }}</div>
       <div v-if="errorMessage" class="banner banner-error">{{ errorMessage }}</div>
+
+      <div v-if="pendingFriendCount > 0 || unreadCount > 0" class="floating-reminder">
+        <div class="floating-reminder-head">
+          <div class="floating-reminder-copy">
+            <div class="floating-reminder-title">
+              {{ topPendingFriend ? topPendingFriend.name : t('chat.title') }}
+            </div>
+            <div v-if="topPendingFriend" class="floating-reminder-sub">
+              {{ topPendingFriend.secondary }} · {{ t('friends.directionIncoming') }}
+            </div>
+            <div v-if="topPendingFriend && unreadCount > 0" class="floating-reminder-sub">
+              {{ unreadCount }} {{ t('ws.unreadLabel') }}
+            </div>
+            <div v-else-if="!topPendingFriend && unreadCount > 0" class="floating-reminder-sub">
+              {{ unreadCount }} {{ t('ws.unreadLabel') }}
+            </div>
+          </div>
+          <div class="floating-reminder-pill">
+            {{ topPendingFriend ? pendingFriendCount : unreadCount }}
+          </div>
+        </div>
+        <div class="floating-reminder-actions">
+          <button v-if="pendingFriendCount > 0" class="ghost compact" type="button" @click="view = 'friends'">{{ t('nav.friends') }}</button>
+          <button v-if="unreadCount > 0" class="primary compact" type="button" @click="view = 'chat'">{{ t('nav.chat') }}</button>
+        </div>
+      </div>
 
       <section v-if="view === 'dashboard'" class="panel-grid">
         <div class="panel">
@@ -129,10 +161,24 @@
           <h2>{{ t('dashboard.spaceSummaryTitle') }}</h2>
           <p>{{ t('dashboard.spaceSummarySub') }}</p>
           <div class="space-cards">
-            <div class="space-card" v-for="space in spaces" :key="space.id">
+            <div
+              class="space-card"
+              :class="{ active: (activePrivateSpace && space.id === activePrivateSpace.id) || (activePublicSpace && space.id === activePublicSpace.id) }"
+              v-for="space in spaces"
+              :key="space.id"
+            >
               <div class="space-tag" :class="space.type">{{ t(`spaces.type.${space.type}`) }}</div>
+              <div v-if="(activePrivateSpace && space.id === activePrivateSpace.id) || (activePublicSpace && space.id === activePublicSpace.id)" class="space-badge">
+                {{ t('spaces.currentLabel') }}
+              </div>
               <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
               <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+              <div class="space-meta">@{{ space.subdomain }}</div>
+              <div class="space-card-actions">
+                <button class="ghost compact" type="button" @click="enterSpace(space)">{{ t('spaces.enterAction') }}</button>
+                <button class="ghost compact" type="button" @click="openSpaceEditor(space)">{{ t('spaces.editAction') }}</button>
+                <button class="ghost compact danger" type="button" @click="deleteSpace(space)">{{ t('spaces.deleteAction') }}</button>
+              </div>
             </div>
           </div>
         </div>
@@ -141,6 +187,9 @@
           <p>{{ t('dashboard.profileSub') }}</p>
           <form class="form">
             <input type="text" :placeholder="t('dashboard.displayNamePlaceholder')" v-model="profileDraft.displayName" />
+            <!-- Username field / 用户名字段：用于个人主页和二级域名入口 -->
+            <input type="text" :placeholder="t('dashboard.usernamePlaceholder')" v-model="profileDraft.username" maxlength="63" autocomplete="username" />
+            <div class="form-hint">{{ t('dashboard.usernameHint') }}</div>
             <button class="primary" type="button" @click="saveProfile">{{ t('dashboard.saveProfile') }}</button>
           </form>
         </div>
@@ -160,23 +209,41 @@
       <section v-if="view === 'private'" class="panel">
         <h2>{{ t('spaces.privateTitle') }}</h2>
         <p>{{ t('spaces.privateSub') }}</p>
-        <div class="space-create">
-          <h3>{{ t('spaces.createTitle') }}</h3>
-          <p>{{ t('spaces.createSub') }}</p>
-          <form class="form">
-            <select v-model="spaceDraft.type">
-              <option value="private">{{ t('spaces.type.private') }}</option>
-              <option value="public">{{ t('spaces.type.public') }}</option>
-            </select>
-            <input type="text" :placeholder="t('spaces.namePlaceholder')" v-model="spaceDraft.name" />
-            <input type="text" :placeholder="t('spaces.descPlaceholder')" v-model="spaceDraft.description" />
-            <button class="primary" type="button" @click="createSpace">{{ t('spaces.createAction') }}</button>
-          </form>
+        <div class="space-toolbar">
+          <div>
+            <div class="space-toolbar-kicker">{{ t('spaces.currentLabel') }}</div>
+            <div class="space-toolbar-title">
+              {{ activePrivateSpace ? localizedSpaceText('name', activePrivateSpace) : t('common.notAvailable') }}
+            </div>
+            <div class="space-toolbar-sub">
+              {{ activePrivateSpace ? `@${activePrivateSpace.subdomain}` : t('posts.spaceRequired') }}
+            </div>
+          </div>
+          <div class="space-toolbar-actions">
+            <button class="ghost" type="button" @click="openSpaceComposer('private')">{{ t('spaces.createAction') }}</button>
+            <button class="primary" type="button" @click="openPostComposer('private')">{{ t('posts.publishAction') }}</button>
+          </div>
         </div>
         <div class="space-cards">
-          <div class="space-card" v-for="space in privateSpaces" :key="space.id">
+          <div
+            class="space-card"
+            :class="{ active: activePrivateSpace && space.id === activePrivateSpace.id }"
+            v-for="space in privateSpaces"
+            :key="space.id"
+          >
+            <div class="space-tag private">{{ t('spaces.type.private') }}</div>
+            <div v-if="activePrivateSpace && space.id === activePrivateSpace.id" class="space-badge">
+              {{ t('spaces.currentLabel') }}
+            </div>
             <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
             <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+            <div class="space-meta">@{{ space.subdomain }}</div>
+            <div v-if="space.status && space.status !== 'active'" class="space-meta">{{ statusLabel(space.status) }}</div>
+            <div class="space-card-actions">
+              <button class="ghost compact" type="button" @click="enterSpace(space)">{{ t('spaces.enterAction') }}</button>
+              <button class="ghost compact" type="button" @click="openSpaceEditor(space)">{{ t('spaces.editAction') }}</button>
+              <button class="ghost compact danger" type="button" @click="deleteSpace(space)">{{ t('spaces.deleteAction') }}</button>
+            </div>
           </div>
         </div>
         <div class="post-feed">
@@ -184,11 +251,12 @@
             <h3>{{ t('posts.privateFeedTitle') }}</h3>
             <p>{{ t('posts.privateFeedSub') }}</p>
           </div>
-          <div v-if="privatePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
-          <article class="post-card" v-for="post in privatePosts" :key="post.id">
+          <div v-if="visiblePrivatePosts.length === 0" class="empty-state">{{ t('posts.privateEmpty') }}</div>
+          <article class="post-card" v-for="post in visiblePrivatePosts" :key="post.id">
             <div class="post-header">
               <div>
                 <div class="post-author">{{ post.authorName }}</div>
+                <div class="post-meta">{{ t('posts.spaceLabel') }} · {{ post.spaceLabel }}</div>
                 <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
               </div>
             </div>
@@ -196,6 +264,8 @@
             <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
+              <button v-if="canEditPost(post)" class="ghost compact" @click="startEditPost(post)">{{ t('posts.edit') }}</button>
+              <button v-if="canEditPost(post)" class="ghost compact danger" @click="deletePost(post)">{{ t('posts.deleteAction') }}</button>
               <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
               <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
@@ -207,49 +277,54 @@
       <section v-if="view === 'public'" class="panel">
         <h2>{{ t('spaces.publicTitle') }}</h2>
         <p>{{ t('spaces.publicSub') }}</p>
-        <div class="space-create">
-          <h3>{{ t('spaces.createTitle') }}</h3>
-          <p>{{ t('spaces.createSub') }}</p>
-          <form class="form">
-            <select v-model="spaceDraft.type">
-              <option value="private">{{ t('spaces.type.private') }}</option>
-              <option value="public">{{ t('spaces.type.public') }}</option>
-            </select>
-            <input type="text" :placeholder="t('spaces.namePlaceholder')" v-model="spaceDraft.name" />
-            <input type="text" :placeholder="t('spaces.descPlaceholder')" v-model="spaceDraft.description" />
-            <button class="primary" type="button" @click="createSpace">{{ t('spaces.createAction') }}</button>
-          </form>
+        <div class="space-toolbar">
+          <div>
+            <div class="space-toolbar-kicker">{{ t('spaces.currentLabel') }}</div>
+            <div class="space-toolbar-title">
+              {{ activePublicSpace ? localizedSpaceText('name', activePublicSpace) : t('common.notAvailable') }}
+            </div>
+            <div class="space-toolbar-sub">
+              {{ activePublicSpace ? `@${activePublicSpace.subdomain}` : t('posts.spaceRequired') }}
+            </div>
+          </div>
+          <div class="space-toolbar-actions">
+            <button class="ghost" type="button" @click="openSpaceComposer('public')">{{ t('spaces.createAction') }}</button>
+            <button class="primary" type="button" @click="openPostComposer('public')">{{ t('posts.publishAction') }}</button>
+          </div>
         </div>
         <div class="space-cards">
-          <div class="space-card" v-for="space in publicSpaces" :key="space.id">
+          <div
+            class="space-card"
+            :class="{ active: activePublicSpace && space.id === activePublicSpace.id }"
+            v-for="space in publicSpaces"
+            :key="space.id"
+          >
+            <div class="space-tag public">{{ t('spaces.type.public') }}</div>
+            <div v-if="activePublicSpace && space.id === activePublicSpace.id" class="space-badge">
+              {{ t('spaces.currentLabel') }}
+            </div>
             <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
             <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+            <div class="space-meta">@{{ space.subdomain }}</div>
+            <div v-if="space.status && space.status !== 'active'" class="space-meta">{{ statusLabel(space.status) }}</div>
+            <div class="space-card-actions">
+              <button class="ghost compact" type="button" @click="enterSpace(space)">{{ t('spaces.enterAction') }}</button>
+              <button class="ghost compact" type="button" @click="openSpaceEditor(space)">{{ t('spaces.editAction') }}</button>
+              <button class="ghost compact danger" type="button" @click="deleteSpace(space)">{{ t('spaces.deleteAction') }}</button>
+            </div>
           </div>
         </div>
         <div class="post-feed">
           <div class="post-composer">
             <h3>{{ t('posts.feedTitle') }}</h3>
             <p>{{ t('posts.feedSub') }}</p>
-            <form class="form">
-              <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="postDraft.title" />
-              <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="postDraft.content"></textarea>
-              <select v-model="postDraft.visibility">
-                <option value="public">{{ t('posts.publicLabel') }}</option>
-                <option value="private">{{ t('posts.privateLabel') }}</option>
-              </select>
-              <select v-model="postDraft.status">
-                <option value="published">{{ t('posts.statusPublished') }}</option>
-                <option value="draft">{{ t('posts.statusDraft') }}</option>
-                <option value="hidden">{{ t('posts.statusHidden') }}</option>
-              </select>
-              <button class="primary" type="button" @click="createPost">{{ t('posts.publishAction') }}</button>
-            </form>
           </div>
-          <div v-if="posts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
-          <article class="post-card" v-for="post in posts" :key="post.id">
+          <div v-if="visiblePublicPosts.length === 0" class="empty-state">{{ t('posts.publicEmpty') }}</div>
+          <article class="post-card" v-for="post in visiblePublicPosts" :key="post.id">
             <div class="post-header">
               <div>
                 <div class="post-author">{{ post.authorName }}</div>
+                <div class="post-meta">{{ t('posts.spaceLabel') }} · {{ post.spaceLabel }}</div>
                 <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
               </div>
               <button class="ghost compact" @click="openProfile(post.userId, post.authorName)">{{ t('posts.viewAuthor') }}</button>
@@ -259,6 +334,7 @@
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
               <button v-if="canEditPost(post)" class="ghost compact" @click="startEditPost(post)">{{ t('posts.edit') }}</button>
+              <button v-if="canEditPost(post)" class="ghost compact danger" @click="deletePost(post)">{{ t('posts.deleteAction') }}</button>
               <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
               <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
@@ -353,11 +429,12 @@
               <div v-if="externalAccounts.length === 0" class="empty-state">{{ t('profile.blockchain.empty') }}</div>
             </div>
           </div>
-          <div v-if="profilePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
+          <div v-if="profilePosts.length === 0" class="empty-state">{{ t('posts.profileEmpty') }}</div>
           <article class="post-card" v-for="post in profilePosts" :key="post.id">
             <div class="post-header">
               <div>
                 <div class="post-author">{{ post.authorName }}</div>
+                <div class="post-meta">{{ t('posts.spaceLabel') }} · {{ post.spaceLabel }}</div>
                 <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
               </div>
             </div>
@@ -365,6 +442,8 @@
             <button class="ghost compact" @click="openPostDetail(post.id)">{{ t('posts.openDetail') }}</button>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
+              <button v-if="canEditPost(post)" class="ghost compact" @click="startEditPost(post)">{{ t('posts.edit') }}</button>
+              <button v-if="canEditPost(post)" class="ghost compact danger" @click="deletePost(post)">{{ t('posts.deleteAction') }}</button>
               <button class="ghost compact" @click="togglePostLike(post)">{{ post.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ post.likesCount }}</button>
               <button class="ghost compact" @click="sharePost(post)">{{ t('posts.share') }} · {{ post.sharesCount }}</button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
@@ -379,6 +458,7 @@
             <div class="post-header">
               <div>
                 <div class="post-author">{{ currentPost.authorName }}</div>
+                <div class="post-meta">{{ t('posts.spaceLabel') }} · {{ currentPost.spaceLabel }}</div>
                 <div class="post-meta">{{ visibilityLabel(currentPost.visibility) }} · {{ formatDateTime(currentPost.createdAt) }}</div>
               </div>
               <div class="profile-actions">
@@ -390,6 +470,7 @@
             <div class="post-content">{{ currentPost.content }}</div>
             <div class="post-actions">
               <button v-if="canEditPost(currentPost)" class="ghost compact" @click="startEditPost(currentPost)">{{ t('posts.edit') }}</button>
+              <button v-if="canEditPost(currentPost)" class="ghost compact danger" @click="deletePost(currentPost)">{{ t('posts.deleteAction') }}</button>
               <button class="ghost compact" @click="togglePostLike(currentPost)">{{ currentPost.likedByMe ? t('posts.unlike') : t('posts.like') }} · {{ currentPost.likesCount }}</button>
               <button class="ghost compact" @click="sharePost(currentPost)">{{ t('posts.share') }} · {{ currentPost.sharesCount }}</button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ currentPost.commentsCount }}</div>
@@ -399,9 +480,18 @@
               <form class="form">
                 <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="editPostDraft.title" />
                 <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="editPostDraft.content"></textarea>
-                <select v-model="editPostDraft.visibility">
+                <select v-model="editPostDraft.visibility" @change="editPostDraft.spaceId = selectedSpaceIdForVisibility($event.target.value, editPostDraft.spaceId)">
                   <option value="public">{{ t('posts.publicLabel') }}</option>
                   <option value="private">{{ t('posts.privateLabel') }}</option>
+                </select>
+                <select v-model="editPostDraft.spaceId">
+                  <option
+                    v-for="space in (editPostDraft.visibility === 'private' ? privateSpaces : publicSpaces)"
+                    :key="space.id"
+                    :value="space.id"
+                  >
+                    {{ localizedSpaceText('name', space) }} · @{{ space.subdomain }}
+                  </option>
                 </select>
                 <select v-model="editPostDraft.status">
                   <option value="published">{{ t('posts.statusPublished') }}</option>
@@ -496,14 +586,16 @@
       <section v-if="view === 'chat'" class="chat">
         <div class="chat-list">
           <h3>{{ t('chat.title') }}</h3>
-          <div class="chat-item" v-for="friend in chatEntries" :key="friend.id" :class="{active: activeChat && activeChat.id === friend.id}" @click="startChat(friend)">
-            <div class="avatar small"></div>
-            <div>
-              <div class="friend-name">{{ friend.name }}</div>
-              <div class="friend-secondary">{{ friend.lastMessage || friendSecondary(friend) }}</div>
-              <div class="friend-status">{{ friend.lastAt ? formatDateTime(friend.lastAt) : t('chat.latest') }}</div>
-              <div v-if="friend.unreadCount" class="friend-direction">{{ t('ws.unreadLabel') }}: {{ friend.unreadCount }}</div>
-              <div class="friend-status">{{ statusLabel(friend.status) }}</div>
+          <div class="chat-list-scroll">
+            <div class="chat-item" v-for="friend in chatEntries" :key="friend.id" :class="{active: activeChat && activeChat.id === friend.id}" @click="startChat(friend)">
+              <div class="avatar small"></div>
+              <div>
+                <div class="friend-name">{{ friend.name }}</div>
+                <div class="friend-secondary">{{ friend.lastMessagePreview || friend.lastMessage || friendSecondary(friend) }}</div>
+                <div class="friend-status">{{ friend.lastAt ? formatDateTime(friend.lastAt) : t('chat.latest') }}</div>
+                <div v-if="friend.unreadCount" class="friend-direction">{{ t('ws.unreadLabel') }}: {{ friend.unreadCount }}</div>
+                <div class="friend-status">{{ statusLabel(friend.status) }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -514,20 +606,164 @@
               <div class="friend-status">{{ activeChat ? friendSecondary(activeChat) : t('chat.onlineNow') }}</div>
             </div>
           </div>
-          <div class="chat-body">
+          <div class="chat-body" ref="chatHistory" @scroll="handleChatHistoryScroll">
             <div class="chat-bubble" v-for="msg in chatMessages" :key="msg.id" :class="msg.from === user.id ? 'me' : 'them'">
-              <div class="chat-text">{{ localizedMessageContent(msg) }}</div>
+              <template v-if="msg.mediaData && msg.messageType === 'image' && msg.mediaUrl">
+                <img class="chat-media-image" :src="msg.mediaUrl" :alt="msg.mediaName || t('chat.mediaImage')" @click="openChatAttachment(msg)" />
+              </template>
+              <template v-else-if="msg.mediaData && msg.messageType === 'video' && msg.mediaUrl">
+                <video class="chat-media-video" :src="msg.mediaUrl" controls></video>
+              </template>
+              <template v-else-if="msg.mediaData && msg.messageType === 'audio' && msg.mediaUrl">
+                <audio class="chat-media-audio" :src="msg.mediaUrl" controls></audio>
+              </template>
+              <div v-else-if="msg.mediaData && msg.messageType !== 'text'" class="chat-media-card">
+                <div class="chat-media-title">{{ msg.mediaName || messageMediaLabel(msg) }}</div>
+                <div class="chat-media-sub">{{ msg.mediaMime || messageMediaLabel(msg) }}</div>
+                <button class="ghost compact" type="button" @click="openChatAttachment(msg)">{{ t('chat.openAttachment') }}</button>
+              </div>
+              <div v-else-if="isStickerMessage(msg)" class="chat-sticker">{{ localizedMessageContent(msg) }}</div>
+              <div v-else-if="localizedMessageContent(msg)" class="chat-text">{{ localizedMessageContent(msg) }}</div>
               <div class="chat-time">{{ msg.time }}</div>
             </div>
             <div v-if="activeChat && chatMessages.length === 0" class="empty-state">{{ t('chat.emptyConversation') }}</div>
             <div v-if="!activeChat" class="empty-state">{{ t('chat.pickFriend') }}</div>
           </div>
+          <button
+            v-if="activeChat && chatMessages.length > 0 && !chatHistoryAtBottom"
+            class="chat-scroll-fab"
+            type="button"
+            :aria-label="t('chat.backToBottom')"
+            @click="scrollChatHistoryToBottom(true)"
+          >
+            <span class="chat-scroll-fab-icon">↓</span>
+            <span class="chat-scroll-fab-text">{{ t('chat.backToBottom') }}</span>
+          </button>
           <div class="chat-input">
-            <input type="text" :placeholder="t('chat.inputPlaceholder')" v-model="chatInput" @keyup.enter="sendMessage" />
-            <button class="primary" @click="sendMessage">{{ t('chat.send') }}</button>
+            <div class="chat-quick-picks">
+              <div class="chat-quick-title">{{ t('chat.quickTitle') }}</div>
+              <div class="chat-quick-grid">
+                <button
+                  v-for="quick in chatQuickSnippets"
+                  :key="`${quick.kind}-${quick.value}`"
+                  class="ghost compact chat-quick-chip"
+                  :class="quick.kind"
+                  type="button"
+                  :title="quick.label"
+                  :disabled="!activeChat"
+                  @click="insertChatSnippet(quick.value)"
+                >{{ quick.value }}</button>
+              </div>
+            </div>
+            <div class="chat-toolbar">
+              <button class="ghost compact" type="button" @click="pickChatAttachment('image')">{{ t('chat.attachImage') }}</button>
+              <button class="ghost compact" type="button" @click="pickChatAttachment('video')">{{ t('chat.attachVideo') }}</button>
+              <button class="ghost compact" type="button" @click="pickChatAttachment('audio')">{{ t('chat.attachAudio') }}</button>
+              <button v-if="chatAttachment" class="ghost compact" type="button" @click="clearChatAttachment">{{ t('chat.clearAttachment') }}</button>
+            </div>
+            <div v-if="chatAttachment" class="chat-attachment">
+              <div class="chat-attachment-icon">⧉</div>
+              <div class="chat-attachment-body">
+                <div class="chat-attachment-title">{{ chatAttachment.mediaName }}</div>
+                <div class="chat-attachment-sub">
+                  {{ messageMediaLabel(chatAttachment) }} · {{ formatByteSize(chatAttachment.originalSizeBytes) }} · {{ t('chat.attachmentHint') }}
+                </div>
+              </div>
+            </div>
+            <div class="chat-compose">
+              <input ref="chatInput" type="text" :placeholder="t('chat.inputPlaceholder')" v-model="chatInput" :disabled="!activeChat" @keyup.enter="sendMessage" />
+              <button class="primary" type="button" @click="sendMessage">{{ t('chat.send') }}</button>
+            </div>
           </div>
         </div>
       </section>
+
+      <div v-if="spaceModalOpen" class="modal-backdrop" @click.self="closeSpaceComposer">
+        <div class="modal">
+          <div class="modal-header">
+            <div>
+              <div class="space-toolbar-kicker">
+                {{ spaceDraft.id ? t('spaces.editTitle') : t('spaces.createTitle') }}
+              </div>
+              <div class="modal-title">
+                {{ spaceDraft.id ? t('spaces.editSub') : t('spaces.createSub') }}
+              </div>
+            </div>
+            <button class="ghost compact" type="button" @click="closeSpaceComposer">×</button>
+          </div>
+          <form class="form modal-form" @submit.prevent="createSpace">
+            <label>{{ t('spaces.typeLabel') }}</label>
+            <select
+              v-model="spaceDraft.type"
+              :disabled="Boolean(spaceDraft.id)"
+              @change="!spaceDraft.id && (spaceDraft.subdomain = spaceDraft.subdomain.trim() || suggestSpaceSubdomain(spaceDraft.name, $event.target.value))"
+            >
+              <option value="private">{{ t('spaces.type.private') }}</option>
+              <option value="public">{{ t('spaces.type.public') }}</option>
+            </select>
+            <input
+              type="text"
+              :placeholder="t('spaces.namePlaceholder')"
+              v-model="spaceDraft.name"
+              @input="!spaceDraft.id && (spaceDraft.subdomain = spaceDraft.subdomain.trim() || suggestSpaceSubdomain(spaceDraft.name, spaceDraft.type))"
+            />
+            <input type="text" :placeholder="t('spaces.subdomainLabel')" v-model="spaceDraft.subdomain" maxlength="63" />
+            <div class="modal-hint">
+              {{ spaceDraft.id ? t('spaces.subdomainEditHint') : t('spaces.subdomainHint') }}
+            </div>
+            <textarea class="post-textarea" :placeholder="t('spaces.descPlaceholder')" v-model="spaceDraft.description"></textarea>
+            <div class="modal-actions">
+              <button class="ghost" type="button" @click="closeSpaceComposer">{{ t('common.cancel') }}</button>
+              <button class="primary" type="submit">
+                {{ spaceDraft.id ? t('spaces.saveAction') : t('spaces.createAction') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div v-if="postModalOpen" class="modal-backdrop" @click.self="closePostComposer">
+        <div class="modal">
+          <div class="modal-header">
+            <div>
+              <div class="space-toolbar-kicker">{{ t('posts.publishAction') }}</div>
+              <div class="modal-title">
+                {{ postDraft.visibility === 'private' ? t('posts.privateFeedTitle') : t('posts.feedTitle') }}
+              </div>
+            </div>
+            <button class="ghost compact" type="button" @click="closePostComposer">×</button>
+          </div>
+          <form class="form modal-form" @submit.prevent="createPost">
+            <label>{{ t('posts.visibilityLabel') }}</label>
+            <select v-model="postDraft.visibility" @change="postDraft.spaceId = selectedSpaceIdForVisibility($event.target.value, postDraft.spaceId)">
+              <option value="public">{{ t('posts.publicLabel') }}</option>
+              <option value="private">{{ t('posts.privateLabel') }}</option>
+            </select>
+            <label>{{ t('posts.spaceLabel') }}</label>
+            <select v-model="postDraft.spaceId">
+              <option
+                v-for="space in (postDraft.visibility === 'private' ? privateSpaces : publicSpaces)"
+                :key="space.id"
+                :value="space.id"
+              >
+                {{ localizedSpaceText('name', space) }} · @{{ space.subdomain }}
+              </option>
+            </select>
+            <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="postDraft.title" />
+            <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="postDraft.content"></textarea>
+            <label>{{ t('posts.statusLabel') }}</label>
+            <select v-model="postDraft.status">
+              <option value="published">{{ t('posts.statusPublished') }}</option>
+              <option value="draft">{{ t('posts.statusDraft') }}</option>
+              <option value="hidden">{{ t('posts.statusHidden') }}</option>
+            </select>
+            <div class="modal-actions">
+              <button class="ghost" type="button" @click="closePostComposer">{{ t('common.cancel') }}</button>
+              <button class="primary" type="submit">{{ t('posts.publishAction') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
     </template>
   </div>

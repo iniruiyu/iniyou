@@ -52,6 +52,8 @@
 
 - 用户体系需要作为核心基础能力
 - 钱包、会员、权益需要与账号体系关联，但保留独立扩展空间
+- 每个用户都可以设置唯一用户名，用户名由英文字母和数字组成，可作为个人主页和二级域名入口 / Each user can set a unique alphanumeric username used for profile and subdomain routing.
+- 登录时支持邮箱、手机号或用户名 / Login supports email, phone, or username.
 
 细化功能：
 
@@ -77,12 +79,28 @@
 
 - 社交能力是首批核心业务之一
 - 内容、互动和聊天能力后续可能继续拆分细化
+- 空间能力属于社交内容的入口层，公共空间必须先进入再浏览或发布
+- 创建空间时需要生成稳定的二级域名标识，方便后续通过子域名进入空间
+- 文章发布需要记录所属空间，便于页面展示当前上下文
+- 空间名称与二级域名需要独立维护，二级域名前缀只能使用英文字母和数字，且最长 63 个字符
+- 用户名和空间二级域名都应限制为 63 个字符，保证可直接作为 DNS 子域名使用 / Usernames and space subdomains should both be limited to 63 characters so they can be used directly as DNS subdomains.
+- 个人空间列表只展示当前用户创建的空间，不再自动生成默认空间
 
 细化功能：
 
+- 创建私人空间
+- 创建公共空间
+- 通过二级域名进入空间
+- 修改空间名称
+- 修改空间二级域名
+- 删除空间
+- 在当前空间内发布文章
+- 在当前空间内查看文章列表
+- 记录文章所属空间
 - 发布文章
 - 查看文章列表
 - 查看文章详情
+- 删除文章
 - 查看用户主页
 - 点赞文章
 - 评论文章
@@ -92,7 +110,16 @@
 - 查看聊天消息
 - 发送聊天消息
 
-### 5.3 后续扩展
+### 5.3 空间相关
+
+- 空间创建入口需要同时支持私人空间和公共空间
+- 空间列表需要展示空间名称、类型和二级域名
+- 空间卡片需要支持进入、改名、改域名和删除
+- 进入公共空间后，发布和查看内容都应记录在该空间上下文中
+- 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
+- 文章卡片需要支持删除当前用户自己的内容
+
+### 5.4 后续扩展
 
 - 支持接入区块链账号
 - 允许继续扩展新的业务需求
@@ -104,7 +131,7 @@
 - 不应破坏原有账号登录注册主流程
 - 应预留多身份、多账号映射能力
 
-### 5.4 多语言界面
+### 5.5 多语言界面
 
 - 前端界面必须支持多语言切换
 - 当前内建语言必须包含：
@@ -144,6 +171,9 @@
 - 文章列表
 - 文章详情
 - 用户主页内容展示
+- 空间内文章发布
+- 空间内文章浏览
+- 文章所属空间记录
 
 ### 6.4 互动模块
 
@@ -157,6 +187,13 @@
 - 会话详情
 - 消息发送
 - 消息读取状态
+- 文本、图片、视频、语音消息发送
+- 媒体消息发送前压缩，过期后自动删除
+- 会话列表未读角标与新好友浮动提醒
+- 桌面端与移动端聊天布局自适应优化
+- 聊天页面需要全屏占满可用区域，历史消息支持滚动/滑动查看
+- 聊天页面需要提供回到底部浮动按钮，并美化右侧滚动条视觉样式
+- 聊天输入区需要提供常用表情与贴纸快捷插入
 
 ### 6.6 扩展身份模块
 
@@ -171,9 +208,12 @@
 - 用户注册
 - 用户登录
 - 用户资料基础能力
+- 空间创建与进入
 - 文章发布与浏览
 - 点赞评论转发
 - 基础聊天
+- 聊天媒体附件、未读角标与好友提醒
+- 聊天全屏布局、历史滚动与表情/贴纸快捷入口
 
 ### 7.2 P1
 
@@ -221,10 +261,25 @@
 
 ## 12. 变更日志
 
+### 2026-03-18
+
+- 新增空间相关需求，明确私人空间与公共空间都需要二级域名标识 / Added space requirements with second-level domain identifiers for private and public spaces.
+- 明确公共空间内容需要先进入空间上下文，再进行浏览或发布 / Clarified that public space content must be accessed through the active space context.
+- 完成聊天全屏布局、历史滚动与表情/贴纸快捷插入 / Completed full-screen chat layout, history scrolling, and emoji/sticker quick inserts.
+- 明确文章需要记录所属空间，并要求双端以弹窗方式完成空间与内容创建 / Clarified that posts must record their owning space and both clients should use modal entry for space/content creation.
+- 明确空间名称与二级域名解耦，空间和文章都支持删除，个人空间列表仅展示用户创建的空间 / Clarified that space names and subdomains are independent, spaces and posts support deletion, and personal space lists only show user-created spaces.
+- 补充用户名作为个人主页与二级域名入口的统一句柄 / Added username as the unified handle for profile and subdomain routing.
+
 ### 2026-03-17
 
 - 收敛首批语言为 English、简体中文与繁體中文 / Reduced built-in languages to English, Simplified Chinese, and Traditional Chinese.
 - 保留 RTL 扩展能力，不再内建希伯来语 / Kept RTL extensibility while removing built-in Hebrew.
+
+### 2026-03-18
+
+- 新增聊天媒体消息、过期自动删除与双端布局优化需求 / Added chat media messages, automatic expiry cleanup, and dual-end layout refinement.
+- 新增新好友浮动提醒与新消息图标提示需求 / Added floating new-friend reminders and unread message badge hints.
+- 新增聊天回到底部按钮与滚动条美化需求 / Added a back-to-bottom button and scrollbar polish requirement for chat.
 
 ### 2026-03-12
 

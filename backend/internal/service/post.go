@@ -13,45 +13,50 @@ import (
 type PostView struct {
 	// Post payload returned to clients.
 	// 返回给客户端的文章视图。
-	ID            string        `json:"id"`
-	UserID        string        `json:"user_id"`
-	AuthorName    string        `json:"author_name"`
-	Title         string        `json:"title"`
-	Content       string        `json:"content"`
-	Status        string        `json:"status"`
-	Visibility    string        `json:"visibility"`
-	LikesCount    int64         `json:"likes_count"`
-	CommentsCount int64         `json:"comments_count"`
-	SharesCount   int64         `json:"shares_count"`
-	LikedByMe     bool          `json:"liked_by_me"`
-	CreatedAt     time.Time     `json:"created_at"`
-	Comments      []CommentView `json:"comments,omitempty"`
+	ID             string        `json:"id"`
+	UserID         string        `json:"user_id"`
+	SpaceID        string        `json:"space_id,omitempty"`
+	SpaceName      string        `json:"space_name,omitempty"`
+	SpaceSubdomain string        `json:"space_subdomain,omitempty"`
+	SpaceType      string        `json:"space_type,omitempty"`
+	AuthorName     string        `json:"author_name"`
+	Title          string        `json:"title"`
+	Content        string        `json:"content"`
+	Status         string        `json:"status"`
+	Visibility     string        `json:"visibility"`
+	LikesCount     int64         `json:"likes_count"`
+	CommentsCount  int64         `json:"comments_count"`
+	SharesCount    int64         `json:"shares_count"`
+	LikedByMe      bool          `json:"liked_by_me"`
+	CreatedAt      time.Time     `json:"created_at"`
+	Comments       []CommentView `json:"comments,omitempty"`
 }
 
 type CommentView struct {
 	// Comment payload returned to clients.
 	// 返回给客户端的评论视图。
-	ID        string    `json:"id"`
-	PostID    string    `json:"post_id"`
-	UserID    string    `json:"user_id"`
-	AuthorName string   `json:"author_name"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
+	ID         string    `json:"id"`
+	PostID     string    `json:"post_id"`
+	UserID     string    `json:"user_id"`
+	AuthorName string    `json:"author_name"`
+	Content    string    `json:"content"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
-func CreatePost(db *gorm.DB, userID string, title string, content string, visibility string) (PostView, error) {
+func CreatePost(db *gorm.DB, userID string, title string, content string, visibility string, spaceID string) (PostView, error) {
 	// Create a post for the current user.
 	// 为当前用户创建文章。
-	return CreatePostWithStatus(db, userID, title, content, visibility, "published")
+	return CreatePostWithStatus(db, userID, title, content, visibility, "published", spaceID)
 }
 
-func CreatePostWithStatus(db *gorm.DB, userID string, title string, content string, visibility string, status string) (PostView, error) {
+func CreatePostWithStatus(db *gorm.DB, userID string, title string, content string, visibility string, status string, spaceID string) (PostView, error) {
 	// Create a post for the current user with an explicit status.
 	// 为当前用户创建带状态的文章。
 	title = strings.TrimSpace(title)
 	content = strings.TrimSpace(content)
 	visibility = strings.ToLower(strings.TrimSpace(visibility))
 	status = normalizePostStatus(status)
+	spaceID = strings.TrimSpace(spaceID)
 	if title == "" {
 		return PostView{}, errors.New("title required")
 	}
@@ -65,8 +70,14 @@ func CreatePostWithStatus(db *gorm.DB, userID string, title string, content stri
 		return PostView{}, errors.New("visibility must be public or private")
 	}
 
+	space, err := resolveSpaceForPost(db, userID, visibility, spaceID)
+	if err != nil {
+		return PostView{}, err
+	}
+
 	post := models.Post{
 		UserID:     userID,
+		SpaceID:    space.ID,
 		Title:      title,
 		Content:    content,
 		Status:     status,
@@ -185,13 +196,14 @@ func ToggleLikePost(db *gorm.DB, userID string, postID string) (PostView, error)
 	return GetPost(db, userID, post.ID)
 }
 
-func UpdatePost(db *gorm.DB, userID string, postID string, title string, content string, visibility string, status string) (PostView, error) {
+func UpdatePost(db *gorm.DB, userID string, postID string, title string, content string, visibility string, status string, spaceID string) (PostView, error) {
 	// Update an existing post owned by the current user.
 	// 更新当前用户拥有的文章。
 	title = strings.TrimSpace(title)
 	content = strings.TrimSpace(content)
 	visibility = strings.ToLower(strings.TrimSpace(visibility))
 	status = normalizePostStatus(status)
+	spaceID = strings.TrimSpace(spaceID)
 	if title == "" {
 		return PostView{}, errors.New("title required")
 	}
@@ -210,9 +222,19 @@ func UpdatePost(db *gorm.DB, userID string, postID string, title string, content
 		return PostView{}, errors.New("cannot edit another user's post")
 	}
 
+	resolvedSpaceID := spaceID
+	if resolvedSpaceID == "" {
+		resolvedSpaceID = post.SpaceID
+	}
+	space, err := resolveSpaceForPost(db, userID, visibility, resolvedSpaceID)
+	if err != nil {
+		return PostView{}, err
+	}
+
 	updates := map[string]any{
 		"title":      title,
 		"content":    content,
+		"space_id":   space.ID,
 		"visibility": visibility,
 		"status":     status,
 		"updated_at": time.Now(),
@@ -221,6 +243,18 @@ func UpdatePost(db *gorm.DB, userID string, postID string, title string, content
 		return PostView{}, err
 	}
 	return GetPost(db, userID, postID)
+}
+
+func DeletePost(db *gorm.DB, userID string, postID string) error {
+	// Delete an existing post owned by the current user.
+	// 删除当前用户拥有的文章。
+	return db.Transaction(func(tx *gorm.DB) error {
+		var post models.Post
+		if err := tx.First(&post, "id = ? AND user_id = ?", postID, userID).Error; err != nil {
+			return err
+		}
+		return deletePostCascade(tx, []string{post.ID})
+	})
 }
 
 func AddComment(db *gorm.DB, userID string, postID string, content string) (PostView, error) {
@@ -288,15 +322,24 @@ func hydratePostView(db *gorm.DB, viewerID string, post models.Post) (PostView, 
 		return PostView{}, err
 	}
 
+	space, err := resolvePostSpaceForView(db, post)
+	if err != nil {
+		return PostView{}, err
+	}
+
 	view := PostView{
-		ID:         post.ID,
-		UserID:     post.UserID,
-		AuthorName: fallbackDisplayName(user),
-		Title:      post.Title,
-		Content:    post.Content,
-		Status:     post.Status,
-		Visibility: post.Visibility,
-		CreatedAt:  post.CreatedAt,
+		ID:             post.ID,
+		UserID:         post.UserID,
+		SpaceID:        space.ID,
+		SpaceName:      space.Name,
+		SpaceSubdomain: space.Subdomain,
+		SpaceType:      space.Type,
+		AuthorName:     fallbackDisplayName(user),
+		Title:          post.Title,
+		Content:        post.Content,
+		Status:         post.Status,
+		Visibility:     post.Visibility,
+		CreatedAt:      post.CreatedAt,
 	}
 
 	_ = db.Model(&models.PostLike{}).Where("post_id = ?", post.ID).Count(&view.LikesCount).Error
@@ -330,6 +373,56 @@ func hydratePostView(db *gorm.DB, viewerID string, post models.Post) (PostView, 
 	return view, nil
 }
 
+func resolveSpaceForPost(db *gorm.DB, userID string, visibility string, spaceID string) (models.Space, error) {
+	// Resolve the target space for a post write operation.
+	// 为文章写入操作解析目标空间。
+	visibility = strings.ToLower(strings.TrimSpace(visibility))
+	spaceID = strings.TrimSpace(spaceID)
+
+	if spaceID != "" {
+		space, err := loadOwnedSpaceByID(db, userID, spaceID)
+		if err != nil {
+			return models.Space{}, err
+		}
+		if space.Type != visibility {
+			return models.Space{}, errors.New("space type does not match visibility")
+		}
+		return space, nil
+	}
+
+	space, err := firstSpaceByType(db, userID, visibility)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.Space{}, errors.New("space required for this visibility")
+		}
+		return models.Space{}, err
+	}
+	return space, nil
+}
+
+func resolvePostSpaceForView(db *gorm.DB, post models.Post) (models.Space, error) {
+	// Resolve the space metadata for a post response.
+	// 为文章响应解析空间元数据。
+	if strings.TrimSpace(post.SpaceID) != "" {
+		space, err := loadOwnedSpaceByID(db, post.UserID, post.SpaceID)
+		if err == nil {
+			return space, nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.Space{}, err
+		}
+	}
+
+	space, err := firstSpaceByType(db, post.UserID, post.Visibility)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.Space{}, nil
+		}
+		return models.Space{}, err
+	}
+	return space, nil
+}
+
 func normalizePostStatus(status string) string {
 	// Normalize and validate post status values.
 	// 规范化并校验文章状态值。
@@ -356,4 +449,25 @@ func fallbackDisplayName(user models.User) string {
 		return *user.Phone
 	}
 	return user.ID
+}
+
+func deletePostCascade(tx *gorm.DB, postIDs []string) error {
+	// Delete a post and all of its dependent interactions.
+	// 删除文章及其所有关联互动数据。
+	if len(postIDs) == 0 {
+		return nil
+	}
+	if err := tx.Where("post_id IN ?", postIDs).Delete(&models.Comment{}).Error; err != nil {
+		return err
+	}
+	if err := tx.Where("post_id IN ?", postIDs).Delete(&models.PostLike{}).Error; err != nil {
+		return err
+	}
+	if err := tx.Where("post_id IN ?", postIDs).Delete(&models.PostShare{}).Error; err != nil {
+		return err
+	}
+	if err := tx.Where("id IN ?", postIDs).Delete(&models.Post{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

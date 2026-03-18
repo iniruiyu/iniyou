@@ -24,6 +24,7 @@ class AuthenticatedShellView extends StatelessWidget {
     required this.backgroundGradient,
     required this.topNav,
     required this.showTopNav,
+    required this.floatingNotice,
     required this.t,
   });
 
@@ -62,6 +63,9 @@ class AuthenticatedShellView extends StatelessWidget {
   // Show top navigation buttons.
   // 是否显示顶部导航按钮。
   final bool showTopNav;
+  // Floating reminder banner in the content shell.
+  // 内容壳层中的浮动提醒卡片。
+  final Widget? floatingNotice;
   final String Function(String key) t;
 
   @override
@@ -77,9 +81,7 @@ class AuthenticatedShellView extends StatelessWidget {
             ? IconButton(
                 tooltip: t('shell.toggleSidebar'),
                 onPressed: onToggleSidebar,
-                icon: Icon(
-                  sidebarCollapsed ? Icons.menu_open : Icons.menu,
-                ),
+                icon: Icon(sidebarCollapsed ? Icons.menu_open : Icons.menu),
               )
             : Builder(
                 builder: (context) {
@@ -137,6 +139,15 @@ class AuthenticatedShellView extends StatelessWidget {
               child: Stack(
                 children: [
                   body,
+                  if (floatingNotice != null)
+                    PositionedDirectional(
+                      top: 16,
+                      end: 16,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        child: floatingNotice!,
+                      ),
+                    ),
                   if (loading)
                     const Positioned(
                       top: 16,
