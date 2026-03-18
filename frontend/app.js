@@ -21,9 +21,6 @@ const app = createApp({
       // Sidebar collapsed state.
       // 侧边栏折叠状态。
       sidebarCollapsed: false,
-      // Layout mode for navigation placement.
-      // 导航布局模式（左侧/顶部）。
-      layoutMode: 'side',
       // JWT token.
       // JWT 令牌。
       token: '',
@@ -129,8 +126,6 @@ const app = createApp({
             blockchain: '链上账号',
             friends: '好友',
             chat: '实时聊天',
-            layoutTop: '切换顶部',
-            layoutSide: '切换左侧',
             collapse: '折叠导航',
             expand: '展开导航',
           },
@@ -434,8 +429,6 @@ const app = createApp({
             blockchain: 'Blockchain',
             friends: 'Friends',
             chat: 'Live Chat',
-            layoutTop: 'Switch Top',
-            layoutSide: 'Switch Side',
             collapse: 'Collapse Nav',
             expand: 'Expand Nav',
           },
@@ -1049,8 +1042,6 @@ const app = createApp({
               blockchain: '鏈上帳號',
               friends: '好友',
               chat: '即時聊天',
-              layoutTop: '切換頂部',
-              layoutSide: '切換左側',
               collapse: '收合導航',
               expand: '展開導航',
             },
@@ -1472,15 +1463,6 @@ const app = createApp({
       // Toggle sidebar collapsed state.
       // 切换侧边栏折叠状态。
       this.sidebarCollapsed = !this.sidebarCollapsed;
-    },
-    toggleLayoutMode() {
-      // Toggle navigation layout placement.
-      // 切换导航布局位置。
-      this.layoutMode = this.layoutMode === 'side' ? 'top' : 'side';
-      localStorage.setItem('layoutMode', this.layoutMode);
-      if (this.layoutMode === 'top') {
-        this.sidebarCollapsed = false;
-      }
     },
     openProfileTab(tabKey) {
       // Open profile view with a specific tab.
@@ -2496,13 +2478,6 @@ const app = createApp({
       this.theme = savedTheme;
     }
     this.applyTheme();
-
-    // Restore layout mode from local storage.
-    // 从本地存储恢复导航布局模式。
-    const savedLayoutMode = localStorage.getItem('layoutMode');
-    if (savedLayoutMode === 'side' || savedLayoutMode === 'top') {
-      this.layoutMode = savedLayoutMode;
-    }
 
     // Load token from storage.
     // 从本地存储读取 token。

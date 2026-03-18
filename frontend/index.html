@@ -11,11 +11,15 @@
 </head>
 <body>
   <!-- Vue root / Vue 根节点 -->
-  <div id="app" class="app" :class="{ 'sidebar-collapsed': layoutMode === 'side' && sidebarCollapsed, 'layout-top': layoutMode === 'top' }">
+  <div
+    id="app"
+    class="app"
+    :class="{ 'sidebar-collapsed': sidebarCollapsed }"
+  >
     <landing-page v-if="!isLoggedIn" :app="appContext"></landing-page>
 
     <template v-else>
-    <aside v-if="layoutMode === 'side'" class="sidebar">
+    <aside v-show="!sidebarCollapsed" class="sidebar">
       <div class="brand">
         <div class="brand-core">
           <div class="brand-mark">AS</div>
@@ -24,21 +28,14 @@
             <div class="brand-sub">{{ t('brandSub') }}</div>
           </div>
         </div>
-        <button class="nav-toggle ghost" type="button" @click="toggleSidebar" :aria-label="sidebarCollapsed ? t('nav.expand') : t('nav.collapse')">
-          <span class="nav-toggle-icon" aria-hidden="true"></span>
-          <span class="nav-toggle-text">{{ sidebarCollapsed ? t('nav.expand') : t('nav.collapse') }}</span>
-        </button>
       </div>
 
       <nav class="nav">
         <!-- Navigation / 侧边导航 -->
-        <button class="nav-item nav-item-control" type="button" @click="toggleLayoutMode">
-          <span class="nav-icon">SW</span>
-          <span class="nav-label">{{ layoutMode === 'side' ? t('nav.layoutTop') : t('nav.layoutSide') }}</span>
+        <button class="nav-item nav-item-control" type="button" @click="toggleSidebar" :aria-label="t('nav.collapse')">
+          <span class="nav-icon">HD</span>
+          <span class="nav-label">{{ t('nav.collapse') }}</span>
         </button>
-        <div class="nav-item nav-item-control nav-item-settings">
-          <settings-menu :app="appContext"></settings-menu>
-        </div>
         <button class="nav-item" data-icon="DB" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">
           <span class="nav-icon">DB</span>
           <span class="nav-label">{{ t('nav.dashboard') }}</span>
@@ -77,50 +74,13 @@
       </div>
     </aside>
 
+    <button v-if="sidebarCollapsed" class="sidebar-fab ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
+      <span class="nav-toggle-icon" aria-hidden="true"></span>
+      <span class="sidebar-fab-label">{{ t('nav.expand') }}</span>
+    </button>
+
     <!-- Main content / 主内容 -->
     <main class="main">
-      <header v-if="layoutMode === 'top'" class="top-shell">
-        <div class="top-shell-brand">
-          <div class="brand-mark">AS</div>
-          <div>
-            <div class="brand-title">Account Space</div>
-            <div class="brand-sub">{{ t('brandSub') }}</div>
-          </div>
-        </div>
-        <div class="top-shell-nav">
-          <button class="nav-item" data-icon="DB" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">
-            <span class="nav-icon">DB</span>
-            <span class="nav-label">{{ t('nav.dashboard') }}</span>
-          </button>
-          <button class="nav-item" data-icon="PR" :class="{active: view === 'private'}" :disabled="!isLoggedIn" @click="view = 'private'">
-            <span class="nav-icon">PR</span>
-            <span class="nav-label">{{ t('nav.private') }}</span>
-          </button>
-          <button class="nav-item" data-icon="PU" :class="{active: view === 'public'}" :disabled="!isLoggedIn" @click="view = 'public'">
-            <span class="nav-icon">PU</span>
-            <span class="nav-label">{{ t('nav.public') }}</span>
-          </button>
-          <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
-            <span class="nav-icon">FR</span>
-            <span class="nav-label">{{ t('nav.friends') }}</span>
-          </button>
-          <button class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
-            <span class="nav-icon">CH</span>
-            <span class="nav-label">{{ t('nav.chat') }}</span>
-          </button>
-          <button class="nav-item" data-icon="ME" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">
-            <span class="nav-icon">ME</span>
-            <span class="nav-label">{{ t('nav.profile') }}</span>
-          </button>
-        </div>
-        <div class="top-shell-actions">
-          <button class="layout-toggle ghost" type="button" @click="toggleLayoutMode">
-            <span class="nav-icon">SW</span>
-            <span class="layout-toggle-label">{{ t('nav.layoutSide') }}</span>
-          </button>
-          <settings-menu :app="appContext"></settings-menu>
-        </div>
-      </header>
       <header class="topbar">
         <div>
           <div class="page-title">{{ pageTitle }}</div>
@@ -133,6 +93,7 @@
               <div class="profile-name">{{ user.name }}</div>
               <div class="profile-level">{{ localizedLevelName }} · {{ localizedPlan }}</div>
             </div>
+            <settings-menu :app="appContext"></settings-menu>
             <button v-if="isLoggedIn" class="ghost compact" @click="logout">{{ t('auth.logout') }}</button>
           </div>
         </div>

@@ -281,6 +281,11 @@
 
 - 2026-03-17：完成双前端导航结构与个人主页标签调整 / Completed dual-frontend navigation structure and profile tab alignment.
 - 2026-03-17：收敛首批内建语言为中英双语与繁体中文 / Reduced built-in languages to English, Simplified Chinese, and Traditional Chinese.
+- 2026-03-18：收口 Vue 顶部切换并改为整栏折叠 / Removed Vue top switch and switched to full sidebar collapse.
+- 2026-03-18：将设置入口移动到退出登录左侧 / Moved settings entry to the left of logout.
+- 2026-03-18：恢复 Vue 折叠为真实隐藏侧栏并保持主区原排版 / Restored real sidebar hiding while keeping the main layout intact.
+- 2026-03-18：改为常驻浮动按钮控制侧栏折叠 / Switched to a persistent floating button to control sidebar collapse.
+- 2026-03-18：拆分展开/收起入口，展开态仅保留导航内隐藏按钮 / Separated expand/collapse entries so expanded state keeps only the in-nav hide button.
 
 ## 14. 维护约定
 
