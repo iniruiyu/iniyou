@@ -8,6 +8,7 @@ import '../controllers/chat_media_actions.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import '../widgets/app_cards.dart';
+import '../widgets/bilingual_field.dart';
 import '../main.dart' show ProfileTab;
 import 'settings_views.dart';
 
@@ -150,8 +151,7 @@ class ProfileView extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
-                  _buildIdentityField(
-                    context,
+                  BilingualField(
                     primaryLabel: t('profile.identity.nickname'),
                     secondaryLabel: peerT('profile.identity.nickname'),
                     child: TextField(
@@ -162,8 +162,7 @@ class ProfileView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildIdentityField(
-                    context,
+                  BilingualField(
                     // Username handle / 用户名句柄：保留为可选账号标识。
                     primaryLabel: t('profile.identity.username'),
                     secondaryLabel: peerT('profile.identity.username'),
@@ -179,14 +178,12 @@ class ProfileView extends StatelessWidget {
                           null,
                       decoration: InputDecoration(
                         hintText: t('dashboard.usernamePlaceholder'),
-                        helperText:
-                            'Letters and numbers only, up to 63 characters / 仅允许英文字母和数字，长度不超过 63',
                       ),
                     ),
+                    helperText: t('dashboard.usernameHint'),
                   ),
                   const SizedBox(height: 12),
-                  _buildIdentityField(
-                    context,
+                  BilingualField(
                     // Domain handle / 域名句柄：用于二级域名与登录入口。
                     // Domain identity / 域名身份：用于二级域名与登录。
                     primaryLabel: t('profile.identity.domain'),
@@ -202,20 +199,19 @@ class ProfileView extends StatelessWidget {
                       }) =>
                           null,
                       decoration: InputDecoration(
-                        helperText:
-                            '域名会作为身份卡和登录入口 / Domain is used as identity card and login handle',
+                        hintText: t('profile.identity.domainPlaceholder'),
                       ),
                     ),
+                    helperText: t('profile.identity.domainHint'),
                   ),
                   const SizedBox(height: 12),
-                  _buildIdentityField(
-                    context,
+                  BilingualField(
                     primaryLabel: t('profile.identity.signature'),
                     secondaryLabel: peerT('profile.identity.signature'),
                     child: TextField(
                       controller: signatureController,
                       decoration: InputDecoration(
-                        hintText: t('profile.identity.signature'),
+                        hintText: t('profile.identity.signaturePlaceholder'),
                       ),
                       maxLines: 3,
                     ),
@@ -233,8 +229,7 @@ class ProfileView extends StatelessWidget {
                         children: [
                           SizedBox(
                             width: fieldWidth,
-                            child: _buildIdentityField(
-                              context,
+                            child: BilingualField(
                               primaryLabel: t('profile.identity.phoneVisibility'),
                               secondaryLabel: peerT('profile.identity.phoneVisibility'),
                               child: DropdownButtonFormField<String>(
@@ -263,8 +258,7 @@ class ProfileView extends StatelessWidget {
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: _buildIdentityField(
-                              context,
+                            child: BilingualField(
                               primaryLabel: t('profile.identity.emailVisibility'),
                               secondaryLabel: peerT('profile.identity.emailVisibility'),
                               child: DropdownButtonFormField<String>(
@@ -293,8 +287,7 @@ class ProfileView extends StatelessWidget {
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: _buildIdentityField(
-                              context,
+                            child: BilingualField(
                               primaryLabel: t('profile.identity.ageVisibility'),
                               secondaryLabel: peerT('profile.identity.ageVisibility'),
                               child: DropdownButtonFormField<String>(
@@ -323,8 +316,7 @@ class ProfileView extends StatelessWidget {
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: _buildIdentityField(
-                              context,
+                            child: BilingualField(
                               primaryLabel: t('profile.identity.genderVisibility'),
                               secondaryLabel: peerT('profile.identity.genderVisibility'),
                               child: DropdownButtonFormField<String>(
@@ -486,36 +478,6 @@ class ProfileView extends StatelessWidget {
       ],
     );
   }
-}
-
-// Reusable bilingual field wrapper / 可复用双语字段包裹：将主标签、副标签和输入控件分层展示。
-Widget _buildIdentityField(
-  BuildContext context, {
-  required String primaryLabel,
-  required String secondaryLabel,
-  required Widget child,
-}) {
-  final theme = Theme.of(context);
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        primaryLabel,
-        style: theme.textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        secondaryLabel,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      const SizedBox(height: 8),
-      child,
-    ],
-  );
 }
 
 class PostDetailView extends StatelessWidget {

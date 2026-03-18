@@ -183,83 +183,75 @@
           <h2>{{ t('profile.identity.title') }}</h2>
           <p>{{ t('profile.identity.sub') }}</p>
           <form class="form identity-form">
-            <!-- Bilingual identity fields / 双语身份字段：主语言单独一行，副语言放在下一行，避免长文案挤压布局。 -->
-            <div class="identity-field">
-              <label class="identity-label">
-                <span class="identity-label-main">{{ t('profile.identity.nickname') }}</span>
-                <span class="identity-label-sub">{{ peerLocaleText('profile.identity.nickname') }}</span>
-              </label>
+            <!-- Bilingual identity fields / 双语身份字段：每个字段复用同一组件，避免布局和文案规则在多处复制。 -->
+            <bilingual-field
+              :primary-label="t('profile.identity.nickname')"
+              :secondary-label="peerLocaleText('profile.identity.nickname')"
+            >
               <input type="text" :placeholder="t('dashboard.displayNamePlaceholder')" v-model="profileDraft.displayName" />
-            </div>
-            <div class="identity-field">
-              <label class="identity-label">
-                <span class="identity-label-main">{{ t('profile.identity.username') }}</span>
-                <span class="identity-label-sub">{{ peerLocaleText('profile.identity.username') }}</span>
-              </label>
+            </bilingual-field>
+            <bilingual-field
+              :primary-label="t('profile.identity.username')"
+              :secondary-label="peerLocaleText('profile.identity.username')"
+              :helper-text="t('dashboard.usernameHint')"
+            >
               <!-- Username field / 用户名字段：用于个人主页和二级域名入口。 -->
               <input type="text" :placeholder="t('dashboard.usernamePlaceholder')" v-model="profileDraft.username" maxlength="63" autocomplete="username" />
-              <div class="form-hint">{{ t('dashboard.usernameHint') }}</div>
-            </div>
-            <div class="identity-field">
-              <label class="identity-label">
-                <span class="identity-label-main">{{ t('profile.identity.domain') }}</span>
-                <span class="identity-label-sub">{{ peerLocaleText('profile.identity.domain') }}</span>
-              </label>
-              <input type="text" :placeholder="t('profile.identity.domain')" v-model="profileDraft.domain" maxlength="63" autocomplete="username" />
-              <div class="form-hint">{{ t('profile.identity.domainHint') }}</div>
-            </div>
-            <div class="identity-field">
-              <label class="identity-label">
-                <span class="identity-label-main">{{ t('profile.identity.signature') }}</span>
-                <span class="identity-label-sub">{{ peerLocaleText('profile.identity.signature') }}</span>
-              </label>
-              <textarea class="post-textarea" :placeholder="t('profile.identity.signature')" v-model="profileDraft.signature"></textarea>
-            </div>
+            </bilingual-field>
+            <bilingual-field
+              :primary-label="t('profile.identity.domain')"
+              :secondary-label="peerLocaleText('profile.identity.domain')"
+              :helper-text="t('profile.identity.domainHint')"
+            >
+              <input type="text" :placeholder="t('profile.identity.domainPlaceholder')" v-model="profileDraft.domain" maxlength="63" autocomplete="username" />
+            </bilingual-field>
+            <bilingual-field
+              :primary-label="t('profile.identity.signature')"
+              :secondary-label="peerLocaleText('profile.identity.signature')"
+            >
+              <textarea class="post-textarea" :placeholder="t('profile.identity.signaturePlaceholder')" v-model="profileDraft.signature"></textarea>
+            </bilingual-field>
             <div class="identity-visibility-grid">
-              <div class="identity-field">
-                <label class="identity-label">
-                  <span class="identity-label-main">{{ t('profile.identity.phoneVisibility') }}</span>
-                  <span class="identity-label-sub">{{ peerLocaleText('profile.identity.phoneVisibility') }}</span>
-                </label>
+              <bilingual-field
+                :primary-label="t('profile.identity.phoneVisibility')"
+                :secondary-label="peerLocaleText('profile.identity.phoneVisibility')"
+              >
                 <select v-model="profileDraft.phoneVisibility">
                   <option value="public">{{ t('profile.identity.visibility.public') }}</option>
                   <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
                   <option value="private">{{ t('profile.identity.visibility.private') }}</option>
                 </select>
-              </div>
-              <div class="identity-field">
-                <label class="identity-label">
-                  <span class="identity-label-main">{{ t('profile.identity.emailVisibility') }}</span>
-                  <span class="identity-label-sub">{{ peerLocaleText('profile.identity.emailVisibility') }}</span>
-                </label>
+              </bilingual-field>
+              <bilingual-field
+                :primary-label="t('profile.identity.emailVisibility')"
+                :secondary-label="peerLocaleText('profile.identity.emailVisibility')"
+              >
                 <select v-model="profileDraft.emailVisibility">
                   <option value="public">{{ t('profile.identity.visibility.public') }}</option>
                   <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
                   <option value="private">{{ t('profile.identity.visibility.private') }}</option>
                 </select>
-              </div>
-              <div class="identity-field">
-                <label class="identity-label">
-                  <span class="identity-label-main">{{ t('profile.identity.ageVisibility') }}</span>
-                  <span class="identity-label-sub">{{ peerLocaleText('profile.identity.ageVisibility') }}</span>
-                </label>
+              </bilingual-field>
+              <bilingual-field
+                :primary-label="t('profile.identity.ageVisibility')"
+                :secondary-label="peerLocaleText('profile.identity.ageVisibility')"
+              >
                 <select v-model="profileDraft.ageVisibility">
                   <option value="public">{{ t('profile.identity.visibility.public') }}</option>
                   <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
                   <option value="private">{{ t('profile.identity.visibility.private') }}</option>
                 </select>
-              </div>
-              <div class="identity-field">
-                <label class="identity-label">
-                  <span class="identity-label-main">{{ t('profile.identity.genderVisibility') }}</span>
-                  <span class="identity-label-sub">{{ peerLocaleText('profile.identity.genderVisibility') }}</span>
-                </label>
+              </bilingual-field>
+              <bilingual-field
+                :primary-label="t('profile.identity.genderVisibility')"
+                :secondary-label="peerLocaleText('profile.identity.genderVisibility')"
+              >
                 <select v-model="profileDraft.genderVisibility">
                   <option value="public">{{ t('profile.identity.visibility.public') }}</option>
                   <option value="friends">{{ t('profile.identity.visibility.friends') }}</option>
                   <option value="private">{{ t('profile.identity.visibility.private') }}</option>
                 </select>
-              </div>
+              </bilingual-field>
             </div>
             <button class="primary" type="button" @click="saveProfile">{{ t('profile.identity.save') }}</button>
           </form>
@@ -843,6 +835,7 @@
   <script src="components/settings-menu.js"></script>
   <script src="components/auth-panel.js"></script>
   <script src="components/landing-page.js"></script>
+  <script src="components/bilingual-field.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

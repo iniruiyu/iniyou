@@ -130,6 +130,8 @@ const app = createApp({
                 friends: '仅好友可见',
                 private: '仅自己可见',
               },
+              domainPlaceholder: '输入域名',
+              signaturePlaceholder: '输入签名',
               domainHint: '域名只能使用英文字母和数字，长度不超过 63，并作为身份卡和登录入口。',
               domainRequired: '请输入域名。',
               domainError: '域名只能包含英文字母和数字，且最长 63 个字符。',
@@ -496,6 +498,8 @@ const app = createApp({
                 friends: 'Friends only',
                 private: 'Only me',
               },
+              domainPlaceholder: 'Enter domain',
+              signaturePlaceholder: 'Enter signature',
               domainHint: 'Use letters and numbers only, up to 63 characters. The domain is your identity card and login handle.',
               domainRequired: 'Domain is required.',
               domainError: 'The domain may contain letters and numbers only, up to 63 characters.',
@@ -1614,6 +1618,8 @@ const app = createApp({
                 friends: '僅好友可見',
                 private: '僅自己可見',
               },
+              domainPlaceholder: '輸入網域',
+              signaturePlaceholder: '輸入簽名',
               domainHint: '域名只能使用英文字母和數字，長度不超過 63，並作為身分卡和登入入口。',
               domainRequired: '請輸入域名。',
               domainError: '域名只能包含英文字母和數字，且最長 63 個字元。',
@@ -3859,5 +3865,6 @@ const app = createApp({
 app.component('settings-menu', window.SettingsMenu);
 app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
+app.component('bilingual-field', window.BilingualField);
 
 app.mount('#app');
