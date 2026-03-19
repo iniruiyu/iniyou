@@ -106,7 +106,8 @@
       <div v-if="flashMessage" class="banner banner-success">{{ flashMessage }}</div>
       <div v-if="errorMessage" class="banner banner-error">{{ errorMessage }}</div>
 
-      <header v-else class="topbar space-topbar">
+      <!-- Space header / 空间头部：仅在进入空间页时显示。 -->
+      <header v-if="isSpaceShell" class="topbar space-topbar">
         <div class="space-topbar-left">
           <button class="ghost compact" type="button" @click="leaveSpaceShell">{{ t('spaces.backAction') }}</button>
           <div>
