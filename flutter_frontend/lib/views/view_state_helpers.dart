@@ -2,6 +2,24 @@ import '../models/app_models.dart';
 import '../main.dart' show AppView;
 import '../widgets/app_cards.dart';
 
+String localizedText(
+  String languageCode,
+  String zh,
+  String en, [
+  String? tw,
+]) {
+  // Resolve a short UI label for the currently selected language.
+  // 根据当前设置语言解析短句式界面文案。
+  switch (languageCode) {
+    case 'en-US':
+      return en;
+    case 'zh-TW':
+      return tw ?? zh;
+    default:
+      return zh;
+  }
+}
+
 FriendItem? findFriendById(String id, List<FriendItem> items) {
   for (final item in items) {
     if (item.id == id) {
@@ -36,22 +54,28 @@ SpaceItem? firstSpaceOfType(List<SpaceItem> spaces, String type) {
   return null;
 }
 
-String spaceTypeLabel(String type) {
-  // Map legacy space types to bilingual display labels.
-  // 将历史空间类型映射为双语展示标签。
-  return '空间 / Space';
+String spaceTypeLabel(String type, String languageCode) {
+  // Map legacy space types to the active language label only.
+  // 将历史空间类型映射为当前语言标签。
+  switch (type) {
+    case 'private':
+      return localizedText(languageCode, '私人空间', 'Private space', '私人空間');
+    case 'public':
+    default:
+      return localizedText(languageCode, '空间', 'Space', '空間');
+  }
 }
 
-String spaceVisibilityLabel(String visibility) {
-  // Map space visibility values to bilingual display labels.
-  // 将空间可见性映射为双语展示标签。
+String spaceVisibilityLabel(String visibility, String languageCode) {
+  // Map space visibility values to the active language label only.
+  // 将空间可见性映射为当前语言标签。
   switch (visibility) {
     case 'friends':
-      return '好友可见 / Friends only';
+      return localizedText(languageCode, '好友可见', 'Friends only', '好友可見');
     case 'private':
-      return '仅自己可见 / Only me';
+      return localizedText(languageCode, '仅自己可见', 'Only me', '僅自己可見');
     default:
-      return '所有人可见 / Public';
+      return localizedText(languageCode, '所有人可见', 'Public', '所有人可見');
   }
 }
 
@@ -86,6 +110,7 @@ List<SummaryCardData> buildHomeSummaryCards({
   required SubscriptionItem? subscription,
   required List<ExternalAccountItem> externalAccounts,
   required String Function(String key) t,
+  required String languageCode,
 }) {
   final chains = connectedChains(externalAccounts);
   // Count only public-type spaces in the dashboard summary.
@@ -95,7 +120,12 @@ List<SummaryCardData> buildHomeSummaryCards({
     SummaryCardData(
       t('summary.spaces'),
       '${visibleSpaces.length}',
-      '可见空间总数 / Total visible spaces',
+      localizedText(
+        languageCode,
+        '可见空间总数',
+        'Visible spaces',
+        '可見空間總數',
+      ),
     ),
     SummaryCardData(
       t('summary.friends'),

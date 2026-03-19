@@ -41,6 +41,7 @@ class DashboardOverviewView extends StatelessWidget {
     required this.activePublicSpace,
     required this.onOpenPublicSpace,
     required this.onOpenPostDetail,
+    required this.languageCode,
   });
 
   final double width;
@@ -51,6 +52,7 @@ class DashboardOverviewView extends StatelessWidget {
   final SpaceItem? activePublicSpace;
   final VoidCallback onOpenPublicSpace;
   final ValueChanged<String> onOpenPostDetail;
+  final String languageCode;
 
   @override
   Widget build(BuildContext context) {
@@ -62,28 +64,30 @@ class DashboardOverviewView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InfoCard(
-          title: '账号概览',
+          title: localizedText(languageCode, '账号概览', 'Account overview', '帳號概覽'),
           lines: [
-            '用户 ID: ${user.id}',
-            if (user.email.isNotEmpty) '邮箱: ${user.email}',
-            if (user.phone.isNotEmpty) '手机号: ${user.phone}',
-            '等级: ${user.level}',
-            '状态: ${user.status}',
+            '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${user.id}',
+            if (user.email.isNotEmpty)
+              '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${user.email}',
+            if (user.phone.isNotEmpty)
+              '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${user.phone}',
+            '${localizedText(languageCode, '等级', 'Level', '等級')}: ${user.level}',
+            '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${user.status}',
           ],
         ),
         const SizedBox(height: 16),
         InfoCard(
-          title: '快捷入口',
-          lines: const [
-            '进入空间管理草稿、可见空间和空间入口',
-            '空间内容会出现在空间页，也能打开作者主页',
-            '好友和聊天页面保持关系与实时消息联动',
+          title: localizedText(languageCode, '快捷入口', 'Quick entry', '快捷入口'),
+          lines: [
+            localizedText(languageCode, '进入空间管理草稿、可见空间和空间入口', 'Use spaces to manage drafts, visible spaces, and entry points.', '進入空間可管理草稿、可見空間和入口。'),
+            localizedText(languageCode, '空间内容会出现在空间页，也能打开作者主页', 'Space content appears on the space page and can also open the author profile.', '空間內容會出現在空間頁，也能打開作者主頁。'),
+            localizedText(languageCode, '好友和聊天页面保持关系与实时消息联动', 'Friends and chat stay linked for relations and live messages.', '好友與聊天頁保持關係與即時訊息聯動。'),
           ],
           trailing: BilingualActionButton(
             variant: BilingualButtonVariant.tonal,
             compact: true,
             onPressed: onOpenPublicSpace,
-            primaryLabel: '打开空间',
+            primaryLabel: localizedText(languageCode, '打开空间', 'Open space', '打開空間'),
             secondaryLabel: 'Open space',
           ),
         ),
@@ -94,22 +98,24 @@ class DashboardOverviewView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InfoCard(
-          title: '空间摘要',
+          title: localizedText(languageCode, '空间摘要', 'Space summary', '空間摘要'),
           lines: [
             if (activePublicSpace != null)
-              '当前空间：${activePublicSpace!.name} · @${activePublicSpace!.subdomain}',
+              '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activePublicSpace!.name} · @${activePublicSpace!.subdomain}',
             for (final space in visibleSpaces.take(4))
-              '${spaceVisibilityLabel(space.visibility)} · ${space.name} · @${space.subdomain}',
-            if (visibleSpaces.isEmpty) '当前还没有可见空间，先创建一个空间。',
+              '${spaceVisibilityLabel(space.visibility, languageCode)} · ${space.name} · @${space.subdomain}',
+            if (visibleSpaces.isEmpty)
+              localizedText(languageCode, '当前还没有可见空间，先创建一个空间。', 'No visible spaces yet. Create one first.', '目前還沒有可見空間，先建立一個空間。'),
           ],
         ),
         const SizedBox(height: 16),
         InfoCard(
-          title: '最近空间内容',
+          title: localizedText(languageCode, '最近空间内容', 'Recent space content', '最近空間內容'),
           lines: [
             for (final post in publicPosts.take(3))
               '${post.authorName}: ${post.title}',
-            if (publicPosts.isEmpty) '空间里还没有内容。',
+            if (publicPosts.isEmpty)
+              localizedText(languageCode, '空间里还没有内容。', 'No content in this space yet.', '空間裡還沒有內容。'),
           ],
           trailing: BilingualActionButton(
             variant: BilingualButtonVariant.tonal,
@@ -117,7 +123,7 @@ class DashboardOverviewView extends StatelessWidget {
             onPressed: publicPosts.isEmpty
                 ? null
                 : () => onOpenPostDetail(publicPosts.first.id),
-            primaryLabel: '查看详情',
+            primaryLabel: localizedText(languageCode, '查看详情', 'View details', '查看詳情'),
             secondaryLabel: 'View details',
           ),
         ),
@@ -260,6 +266,7 @@ class SpaceListSection extends StatelessWidget {
     required this.onEnterSpace,
     this.onEditSpace,
     this.onDeleteSpace,
+    required this.languageCode,
   });
 
   final String title;
@@ -269,6 +276,7 @@ class SpaceListSection extends StatelessWidget {
   final ValueChanged<SpaceItem> onEnterSpace;
   final ValueChanged<SpaceItem>? onEditSpace;
   final ValueChanged<SpaceItem>? onDeleteSpace;
+  final String languageCode;
 
   @override
   Widget build(BuildContext context) {
@@ -305,17 +313,23 @@ class SpaceListSection extends StatelessWidget {
                                 ),
                               ),
                               if (space.id == activeSpaceId)
-                                const Chip(label: Text('当前')),
+                                Chip(label: Text(localizedText(languageCode, '当前', 'Current', '目前'))),
                             ],
                           ),
                           const SizedBox(height: 10),
                           Text(space.description),
                           const SizedBox(height: 8),
-                          Text('类型: ${spaceTypeLabel(space.type)}'),
+                          Text(
+                            '${localizedText(languageCode, '类型', 'Type', '類型')}: ${spaceTypeLabel(space.type, languageCode)}',
+                          ),
                           const SizedBox(height: 4),
-                          Text('可见性: ${spaceVisibilityLabel(space.visibility)}'),
+                          Text(
+                            '${localizedText(languageCode, '可见性', 'Visibility', '可見性')}: ${spaceVisibilityLabel(space.visibility, languageCode)}',
+                          ),
                           const SizedBox(height: 4),
-                          Text('二级域名: @${space.subdomain}'),
+                          Text(
+                            '${localizedText(languageCode, '二级域名', 'Subdomain', '二級網域')}: @${space.subdomain}',
+                          ),
                           const SizedBox(height: 14),
                           Wrap(
                             spacing: 8,
@@ -325,7 +339,7 @@ class SpaceListSection extends StatelessWidget {
                                 variant: BilingualButtonVariant.tonal,
                                 compact: true,
                                 onPressed: () => onEnterSpace(space),
-                                primaryLabel: '进入空间',
+                                primaryLabel: localizedText(languageCode, '进入空间', 'Enter space', '進入空間'),
                                 secondaryLabel: 'Enter space',
                               ),
                               if (onEditSpace != null && currentUserId != null && space.userId == currentUserId)
@@ -333,7 +347,7 @@ class SpaceListSection extends StatelessWidget {
                                   variant: BilingualButtonVariant.tonal,
                                   compact: true,
                                   onPressed: () => onEditSpace!(space),
-                                  primaryLabel: '编辑',
+                                  primaryLabel: localizedText(languageCode, '编辑', 'Edit', '編輯'),
                                   secondaryLabel: 'Edit',
                                 ),
                               if (onDeleteSpace != null && currentUserId != null && space.userId == currentUserId)
@@ -341,7 +355,7 @@ class SpaceListSection extends StatelessWidget {
                                   variant: BilingualButtonVariant.text,
                                   compact: true,
                                   onPressed: () => onDeleteSpace!(space),
-                                  primaryLabel: '删除',
+                                  primaryLabel: localizedText(languageCode, '删除', 'Delete', '刪除'),
                                   secondaryLabel: 'Delete',
                                 ),
                             ],
@@ -355,9 +369,11 @@ class SpaceListSection extends StatelessWidget {
               .toList(),
         ),
         if (spaces.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 12),
-            child: Text('当前还没有空间。'),
+            child: Text(
+              localizedText(languageCode, '当前还没有空间。', 'No spaces yet.', '目前還沒有空間。'),
+            ),
           ),
       ],
     );
@@ -377,6 +393,7 @@ class PostStreamSection extends StatelessWidget {
     required this.onOpenDetail,
     required this.canEditPost,
     this.onDeletePost,
+    required this.languageCode,
   });
 
   final List<PostItem> posts;
@@ -389,11 +406,15 @@ class PostStreamSection extends StatelessWidget {
   final ValueChanged<String> onOpenDetail;
   final bool Function(PostItem post) canEditPost;
   final ValueChanged<PostItem>? onDeletePost;
+  final String languageCode;
 
   @override
   Widget build(BuildContext context) {
     if (posts.isEmpty) {
-      return InfoCard(title: '内容流', lines: [emptyText]);
+      return InfoCard(
+        title: localizedText(languageCode, '内容流', 'Feed', '內容流'),
+        lines: [emptyText],
+      );
     }
     return Column(
       children: [

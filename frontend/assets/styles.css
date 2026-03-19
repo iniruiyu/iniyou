@@ -975,6 +975,59 @@ body {
   margin-top: 4px;
 }
 
+.chat-profile-modal {
+  width: min(760px, 100%);
+}
+
+.friend-profile-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  margin-top: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(110, 231, 255, 0.18);
+  background: linear-gradient(180deg, rgba(110, 231, 255, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.friend-profile-summary .avatar.large {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(110, 231, 255, 0.14), 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+.friend-profile-summary-copy {
+  min-width: 0;
+}
+
+.friend-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.friend-profile-card {
+  background: var(--surface-soft);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+}
+
+.friend-profile-label {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.friend-profile-value {
+  margin-top: 6px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
 .post-textarea {
   width: 100%;
 }
@@ -1328,6 +1381,20 @@ body {
 .chat-header {
   padding: 16px 20px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.chat-header-copy {
+  min-width: 0;
+}
+
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .chat-body {
@@ -2177,6 +2244,22 @@ button:disabled {
   .chat {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(220px, 34vh) minmax(0, 1fr);
+  }
+
+  .chat-header {
+    flex-direction: column;
+  }
+
+  .chat-header-actions {
+    width: 100%;
+  }
+
+  .friend-profile-summary {
+    flex-direction: column;
+  }
+
+  .friend-profile-grid {
+    grid-template-columns: 1fr;
   }
 
   .chat-scroll-fab {

@@ -97,7 +97,7 @@ const app = createApp({
             loginHint: '输入账号后直接进入控制台。',
             registerHint: '创建账号后自动进入你的空间。',
             statStepOne: '选择登录或注册，缩短首次进入路径。',
-            statStepTwo: '完成认证后进入首页 / 工作台。',
+            statStepTwo: '完成认证后进入首页。',
             statStepThree: '语言切换保持在右上角稳定可见。',
             previewLabel: 'Auth Flow',
             previewTitle: '未登录态聚焦在账号流程',
@@ -163,7 +163,7 @@ const app = createApp({
           },
           profileMenu: {
             title: '个人主页菜单',
-            subtitle: '会员等级 / 订阅 / 链上账号',
+            subtitle: '会员等级、订阅、链上账号',
           },
           theme: {
             title: '外观皮肤',
@@ -180,7 +180,7 @@ const app = createApp({
             cancel: '取消',
           },
           nav: {
-            auth: '登录 / 注册',
+            auth: '登录注册',
             dashboard: '账号主页',
             space: '空间',
             profile: '用户主页',
@@ -205,7 +205,7 @@ const app = createApp({
             needLogin: '需要登录',
           },
           pageTitle: {
-            auth: '登录 / 注册',
+            auth: '登录注册',
             dashboard: '账号主页',
             space: '空间',
             private: '空间',
@@ -237,7 +237,7 @@ const app = createApp({
             welcomeSub: '登录后进入你的身份卡与空间。',
             createTitle: '创建新账号',
             createSub: '加入会员体系，解锁更大空间与更多互动。',
-            accountPlaceholder: '邮箱 / 手机 / 用户名 / 域名',
+            accountPlaceholder: '邮箱、手机、用户名、域名',
             passwordPlaceholder: '密码',
             emailPlaceholder: '邮箱',
             phonePlaceholder: '手机号',
@@ -394,7 +394,7 @@ const app = createApp({
             sub: '绑定外部区块链地址，为后续链上身份和资产能力预留入口。',
             providerLabel: '提供方',
             chainLabel: '链网络',
-            addressPlaceholder: '钱包地址 / 账号地址',
+            addressPlaceholder: '钱包地址、账号地址',
             signaturePlaceholder: '签名载荷（必填，用于基础校验）',
             securityHint: '当前版本会校验提供方、链类型、地址格式和签名载荷长度。',
             bindAction: '绑定账号',
@@ -428,7 +428,7 @@ const app = createApp({
           },
           chat: {
             title: '会话',
-            quickTitle: '常用表情 / 贴纸',
+            quickTitle: '常用表情与贴纸',
             quickPanelTitle: '表情包面板',
             quickPanelHint: '表情与文字表情分开显示。',
             quickEmojiTitle: '常用表情',
@@ -454,6 +454,11 @@ const app = createApp({
             mediaVideo: '视频',
             mediaAudio: '语音',
             mediaFile: '文件',
+            friendProfileTitle: '好友资料',
+            friendProfileSub: '查看好友的公开资料、联系方式和关系状态。',
+            viewProfile: '查看资料',
+            friendStatus: '好友状态',
+            friendDirection: '关系方向',
           },
           plans: {
             basic: '基础会员',
@@ -558,7 +563,7 @@ const app = createApp({
           },
           profileMenu: {
             title: 'Profile Menu',
-            subtitle: 'Membership / Subscription / Blockchain',
+            subtitle: 'Membership, Subscription, and Blockchain',
           },
           theme: {
             title: 'Theme',
@@ -575,7 +580,7 @@ const app = createApp({
             cancel: 'Cancel',
           },
           nav: {
-            auth: 'Sign In / Sign Up',
+            auth: 'Sign In',
             dashboard: 'Dashboard',
             space: 'Space',
             private: 'Space',
@@ -602,7 +607,7 @@ const app = createApp({
             needLogin: 'Login Required',
           },
           pageTitle: {
-            auth: 'Sign In / Sign Up',
+            auth: 'Sign In',
             dashboard: 'Dashboard',
             space: 'Space',
             private: 'Space',
@@ -634,7 +639,7 @@ const app = createApp({
             welcomeSub: 'Sign in to access your space.',
             createTitle: 'Create Account',
             createSub: 'Join membership plans and unlock larger spaces.',
-            accountPlaceholder: 'Email / Phone / Username / Domain',
+            accountPlaceholder: 'Email, Phone, Username, Domain',
             passwordPlaceholder: 'Password',
             emailPlaceholder: 'Email',
             phonePlaceholder: 'Phone',
@@ -787,7 +792,7 @@ const app = createApp({
             sub: 'Bind external wallet addresses now and reserve room for future on-chain identity features.',
             providerLabel: 'Provider',
             chainLabel: 'Chain',
-            addressPlaceholder: 'Wallet address / account address',
+            addressPlaceholder: 'Wallet address, account address',
             signaturePlaceholder: 'Signature payload (required for baseline checks)',
             securityHint: 'This version validates provider, chain, address format, and signature payload length.',
             bindAction: 'Bind Account',
@@ -821,7 +826,7 @@ const app = createApp({
           },
           chat: {
             title: 'Conversations',
-            quickTitle: 'Emoji / stickers',
+            quickTitle: 'Emoji and stickers',
             quickPanelTitle: 'Emoji panel',
             quickPanelHint: 'Emojis and text stickers are shown separately.',
             quickEmojiTitle: 'Emoji',
@@ -847,6 +852,11 @@ const app = createApp({
             mediaVideo: 'Video',
             mediaAudio: 'Voice',
             mediaFile: 'File',
+            friendProfileTitle: 'Friend Profile',
+            friendProfileSub: 'View your friend’s public details, contact info, and relationship status.',
+            viewProfile: 'View Profile',
+            friendStatus: 'Friend Status',
+            friendDirection: 'Relation Direction',
           },
           plans: {
             basic: 'Basic',
@@ -1117,6 +1127,9 @@ const app = createApp({
       // Active chat target.
       // 当前聊天对象。
       activeChat: null,
+      // Chat friend profile modal state.
+      // 聊天好友资料弹窗状态。
+      chatFriendProfile: null,
       // Chat history.
       // 聊天记录。
       chatMessages: [
@@ -1811,7 +1824,7 @@ const app = createApp({
             htmlTitle: '帳號服務 · 私人空間與公共空間',
             common: { guest: '訪客', cancel: '取消' },
             nav: {
-              auth: '登入 / 註冊',
+            auth: '登入註冊',
               dashboard: '帳號主頁',
               space: '空間',
               private: '私人空間',
@@ -1866,7 +1879,7 @@ const app = createApp({
               needLogin: '需要登入',
             },
             pageTitle: {
-              auth: '登入 / 註冊',
+            auth: '登入註冊',
               dashboard: '帳號主頁',
               space: '空間',
               private: '空間',
@@ -1894,7 +1907,7 @@ const app = createApp({
               welcomeSub: '登入後進入你的空間。',
               createTitle: '建立新帳號',
               createSub: '加入會員體系，解鎖更大空間與更多互動。',
-              accountPlaceholder: '信箱 / 手機 / 使用者名稱 / 域名',
+            accountPlaceholder: '信箱、手機、使用者名稱、域名',
               passwordPlaceholder: '密碼',
               emailPlaceholder: '信箱',
               phonePlaceholder: '手機號碼',
@@ -2012,7 +2025,7 @@ const app = createApp({
               sub: '綁定外部區塊鏈地址，為後續鏈上身份與資產能力預留入口。',
               providerLabel: '提供方',
               chainLabel: '鏈網路',
-              addressPlaceholder: '錢包地址 / 帳號地址',
+            addressPlaceholder: '錢包地址、帳號地址',
               signaturePlaceholder: '簽名載荷（必填，用於基礎校驗）',
               securityHint: '目前版本會校驗提供方、鏈類型、地址格式與簽名載荷長度。',
               bindAction: '綁定帳號',
@@ -2043,7 +2056,7 @@ const app = createApp({
             },
           chat: {
             title: '會話',
-            quickTitle: '常用表情／貼紙',
+            quickTitle: '常用表情與貼紙',
             quickPanelTitle: '表情包面板',
             quickPanelHint: '表情與文字表情分開顯示。',
             quickEmojiTitle: '常用表情',
@@ -2068,6 +2081,11 @@ const app = createApp({
               mediaVideo: '影片',
               mediaAudio: '語音',
               mediaFile: '檔案',
+              friendProfileTitle: '好友資料',
+              friendProfileSub: '查看好友的公開資料、聯絡方式與關係狀態。',
+              viewProfile: '查看資料',
+              friendStatus: '好友狀態',
+              friendDirection: '關係方向',
             },
             plans: {
               basic: '基礎會員',
@@ -2209,6 +2227,8 @@ const app = createApp({
       this.chatSummaries = [];
       this.revokeChatMediaUrls();
       this.chatAttachment = null;
+      this.chatFriendProfile = null;
+      this.chatQuickPanelOpen = false;
       this.chatHistoryAtBottom = true;
       this.activeChat = null;
       this.activePrivateSpaceId = '';
@@ -2248,6 +2268,75 @@ const app = createApp({
       // Render the best available secondary contact text.
       // 渲染可用的次级联系信息。
       return friend.secondary || friend.domain || friend.username || friend.id;
+    },
+    friendProfileRows(friend) {
+      // Build the rows shown in the chat friend profile modal.
+      // 构建聊天好友资料弹窗中展示的字段行。
+      if (!friend) {
+        return [];
+      }
+      const missing = this.t('common.notAvailable') || '-';
+      return [
+        {
+          key: 'username',
+          label: this.t('profile.identity.username'),
+          value: friend.username ? `@${friend.username}` : missing,
+        },
+        {
+          key: 'domain',
+          label: this.t('profile.identity.domain'),
+          value: friend.domain ? `@${friend.domain}` : missing,
+        },
+        {
+          key: 'signature',
+          label: this.t('profile.identity.signature'),
+          value: friend.signature || missing,
+        },
+        {
+          key: 'email',
+          label: this.t('dashboard.emailPlaceholder'),
+          value: friend.email || missing,
+        },
+        {
+          key: 'phone',
+          label: this.t('dashboard.phonePlaceholder'),
+          value: friend.phone || missing,
+        },
+        {
+          key: 'status',
+          label: this.t('chat.friendStatus'),
+          value: this.statusLabel(friend.status),
+        },
+        {
+          key: 'direction',
+          label: this.t('chat.friendDirection'),
+          value: this.directionLabel(friend.direction),
+        },
+      ];
+    },
+    openChatFriendProfile(friend) {
+      // Open the chat friend profile modal with a frozen friend snapshot.
+      // 使用冻结的好友快照打开聊天好友资料弹窗。
+      if (!friend) {
+        return;
+      }
+      this.closeChatQuickPanel();
+      this.chatFriendProfile = { ...friend };
+    },
+    async openChatFriendProfilePage() {
+      // Jump from the modal to the full profile page.
+      // 从弹窗跳转到完整个人主页。
+      if (!this.chatFriendProfile?.id) {
+        return;
+      }
+      const friend = { ...this.chatFriendProfile };
+      this.closeChatFriendProfile();
+      await this.openProfile(friend.id, friend.name);
+    },
+    closeChatFriendProfile() {
+      // Close the chat friend profile modal.
+      // 关闭聊天好友资料弹窗。
+      this.chatFriendProfile = null;
     },
     searchResultActionLabel(result) {
       // Render the action label for a user search result.
@@ -3971,6 +4060,9 @@ const app = createApp({
             this.chatMessages = [];
           }
         }
+        if (this.chatFriendProfile && (!this.activeChat || this.chatFriendProfile.id !== this.activeChat.id)) {
+          this.closeChatFriendProfile();
+        }
       }
     },
     async searchUsers() {
@@ -4198,6 +4290,7 @@ const app = createApp({
       this.view = 'chat';
       this.activeChat = friend;
       this.closeChatQuickPanel();
+      this.closeChatFriendProfile();
       this.chatAttachment = null;
       this.chatMessages = [];
       this.chatHistoryAtBottom = true;

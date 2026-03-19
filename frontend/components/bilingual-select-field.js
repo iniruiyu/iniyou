@@ -43,9 +43,7 @@ window.BilingualSelectField = {
       if (typeof option.label === 'string' && option.label.trim()) {
         return option.label;
       }
-      const primary = option.primaryLabel || option.primary || '';
-      const secondary = option.secondaryLabel || option.secondary || '';
-      return [primary, secondary].filter(Boolean).join(' / ');
+      return option.primaryLabel || option.primary || option.name || '';
     },
     handleChange(event) {
       const value = event.target.value;
@@ -54,12 +52,12 @@ window.BilingualSelectField = {
     },
   },
   // Reusable bilingual select shell.
-  // 可复用双语下拉外壳：统一主标签、副标签和选项渲染逻辑。
+  // Reusable select shell for the active language only.
+  // 仅显示当前语言的下拉外壳，避免选项里重复拼接双语文本。
   template: `
     <div class="identity-field">
       <label class="identity-label">
         <span class="identity-label-main">{{ primaryLabel }}</span>
-        <span class="identity-label-sub">{{ secondaryLabel }}</span>
       </label>
       <select
         :disabled="disabled"

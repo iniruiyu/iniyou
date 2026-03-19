@@ -1162,9 +1162,14 @@
         </div>
         <div class="chat-window" @click="closeChatQuickPanel">
           <div class="chat-header">
-            <div>
+            <div class="chat-header-copy">
               <div class="friend-name">{{ activeChat ? activeChat.name : t('chat.pickFriend') }}</div>
               <div class="friend-status">{{ activeChat ? friendSecondary(activeChat) : t('chat.onlineNow') }}</div>
+            </div>
+            <div class="chat-header-actions" v-if="activeChat">
+              <button class="ghost compact" type="button" @click.stop="openChatFriendProfile(activeChat)">
+                {{ t('chat.viewProfile') }}
+              </button>
             </div>
           </div>
           <div class="chat-body" ref="chatHistory" @scroll="handleChatHistoryScroll">
@@ -1273,6 +1278,37 @@
           </div>
         </div>
       </section>
+
+      <div v-if="chatFriendProfile" class="modal-backdrop" @click.self="closeChatFriendProfile">
+        <div class="modal chat-profile-modal">
+          <div class="modal-header">
+            <div>
+              <div class="space-toolbar-kicker">{{ t('chat.friendProfileTitle') }}</div>
+              <div class="modal-title">{{ chatFriendProfile.name }}</div>
+              <div class="modal-hint">{{ t('chat.friendProfileSub') }}</div>
+            </div>
+            <button class="ghost compact" type="button" @click="closeChatFriendProfile">×</button>
+          </div>
+          <div class="friend-profile-summary">
+            <div class="avatar large"></div>
+            <div class="friend-profile-summary-copy">
+              <div class="friend-name">{{ chatFriendProfile.name }}</div>
+              <div class="friend-secondary">{{ friendSecondary(chatFriendProfile) }}</div>
+              <div class="friend-status">{{ statusLabel(chatFriendProfile.status) }} · {{ directionLabel(chatFriendProfile.direction) }}</div>
+            </div>
+          </div>
+          <div class="friend-profile-grid">
+            <div v-for="item in friendProfileRows(chatFriendProfile)" :key="item.key" class="friend-profile-card">
+              <div class="friend-profile-label">{{ item.label }}</div>
+              <div class="friend-profile-value">{{ item.value }}</div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="ghost" type="button" @click="closeChatFriendProfile">{{ t('common.cancel') }}</button>
+            <button class="primary" type="button" @click="openChatFriendProfilePage">{{ t('chat.viewProfile') }}</button>
+          </div>
+        </div>
+      </div>
 
       <div v-if="spaceModalOpen" class="modal-backdrop" @click.self="closeSpaceComposer">
         <div class="modal">

@@ -2,84 +2,125 @@ import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
 
-List<DropdownMenuItem<String>> buildIdentityVisibilityItems() {
-  // Shared identity visibility choices / 共用身份资料可见范围选项。
+String _localizedChoice(
+  String languageCode,
+  String zh,
+  String en, [
+  String? tw,
+]) {
+  switch (languageCode) {
+    case 'en-US':
+      return en;
+    case 'zh-TW':
+      return tw ?? zh;
+    default:
+      return zh;
+  }
+}
+
+List<DropdownMenuItem<String>> buildIdentityVisibilityItems(
+  String languageCode,
+) {
+  // Shared identity visibility choices for the active language only.
+  // 当前语言的身份资料可见范围选项。
   return const [
     DropdownMenuItem(
       value: 'public',
-      child: Text('公开 / Public'),
+      child: Text('公开'),
     ),
     DropdownMenuItem(
       value: 'friends',
-      child: Text('好友可见 / Friends only'),
+      child: Text('好友可见'),
     ),
     DropdownMenuItem(
       value: 'private',
-      child: Text('仅自己 / Only me'),
+      child: Text('仅自己'),
     ),
-  ];
+  ].map((item) {
+    final label = switch (item.value) {
+      'public' => _localizedChoice(languageCode, '公开', 'Public', '公開'),
+      'friends' => _localizedChoice(languageCode, '好友可见', 'Friends only', '好友可見'),
+      'private' => _localizedChoice(languageCode, '仅自己', 'Only me', '僅自己'),
+      _ => '',
+    };
+    return DropdownMenuItem<String>(value: item.value, child: Text(label));
+  }).toList(growable: false);
 }
 
-List<DropdownMenuItem<String>> buildPostVisibilityItems() {
-  // Shared post visibility choices / 共用文章可见范围选项。
-  return const [
+List<DropdownMenuItem<String>> buildPostVisibilityItems(String languageCode) {
+  // Shared post visibility choices for the active language only.
+  // 当前语言的文章可见范围选项。
+  return [
     DropdownMenuItem(
       value: 'public',
-      child: Text('公开 / Public'),
+      child: Text(_localizedChoice(languageCode, '公开', 'Public', '公開')),
     ),
     DropdownMenuItem(
       value: 'private',
-      child: Text('私密 / Private'),
+      child: Text(_localizedChoice(languageCode, '私密', 'Private', '私密')),
     ),
   ];
 }
 
-List<DropdownMenuItem<String>> buildPostStatusItems() {
-  // Shared post status choices / 共用文章状态选项。
-  return const [
+List<DropdownMenuItem<String>> buildPostStatusItems(String languageCode) {
+  // Shared post status choices for the active language only.
+  // 当前语言的文章状态选项。
+  return [
     DropdownMenuItem(
       value: 'published',
-      child: Text('已发布 / Published'),
+      child: Text(
+        _localizedChoice(languageCode, '已发布', 'Published', '已發布'),
+      ),
     ),
     DropdownMenuItem(
       value: 'draft',
-      child: Text('草稿 / Draft'),
+      child: Text(_localizedChoice(languageCode, '草稿', 'Draft', '草稿')),
     ),
     DropdownMenuItem(
       value: 'hidden',
-      child: Text('隐藏 / Hidden'),
+      child: Text(_localizedChoice(languageCode, '隐藏', 'Hidden', '隱藏')),
     ),
   ];
 }
 
-List<DropdownMenuItem<String>> buildSpaceTypeItems() {
-  // Shared space type choices / 共用空间类型选项。
-  return const [
+List<DropdownMenuItem<String>> buildSpaceTypeItems(String languageCode) {
+  // Shared space type choices for the active language only.
+  // 当前语言的空间类型选项。
+  return [
     DropdownMenuItem(
       value: 'private',
-      child: Text('私人空间 / Private space'),
+      child: Text(
+        _localizedChoice(languageCode, '私人空间', 'Private space', '私人空間'),
+      ),
     ),
     DropdownMenuItem(
       value: 'public',
-      child: Text('空间 / Space'),
+      child: Text(_localizedChoice(languageCode, '空间', 'Space', '空間')),
     ),
   ];
 }
 
-List<DropdownMenuItem<String>> buildSpaceVisibilityItems() {
-  // Shared space visibility choices / 共用空间可见范围选项。
-  return const [
+List<DropdownMenuItem<String>> buildSpaceVisibilityItems(String languageCode) {
+  // Shared space visibility choices for the active language only.
+  // 当前语言的空间可见范围选项。
+  return [
     DropdownMenuItem(
       value: 'public',
-      child: Text('所有人可见 / Public'),
+      child: Text(
+        _localizedChoice(languageCode, '所有人可见', 'Public', '所有人可見'),
+      ),
     ),
     DropdownMenuItem(
       value: 'friends',
-      child: Text('好友可见 / Friends only'),
+      child: Text(
+        _localizedChoice(languageCode, '好友可见', 'Friends only', '好友可見'),
+      ),
     ),
     DropdownMenuItem(
       value: 'private',
-      child: Text('仅自己可见 / Only me'),
+      child: Text(
+        _localizedChoice(languageCode, '仅自己可见', 'Only me', '僅自己可見'),
+      ),
     ),
   ];
 }

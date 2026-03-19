@@ -269,6 +269,11 @@
 
 ## 12. 变更日志
 
+### 2026-03-19
+
+- 收口空间相关界面文案为当前语言单语显示，不再同时展示中文和英文 / Collapsed space-related UI labels to the active language only instead of showing bilingual text side by side.
+- 在聊天界面新增好友资料弹窗，支持查看资料并跳转到完整个人主页 / Added a friend profile modal in chat so users can review details and jump to the full profile page.
+
 ### 2026-03-18
 
 - 新增空间相关需求，明确私人空间与公共空间都需要二级域名标识 / Added space requirements with second-level domain identifiers for private and public spaces.

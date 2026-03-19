@@ -269,3 +269,4 @@ new-project/
 - 2026-03-19：补齐空间页当前选中空间同步，并限制空间卡片编辑/删除仅对创建者可见 / Synced the currently selected space in the space page and limited space card edit/delete actions to creators only.
 - 2026-03-19：收紧空间列表与个人主页空间可见范围，并补齐空间内容页图文/小视频发布与帖子媒体展示 / Tightened space list and profile space visibility, and added image/short-video publishing plus post media rendering in the space content page.
 - 2026-03-19：优化 Vue 空间页为单一内容流，并新增评论楼中楼回复与创建者专属空间操作 / Refined the Vue space page into a single content feed and added threaded comment replies plus creator-only space actions.
+- 2026-03-19：收口空间相关文案为当前语言单语显示，并补充聊天好友资料弹窗 / Collapsed space-related labels to the active language only and added a chat friend profile modal.

@@ -36,6 +36,7 @@ Widget buildDashboardView({
   required SpaceItem? activePublicSpace,
   required VoidCallback onOpenPublicSpace,
   required ValueChanged<String> onOpenPostDetail,
+  required String languageCode,
 }) {
   return DashboardOverviewView(
     width: width,
@@ -46,6 +47,7 @@ Widget buildDashboardView({
     activePublicSpace: activePublicSpace,
     onOpenPublicSpace: onOpenPublicSpace,
     onOpenPostDetail: onOpenPostDetail,
+    languageCode: languageCode,
   );
 }
 
@@ -67,6 +69,7 @@ Widget buildSpaceView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required String languageCode,
 }) {
   // Keep the page focused on creator-owned spaces and the active feed.
   // 页面聚焦于“自己创建的空间列表 + 当前空间内容流”。
@@ -81,15 +84,16 @@ Widget buildSpaceView({
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       InfoCard(
-        title: '空间 / Space',
+        title: localizedText(languageCode, '空间', 'Space', '空間'),
         lines: [
-          '只显示自己创建的空间。 / Only spaces you created are listed here.',
-          '进入空间后即可浏览内容，并记录所属空间。 / Enter a space to browse its feed and keep posts bound to it.',
+          localizedText(languageCode, '只显示自己创建的空间。', 'Only spaces you created are listed here.', '只顯示自己建立的空間。'),
+          localizedText(languageCode, '进入空间后即可浏览内容，并记录所属空间。', 'Enter a space to browse its feed and keep posts bound to it.', '進入空間後即可瀏覽內容，並記錄所屬空間。'),
           if (selectedSpace == null)
-            '先从下方空间列表选择一个空间。 / Pick a space from the list below first.',
-          if (selectedSpace != null) '当前空间：${selectedSpace.spaceLabel}',
+            localizedText(languageCode, '先从下方空间列表选择一个空间。', 'Pick a space from the list below first.', '先從下方空間列表選擇一個空間。'),
           if (selectedSpace != null)
-            '可见性：${spaceVisibilityLabel(selectedSpace.visibility)}',
+            '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${selectedSpace.spaceLabel}',
+          if (selectedSpace != null)
+            '${localizedText(languageCode, '可见性', 'Visibility', '可見性')}: ${spaceVisibilityLabel(selectedSpace.visibility, languageCode)}',
         ],
       ),
       const SizedBox(height: 16),
@@ -101,13 +105,13 @@ Widget buildSpaceView({
             width: 360,
             child: SpaceComposerCard(
               loading: loading,
-              title: '创建空间 / Create space',
-              subtitle: '新空间会自动生成二级域名，名称和域名分开维护。',
-              detailLines: const [
-                '空间列表仅保留自己创建的空间。',
-                '可见范围和空间名称可以独立调整。',
+              title: localizedText(languageCode, '创建空间', 'Create space', '建立空間'),
+              subtitle: localizedText(languageCode, '新空间会自动生成二级域名，名称和域名分开维护。', 'A new space gets its own subdomain; name and subdomain are managed separately.', '新空間會自動生成二級網域，名稱和網域分開維護。'),
+              detailLines: [
+                localizedText(languageCode, '空间列表仅保留自己创建的空间。', 'Only spaces you created stay in the list.', '空間列表僅保留自己建立的空間。'),
+                localizedText(languageCode, '可见范围和空间名称可以独立调整。', 'Visibility and space name can be adjusted independently.', '可見範圍和空間名稱可以獨立調整。'),
               ],
-              buttonPrimaryLabel: '打开创建弹窗',
+              buttonPrimaryLabel: localizedText(languageCode, '打开创建弹窗', 'Open create dialog', '打開建立彈窗'),
               buttonSecondaryLabel: 'Open create dialog',
               buttonVariant: BilingualButtonVariant.filled,
               onSubmit: onOpenSpaceComposer,
@@ -118,13 +122,13 @@ Widget buildSpaceView({
             child: canPublish
                 ? PostComposerCard(
                     loading: loading,
-                    title: '发布内容 / Publish content',
-                    subtitle: '支持图文和小视频，内容会记录在当前空间。',
+                    title: localizedText(languageCode, '发布内容', 'Publish content', '發布內容'),
+                    subtitle: localizedText(languageCode, '支持图文和小视频，内容会记录在当前空间。', 'Images and short videos are supported, and posts are recorded in the current space.', '支援圖文和小影片，內容會記錄在目前空間。'),
                     detailLines: [
-                      '当前空间：${selectedSpace.name} · @${selectedSpace.subdomain}',
-                      '创建者进入空间后可以直接发帖，其他人可点赞和评论。',
+                      '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${selectedSpace.name} · @${selectedSpace.subdomain}',
+                      localizedText(languageCode, '创建者进入空间后可以直接发帖，其他人可点赞和评论。', 'Creators can publish immediately after entering the space, while others can like and comment.', '建立者進入空間後可以直接發帖，其他人可按讚和評論。'),
                     ],
-                    buttonPrimaryLabel: '打开发布弹窗',
+                    buttonPrimaryLabel: localizedText(languageCode, '打开发布弹窗', 'Open publish dialog', '打開發布彈窗'),
                     buttonSecondaryLabel: 'Open publish dialog',
                     buttonVariant: BilingualButtonVariant.filled,
                     onSubmit: onOpenPostComposer,
@@ -132,13 +136,13 @@ Widget buildSpaceView({
                 : SizedBox(
                     width: 360,
                     child: InfoCard(
-                      title: '发布权限 / Publish access',
+                      title: localizedText(languageCode, '发布权限', 'Publish access', '發布權限'),
                       lines: [
                         if (selectedSpace == null)
-                          '先选择一个空间，再开始浏览或发布内容。'
+                          localizedText(languageCode, '先选择一个空间，再开始浏览或发布内容。', 'Select a space first, then browse or publish content.', '先選擇一個空間，再開始瀏覽或發布內容。')
                         else
-                          '只有空间创建者可以发帖，其他人可点赞和评论。',
-                        '内容会按空间可见性展示给其他人。',
+                          localizedText(languageCode, '只有空间创建者可以发帖，其他人可点赞和评论。', 'Only the creator can publish; others can like and comment.', '只有空間建立者可以發帖，其他人可按讚和評論。'),
+                        localizedText(languageCode, '内容会按空间可见性展示给其他人。', 'Content is shown to others according to space visibility.', '內容會依空間可見性展示給其他人。'),
                       ],
                     ),
                   ),
@@ -147,21 +151,22 @@ Widget buildSpaceView({
       ),
       const SizedBox(height: 16),
       SpaceListSection(
-        title: '我的空间 / My spaces',
+        title: localizedText(languageCode, '我的空间', 'My spaces', '我的空間'),
         spaces: ownedSpaces,
         activeSpaceId: selectedSpace?.id,
         currentUserId: user?.id,
         onEnterSpace: onEnterSpace,
         onEditSpace: onEditSpace,
         onDeleteSpace: onDeleteSpace,
+        languageCode: languageCode,
       ),
       const SizedBox(height: 16),
       if (selectedSpace != null)
         PostStreamSection(
           posts: spacePosts,
           emptyText: canPublish
-              ? '这个空间里还没有内容，点击发布开始创作。'
-              : '这个空间里还没有内容。',
+              ? localizedText(languageCode, '这个空间里还没有内容，点击发布开始创作。', 'There is no content in this space yet. Publish the first post.', '這個空間裡還沒有內容，點擊發布開始創作。')
+              : localizedText(languageCode, '这个空间里还没有内容。', 'There is no content in this space yet.', '這個空間裡還沒有內容。'),
           commentControllerFor: commentControllerFor,
           onLike: onToggleLike,
           onShare: onSharePost,
@@ -172,13 +177,14 @@ Widget buildSpaceView({
               user != null &&
               (post.userId == user.id || post.spaceUserId == user.id),
           onDeletePost: onDeletePost,
+          languageCode: languageCode,
         )
       else
         InfoCard(
-          title: '内容流 / Feed',
-          lines: const [
-            '先从上面的空间列表选择一个空间。',
-            '进入后即可浏览内容、点赞和评论。',
+          title: localizedText(languageCode, '内容流', 'Feed', '內容流'),
+          lines: [
+            localizedText(languageCode, '先从上面的空间列表选择一个空间。', 'Select a space from the list above first.', '先從上面的空間列表選擇一個空間。'),
+            localizedText(languageCode, '进入后即可浏览内容、点赞和评论。', 'After entering, you can browse content, like, and comment.', '進入後即可瀏覽內容、按讚和評論。'),
           ],
         ),
     ],
@@ -203,17 +209,20 @@ Widget buildPrivateView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required String languageCode,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       SpaceComposerCard(
         loading: loading,
-        title: '创建私人空间',
-        subtitle: '私人空间适合沉淀草稿和只对自己可见的内容。',
-        detailLines: const ['创建后会自动生成二级域名，便于后续通过空间入口进入。'],
+        title: localizedText(languageCode, '创建私人空间', 'Create private space', '建立私人空間'),
+        subtitle: localizedText(languageCode, '私人空间适合沉淀草稿和只对自己可见的内容。', 'Private spaces are good for drafts and content visible only to you.', '私人空間適合沉澱草稿和只對自己可見的內容。'),
+        detailLines: [
+          localizedText(languageCode, '创建后会自动生成二级域名，便于后续通过空间入口进入。', 'A subdomain is generated automatically so you can enter it later.', '建立後會自動生成二級網域，方便之後透過空間入口進入。'),
+        ],
         // 按钮统一使用双语组件 / Use the shared bilingual action button.
-        buttonPrimaryLabel: '打开创建弹窗',
+        buttonPrimaryLabel: localizedText(languageCode, '打开创建弹窗', 'Open create dialog', '打開建立彈窗'),
         buttonSecondaryLabel: 'Open create dialog',
         buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenSpaceComposer,
@@ -221,32 +230,33 @@ Widget buildPrivateView({
       const SizedBox(height: 16),
       PostComposerCard(
         loading: loading,
-        title: '发布私人内容',
-        subtitle: '私人内容仅自己可见，适合草稿、笔记和内部记录。',
+        title: localizedText(languageCode, '发布私人内容', 'Publish private content', '發布私人內容'),
+        subtitle: localizedText(languageCode, '私人内容仅自己可见，适合草稿、笔记和内部记录。', 'Private content is visible only to you and works well for drafts, notes, and internal records.', '私人內容僅自己可見，適合草稿、筆記和內部記錄。'),
         detailLines: [
           if (activeSpace != null)
-            '当前空间：${activeSpace.name} · @${activeSpace.subdomain}',
-          '发布后会记录所属空间，方便后续筛选和回溯。',
+            '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activeSpace.name} · @${activeSpace.subdomain}',
+          localizedText(languageCode, '发布后会记录所属空间，方便后续筛选和回溯。', 'The post will be bound to the selected space for easier filtering and tracing.', '發布後會記錄所屬空間，方便後續篩選和回溯。'),
         ],
-        buttonPrimaryLabel: '打开发布弹窗',
+        buttonPrimaryLabel: localizedText(languageCode, '打开发布弹窗', 'Open publish dialog', '打開發布彈窗'),
         buttonSecondaryLabel: 'Open publish dialog',
         buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenPostComposer,
       ),
       const SizedBox(height: 16),
       SpaceListSection(
-        title: '私人空间列表',
+        title: localizedText(languageCode, '私人空间列表', 'Private space list', '私人空間列表'),
         spaces: privateSpaces(spaces),
         activeSpaceId: activeSpace?.id,
         currentUserId: user?.id,
         onEnterSpace: onEnterSpace,
         onEditSpace: onEditSpace,
         onDeleteSpace: onDeleteSpace,
+        languageCode: languageCode,
       ),
       const SizedBox(height: 16),
       PostStreamSection(
         posts: privatePosts,
-        emptyText: '还没有私人内容。',
+        emptyText: localizedText(languageCode, '还没有私人内容。', 'No private content yet.', '還沒有私人內容。'),
         commentControllerFor: commentControllerFor,
         onLike: onToggleLike,
         onShare: onSharePost,
@@ -255,6 +265,7 @@ Widget buildPrivateView({
         onOpenDetail: onOpenPostDetail,
         canEditPost: (post) => user != null && post.userId == user.id,
         onDeletePost: onDeletePost,
+        languageCode: languageCode,
       ),
     ],
   );
@@ -278,16 +289,19 @@ Widget buildPublicView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required String languageCode,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       SpaceComposerCard(
         loading: loading,
-        title: '创建空间',
-        subtitle: '空间适合对外展示项目，也可以设置好友可见或仅自己可见。',
-        detailLines: const ['创建后会生成可识别的二级域名，便于从外部直接进入。'],
-        buttonPrimaryLabel: '打开创建弹窗',
+        title: localizedText(languageCode, '创建空间', 'Create space', '建立空間'),
+        subtitle: localizedText(languageCode, '空间适合对外展示项目，也可以设置好友可见或仅自己可见。', 'Spaces are good for public projects and can also be limited to friends or just you.', '空間適合對外展示專案，也可以設定好友可見或僅自己可見。'),
+        detailLines: [
+          localizedText(languageCode, '创建后会生成可识别的二级域名，便于从外部直接进入。', 'A recognizable subdomain will be generated so others can enter directly.', '建立後會生成可辨識的二級網域，方便從外部直接進入。'),
+        ],
+        buttonPrimaryLabel: localizedText(languageCode, '打开创建弹窗', 'Open create dialog', '打開建立彈窗'),
         buttonSecondaryLabel: 'Open create dialog',
         buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenSpaceComposer,
@@ -295,32 +309,33 @@ Widget buildPublicView({
       const SizedBox(height: 16),
       PostComposerCard(
         loading: loading,
-        title: '发布空间内容',
-        subtitle: '空间文章会出现在空间和作者主页。',
+        title: localizedText(languageCode, '发布空间内容', 'Publish space content', '發布空間內容'),
+        subtitle: localizedText(languageCode, '空间文章会出现在空间和作者主页。', 'Space posts appear in the space feed and on the author profile.', '空間文章會出現在空間和作者主頁。'),
         detailLines: [
           if (activeSpace != null)
-            '当前空间：${activeSpace.name} · @${activeSpace.subdomain}',
-          '发布时会记录所属空间，便于后续查看和分享。',
+            '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activeSpace.name} · @${activeSpace.subdomain}',
+          localizedText(languageCode, '发布时会记录所属空间，便于后续查看和分享。', 'The post will be bound to the selected space for later review and sharing.', '發布時會記錄所屬空間，便於後續查看和分享。'),
         ],
-        buttonPrimaryLabel: '打开发布弹窗',
+        buttonPrimaryLabel: localizedText(languageCode, '打开发布弹窗', 'Open publish dialog', '打開發布彈窗'),
         buttonSecondaryLabel: 'Open publish dialog',
         buttonVariant: BilingualButtonVariant.filled,
         onSubmit: onOpenPostComposer,
       ),
       const SizedBox(height: 16),
       SpaceListSection(
-        title: '空间列表',
+        title: localizedText(languageCode, '空间列表', 'Space list', '空間列表'),
         spaces: publicSpaces(spaces),
         activeSpaceId: activeSpace?.id,
         currentUserId: user?.id,
         onEnterSpace: onEnterSpace,
         onEditSpace: onEditSpace,
         onDeleteSpace: onDeleteSpace,
+        languageCode: languageCode,
       ),
       const SizedBox(height: 16),
       PostStreamSection(
         posts: publicPosts,
-        emptyText: '空间里还没有内容。',
+        emptyText: localizedText(languageCode, '空间里还没有内容。', 'There is no content in this space yet.', '空間裡還沒有內容。'),
         commentControllerFor: commentControllerFor,
         onLike: onToggleLike,
         onShare: onSharePost,
@@ -329,6 +344,7 @@ Widget buildPublicView({
         onOpenDetail: onOpenPostDetail,
         canEditPost: (post) => user != null && post.userId == user.id,
         onDeletePost: onDeletePost,
+        languageCode: languageCode,
       ),
     ],
   );
@@ -372,6 +388,7 @@ Widget buildProfileView({
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
   required ValueChanged<SpaceItem> onEnterSpace,
+  required String languageCode,
   required String Function(String key) t,
   required String Function(String key) peerT,
 }) {
@@ -421,6 +438,7 @@ Widget buildProfileView({
     onOpenProfile: onOpenProfile,
     onOpenPostDetail: onOpenPostDetail,
     onEnterSpace: onEnterSpace,
+    languageCode: languageCode,
     t: t,
     peerT: peerT,
   );
@@ -443,6 +461,7 @@ Widget buildPostDetailView({
   required ValueChanged<String> onOpenProfile,
   required VoidCallback onSaveEdits,
   required VoidCallback? onDeletePost,
+  required String languageCode,
 }) {
   final post = currentPost;
   return PostDetailView(
@@ -482,6 +501,7 @@ Widget buildPostDetailView({
     },
     onSaveEdits: onSaveEdits,
     onDeletePost: onDeletePost,
+    languageCode: languageCode,
   );
 }
 
@@ -543,6 +563,7 @@ Widget buildFriendsView({
   required ValueChanged<String> onAcceptFriend,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<FriendItem> onStartChat,
+  required String languageCode,
 }) {
   return FriendsView(
     loading: loading,
@@ -554,6 +575,7 @@ Widget buildFriendsView({
     onAcceptFriend: onAcceptFriend,
     onOpenProfile: onOpenProfile,
     onStartChat: onStartChat,
+    languageCode: languageCode,
   );
 }
 
@@ -569,9 +591,11 @@ Widget buildChatView({
   required TextEditingController chatComposerController,
   required bool loading,
   required ValueChanged<FriendItem> onStartChat,
+  required ValueChanged<String> onOpenProfile,
   required VoidCallback onSendMessage,
   required Future<void> Function(String messageType) onPickAttachment,
   required VoidCallback onClearAttachment,
+  required String languageCode,
 }) {
   return ChatView(
     width: width,
@@ -586,8 +610,10 @@ Widget buildChatView({
     loading: loading,
     findFriend: (id) => findFriendById(id, friends),
     onStartChat: onStartChat,
+    onOpenProfile: onOpenProfile,
     onSendMessage: onSendMessage,
     onPickAttachment: onPickAttachment,
     onClearAttachment: onClearAttachment,
+    languageCode: languageCode,
   );
 }

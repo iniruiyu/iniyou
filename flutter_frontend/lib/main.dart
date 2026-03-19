@@ -348,6 +348,19 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   String _t(String key) => AppI18n.tr(_languageCode, key);
 
+  String _l(String zh, String en, [String? tw]) {
+    // Resolve short UI strings for the active language only.
+    // 仅为当前语言解析短句式界面文案。
+    switch (_languageCode) {
+      case 'en-US':
+        return en;
+      case 'zh-TW':
+        return tw ?? zh;
+      default:
+        return zh;
+    }
+  }
+
   String _peerT(String key) {
     // Resolve the counterpart language for bilingual labels.
     // 解析双语标签的另一种语言，保持主副语言分层展示。
@@ -703,21 +716,21 @@ class _IniyouHomeState extends State<IniyouHome> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          isEditing ? '编辑空间' : '创建空间',
+                          isEditing ? _l('编辑空间', 'Edit space', '編輯空間') : _l('创建空间', 'Create space', '建立空間'),
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           isEditing
-                              ? '名称和二级域名可以独立修改，二级域名只能包含英文字母和数字，且最长 63 个字符。'
-                              : '选择空间类型并设置可见范围，然后补充名称、描述和二级域名。名称和二级域名互不关联，二级域名最长 63 个字符。',
+                              ? _l('名称和二级域名可以独立修改，二级域名只能包含英文字母和数字，且最长 63 个字符。', 'The name and subdomain can be edited independently; the subdomain must use letters and numbers only, up to 63 characters.', '名稱和二級網域可以獨立修改，二級網域只能包含英文字母和數字，且最長 63 個字元。')
+                              : _l('选择空间类型并设置可见范围，然后补充名称、描述和二级域名。名称和二级域名互不关联，二级域名最长 63 个字符。', 'Choose the space type and visibility, then fill in the name, description, and subdomain. The name and subdomain are independent, and the subdomain can be up to 63 characters.', '選擇空間類型並設定可見範圍，然後補充名稱、描述和二級網域。名稱和二級網域互不關聯，二級網域最長 63 個字元。'),
                         ),
                         const SizedBox(height: 20),
                         BilingualDropdownField<String>(
-                          primaryLabel: '空间类型',
+                          primaryLabel: _l('空间类型', 'Space type', '空間類型'),
                           secondaryLabel: 'Space type',
                           value: selectedType,
-                          items: buildSpaceTypeItems(),
+                          items: buildSpaceTypeItems(_languageCode),
                           onChanged: isEditing
                               ? null
                               : (value) {
@@ -744,10 +757,10 @@ class _IniyouHomeState extends State<IniyouHome> {
                         ),
                         const SizedBox(height: 12),
                         BilingualDropdownField<String>(
-                          primaryLabel: '可见范围',
+                          primaryLabel: _l('可见范围', 'Visibility', '可見範圍'),
                           secondaryLabel: 'Visibility',
                           value: selectedVisibility,
-                          items: buildSpaceVisibilityItems(),
+                          items: buildSpaceVisibilityItems(_languageCode),
                           onChanged: selectedType == 'private'
                               ? null
                               : (value) {
@@ -759,7 +772,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                         const SizedBox(height: 12),
                         TextField(
                           controller: _spaceNameController,
-                          decoration: const InputDecoration(labelText: '空间名称'),
+                          decoration: InputDecoration(labelText: _l('空间名称', 'Space name', '空間名稱')),
                           onChanged: isEditing
                               ? null
                               : (value) {
@@ -784,10 +797,10 @@ class _IniyouHomeState extends State<IniyouHome> {
                           controller: _spaceSubdomainController,
                           maxLength: 63,
                           decoration: InputDecoration(
-                            labelText: '二级域名（可选）',
+                            labelText: _l('二级域名（可选）', 'Subdomain (optional)', '二級網域（可選）'),
                             helperText: isEditing
-                                ? '仅允许英文字母和数字，且最长 63 个字符。'
-                                : '仅允许英文字母和数字，最长 63 个字符，留空时后端会自动生成。',
+                                ? _l('仅允许英文字母和数字，且最长 63 个字符。', 'Letters and numbers only, up to 63 characters.', '僅允許英文字母和數字，且最長 63 個字元。')
+                                : _l('仅允许英文字母和数字，最长 63 个字符，留空时后端会自动生成。', 'Letters and numbers only, up to 63 characters. Leave it blank to auto-generate.', '僅允許英文字母和數字，最長 63 個字元，留空時後端會自動生成。'),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -795,7 +808,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                           controller: _spaceDescriptionController,
                           minLines: 3,
                           maxLines: 5,
-                          decoration: const InputDecoration(labelText: '空间描述'),
+                          decoration: InputDecoration(labelText: _l('空间描述', 'Space description', '空間描述')),
                         ),
                         const SizedBox(height: 20),
                         Wrap(
@@ -808,7 +821,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                               variant: BilingualButtonVariant.tonal,
                               onPressed: () =>
                                   Navigator.of(dialogContext).pop(),
-                              primaryLabel: '取消',
+                              primaryLabel: _l('取消', 'Cancel', '取消'),
                               secondaryLabel: 'Cancel',
                             ),
                             BilingualActionButton(
@@ -826,14 +839,14 @@ class _IniyouHomeState extends State<IniyouHome> {
                                               .trim()
                                               .toLowerCase();
                                       if (name.isEmpty) {
-                                        setState(() => _error = '空间名称不能为空');
+                                        setState(() => _error = _l('空间名称不能为空', 'Space name cannot be empty', '空間名稱不能為空'));
                                         return;
                                       }
                                       if (subdomain.isNotEmpty &&
                                           !_isValidSpaceSubdomain(subdomain)) {
                                         setState(
                                           () => _error =
-                                              '二级域名只能包含英文字母和数字，且最长 63 个字符',
+                                              _l('二级域名只能包含英文字母和数字，且最长 63 个字符', 'The subdomain can contain letters and numbers only, up to 63 characters.', '二級網域只能包含英文字母和數字，且最長 63 個字元'),
                                         );
                                         return;
                                       }
@@ -847,7 +860,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                                         subdomain: subdomain,
                                       );
                                     },
-                              primaryLabel: isEditing ? '保存修改' : '创建空间',
+                              primaryLabel: isEditing ? _l('保存修改', 'Save changes', '儲存修改') : _l('创建空间', 'Create space', '建立空間'),
                               secondaryLabel:
                                   isEditing ? 'Save changes' : 'Create space',
                             ),
@@ -876,12 +889,12 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 打开统一的空间发帖弹窗。
     final ownedSpaces = _spaces.where((space) => space.userId == _user?.id).toList();
     if (ownedSpaces.isEmpty) {
-      setState(() => _error = '请先创建空间');
+      setState(() => _error = _l('请先创建空间', 'Create a space first', '請先建立空間'));
       return;
     }
     final targetSpace = activeSpace ?? _currentSpace ?? ownedSpaces.first;
     if (targetSpace.userId != _user?.id) {
-      setState(() => _error = '只有空间创建者可以发帖');
+      setState(() => _error = _l('只有空间创建者可以发帖', 'Only the space creator can publish posts', '只有空間建立者可以發帖'));
       return;
     }
 
@@ -940,7 +953,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                     mediaMime: attachment.mediaMime,
                     mediaData: attachment.mediaData,
                   ),
-                  primaryLabel: '打开',
+                  primaryLabel: _l('打开', 'Open', '開啟'),
                   secondaryLabel: 'Open',
                 ),
               ],
@@ -964,18 +977,18 @@ class _IniyouHomeState extends State<IniyouHome> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '发布空间内容 / Publish space content',
+                        _l('发布空间内容', 'Publish space content', '發布空間內容'),
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         selectedSpace == null
-                            ? '先选择一个空间，再填写标题、内容或媒体。'
-                            : '当前空间：${selectedSpace.name} · @${selectedSpace.subdomain}',
+                            ? _l('先选择一个空间，再填写标题、内容或媒体。', 'Select a space first, then fill in the title, content, or media.', '先選擇一個空間，再填寫標題、內容或媒體。')
+                            : '${_l('当前空间', 'Current space', '目前空間')}: ${selectedSpace.name} · @${selectedSpace.subdomain}',
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '其他人会按照帖子可见性看到内容，你也可以附加图片或小视频。',
+                        _l('其他人会按照帖子可见性看到内容，你也可以附加图片或小视频。', 'Others will see the post according to its visibility, and you can attach images or short videos.', '其他人會依照貼文可見性看到內容，你也可以附加圖片或小影片。'),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       if (dialogError != null) ...[
@@ -987,7 +1000,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                       ],
                       const SizedBox(height: 20),
                       BilingualDropdownField<String>(
-                        primaryLabel: '发布空间',
+                        primaryLabel: _l('发布空间', 'Publish space', '發布空間'),
                         secondaryLabel: 'Publish space',
                         value: selectedSpaceId,
                         items: buildSpaceItems(ownedSpaces),
@@ -999,10 +1012,10 @@ class _IniyouHomeState extends State<IniyouHome> {
                       ),
                       const SizedBox(height: 12),
                       BilingualDropdownField<String>(
-                        primaryLabel: '帖子可见性',
+                        primaryLabel: _l('帖子可见性', 'Post visibility', '貼文可見性'),
                         secondaryLabel: 'Post visibility',
                         value: selectedVisibility,
-                        items: buildPostVisibilityItems(),
+                        items: buildPostVisibilityItems(_languageCode),
                         onChanged: (value) {
                           setDialogState(() {
                             selectedVisibility = value ?? selectedVisibility;
@@ -1012,14 +1025,14 @@ class _IniyouHomeState extends State<IniyouHome> {
                       const SizedBox(height: 12),
                       TextField(
                         controller: titleController,
-                        decoration: const InputDecoration(labelText: '标题'),
+                        decoration: InputDecoration(labelText: _l('标题', 'Title', '標題')),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: contentController,
                         minLines: 4,
                         maxLines: 8,
-                        decoration: const InputDecoration(labelText: '内容'),
+                        decoration: InputDecoration(labelText: _l('内容', 'Content', '內容')),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -1043,7 +1056,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       selectedAttachment = attachment;
                                     });
                                   },
-                            primaryLabel: '添加图片',
+                            primaryLabel: _l('添加图片', 'Add image', '新增圖片'),
                             secondaryLabel: 'Add image',
                           ),
                           BilingualActionButton(
@@ -1063,7 +1076,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       selectedAttachment = attachment;
                                     });
                                   },
-                            primaryLabel: '添加小视频',
+                            primaryLabel: _l('添加小视频', 'Add short video', '新增小影片'),
                             secondaryLabel: 'Add short video',
                           ),
                           if (selectedAttachment != null)
@@ -1075,7 +1088,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                                   selectedAttachment = null;
                                 });
                               },
-                              primaryLabel: '清除媒体',
+                              primaryLabel: _l('清除媒体', 'Clear media', '清除媒體'),
                               secondaryLabel: 'Clear media',
                             ),
                         ],
@@ -1086,10 +1099,10 @@ class _IniyouHomeState extends State<IniyouHome> {
                       ],
                       const SizedBox(height: 12),
                       BilingualDropdownField<String>(
-                        primaryLabel: '状态',
+                        primaryLabel: _l('状态', 'Status', '狀態'),
                         secondaryLabel: 'Status',
                         value: selectedStatus,
-                        items: buildPostStatusItems(),
+                        items: buildPostStatusItems(_languageCode),
                         onChanged: (value) {
                           setDialogState(() {
                             selectedStatus = value ?? selectedStatus;
@@ -1104,7 +1117,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                           BilingualActionButton(
                             variant: BilingualButtonVariant.tonal,
                             onPressed: () => Navigator.of(dialogContext).pop(),
-                            primaryLabel: '取消',
+                            primaryLabel: _l('取消', 'Cancel', '取消'),
                             secondaryLabel: 'Cancel',
                           ),
                           BilingualActionButton(
@@ -1117,9 +1130,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                                     if (title.isEmpty ||
                                         (content.isEmpty &&
                                             selectedAttachment == null)) {
-                                      setDialogState(() {
-                                        dialogError =
-                                            '标题不能为空，内容或媒体至少保留一项';
+                                        setDialogState(() {
+                                          dialogError =
+                                            _l('标题不能为空，内容或媒体至少保留一项', 'Title cannot be empty; keep at least content or media.', '標題不能為空，內容或媒體至少保留一項');
                                       });
                                       return;
                                     }
@@ -1133,7 +1146,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       attachment: selectedAttachment,
                                     );
                                   },
-                            primaryLabel: '发布内容',
+                            primaryLabel: _l('发布内容', 'Publish content', '發布內容'),
                             secondaryLabel: 'Publish content',
                           ),
                         ],
@@ -1158,7 +1171,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
     setState(() {
       _view = AppView.space;
-      _flash = '已进入空间 · @${space.subdomain}';
+      _flash = '${_l('已进入空间', 'Entered space', '已進入空間')} · @${space.subdomain}';
       _error = null;
     });
   }
@@ -1426,7 +1439,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             BilingualActionButton(
               variant: BilingualButtonVariant.text,
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              primaryLabel: '取消',
+              primaryLabel: _l('取消', 'Cancel', '取消'),
               secondaryLabel: 'Cancel',
             ),
             BilingualActionButton(
@@ -1460,21 +1473,21 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 根据弹窗草稿创建或更新空间。
     final normalizedSubdomain = subdomain.toLowerCase().trim();
     if (name.trim().isEmpty) {
-      setState(() => _error = '空间名称不能为空');
+      setState(() => _error = _l('空间名称不能为空', 'Space name cannot be empty', '空間名稱不能為空'));
       return;
     }
     if (space == null &&
         normalizedSubdomain.isNotEmpty &&
         !_isValidSpaceSubdomain(normalizedSubdomain)) {
-      setState(() => _error = '二级域名只能包含英文字母和数字，且最长 63 个字符');
+      setState(() => _error = _l('二级域名只能包含英文字母和数字，且最长 63 个字符', 'The subdomain can contain letters and numbers only, up to 63 characters.', '二級網域只能包含英文字母和數字，且最長 63 個字元'));
       return;
     }
     if (space != null && normalizedSubdomain.isEmpty) {
-      setState(() => _error = '二级域名不能为空');
+      setState(() => _error = _l('二级域名不能为空', 'The subdomain cannot be empty', '二級網域不能為空'));
       return;
     }
     if (space != null && !_isValidSpaceSubdomain(normalizedSubdomain)) {
-      setState(() => _error = '二级域名只能包含英文字母和数字，且最长 63 个字符');
+      setState(() => _error = _l('二级域名只能包含英文字母和数字，且最长 63 个字符', 'The subdomain can contain letters and numbers only, up to 63 characters.', '二級網域只能包含英文字母和數字，且最長 63 個字元'));
       return;
     }
 
@@ -1495,7 +1508,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
         setState(() {
           _view = AppView.space;
-          _flash = '已创建空间 · @${result.space.subdomain}';
+          _flash = '${_l('已创建空间', 'Space created', '空間已建立')} · @${result.space.subdomain}';
         });
         return;
       }
@@ -1517,7 +1530,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _view = AppView.space;
-        _flash = '空间已更新 · @${updated.subdomain}';
+        _flash = '${_l('空间已更新', 'Space updated', '空間已更新')} · @${updated.subdomain}';
       });
     });
   }
@@ -1526,9 +1539,9 @@ class _IniyouHomeState extends State<IniyouHome> {
     // Delete a managed space and all of its content.
     // 删除可管理空间及其全部内容。
     final confirmed = await _confirmDangerousAction(
-      title: '删除空间',
-      message: '删除空间后，该空间下的文章、评论、点赞和转发记录都会一并删除，是否继续？',
-      confirmLabel: '删除',
+      title: _l('删除空间', 'Delete space', '刪除空間'),
+      message: _l('删除空间后，该空间下的文章、评论、点赞和转发记录都会一并删除，是否继续？', 'Deleting the space will remove its posts, comments, likes, and shares. Continue?', '刪除空間後，該空間下的文章、評論、按讚和轉發記錄都會一併刪除，是否繼續？'),
+      confirmLabel: _l('删除', 'Delete', '刪除'),
       confirmSecondaryLabel: 'Delete',
     );
     if (!confirmed) {
@@ -1564,7 +1577,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (!mounted) {
         return;
       }
-      setState(() => _flash = '空间已删除');
+      setState(() => _flash = _l('空间已删除', 'Space deleted', '空間已刪除'));
     });
   }
 
@@ -1572,9 +1585,9 @@ class _IniyouHomeState extends State<IniyouHome> {
     // Delete a managed post and all of its interactions.
     // 删除可管理文章及其所有互动记录。
     final confirmed = await _confirmDangerousAction(
-      title: '删除文章',
-      message: '删除文章后，关联的评论、点赞和转发记录都会一并删除，是否继续？',
-      confirmLabel: '删除',
+      title: _l('删除文章', 'Delete post', '刪除文章'),
+      message: _l('删除文章后，关联的评论、点赞和转发记录都会一并删除，是否继续？', 'Deleting the post will also remove its comments, likes, and shares. Continue?', '刪除文章後，關聯的評論、按讚和轉發記錄都會一併刪除，是否繼續？'),
+      confirmLabel: _l('删除', 'Delete', '刪除'),
       confirmSecondaryLabel: 'Delete',
     );
     if (!confirmed) {
@@ -1598,7 +1611,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (!mounted) {
         return;
       }
-      setState(() => _flash = '文章已删除');
+      setState(() => _flash = _l('文章已删除', 'Post deleted', '文章已刪除'));
     });
   }
 
@@ -1614,7 +1627,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     final content = contentController.text.trim();
     final hasMedia = attachment?.isMedia == true;
     if (title.isEmpty || (content.isEmpty && !hasMedia)) {
-      setState(() => _error = '标题不能为空，内容或媒体至少保留一项');
+      setState(() => _error = _l('标题不能为空，内容或媒体至少保留一项', 'Title cannot be empty; keep at least content or media.', '標題不能為空，內容或媒體至少保留一項'));
       return;
     }
     await _runBusy(() async {
@@ -2528,6 +2541,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         activePublicSpace: activePublicSpace,
         onOpenPublicSpace: () => _navigateTo(AppView.space),
         onOpenPostDetail: _openPostDetail,
+        languageCode: _languageCode,
       ),
       space: buildSpaceView(
         loading: _loading,
@@ -2550,6 +2564,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        languageCode: _languageCode,
       ),
       privateSpace: buildPrivateView(
         loading: _loading,
@@ -2573,6 +2588,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        languageCode: _languageCode,
       ),
       publicSpace: buildPublicView(
         loading: _loading,
@@ -2596,6 +2612,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        languageCode: _languageCode,
       ),
       profile: buildProfileView(
         user: _user,
@@ -2640,6 +2657,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
         onEnterSpace: _enterSpace,
+        languageCode: _languageCode,
         t: _t,
         peerT: _peerT,
       ),
@@ -2664,6 +2682,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _currentPost == null
             ? null
             : () => _deletePost(_currentPost!),
+        languageCode: _languageCode,
       ),
       levels: buildLevelsView(
         currentLevel: _user?.level ?? 'basic',
@@ -2699,6 +2718,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onAcceptFriend: _acceptFriend,
         onOpenProfile: _openProfile,
         onStartChat: _startChat,
+        languageCode: _languageCode,
       ),
       chat: buildChatView(
         width: width,
@@ -2712,9 +2732,11 @@ class _IniyouHomeState extends State<IniyouHome> {
         chatComposerController: _chatComposerController,
         loading: _loading,
         onStartChat: _startChat,
+        onOpenProfile: _openProfile,
         onSendMessage: _sendMessage,
         onPickAttachment: _pickChatAttachment,
         onClearAttachment: _clearChatAttachment,
+        languageCode: _languageCode,
       ),
     );
   }

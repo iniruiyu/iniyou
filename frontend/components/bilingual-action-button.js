@@ -48,7 +48,8 @@ window.BilingualActionButton = {
     },
   },
   // Reusable bilingual action button shell.
-  // 可复用双语动作按钮外壳：统一主标签、副标签与按钮层级。
+  // Reusable action button shell for the active language only.
+  // 仅显示当前语言的动作按钮外壳，避免同一按钮内重复展示双语。
   template: `
     <button
       :class="buttonClass"
@@ -57,7 +58,6 @@ window.BilingualActionButton = {
       @click="handleClick"
     >
       <span class="bilingual-action-button-main">{{ primaryLabel }}</span>
-      <span class="bilingual-action-button-sub">{{ secondaryLabel }}</span>
     </button>
   `,
 };

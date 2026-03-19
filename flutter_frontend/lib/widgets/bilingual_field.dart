@@ -16,8 +16,8 @@ class BilingualField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Stack bilingual labels vertically so the field keeps its width.
-    // 将双语标签纵向堆叠，避免输入控件被同一行双语文案挤压。
+    // Keep the field label on the active language only.
+    // 仅保留当前语言字段标题，避免输入控件被双语文案挤压。
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,13 +26,6 @@ class BilingualField extends StatelessWidget {
           primaryLabel,
           style: theme.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          secondaryLabel,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),

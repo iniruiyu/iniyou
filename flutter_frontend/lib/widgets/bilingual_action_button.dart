@@ -27,11 +27,10 @@ class BilingualActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Keep action labels stacked so bilingual button copy does not squeeze the row.
-    // 保持按钮文案纵向堆叠，避免双语按钮把整行挤窄。
+    // Keep the action label on the active language only.
+    // 仅保留当前语言按钮文案，避免双语堆叠挤占布局。
     final child = _BilingualActionButtonLabel(
       primaryLabel: primaryLabel,
-      secondaryLabel: secondaryLabel,
       compact: compact,
     );
     Widget button;
@@ -60,12 +59,10 @@ class BilingualActionButton extends StatelessWidget {
 class _BilingualActionButtonLabel extends StatelessWidget {
   const _BilingualActionButtonLabel({
     required this.primaryLabel,
-    required this.secondaryLabel,
     required this.compact,
   });
 
   final String primaryLabel;
-  final String secondaryLabel;
   final bool compact;
 
   @override
@@ -78,12 +75,6 @@ class _BilingualActionButtonLabel extends StatelessWidget {
           fontWeight: FontWeight.w600,
           height: 1.1,
         );
-    final secondaryStyle = (compact
-            ? theme.textTheme.labelSmall
-            : theme.textTheme.bodySmall)
-        ?.copyWith(
-          height: 1.05,
-        );
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -92,12 +83,6 @@ class _BilingualActionButtonLabel extends StatelessWidget {
           primaryLabel,
           textAlign: TextAlign.center,
           style: primaryStyle,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          secondaryLabel,
-          textAlign: TextAlign.center,
-          style: secondaryStyle,
         ),
       ],
     );

@@ -14,12 +14,12 @@ window.BilingualField = {
     },
   },
   // Reusable bilingual field shell.
-  // 可复用双语字段外壳：统一主标签、副标签和输入控件的层级。
+  // Reusable field shell for the active language only.
+  // 仅显示当前语言的字段外壳，避免标签区堆叠双语文案。
   template: `
     <div class="identity-field">
       <label class="identity-label">
         <span class="identity-label-main">{{ primaryLabel }}</span>
-        <span class="identity-label-sub">{{ secondaryLabel }}</span>
       </label>
       <slot></slot>
       <div v-if="helperText" class="form-hint">{{ helperText }}</div>
