@@ -2212,7 +2212,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                 activePublicSpace: activePublicSpace,
                 t: _t,
               ),
-              compactMode: _view == AppView.space && _currentSpace != null,
+              compactMode: false,
               loading: _loading,
               wide: wide,
               sidebarCollapsed: _sidebarCollapsed,
