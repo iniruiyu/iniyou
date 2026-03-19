@@ -281,3 +281,4 @@ new-project/
 - 2026-03-19：调整空间入口为保留站点导航的普通空间页，不再切换为隐藏导航的壳层 / Adjusted the space entry to keep the site navigation visible instead of switching to a hidden-nav shell.
 - 2026-03-19：收口好友资料、账号主页与聊天页为空间独立页面，仅在好友资料中展示对方公开空间入口 / Separated friend profile, account home, and chat into space-independent pages, while showing a friend's public space entry only inside the friend profile modal.
 - 2026-03-19：将进入空间后的页面改为独立内容页并补充显式返回按钮，确保空间页不显示主导航 / Turned the entered-space view into a dedicated content page with an explicit back button, ensuring the space page does not show the main navigation.
+- 2026-03-19：收紧空间页为单层头部布局，去掉重复英雄块，并让好友/聊天页顶部不再重复标题与空间域名字段 / Tightened the space page into a single header layout, removed the duplicated hero block, and stopped friend/chat pages from repeating titles and space domain fields.

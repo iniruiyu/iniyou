@@ -882,6 +882,13 @@ body {
   text-align: right;
 }
 
+.space-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
 .space-shell-grid {
   display: grid;
   gap: 18px;

@@ -200,14 +200,10 @@ Widget buildSpaceView({
                 spacing: 10,
                 runSpacing: 10,
                 children: [
-                  _SpaceMetaChip(
-                    title: localizedText(languageCode, '当前空间', 'Current space', '目前空間'),
-                    value: selectedSpace?.name ?? localizedText(languageCode, '未选择', 'Not selected', '未選擇'),
-                  ),
-                  _SpaceMetaChip(
-                    title: localizedText(languageCode, '二级域名', 'Subdomain', '二級網域'),
-                    value: selectedSpace == null ? '@-' : '@${selectedSpace.subdomain}',
-                  ),
+              _SpaceMetaChip(
+                title: localizedText(languageCode, '当前空间', 'Current space', '目前空間'),
+                value: selectedSpace?.name ?? localizedText(languageCode, '未选择', 'Not selected', '未選擇'),
+              ),
                   _SpaceMetaChip(
                     title: localizedText(languageCode, '可见性', 'Visibility', '可見性'),
                     value: selectedSpace == null
@@ -320,7 +316,7 @@ Widget buildPrivateView({
         subtitle: localizedText(languageCode, '私人内容仅自己可见，适合草稿、笔记和内部记录。', 'Private content is visible only to you and works well for drafts, notes, and internal records.', '私人內容僅自己可見，適合草稿、筆記和內部記錄。'),
         detailLines: [
           if (activeSpace != null)
-            '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activeSpace.name} · @${activeSpace.subdomain}',
+            '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activeSpace.name}',
           localizedText(languageCode, '发布后会记录所属空间，方便后续筛选和回溯。', 'The post will be bound to the selected space for easier filtering and tracing.', '發布後會記錄所屬空間，方便後續篩選和回溯。'),
         ],
         buttonPrimaryLabel: localizedText(languageCode, '打开发布弹窗', 'Open publish dialog', '打開發布彈窗'),
@@ -399,7 +395,7 @@ Widget buildPublicView({
         subtitle: localizedText(languageCode, '空间文章会出现在空间和作者主页。', 'Space posts appear in the space feed and on the author profile.', '空間文章會出現在空間和作者主頁。'),
         detailLines: [
           if (activeSpace != null)
-            '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activeSpace.name} · @${activeSpace.subdomain}',
+            '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activeSpace.name}',
           localizedText(languageCode, '发布时会记录所属空间，便于后续查看和分享。', 'The post will be bound to the selected space for later review and sharing.', '發布時會記錄所屬空間，便於後續查看和分享。'),
         ],
         buttonPrimaryLabel: localizedText(languageCode, '打开发布弹窗', 'Open publish dialog', '打開發布彈窗'),

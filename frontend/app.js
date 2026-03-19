@@ -1262,10 +1262,6 @@ const app = createApp({
         return this.t('posts.profileFeedSub');
       }
       if (this.view === 'space' || this.view === 'private' || this.view === 'public') {
-        const activeSpace = this.activePublicSpace;
-        if (activeSpace?.subdomain) {
-          return `${this.t('pageSub.space')} · @${activeSpace.subdomain}`;
-        }
         return this.t('pageSub.space');
       }
       return this.t(`pageSub.${this.view}`) || '';
