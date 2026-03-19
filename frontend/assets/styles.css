@@ -74,6 +74,10 @@ body {
   grid-template-columns: 1fr;
 }
 
+.app.space-shell-mode .main {
+  grid-column: 1;
+}
+
 .app.sidebar-collapsed .sidebar {
   visibility: hidden;
   opacity: 0;

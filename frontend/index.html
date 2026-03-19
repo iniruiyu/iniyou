@@ -14,12 +14,13 @@
   <div
     id="app"
     class="app"
-    :class="{ 'sidebar-collapsed': sidebarCollapsed }"
+    :class="{ 'sidebar-collapsed': sidebarCollapsed, 'space-shell-mode': isSpaceShell }"
   >
     <landing-page v-if="!isLoggedIn" :app="appContext"></landing-page>
 
     <template v-else>
-    <aside v-show="!sidebarCollapsed" class="sidebar">
+    <!-- Main navigation shell / 主导航壳层：进入空间页时不渲染。 -->
+    <aside v-if="!isSpaceShell && !sidebarCollapsed" class="sidebar">
       <div class="brand">
         <div class="brand-core">
           <div class="brand-mark">AS</div>
@@ -76,7 +77,7 @@
       </div>
     </aside>
 
-    <button v-if="sidebarCollapsed" class="sidebar-fab ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
+    <button v-if="!isSpaceShell && sidebarCollapsed" class="sidebar-fab ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
       <span class="nav-toggle-icon" aria-hidden="true"></span>
       <span class="sidebar-fab-label">{{ t('nav.expand') }}</span>
     </button>

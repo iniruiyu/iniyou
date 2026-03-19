@@ -61,6 +61,7 @@ Widget buildSpaceView({
   required TextEditingController Function(String postId) commentControllerFor,
   required VoidCallback onOpenSpaceComposer,
   required VoidCallback onOpenPostComposer,
+  required VoidCallback onLeaveSpace,
   required ValueChanged<SpaceItem> onEnterSpace,
   required ValueChanged<SpaceItem> onEditSpace,
   required ValueChanged<SpaceItem> onDeleteSpace,
@@ -152,6 +153,15 @@ Widget buildSpaceView({
                       runSpacing: 8,
                       alignment: WrapAlignment.end,
                       children: [
+                        // Keep a direct exit action in the space hero.
+                        // 在空间头部保留直接返回操作。
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.text,
+                          compact: true,
+                          onPressed: onLeaveSpace,
+                          primaryLabel: localizedText(languageCode, '返回首页', 'Back to home', '返回首頁'),
+                          secondaryLabel: 'Back to home',
+                        ),
                         BilingualActionButton(
                           variant: BilingualButtonVariant.tonal,
                           compact: true,
@@ -174,6 +184,14 @@ Widget buildSpaceView({
                           secondaryLabel: 'Delete space',
                         ),
                       ],
+                    ),
+                  if (!canManageSelectedSpace)
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.text,
+                      compact: true,
+                      onPressed: onLeaveSpace,
+                      primaryLabel: localizedText(languageCode, '返回首页', 'Back to home', '返回首頁'),
+                      secondaryLabel: 'Back to home',
                     ),
                 ],
               ),

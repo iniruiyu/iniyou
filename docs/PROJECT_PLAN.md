@@ -280,3 +280,4 @@ new-project/
 - 2026-03-19：将 Flutter 进入空间后的首屏重构为空间横幅 + 内容流/工作台双栏布局 / Reworked the Flutter space entry screen into a space banner with a content-feed/workspace two-column layout.
 - 2026-03-19：调整空间入口为保留站点导航的普通空间页，不再切换为隐藏导航的壳层 / Adjusted the space entry to keep the site navigation visible instead of switching to a hidden-nav shell.
 - 2026-03-19：收口好友资料、账号主页与聊天页为空间独立页面，仅在好友资料中展示对方公开空间入口 / Separated friend profile, account home, and chat into space-independent pages, while showing a friend's public space entry only inside the friend profile modal.
+- 2026-03-19：将进入空间后的页面改为独立内容页并补充显式返回按钮，确保空间页不显示主导航 / Turned the entered-space view into a dedicated content page with an explicit back button, ensuring the space page does not show the main navigation.

@@ -2172,6 +2172,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             _publicPosts,
             activePublicSpace?.id,
           );
+          final spaceShell = _view == AppView.space;
           final identityHandle = _user!.domain.isNotEmpty
               ? _user!.domain
               : _user!.username;
@@ -2189,32 +2190,34 @@ class _IniyouHomeState extends State<IniyouHome> {
               activePublicSpace: activePublicSpace,
               t: _t,
             ),
-              pageSubtitle: pageSubtitleForView(
-                _view,
-                activePrivateSpace: activePrivateSpace,
-                activePublicSpace: activePublicSpace,
-                t: _t,
-              ),
-              compactMode: false,
-              loading: _loading,
-              wide: wide,
-              sidebarCollapsed: _sidebarCollapsed,
-              sidebar: _buildSidebar(),
-              onRefresh: () => _runBusy(_refreshAll),
-              onLogout: _logout,
-              onToggleSidebar: _toggleSidebar,
-              onCompactBack: () => _navigateTo(AppView.dashboard),
-              currentLanguageCode: _languageCode,
+            pageSubtitle: pageSubtitleForView(
+              _view,
+              activePrivateSpace: activePrivateSpace,
+              activePublicSpace: activePublicSpace,
+              t: _t,
+            ),
+            // Space view uses a compact shell so it behaves like a dedicated page.
+            // 空间视图使用紧凑壳层，表现为独立页面。
+            compactMode: spaceShell,
+            loading: _loading,
+            wide: wide,
+            sidebarCollapsed: _sidebarCollapsed,
+            sidebar: _buildSidebar(),
+            onRefresh: () => _runBusy(_refreshAll),
+            onLogout: _logout,
+            onToggleSidebar: _toggleSidebar,
+            onCompactBack: () => _navigateTo(AppView.dashboard),
+            currentLanguageCode: _languageCode,
             onLanguageChanged: _setLanguage,
             currentThemeKey: _themeKeyValue,
             onThemeChanged: _setTheme,
             themeOptions: _themeOptions,
             backgroundGradient: _backgroundGradientFor(_themeKeyValue),
             topNav: _buildTopNavBar(),
-            // Show nav buttons only when sidebar is collapsed on wide layouts.
-            // 仅在宽屏且侧边栏折叠时显示导航按钮。
-            showTopNav: wide && _sidebarCollapsed,
-            floatingNotice: _buildSocialReminderBanner(),
+            // Keep the main navigation hidden on the dedicated space page.
+            // 空间独立页面中保持主导航隐藏。
+            showTopNav: !spaceShell && wide && _sidebarCollapsed,
+            floatingNotice: spaceShell ? null : _buildSocialReminderBanner(),
             t: _t,
             body: AuthenticatedHomeView(
               width: constraints.maxWidth,
@@ -2527,7 +2530,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-              space: buildSpaceView(
+                space: buildSpaceView(
                   context: context,
                   loading: _loading,
                   spaces: _spaces,
@@ -2539,6 +2542,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                 onOpenSpaceComposer: () =>
                     _openSpaceComposer(defaultType: 'public'),
                 onOpenPostComposer: () => _openPostComposer(activeSpace: _currentSpace),
+                onLeaveSpace: () => _navigateTo(AppView.dashboard),
                 onEnterSpace: _enterSpace,
                 onEditSpace: (space) =>
                     _openSpaceComposer(defaultType: space.type, space: space),
