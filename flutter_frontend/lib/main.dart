@@ -2174,12 +2174,11 @@ class _IniyouHomeState extends State<IniyouHome> {
       content = LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 1120;
-          final activeSpace = _currentSpace ?? _selectedSpaceForVisibility('public');
-          final activePrivateSpace = activeSpace;
-          final activePublicSpace = activeSpace;
+          final activePrivateSpace = _selectedSpaceForVisibility('private');
+          final activePublicSpace = _selectedSpaceForVisibility('public');
           final dashboardPublicPosts = postsForSpace(
             _publicPosts,
-            activeSpace?.id,
+            activePublicSpace?.id,
           );
           final filteredPrivatePosts = postsForSpace(
             _privatePosts,
@@ -2187,7 +2186,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           );
           final filteredPublicPosts = postsForSpace(
             _publicPosts,
-            activeSpace?.id,
+            activePublicSpace?.id,
           );
           final identityHandle = _user!.domain.isNotEmpty
               ? _user!.domain
@@ -2529,7 +2528,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       _externalProvider,
       _externalChain,
     );
-    final activeSpace = activePublicSpace ?? activePrivateSpace;
     return sectionBodyForView(
       _view,
       dashboard: buildDashboardView(
@@ -2543,20 +2541,20 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-      space: buildSpaceView(
-        loading: _loading,
-        spaces: _spaces,
-        activeSpace: activeSpace,
-        spacePosts: _spacePosts,
-        user: _user,
-        commentControllerFor: (postId) =>
-            _commentControllers.putIfAbsent(postId, TextEditingController.new),
-        onOpenSpaceComposer: () =>
-            _openSpaceComposer(defaultType: 'public'),
-        onOpenPostComposer: () => _openPostComposer(activeSpace: activeSpace),
-        onEnterSpace: _enterSpace,
-        onEditSpace: (space) =>
-            _openSpaceComposer(defaultType: space.type, space: space),
+              space: buildSpaceView(
+                loading: _loading,
+                spaces: _spaces,
+                activeSpace: _currentSpace,
+                spacePosts: _spacePosts,
+                user: _user,
+                commentControllerFor: (postId) =>
+                    _commentControllers.putIfAbsent(postId, TextEditingController.new),
+                onOpenSpaceComposer: () =>
+                    _openSpaceComposer(defaultType: 'public'),
+                onOpenPostComposer: () => _openPostComposer(activeSpace: _currentSpace),
+                onEnterSpace: _enterSpace,
+                onEditSpace: (space) =>
+                    _openSpaceComposer(defaultType: space.type, space: space),
         onDeleteSpace: _deleteSpace,
         onToggleLike: _toggleLike,
         onSharePost: _sharePost,
@@ -2566,17 +2564,17 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-      privateSpace: buildPrivateView(
-        loading: _loading,
-        activeSpace: activePrivateSpace,
-        spaces: _spaces,
-        privatePosts: filteredPrivatePosts,
-        user: _user,
+              privateSpace: buildPrivateView(
+                loading: _loading,
+                activeSpace: _currentSpace ?? activePrivateSpace,
+                spaces: _spaces,
+                privatePosts: filteredPrivatePosts,
+                user: _user,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
-        onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'private'),
-        onOpenPostComposer: () => _openPostComposer(
-          activeSpace: activePrivateSpace,
+                onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'private'),
+                onOpenPostComposer: () => _openPostComposer(
+          activeSpace: _currentSpace ?? activePrivateSpace,
         ),
         onEnterSpace: _enterSpace,
         onEditSpace: (space) =>
@@ -2590,17 +2588,17 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-      publicSpace: buildPublicView(
-        loading: _loading,
-        activeSpace: activePublicSpace,
-        spaces: _spaces,
-        publicPosts: filteredPublicPosts,
-        user: _user,
+              publicSpace: buildPublicView(
+                loading: _loading,
+                activeSpace: _currentSpace ?? activePublicSpace,
+                spaces: _spaces,
+                publicPosts: filteredPublicPosts,
+                user: _user,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
-        onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'public'),
-        onOpenPostComposer: () => _openPostComposer(
-          activeSpace: activePublicSpace,
+                onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'public'),
+                onOpenPostComposer: () => _openPostComposer(
+          activeSpace: _currentSpace ?? activePublicSpace,
         ),
         onEnterSpace: _enterSpace,
         onEditSpace: (space) =>

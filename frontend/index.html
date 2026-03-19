@@ -427,24 +427,34 @@
       <section v-if="view === 'space' || view === 'public'" class="panel space-page">
         <div class="space-page-hero">
           <div>
-            <div class="space-toolbar-kicker">{{ t('spaces.publicTitle') }}</div>
+            <div class="space-toolbar-kicker">{{ t('spaces.pageTitle') }}</div>
             <div class="space-page-title">
-              {{ activeSpace ? localizedSpaceText('name', activeSpace) : t('spaces.publicTitle') }}
+              {{ currentSpace ? localizedSpaceText('name', currentSpace) : t('spaces.pageTitle') }}
             </div>
             <div class="space-page-sub">
-              {{ activeSpace ? `${spaceVisibilityLabel(activeSpace.visibility)} · @${activeSpace.subdomain}` : t('spaces.publicSub') }}
+              {{ currentSpace ? `${spaceVisibilityLabel(currentSpace.visibility)} · @${currentSpace.subdomain}` : t('spaces.pageSub') }}
             </div>
-            <div v-if="activeSpace" class="space-page-note">
-              {{ user && activeSpace.userId === user.id ? t('posts.creatorHint') : t('posts.viewerHint') }}
+            <div v-if="currentSpace" class="space-page-note">
+              {{ user && currentSpace.userId === user.id ? t('posts.creatorHint') : t('posts.viewerHint') }}
+            </div>
+            <div v-else class="space-page-note">
+              {{ t('spaces.pageEmpty') }}
             </div>
           </div>
-          <div v-if="user && activeSpace && activeSpace.userId === user.id" class="space-toolbar-actions">
+          <div v-if="user && currentSpace && currentSpace.userId === user.id" class="space-toolbar-actions">
             <bilingual-action-button
               variant="ghost"
               type="button"
               :primary-label="t('spaces.settingsAction')"
               :secondary-label="peerLocaleText('spaces.settingsAction')"
-              @click="openSpaceEditor(activeSpace)"
+              @click="openSpaceEditor(currentSpace)"
+            ></bilingual-action-button>
+            <bilingual-action-button
+              variant="ghost"
+              type="button"
+              :primary-label="t('spaces.publishAction')"
+              :secondary-label="peerLocaleText('spaces.publishAction')"
+              @click="openPostComposer(currentSpace)"
             ></bilingual-action-button>
             <bilingual-action-button
               variant="ghost"
@@ -452,8 +462,30 @@
               type="button"
               :primary-label="t('spaces.deleteAction')"
               :secondary-label="peerLocaleText('spaces.deleteAction')"
-              @click="deleteSpace(activeSpace)"
+              @click="deleteSpace(currentSpace)"
             ></bilingual-action-button>
+          </div>
+        </div>
+
+        <div class="space-nav-grid">
+          <div class="space-nav-card">
+            <div class="space-toolbar-kicker">{{ t('spaces.pageNavTitle') }}</div>
+            <div class="space-nav-title">{{ t('spaces.pageNavSub') }}</div>
+            <div class="space-nav-links">
+              <button class="ghost compact" type="button" @click="view = 'dashboard'">{{ t('sidebar.dashboard') }}</button>
+              <button class="ghost compact" type="button" @click="view = 'space'">{{ t('sidebar.space') }}</button>
+              <button class="ghost compact" type="button" @click="view = 'profile'">{{ t('sidebar.profile') }}</button>
+            </div>
+          </div>
+          <div class="space-nav-card">
+            <div class="space-toolbar-kicker">{{ t('spaces.currentTitle') }}</div>
+            <div class="space-nav-title">{{ currentSpace ? localizedSpaceText('name', currentSpace) : t('spaces.pageEmptyTitle') }}</div>
+            <div class="space-nav-meta">{{ currentSpace ? `@${currentSpace.subdomain}` : t('spaces.pageEmpty') }}</div>
+          </div>
+          <div class="space-nav-card">
+            <div class="space-toolbar-kicker">{{ t('spaces.myTitle') }}</div>
+            <div class="space-nav-title">{{ ownedSpaces.length }}</div>
+            <div class="space-nav-meta">{{ t('spaces.mySub') }}</div>
           </div>
         </div>
 
@@ -461,24 +493,24 @@
           <div class="post-composer">
             <div class="post-header">
               <div>
-                <h3>{{ t('posts.feedTitle') }}</h3>
-                <p>{{ t('posts.feedSub') }}</p>
+                <h3>{{ t('posts.spaceFeedTitle') }}</h3>
+                <p>{{ currentSpace ? t('posts.spaceFeedSub') : t('spaces.pageEmpty') }}</p>
               </div>
               <bilingual-action-button
-                v-if="user && activeSpace && activeSpace.userId === user.id"
+                v-if="user && currentSpace && currentSpace.userId === user.id"
                 variant="primary"
                 compact
                 type="button"
                 :primary-label="t('posts.publishAction')"
                 :secondary-label="peerLocaleText('posts.publishAction')"
-                @click="openPostComposer(activeSpace)"
+                @click="openPostComposer(currentSpace)"
               ></bilingual-action-button>
             </div>
-            <div v-if="activeSpace" class="post-feed-note">
-              {{ user && activeSpace.userId === user.id ? t('posts.creatorHint') : t('posts.viewerHint') }}
+            <div v-if="currentSpace" class="post-feed-note">
+              {{ user && currentSpace.userId === user.id ? t('posts.creatorHint') : t('posts.viewerHint') }}
             </div>
           </div>
-          <div v-if="!activeSpace" class="empty-state">{{ t('posts.spaceRequired') }}</div>
+          <div v-if="!currentSpace" class="empty-state">{{ t('spaces.pageEmpty') }}</div>
           <div v-else-if="activeSpacePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
           <article class="post-card" v-for="post in activeSpacePosts" :key="post.id">
             <div class="post-header">

@@ -271,6 +271,15 @@ const app = createApp({
             saveError: '资料更新失败，请稍后重试。',
           },
           spaces: {
+            pageTitle: '空间页面',
+            pageSub: '先进入空间，再查看这个空间的帖子。',
+            pageEmptyTitle: '尚未进入空间',
+            pageEmpty: '先从下方空间列表选择并进入一个空间。',
+            pageNavTitle: '空间导航',
+            pageNavSub: '查看当前空间、自己的空间和常用入口。',
+            currentTitle: '当前空间',
+            myTitle: '我的空间',
+            mySub: '只显示你创建的空间。',
             privateTitle: '空间',
             privateSub: '查看可见空间并管理内容。',
             publicTitle: '空间',
@@ -315,6 +324,8 @@ const app = createApp({
           posts: {
             feedTitle: '空间内容流',
             feedSub: '创建者可以在进入空间后发帖，其他人可查看并互动。',
+            spaceFeedTitle: '空间内容流',
+            spaceFeedSub: '进入当前空间后，帖子会按该空间独立展示。',
             privateFeedTitle: '空间内容',
             privateFeedSub: '查看你发布的文章。',
             profileFeedTitle: '作者内容',
@@ -673,6 +684,15 @@ const app = createApp({
             saveError: 'Profile update failed. Try again later.',
           },
           spaces: {
+            pageTitle: 'Space Page',
+            pageSub: 'Enter a space first, then view its posts.',
+            pageEmptyTitle: 'No space entered',
+            pageEmpty: 'Pick a space from the list below and enter it first.',
+            pageNavTitle: 'Space Navigation',
+            pageNavSub: 'See the current space, your own spaces, and common shortcuts.',
+            currentTitle: 'Current Space',
+            myTitle: 'My Spaces',
+            mySub: 'Only the spaces you created are listed.',
             privateTitle: 'Space',
             privateSub: 'Browse visible spaces and manage content.',
             publicTitle: 'Space',
@@ -717,6 +737,8 @@ const app = createApp({
           posts: {
             feedTitle: 'Space Feed',
             feedSub: 'Share updates, ideas, and project progress.',
+            spaceFeedTitle: 'Space Feed',
+            spaceFeedSub: 'After entering the current space, posts are shown for that space only.',
             privateFeedTitle: 'Space Content',
             privateFeedSub: 'Review your posts.',
             profileFeedTitle: 'Author Feed',
@@ -1940,7 +1962,16 @@ const app = createApp({
               saveSuccess: '資料已更新',
               saveError: '資料更新失敗，請稍後重試。',
             },
-            spaces: {
+          spaces: {
+              pageTitle: '空間頁',
+              pageSub: '先進入空間，再查看這個空間的貼文。',
+              pageEmptyTitle: '尚未進入空間',
+              pageEmpty: '先從下方空間列表選擇並進入一個空間。',
+              pageNavTitle: '空間導覽',
+              pageNavSub: '查看目前空間、自己的空間與常用入口。',
+              currentTitle: '目前空間',
+              myTitle: '我的空間',
+              mySub: '只顯示你建立的空間。',
               privateTitle: '空間',
               privateSub: '查看可見空間並管理內容。',
               publicTitle: '空間',
@@ -1977,10 +2008,12 @@ const app = createApp({
                 private: '僅自己可見',
               },
             },
-            posts: {
-              feedTitle: '空間內容流',
-              feedSub: '發布你的近況、想法與專案更新。',
-              creatorHint: '只有空間建立者可以在這裡發帖、設定空間資料並管理文章，其他人可查看並按讚、評論、回覆。',
+          posts: {
+            feedTitle: '空間內容流',
+            feedSub: '發布你的近況、想法與專案更新。',
+            spaceFeedTitle: '空間內容流',
+            spaceFeedSub: '進入目前空間後，貼文會依該空間獨立展示。',
+            creatorHint: '只有空間建立者可以在這裡發帖、設定空間資料並管理文章，其他人可查看並按讚、評論、回覆。',
               viewerHint: '你目前以訪客身份瀏覽這個空間，只能按讚、評論和回覆。',
               titlePlaceholder: '文章標題',
               contentPlaceholder: '寫點什麼，分享給大家...',
@@ -3113,7 +3146,7 @@ const app = createApp({
           }
         }
         this.syncActiveSpaces();
-        const activeSpace = this.currentSpace || this.activeSpace;
+        const activeSpace = this.currentSpace;
         if (activeSpace?.id) {
           await this.loadSpacePosts(activeSpace.id);
         } else {
