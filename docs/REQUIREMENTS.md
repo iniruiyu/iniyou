@@ -274,6 +274,7 @@
 - 收口空间相关界面文案为当前语言单语显示，不再同时展示中文和英文 / Collapsed space-related UI labels to the active language only instead of showing bilingual text side by side.
 - 在聊天界面新增好友资料弹窗，支持查看资料并跳转到完整个人主页 / Added a friend profile modal in chat so users can review details and jump to the full profile page.
 - 空间页改为进入后才显示该空间帖子，并增加当前空间导航与设置区 / The space page now shows posts only after entering a space and includes current-space navigation and settings.
+- 空间页导航按钮改为使用现有导航文案键，避免显示原始 key；Flutter 进入空间后立即拉取帖子，避免依赖手动刷新 / The space-page nav buttons now reuse existing nav translation keys instead of showing raw keys, and Flutter fetches posts immediately after entering a space without requiring a manual refresh.
 
 ### 2026-03-18
 

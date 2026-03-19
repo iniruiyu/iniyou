@@ -1166,6 +1166,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     // Enter a space and switch to the matching page.
     // 进入空间并切换到对应页面。
     await _setActiveSpace(space);
+    await _loadSpacePosts(space.id, quiet: true);
     if (!mounted) {
       return;
     }
