@@ -120,6 +120,7 @@
 - 空间列表需要展示空间名称、可见范围和二级域名 / Space lists should show the space name, visibility scope, and subdomain.
 - 空间卡片需要支持进入、改名、改域名、改可见范围和删除，且只有创建者可见编辑与删除入口 / Space cards should support enter, rename, subdomain changes, visibility updates, and deletion, and edit/delete actions should only be visible to the creator.
 - 空间页面需要统一使用“空间”作为入口名称，不再拆分私人/公共页面 / The space page should use "Space" as the single entry name and no longer split private/public pages.
+- 点击“空间”只应进入工作台页，只有点击空间卡片里的“进入空间”才应进入具体空间内容页 / Clicking "Space" should open the workspace page only, and entering a specific space content page must happen from the card's "Enter space" action.
 - 进入空间后，发布和查看内容都应记录在该空间上下文中 / After entering a space, both publishing and browsing content should be recorded in that space context.
 - 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
 - 空间内容页需要展示当前空间和空间内容流，并支持图文与小视频附件发布 / The space content page should show the current space and the feed, and support image plus short-video attachments.

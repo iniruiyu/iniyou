@@ -290,3 +290,4 @@ new-project/
 - 2026-03-19：修复 Flutter 删除空间后当前空间缓存未清空导致的 record not found，并统一订阅、外部账号等按钮的本地状态刷新链路 / Fixed the Flutter stale current-space cache after space deletion causing record-not-found errors, and unified local-state refresh paths for subscription and external-account actions.
 - 2026-03-19：恢复 Vue 空间页默认展开工作台，确保进入空间后直接显示“我的空间”内容而不是空壳层 / Restored the default expanded Vue space workspace so entering space immediately shows “My spaces” content instead of an empty shell.
 - 2026-03-19：收紧空间删除后的前端状态清理，避免已删空间继续出现在发帖下拉和空间内容流中，并让空间页仅在有效当前空间存在时展示帖子 / Tightened frontend state cleanup after deleting a space to prevent deleted spaces from lingering in composer pickers and feeds, and only show posts when a valid current space exists.
+- 2026-03-19：拆分“空间工作台”和“具体空间内容”入口，确保点击空间只开工作台，点击卡片进入按钮才进入对应空间 / Split the "space workspace" and "specific space content" entries so clicking Space opens only the workspace and card entry buttons open the target space.

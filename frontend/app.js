@@ -1684,7 +1684,7 @@ const app = createApp({
       }
       this.setActiveSpace(space);
       await this.loadSpacePosts(space.id);
-      this.enterSpaceShell();
+      this.enterSpaceShell(space);
     },
     openSpaceComposer(type) {
       // Open the space composer dialog in create mode.
@@ -3011,19 +3011,33 @@ const app = createApp({
       // 切换侧边栏折叠状态。
       this.sidebarCollapsed = !this.sidebarCollapsed;
     },
-    enterSpaceShell() {
-      // Switch into the dedicated space shell and keep the workspace visible.
-      // 切换进入独立空间壳层，并保持工作台默认展开。
+    enterSpaceShell(space = null) {
+      // Switch into the dedicated space shell and optionally bind a selected space.
+      // 切换进入独立空间壳层，并可选绑定一个具体空间。
       this.view = 'space';
       this.spaceOwnedExpanded = true;
       this.spacePanelTab = 'owned';
+      if (space) {
+        this.currentSpace = space;
+        this.currentPost = null;
+        this.activePrivateSpaceId = space.id;
+        this.activePublicSpaceId = space.id;
+        this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, space.id);
+        this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, space.id);
+        return;
+      }
+      this.currentSpace = null;
+      this.spacePosts = [];
+      this.currentPost = null;
+      this.activePrivateSpaceId = '';
+      this.activePublicSpaceId = '';
+      this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, '');
+      this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, '');
     },
     leaveSpaceShell() {
-      // Leave the dedicated space shell and return to the dashboard.
-      // 离开独立空间壳层并返回首页。
-      this.view = 'dashboard';
-      this.spaceOwnedExpanded = false;
-      this.spacePanelTab = 'owned';
+      // Leave the current space view and return to the workspace-only page.
+      // 离开当前空间视图并返回仅工作台页面。
+      this.enterSpaceShell();
     },
     toggleSpaceOwnedPanel() {
       // Toggle the owned-space panel inside the space workspace.
@@ -3525,12 +3539,12 @@ const app = createApp({
     backFromPostDetail() {
       // Return from detail view to the combined space feed.
       // 从详情页返回合并后的空间内容流。
-      this.enterSpaceShell();
+      this.enterSpaceShell(this.currentSpace);
     },
     backToPublicFeed() {
       // Return from profile view to the combined space feed.
       // 从用户主页返回合并后的空间内容流。
-      this.enterSpaceShell();
+      this.enterSpaceShell(this.currentSpace);
     },
     async refreshActiveProfile() {
       // Refresh profile data when the profile page is open.
@@ -3607,7 +3621,7 @@ const app = createApp({
         return;
       }
       this.postDraft.spaceId = spaceId;
-      this.enterSpaceShell();
+      this.enterSpaceShell(this.currentSpace);
       await this.loadSpacePosts(spaceId);
       this.postDraft.title = '';
       this.postDraft.content = '';
@@ -3950,7 +3964,7 @@ const app = createApp({
         await this.loadSpaces();
         this.setActiveSpace(updatedSpace);
         await this.loadSpacePosts(updatedSpace.id);
-        this.enterSpaceShell();
+        this.enterSpaceShell(updatedSpace);
         this.openSpaceWorkspaceTab('owned');
         this.closeSpaceComposer();
         this.setFlash(this.t('spaces.editSuccess'));
@@ -3979,7 +3993,7 @@ const app = createApp({
       await this.loadSpaces();
       this.setActiveSpace(createdSpace);
       await this.loadSpacePosts(createdSpace.id);
-      this.enterSpaceShell();
+      this.enterSpaceShell(createdSpace);
       this.openSpaceWorkspaceTab('owned');
       this.closeSpaceComposer();
       this.setFlash(this.t('spaces.createSuccess'));

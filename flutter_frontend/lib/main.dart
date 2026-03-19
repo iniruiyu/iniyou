@@ -1191,9 +1191,42 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     setState(() {
+      _currentPost = null;
+      _editPostTitleController.clear();
+      _editPostContentController.clear();
+      _editPostVisibility = 'public';
+      _editPostStatus = 'published';
       _view = AppView.space;
       _flash = '${_l('已进入空间', 'Entered space', '已進入空間')} · @${space.subdomain}';
       _error = null;
+    });
+  }
+
+  void _openSpaceWorkspace() {
+    // Open the space workspace without binding a specific space.
+    // 打开空间工作台，但不绑定具体空间。
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _currentSpace = null;
+      _spacePosts = const [];
+      _currentPost = null;
+      _editPostTitleController.clear();
+      _editPostContentController.clear();
+      _editPostVisibility = 'public';
+      _editPostStatus = 'published';
+      _activePrivateSpaceId = null;
+      _activePublicSpaceId = null;
+      _view = AppView.space;
+      _flash = null;
+      _error = null;
+    });
+    SharedPreferences.getInstance().then((prefs) {
+      // Clear the stored space selection so deleted or exited spaces do not reappear.
+      // 清空已保存的空间选择，避免删除或退出后旧空间再次回显。
+      _persistSpaceSelection(prefs, _activePrivateSpaceKey, null);
+      _persistSpaceSelection(prefs, _activePublicSpaceKey, null);
     });
   }
 
@@ -1402,6 +1435,10 @@ class _IniyouHomeState extends State<IniyouHome> {
   void _navigateTo(AppView view) {
     // Redirect settings views into profile tabs.
     // 将设置类视图重定向到个人主页标签。
+    if (view == AppView.space) {
+      _openSpaceWorkspace();
+      return;
+    }
     if (view == AppView.levels) {
       _openProfileTab(ProfileTab.levels);
       return;
@@ -1531,6 +1568,11 @@ class _IniyouHomeState extends State<IniyouHome> {
           return;
         }
         setState(() {
+          _currentPost = null;
+          _editPostTitleController.clear();
+          _editPostContentController.clear();
+          _editPostVisibility = 'public';
+          _editPostStatus = 'published';
           _view = AppView.space;
           _flash = '${_l('已创建空间', 'Space created', '空間已建立')} · @${result.space.subdomain}';
         });
@@ -1549,14 +1591,19 @@ class _IniyouHomeState extends State<IniyouHome> {
           .toList();
       await _setActiveSpace(updated);
       await _refreshAll();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _view = AppView.space;
-        _flash = '${_l('空间已更新', 'Space updated', '空間已更新')} · @${updated.subdomain}';
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _currentPost = null;
+          _editPostTitleController.clear();
+          _editPostContentController.clear();
+          _editPostVisibility = 'public';
+          _editPostStatus = 'published';
+          _view = AppView.space;
+          _flash = '${_l('空间已更新', 'Space updated', '空間已更新')} · @${updated.subdomain}';
+        });
       });
-    });
   }
 
   Future<void> _deleteSpace(SpaceItem space) async {
@@ -1614,16 +1661,17 @@ class _IniyouHomeState extends State<IniyouHome> {
           }
         }
       });
-      final prefs = _prefs ??= await SharedPreferences.getInstance();
-      await _persistSpaceSelection(prefs, _activePrivateSpaceKey, _activePrivateSpaceId);
-      await _persistSpaceSelection(prefs, _activePublicSpaceKey, _activePublicSpaceId);
-      await _refreshAll();
-      if (!mounted) {
-        return;
-      }
-      setState(() => _flash = _l('空间已删除', 'Space deleted', '空間已刪除'));
-    });
-  }
+        final prefs = _prefs ??= await SharedPreferences.getInstance();
+        await _persistSpaceSelection(prefs, _activePrivateSpaceKey, _activePrivateSpaceId);
+        await _persistSpaceSelection(prefs, _activePublicSpaceKey, _activePublicSpaceId);
+        await _refreshAll();
+        if (!mounted) {
+          return;
+        }
+        _openSpaceWorkspace();
+        setState(() => _flash = _l('空间已删除', 'Space deleted', '空間已刪除'));
+      });
+    }
 
   Future<void> _deletePost(PostItem post) async {
     // Delete a managed post and all of its interactions.
@@ -2596,13 +2644,13 @@ class _IniyouHomeState extends State<IniyouHome> {
                 user: _user,
                 commentControllerFor: (postId) =>
                     _commentControllers.putIfAbsent(postId, TextEditingController.new),
-                onOpenSpaceComposer: () =>
-                    _openSpaceComposer(defaultType: 'public'),
-                onOpenPostComposer: () => _openPostComposer(activeSpace: _resolvedCurrentSpace()),
-                onLeaveSpace: () => _navigateTo(AppView.dashboard),
-                onEnterSpace: _enterSpace,
-                onEditSpace: (space) =>
-                    _openSpaceComposer(defaultType: space.type, space: space),
+                  onOpenSpaceComposer: () =>
+                      _openSpaceComposer(defaultType: 'public'),
+                  onOpenPostComposer: () => _openPostComposer(activeSpace: _resolvedCurrentSpace()),
+                  onLeaveSpace: _openSpaceWorkspace,
+                  onEnterSpace: _enterSpace,
+                  onEditSpace: (space) =>
+                      _openSpaceComposer(defaultType: space.type, space: space),
         onDeleteSpace: _deleteSpace,
         onToggleLike: _toggleLike,
         onSharePost: _sharePost,
