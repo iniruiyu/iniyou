@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -188,10 +189,24 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 }
 
 func (h *AccountHandler) ListSpaces(c *gin.Context) {
-	// List current user's spaces.
-	// 列出当前用户空间。
+	// List current user's owned spaces.
+	// 列出当前用户自己创建的空间。
 	uid := c.GetString("user_id")
 	spaces, err := service.ListSpaces(h.DB, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": spaces})
+}
+
+func (h *AccountHandler) ListUserSpaces(c *gin.Context) {
+	// List public spaces for a user profile.
+	// 列出某个用户个人主页展示的公开空间。
+	uid := c.GetString("user_id")
+	targetUserID := c.Param("id")
+	visibility := strings.ToLower(strings.TrimSpace(c.DefaultQuery("visibility", "public")))
+	spaces, err := service.ListUserSpaces(h.DB, uid, targetUserID, visibility)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
 		return

@@ -127,6 +127,10 @@ String pageTitleForView(
     case AppView.dashboard:
       return t('page.dashboard');
     case AppView.space:
+      final activeSpace = activePublicSpace ?? activePrivateSpace;
+      if (activeSpace?.name.isNotEmpty == true) {
+        return '${t('page.space')} · ${activeSpace!.name}';
+      }
       return t('page.space');
     case AppView.privateSpace:
     case AppView.publicSpace:
@@ -177,6 +181,10 @@ String pageSubtitleForView(
     case AppView.dashboard:
       return t('subtitle.dashboard');
     case AppView.space:
+      final activeSpace = activePublicSpace ?? activePrivateSpace;
+      if (activeSpace?.subdomain.isNotEmpty == true) {
+        return '${t('subtitle.space')} · @${activeSpace!.subdomain}';
+      }
       return t('subtitle.space');
     case AppView.privateSpace:
     case AppView.publicSpace:

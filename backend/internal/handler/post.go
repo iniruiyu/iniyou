@@ -21,6 +21,10 @@ type createPostRequest struct {
 	Visibility string `json:"visibility"`
 	Status     string `json:"status"`
 	SpaceID    string `json:"space_id"`
+	MediaType  string `json:"media_type"`
+	MediaName  string `json:"media_name"`
+	MediaMime  string `json:"media_mime"`
+	MediaData  string `json:"media_data"`
 }
 
 type commentRequest struct {
@@ -40,6 +44,28 @@ func (h *PostHandler) ListPosts(c *gin.Context) {
 	items, err := service.ListPosts(h.DB, uid, c.Query("visibility"), limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
+func (h *PostHandler) ListSpacePosts(c *gin.Context) {
+	// List posts inside a specific space.
+	// 列出指定空间内的文章。
+	uid := c.GetString("user_id")
+	limit := 20
+	if raw := c.Query("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			limit = parsed
+		}
+	}
+	items, err := service.ListSpacePosts(h.DB, uid, c.Param("id"), c.Query("visibility"), limit)
+	if err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items})
@@ -84,7 +110,19 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	item, err := service.CreatePostWithStatus(h.DB, uid, req.Title, req.Content, req.Visibility, req.Status, req.SpaceID)
+	item, err := service.CreatePostWithStatus(
+		h.DB,
+		uid,
+		req.Title,
+		req.Content,
+		req.Visibility,
+		req.Status,
+		req.SpaceID,
+		req.MediaType,
+		req.MediaName,
+		req.MediaMime,
+		req.MediaData,
+	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -101,7 +139,20 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	item, err := service.UpdatePost(h.DB, uid, c.Param("id"), req.Title, req.Content, req.Visibility, req.Status, req.SpaceID)
+	item, err := service.UpdatePost(
+		h.DB,
+		uid,
+		c.Param("id"),
+		req.Title,
+		req.Content,
+		req.Visibility,
+		req.Status,
+		req.SpaceID,
+		req.MediaType,
+		req.MediaName,
+		req.MediaMime,
+		req.MediaData,
+	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

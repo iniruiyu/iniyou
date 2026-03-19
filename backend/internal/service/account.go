@@ -554,24 +554,48 @@ func CreateSpace(db *gorm.DB, userID string, spaceType string, visibility string
 }
 
 func ListSpaces(db *gorm.DB, userID string) ([]models.Space, error) {
-	// List all spaces visible to the current viewer.
-	// 列出当前查看者可见的全部空间。
+	// List the spaces owned by the current user.
+	// 列出当前用户自己创建的空间。
 	var spaces []models.Space
-	if err := db.Where("COALESCE(source, '') <> ?", "system").Order("created_at asc").Find(&spaces).Error; err != nil {
+	if err := db.Where(
+		"user_id = ? AND COALESCE(source, '') <> ?",
+		userID,
+		"system",
+	).Order("created_at asc").Find(&spaces).Error; err != nil {
 		return nil, err
 	}
-	friendIDs, err := loadAcceptedFriendIDs(db, userID)
-	if err != nil {
-		return nil, err
+	return spaces, nil
+}
+
+func ListUserSpaces(db *gorm.DB, viewerID string, targetUserID string, visibility string) ([]models.Space, error) {
+	// List the spaces shown on a user's profile page.
+	// 列出个人主页上展示的空间。
+	targetUserID = strings.TrimSpace(targetUserID)
+	if targetUserID == "" {
+		return []models.Space{}, nil
+	}
+	visibility = strings.ToLower(strings.TrimSpace(visibility))
+	if visibility == "" {
+		visibility = "public"
+	}
+	if visibility == "all" && viewerID == targetUserID {
+		return ListSpaces(db, targetUserID)
+	}
+	if visibility != "public" {
+		visibility = "public"
 	}
 
-	items := make([]models.Space, 0, len(spaces))
-	for _, space := range spaces {
-		if canViewSpace(userID, friendIDs, space) {
-			items = append(items, space)
-		}
+	var spaces []models.Space
+	if err := db.Where(
+		"user_id = ? AND visibility = ? AND COALESCE(source, '') <> ? AND status = ?",
+		targetUserID,
+		visibility,
+		"system",
+		"active",
+	).Order("created_at asc").Find(&spaces).Error; err != nil {
+		return nil, err
 	}
-	return items, nil
+	return spaces, nil
 }
 
 func buildSpaceSubdomain(db *gorm.DB, userID string, spaceType string, name string, requested string) (string, error) {
@@ -748,7 +772,7 @@ func DeleteSpace(db *gorm.DB, userID string, spaceID string) error {
 		}
 
 		var posts []models.Post
-		if err := tx.Select("id").Where("space_id = ? AND user_id = ?", spaceID, userID).Find(&posts).Error; err != nil {
+		if err := tx.Select("id").Where("space_id = ?", spaceID).Find(&posts).Error; err != nil {
 			return err
 		}
 		postIDs := make([]string, 0, len(posts))

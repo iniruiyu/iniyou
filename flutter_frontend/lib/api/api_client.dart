@@ -85,6 +85,21 @@ class ApiClient {
   Future<List<SpaceItem>> listSpaces() async =>
       _list(await _get(spaceBase, '/spaces'), SpaceItem.fromJson);
 
+  Future<List<SpaceItem>> listUserSpaces(
+    String userId, {
+    String visibility = 'public',
+  }) async {
+    final encoded = Uri.encodeComponent(userId);
+    final scopedVisibility = Uri.encodeQueryComponent(visibility);
+    return _list(
+      await _get(
+        spaceBase,
+        '/users/$encoded/spaces?visibility=$scopedVisibility',
+      ),
+      SpaceItem.fromJson,
+    );
+  }
+
   Future<SpaceItem> createSpace({
     required String type,
     required String visibility,
@@ -156,6 +171,10 @@ class ApiClient {
     required String visibility,
     required String status,
     String? spaceId,
+    String mediaType = '',
+    String mediaName = '',
+    String mediaMime = '',
+    String mediaData = '',
   }) async {
     final body = {
       'title': title,
@@ -163,6 +182,10 @@ class ApiClient {
       'visibility': visibility,
       'status': status,
       if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
+      if (mediaType.trim().isNotEmpty) 'media_type': mediaType.trim(),
+      if (mediaName.trim().isNotEmpty) 'media_name': mediaName.trim(),
+      if (mediaMime.trim().isNotEmpty) 'media_mime': mediaMime.trim(),
+      if (mediaData.trim().isNotEmpty) 'media_data': mediaData.trim(),
     };
     return PostItem.fromJson(await _post(spaceBase, '/posts', body));
   }
@@ -174,6 +197,10 @@ class ApiClient {
     required String visibility,
     required String status,
     String? spaceId,
+    String mediaType = '',
+    String mediaName = '',
+    String mediaMime = '',
+    String mediaData = '',
   }) async {
     final body = {
       'title': title,
@@ -181,6 +208,10 @@ class ApiClient {
       'visibility': visibility,
       'status': status,
       if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
+      if (mediaType.trim().isNotEmpty) 'media_type': mediaType.trim(),
+      if (mediaName.trim().isNotEmpty) 'media_name': mediaName.trim(),
+      if (mediaMime.trim().isNotEmpty) 'media_mime': mediaMime.trim(),
+      if (mediaData.trim().isNotEmpty) 'media_data': mediaData.trim(),
     };
     return PostItem.fromJson(await _patch(spaceBase, '/posts/$id', body));
   }
@@ -199,6 +230,22 @@ class ApiClient {
 
   Future<PostItem> sharePost(String id) async =>
       PostItem.fromJson(await _post(spaceBase, '/posts/$id/shares', {}));
+
+  Future<List<PostItem>> listSpacePosts(
+    String spaceId, {
+    String visibility = 'all',
+    int limit = 50,
+  }) async {
+    final encoded = Uri.encodeComponent(spaceId);
+    final query = Uri(queryParameters: {
+      'visibility': visibility,
+      'limit': '$limit',
+    }).query;
+    return _list(
+      await _get(spaceBase, '/spaces/$encoded/posts?$query'),
+      PostItem.fromJson,
+    );
+  }
 
   Future<List<FriendItem>> listFriends() async =>
       _list(await _get(accountBase, '/friends'), FriendItem.fromJson);

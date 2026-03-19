@@ -267,3 +267,4 @@ new-project/
 - 2026-03-18：完成聊天表情面板收起、Vue 同步与提醒卡强化，并记录收尾状态 / Finished chat quick panel collapse, Vue sync, and reminder card emphasis, with a final progress note.
 - 2026-03-19：统一空间入口为单一“空间”页，并将首页摘要改为仅展示公共可见空间 / Unified the space entry into a single “Space” page and limited home summaries to publicly visible spaces.
 - 2026-03-19：补齐空间页当前选中空间同步，并限制空间卡片编辑/删除仅对创建者可见 / Synced the currently selected space in the space page and limited space card edit/delete actions to creators only.
+- 2026-03-19：收紧空间列表与个人主页空间可见范围，并补齐空间内容页图文/小视频发布与帖子媒体展示 / Tightened space list and profile space visibility, and added image/short-video publishing plus post media rendering in the space content page.

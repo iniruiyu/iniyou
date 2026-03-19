@@ -103,6 +103,10 @@ type Post struct {
 	SpaceID    string `gorm:"type:uuid;index"`
 	Title      string `gorm:"type:varchar(160)"`
 	Content    string `gorm:"type:text"`
+	MediaType  string `gorm:"type:varchar(20);default:text"`
+	MediaName  string `gorm:"type:varchar(255);default:''"`
+	MediaMime  string `gorm:"type:varchar(120);default:''"`
+	MediaData  string `gorm:"type:text;default:''"`
 	Status     string `gorm:"type:varchar(20);default:published"`
 	Visibility string `gorm:"type:varchar(20);default:public"`
 	CreatedAt  time.Time

@@ -16,6 +16,7 @@ type PostView struct {
 	ID              string        `json:"id"`
 	UserID          string        `json:"user_id"`
 	SpaceID         string        `json:"space_id,omitempty"`
+	SpaceUserID     string        `json:"space_user_id,omitempty"`
 	SpaceName       string        `json:"space_name,omitempty"`
 	SpaceSubdomain  string        `json:"space_subdomain,omitempty"`
 	SpaceType       string        `json:"space_type,omitempty"`
@@ -23,6 +24,10 @@ type PostView struct {
 	AuthorName      string        `json:"author_name"`
 	Title           string        `json:"title"`
 	Content         string        `json:"content"`
+	MediaType       string        `json:"media_type,omitempty"`
+	MediaName       string        `json:"media_name,omitempty"`
+	MediaMime       string        `json:"media_mime,omitempty"`
+	MediaData       string        `json:"media_data,omitempty"`
 	Status          string        `json:"status"`
 	Visibility      string        `json:"visibility"`
 	LikesCount      int64         `json:"likes_count"`
@@ -47,10 +52,10 @@ type CommentView struct {
 func CreatePost(db *gorm.DB, userID string, title string, content string, visibility string, spaceID string) (PostView, error) {
 	// Create a post for the current user.
 	// 为当前用户创建文章。
-	return CreatePostWithStatus(db, userID, title, content, visibility, "published", spaceID)
+	return CreatePostWithStatus(db, userID, title, content, visibility, "published", spaceID, "", "", "", "")
 }
 
-func CreatePostWithStatus(db *gorm.DB, userID string, title string, content string, visibility string, status string, spaceID string) (PostView, error) {
+func CreatePostWithStatus(db *gorm.DB, userID string, title string, content string, visibility string, status string, spaceID string, mediaType string, mediaName string, mediaMime string, mediaData string) (PostView, error) {
 	// Create a post for the current user with an explicit status.
 	// 为当前用户创建带状态的文章。
 	title = strings.TrimSpace(title)
@@ -58,10 +63,11 @@ func CreatePostWithStatus(db *gorm.DB, userID string, title string, content stri
 	visibility = strings.ToLower(strings.TrimSpace(visibility))
 	status = normalizePostStatus(status)
 	spaceID = strings.TrimSpace(spaceID)
+	mediaType, mediaName, mediaMime, mediaData = normalizePostMediaPayload(mediaType, mediaName, mediaMime, mediaData)
 	if title == "" {
 		return PostView{}, errors.New("title required")
 	}
-	if content == "" {
+	if content == "" && mediaData == "" {
 		return PostView{}, errors.New("content required")
 	}
 	if visibility == "" {
@@ -71,7 +77,7 @@ func CreatePostWithStatus(db *gorm.DB, userID string, title string, content stri
 		return PostView{}, errors.New("visibility must be public or private")
 	}
 
-	space, err := resolveSpaceForPost(db, userID, visibility, spaceID)
+	space, err := resolveOwnedSpaceForPost(db, userID, spaceID)
 	if err != nil {
 		return PostView{}, err
 	}
@@ -81,6 +87,10 @@ func CreatePostWithStatus(db *gorm.DB, userID string, title string, content stri
 		SpaceID:    space.ID,
 		Title:      title,
 		Content:    content,
+		MediaType:  mediaType,
+		MediaName:  mediaName,
+		MediaMime:  mediaMime,
+		MediaData:  mediaData,
 		Status:     status,
 		Visibility: visibility,
 	}
@@ -148,21 +158,69 @@ func ListPostsByUser(db *gorm.DB, viewerID string, ownerID string, visibility st
 	return buildPostViews(db, viewerID, posts)
 }
 
+func ListSpacePosts(db *gorm.DB, viewerID string, spaceID string, visibility string, limit int) ([]PostView, error) {
+	// List posts inside one space while honoring creator and viewer visibility.
+	// 列出单个空间中的文章，并同时遵守创建者与查看者的可见性。
+	if limit < 1 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	spaceID = strings.TrimSpace(spaceID)
+	if spaceID == "" {
+		return nil, errors.New("space required")
+	}
+	visibility = strings.ToLower(strings.TrimSpace(visibility))
+
+	var space models.Space
+	if err := db.First(&space, "id = ?", spaceID).Error; err != nil {
+		return nil, err
+	}
+
+	friendIDs, err := loadAcceptedFriendIDs(db, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	if !canViewSpace(viewerID, friendIDs, space) {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	query := db.Model(&models.Post{}).
+		Where("space_id = ?", space.ID).
+		Order("created_at desc").
+		Limit(limit)
+
+	if viewerID == space.UserID {
+		switch visibility {
+		case "public", "private":
+			query = query.Where("visibility = ?", visibility)
+		case "", "all":
+			// Keep all creator-owned posts, including drafts and hidden items.
+			// 保留创建者可见的全部文章，包括草稿和隐藏内容。
+		default:
+			query = query.Where("visibility = ?", "public")
+		}
+	} else {
+		if visibility == "private" {
+			return []PostView{}, nil
+		}
+		query = query.Where("visibility = ? AND status = ?", "public", "published")
+	}
+
+	var posts []models.Post
+	if err := query.Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	return buildPostViews(db, viewerID, posts)
+}
+
 func GetPost(db *gorm.DB, viewerID string, postID string) (PostView, error) {
 	// Get one post with aggregate counters and comments.
 	// 获取单篇文章及聚合计数和评论。
 	var post models.Post
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
 		return PostView{}, err
-	}
-	if post.Status == "hidden" && post.UserID != viewerID {
-		return PostView{}, gorm.ErrRecordNotFound
-	}
-	if post.Status == "draft" && post.UserID != viewerID {
-		return PostView{}, gorm.ErrRecordNotFound
-	}
-	if post.Visibility == "private" && post.UserID != viewerID {
-		return PostView{}, gorm.ErrRecordNotFound
 	}
 	views, err := buildPostViews(db, viewerID, []models.Post{post})
 	if err != nil {
@@ -197,7 +255,7 @@ func ToggleLikePost(db *gorm.DB, userID string, postID string) (PostView, error)
 	return GetPost(db, userID, post.ID)
 }
 
-func UpdatePost(db *gorm.DB, userID string, postID string, title string, content string, visibility string, status string, spaceID string) (PostView, error) {
+func UpdatePost(db *gorm.DB, userID string, postID string, title string, content string, visibility string, status string, spaceID string, mediaType string, mediaName string, mediaMime string, mediaData string) (PostView, error) {
 	// Update an existing post owned by the current user.
 	// 更新当前用户拥有的文章。
 	title = strings.TrimSpace(title)
@@ -205,10 +263,11 @@ func UpdatePost(db *gorm.DB, userID string, postID string, title string, content
 	visibility = strings.ToLower(strings.TrimSpace(visibility))
 	status = normalizePostStatus(status)
 	spaceID = strings.TrimSpace(spaceID)
+	mediaType, mediaName, mediaMime, mediaData = normalizePostMediaPayload(mediaType, mediaName, mediaMime, mediaData)
 	if title == "" {
 		return PostView{}, errors.New("title required")
 	}
-	if content == "" {
+	if content == "" && mediaData == "" {
 		return PostView{}, errors.New("content required")
 	}
 	if visibility != "public" && visibility != "private" {
@@ -219,7 +278,11 @@ func UpdatePost(db *gorm.DB, userID string, postID string, title string, content
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
 		return PostView{}, err
 	}
-	if post.UserID != userID {
+	managed, err := canManagePost(db, userID, post)
+	if err != nil {
+		return PostView{}, err
+	}
+	if !managed {
 		return PostView{}, errors.New("cannot edit another user's post")
 	}
 
@@ -227,15 +290,25 @@ func UpdatePost(db *gorm.DB, userID string, postID string, title string, content
 	if resolvedSpaceID == "" {
 		resolvedSpaceID = post.SpaceID
 	}
-	space, err := resolveSpaceForPost(db, userID, visibility, resolvedSpaceID)
+	space, err := resolveOwnedSpaceForPost(db, userID, resolvedSpaceID)
 	if err != nil {
 		return PostView{}, err
+	}
+	if mediaData == "" {
+		mediaType = post.MediaType
+		mediaName = post.MediaName
+		mediaMime = post.MediaMime
+		mediaData = post.MediaData
 	}
 
 	updates := map[string]any{
 		"title":      title,
 		"content":    content,
 		"space_id":   space.ID,
+		"media_type": mediaType,
+		"media_name": mediaName,
+		"media_mime": mediaMime,
+		"media_data": mediaData,
 		"visibility": visibility,
 		"status":     status,
 		"updated_at": time.Now(),
@@ -251,8 +324,15 @@ func DeletePost(db *gorm.DB, userID string, postID string) error {
 	// 删除当前用户拥有的文章。
 	return db.Transaction(func(tx *gorm.DB) error {
 		var post models.Post
-		if err := tx.First(&post, "id = ? AND user_id = ?", postID, userID).Error; err != nil {
+		if err := tx.First(&post, "id = ?", postID).Error; err != nil {
 			return err
+		}
+		managed, err := canManagePost(tx, userID, post)
+		if err != nil {
+			return err
+		}
+		if !managed {
+			return errors.New("cannot delete another user's post")
 		}
 		return deletePostCascade(tx, []string{post.ID})
 	})
@@ -312,6 +392,9 @@ func buildPostViews(db *gorm.DB, viewerID string, posts []models.Post) ([]PostVi
 	}
 	items := make([]PostView, 0, len(posts))
 	for _, post := range posts {
+		if !canViewPost(viewerID, friendIDs, post) {
+			continue
+		}
 		view, err := hydratePostView(db, viewerID, friendIDs, post)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -342,6 +425,7 @@ func hydratePostView(db *gorm.DB, viewerID string, friendIDs map[string]struct{}
 		ID:              post.ID,
 		UserID:          post.UserID,
 		SpaceID:         space.ID,
+		SpaceUserID:     space.UserID,
 		SpaceName:       space.Name,
 		SpaceSubdomain:  space.Subdomain,
 		SpaceType:       space.Type,
@@ -349,6 +433,10 @@ func hydratePostView(db *gorm.DB, viewerID string, friendIDs map[string]struct{}
 		AuthorName:      fallbackDisplayName(user),
 		Title:           post.Title,
 		Content:         post.Content,
+		MediaType:       normalizePostMediaType(post.MediaType, post.MediaMime, post.MediaName, post.MediaData),
+		MediaName:       strings.TrimSpace(post.MediaName),
+		MediaMime:       strings.TrimSpace(post.MediaMime),
+		MediaData:       strings.TrimSpace(post.MediaData),
 		Status:          post.Status,
 		Visibility:      post.Visibility,
 		CreatedAt:       post.CreatedAt,
@@ -385,31 +473,48 @@ func hydratePostView(db *gorm.DB, viewerID string, friendIDs map[string]struct{}
 	return view, nil
 }
 
-func resolveSpaceForPost(db *gorm.DB, userID string, visibility string, spaceID string) (models.Space, error) {
-	// Resolve the target space for a post write operation.
-	// 为文章写入操作解析目标空间。
-	visibility = strings.ToLower(strings.TrimSpace(visibility))
-	spaceID = strings.TrimSpace(spaceID)
-
-	if spaceID != "" {
-		space, err := loadOwnedSpaceByID(db, userID, spaceID)
-		if err != nil {
-			return models.Space{}, err
-		}
-		if space.Type != visibility {
-			return models.Space{}, errors.New("space type does not match visibility")
-		}
-		return space, nil
+func canViewPost(viewerID string, friendIDs map[string]struct{}, post models.Post) bool {
+	// Decide whether the current viewer can see a post.
+	// 判断当前查看者是否可以看到某篇文章。
+	if strings.TrimSpace(post.UserID) == strings.TrimSpace(viewerID) {
+		return true
 	}
+	switch strings.ToLower(strings.TrimSpace(post.Status)) {
+	case "draft", "hidden":
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(post.Visibility)) {
+	case "public":
+		return true
+	case "friends":
+		_, ok := friendIDs[post.UserID]
+		return ok
+	default:
+		return false
+	}
+}
 
-	space, err := firstSpaceByType(db, userID, visibility)
+func canManagePost(db *gorm.DB, userID string, post models.Post) (bool, error) {
+	// Decide whether the current user can manage a post.
+	// 判断当前用户是否可以管理某篇文章。
+	if strings.TrimSpace(post.UserID) == strings.TrimSpace(userID) {
+		return true, nil
+	}
+	space, err := resolvePostSpaceForView(db, post)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return models.Space{}, errors.New("space required for this visibility")
-		}
-		return models.Space{}, err
+		return false, err
 	}
-	return space, nil
+	return strings.TrimSpace(space.UserID) == strings.TrimSpace(userID), nil
+}
+
+func resolveOwnedSpaceForPost(db *gorm.DB, userID string, spaceID string) (models.Space, error) {
+	// Resolve the owned space selected for a post write operation.
+	// 为文章写入操作解析当前用户选择的空间。
+	spaceID = strings.TrimSpace(spaceID)
+	if spaceID == "" {
+		return models.Space{}, errors.New("space required")
+	}
+	return loadOwnedSpaceByID(db, userID, spaceID)
 }
 
 func resolvePostSpaceForView(db *gorm.DB, post models.Post) (models.Space, error) {
@@ -433,6 +538,62 @@ func resolvePostSpaceForView(db *gorm.DB, post models.Post) (models.Space, error
 		return models.Space{}, err
 	}
 	return space, nil
+}
+
+func normalizePostMediaType(mediaType string, mediaMime string, mediaName string, mediaData string) string {
+	// Normalize post media type and infer from MIME or file name when needed.
+	// 规范化文章媒体类型，并在必要时从 MIME 或文件名推断。
+	value := strings.ToLower(strings.TrimSpace(mediaType))
+	switch value {
+	case "text":
+		return "text"
+	case "image", "video":
+		return value
+	}
+	if strings.TrimSpace(mediaData) == "" && strings.TrimSpace(mediaName) == "" && strings.TrimSpace(mediaMime) == "" {
+		return "text"
+	}
+	mime := strings.ToLower(strings.TrimSpace(mediaMime))
+	switch {
+	case strings.HasPrefix(mime, "image/"):
+		return "image"
+	case strings.HasPrefix(mime, "video/"):
+		return "video"
+	}
+	name := strings.ToLower(strings.TrimSpace(mediaName))
+	switch {
+	case strings.HasSuffix(name, ".png"),
+		strings.HasSuffix(name, ".jpg"),
+		strings.HasSuffix(name, ".jpeg"),
+		strings.HasSuffix(name, ".gif"),
+		strings.HasSuffix(name, ".webp"):
+		return "image"
+	case strings.HasSuffix(name, ".mp4"),
+		strings.HasSuffix(name, ".mov"),
+		strings.HasSuffix(name, ".webm"),
+		strings.HasSuffix(name, ".mkv"):
+		return "video"
+	}
+	return "text"
+}
+
+func normalizePostMediaPayload(mediaType string, mediaName string, mediaMime string, mediaData string) (string, string, string, string) {
+	// Normalize media payload fields before storing or updating a post.
+	// 在存储或更新文章前规范化媒体载荷字段。
+	mediaName = strings.TrimSpace(mediaName)
+	mediaMime = strings.TrimSpace(mediaMime)
+	mediaData = strings.TrimSpace(mediaData)
+	mediaType = normalizePostMediaType(mediaType, mediaMime, mediaName, mediaData)
+	if mediaType == "text" {
+		return "text", "", "", ""
+	}
+	if mediaData == "" {
+		return "", "", "", ""
+	}
+	if mediaType != "image" && mediaType != "video" {
+		return "", "", "", ""
+	}
+	return mediaType, mediaName, mediaMime, mediaData
 }
 
 func normalizePostStatus(status string) string {

@@ -24,9 +24,14 @@ class DashboardBundle {
 }
 
 class ProfileBundle {
-  const ProfileBundle({required this.profileUser, required this.posts});
+  const ProfileBundle({
+    required this.profileUser,
+    required this.spaces,
+    required this.posts,
+  });
 
   final UserProfileItem profileUser;
+  final List<SpaceItem> spaces;
   final List<PostItem> posts;
 }
 
@@ -115,6 +120,9 @@ class AppActions {
   }) async {
     final results = await Future.wait([
       api.fetchUserProfile(userId),
+      // Profile pages only surface public spaces, even on the owner's page.
+      // 个人主页只展示公开空间，即使是自己的主页也保持一致。
+      api.listUserSpaces(userId, visibility: 'public'),
       api.listUserPosts(
         userId,
         visibility: ownProfile ? 'all' : 'public',
@@ -124,7 +132,8 @@ class AppActions {
 
     return ProfileBundle(
       profileUser: results[0] as UserProfileItem,
-      posts: results[1] as List<PostItem>,
+      spaces: results[1] as List<SpaceItem>,
+      posts: results[2] as List<PostItem>,
     );
   }
 
@@ -160,6 +169,10 @@ class AppActions {
     required String visibility,
     required String status,
     String? spaceId,
+    String mediaType = '',
+    String mediaName = '',
+    String mediaMime = '',
+    String mediaData = '',
   }) async {
     final post = await api.createPost(
       title: title,
@@ -167,6 +180,10 @@ class AppActions {
       visibility: visibility,
       status: status,
       spaceId: spaceId,
+      mediaType: mediaType,
+      mediaName: mediaName,
+      mediaMime: mediaMime,
+      mediaData: mediaData,
     );
     return PostPublishBundle(
       post: post,

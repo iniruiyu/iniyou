@@ -53,14 +53,11 @@ Widget buildSpaceView({
   required bool loading,
   required List<SpaceItem> spaces,
   required SpaceItem? activeSpace,
-  required List<PostItem> privatePosts,
-  required List<PostItem> publicPosts,
+  required List<PostItem> spacePosts,
   required CurrentUser? user,
   required TextEditingController Function(String postId) commentControllerFor,
-  required VoidCallback onOpenPrivateSpaceComposer,
-  required VoidCallback onOpenPublicSpaceComposer,
-  required VoidCallback onOpenPrivatePostComposer,
-  required VoidCallback onOpenPublicPostComposer,
+  required VoidCallback onOpenSpaceComposer,
+  required VoidCallback onOpenPostComposer,
   required ValueChanged<SpaceItem> onEnterSpace,
   required ValueChanged<SpaceItem> onEditSpace,
   required ValueChanged<SpaceItem> onDeleteSpace,
@@ -71,40 +68,119 @@ Widget buildSpaceView({
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
 }) {
-  // Combine the visible space entry points into one page.
-  // 将可见空间入口合并到同一页面。
+  // Keep the page focused on creator-owned spaces and the active feed.
+  // 页面聚焦于“自己创建的空间列表 + 当前空间内容流”。
+  final ownedSpaces = user == null
+      ? <SpaceItem>[]
+      : spaces.where((space) => space.userId == user.id).toList();
+  final selectedSpace = activeSpace;
+  final canPublish = user != null &&
+      selectedSpace != null &&
+      selectedSpace.userId == user.id;
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       InfoCard(
-        title: '空间总览',
-        lines: const [
-          '在同一页面管理可见空间与内容发布。',
-          '域名身份和空间二级域名都可以直接作为入口。',
+        title: '空间 / Space',
+        lines: [
+          '只显示自己创建的空间。 / Only spaces you created are listed here.',
+          '进入空间后即可浏览内容，并记录所属空间。 / Enter a space to browse its feed and keep posts bound to it.',
+          if (selectedSpace == null)
+            '先从下方空间列表选择一个空间。 / Pick a space from the list below first.',
+          if (selectedSpace != null) '当前空间：${selectedSpace.spaceLabel}',
+          if (selectedSpace != null)
+            '可见性：${spaceVisibilityLabel(selectedSpace.visibility)}',
         ],
       ),
       const SizedBox(height: 16),
-      buildPublicView(
-        loading: loading,
-        // Keep the visible space card synced with the currently selected space.
-        // 让可见空间卡片始终跟随当前选中的空间。
-        activeSpace: activeSpace ?? firstSpaceOfType(spaces, 'public'),
-        spaces: spaces,
-        publicPosts: publicPosts,
-        user: user,
-        commentControllerFor: commentControllerFor,
-        onOpenSpaceComposer: onOpenPublicSpaceComposer,
-        onOpenPostComposer: onOpenPublicPostComposer,
+      Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          SizedBox(
+            width: 360,
+            child: SpaceComposerCard(
+              loading: loading,
+              title: '创建空间 / Create space',
+              subtitle: '新空间会自动生成二级域名，名称和域名分开维护。',
+              detailLines: const [
+                '空间列表仅保留自己创建的空间。',
+                '可见范围和空间名称可以独立调整。',
+              ],
+              buttonPrimaryLabel: '打开创建弹窗',
+              buttonSecondaryLabel: 'Open create dialog',
+              buttonVariant: BilingualButtonVariant.filled,
+              onSubmit: onOpenSpaceComposer,
+            ),
+          ),
+          SizedBox(
+            width: 360,
+            child: canPublish
+                ? PostComposerCard(
+                    loading: loading,
+                    title: '发布内容 / Publish content',
+                    subtitle: '支持图文和小视频，内容会记录在当前空间。',
+                    detailLines: [
+                      '当前空间：${selectedSpace.name} · @${selectedSpace.subdomain}',
+                      '创建者进入空间后可以直接发帖，其他人可点赞和评论。',
+                    ],
+                    buttonPrimaryLabel: '打开发布弹窗',
+                    buttonSecondaryLabel: 'Open publish dialog',
+                    buttonVariant: BilingualButtonVariant.filled,
+                    onSubmit: onOpenPostComposer,
+                  )
+                : SizedBox(
+                    width: 360,
+                    child: InfoCard(
+                      title: '发布权限 / Publish access',
+                      lines: [
+                        if (selectedSpace == null)
+                          '先选择一个空间，再开始浏览或发布内容。'
+                        else
+                          '只有空间创建者可以发帖，其他人可点赞和评论。',
+                        '内容会按空间可见性展示给其他人。',
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      SpaceListSection(
+        title: '我的空间 / My spaces',
+        spaces: ownedSpaces,
+        activeSpaceId: selectedSpace?.id,
+        currentUserId: user?.id,
         onEnterSpace: onEnterSpace,
         onEditSpace: onEditSpace,
         onDeleteSpace: onDeleteSpace,
-        onToggleLike: onToggleLike,
-        onSharePost: onSharePost,
-        onCommentPost: onCommentPost,
-        onDeletePost: onDeletePost,
-        onOpenProfile: onOpenProfile,
-        onOpenPostDetail: onOpenPostDetail,
       ),
+      const SizedBox(height: 16),
+      if (selectedSpace != null)
+        PostStreamSection(
+          posts: spacePosts,
+          emptyText: canPublish
+              ? '这个空间里还没有内容，点击发布开始创作。'
+              : '这个空间里还没有内容。',
+          commentControllerFor: commentControllerFor,
+          onLike: onToggleLike,
+          onShare: onSharePost,
+          onComment: onCommentPost,
+          onOpenAuthor: onOpenProfile,
+          onOpenDetail: onOpenPostDetail,
+          canEditPost: (post) =>
+              user != null &&
+              (post.userId == user.id || post.spaceUserId == user.id),
+          onDeletePost: onDeletePost,
+        )
+      else
+        InfoCard(
+          title: '内容流 / Feed',
+          lines: const [
+            '先从上面的空间列表选择一个空间。',
+            '进入后即可浏览内容、点赞和评论。',
+          ],
+        ),
     ],
   );
 }
@@ -262,6 +338,7 @@ Widget buildProfileView({
   required CurrentUser? user,
   required UserProfileItem? profileUser,
   required List<PostItem> profilePosts,
+  required List<SpaceItem> profileSpaces,
   required SubscriptionItem? subscription,
   required List<ExternalAccountItem> externalAccounts,
   required List<FriendItem> friends,
@@ -294,6 +371,7 @@ Widget buildProfileView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required ValueChanged<SpaceItem> onEnterSpace,
   required String Function(String key) t,
   required String Function(String key) peerT,
 }) {
@@ -301,6 +379,7 @@ Widget buildProfileView({
     user: user,
     profileUser: profileUser,
     profilePosts: profilePosts,
+    profileSpaces: profileSpaces,
     subscription: subscription,
     connectedChains: connectedChains(externalAccounts),
     displayNameController: displayNameController,
@@ -341,6 +420,7 @@ Widget buildProfileView({
     onDeletePost: onDeletePost,
     onOpenProfile: onOpenProfile,
     onOpenPostDetail: onOpenPostDetail,
+    onEnterSpace: onEnterSpace,
     t: t,
     peerT: peerT,
   );

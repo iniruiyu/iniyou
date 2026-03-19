@@ -140,8 +140,13 @@
 - `id`
 - `user_id`
 - `space_id`
+- `space_user_id`
 - `title`
 - `content`
+- `media_type`
+- `media_name`
+- `media_mime`
+- `media_data`
 - `status`
 - `visibility`
 
@@ -236,6 +241,7 @@
 - `posts` 与 `comments` 为一对多关系
 - `posts` 与 `post_likes` 为一对多关系
 - `posts` 与 `post_shares` 为一对多关系
+- `posts.media_*` 用于承载图文和小视频附件 / `posts.media_*` carries image and short-video attachments.
 - `chat_conversations` 与 `chat_participants` 为一对多关系
 - `chat_conversations` 与 `chat_messages` 为一对多关系
 - `chat_messages` 与 `message_reads` 为一对多关系

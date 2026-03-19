@@ -168,25 +168,35 @@
 - 说明：
   - 公开主页使用 `visibility=public`
   - 当前用户自己的内容列表可使用 `visibility=all`
-  - 返回建议补充 `space_id`, `space_name`, `space_subdomain`, `space_type`, `space_visibility`，便于页面展示文章所属空间与可见范围
+  - 返回建议补充 `space_id`, `space_user_id`, `space_name`, `space_subdomain`, `space_type`, `space_visibility`，便于页面展示文章所属空间、创建者和可见范围
+
+- `GET /api/v1/users/{id}/spaces?visibility=public|friends|private|all`
+- 用途：获取指定用户的空间列表
+- 说明：
+  - 个人主页仅应使用 `visibility=public`
+  - 当前用户自己的空间列表可使用 `visibility=all`
+  - 返回结果用于个人主页展示公开空间和空间入口
 
 ### 6.6 发布文章
 
 - `POST /api/v1/posts`
 - 用途：创建文章
-- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`
+- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`, `media_type`, `media_name`, `media_mime`, `media_data`
 - 说明：
   - `space_id` 用于记录当前文章所属空间
+  - `space_user_id` 应由服务端根据 `space_id` 自动补全
   - 如果前端已进入空间上下文，发布时应优先携带当前空间 ID
   - `visibility` 应与空间可见范围保持一致，避免跨空间发布
+  - `media_type` 支持 `image` 和 `video`
+  - `media_data` 为图文或小视频的 base64 载荷
 
 ### 6.7 更新文章
 
 - `PATCH /api/v1/posts/{id}`
 - 用途：更新当前用户自己的文章
-- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`
+- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`, `media_type`, `media_name`, `media_mime`, `media_data`
 - 状态建议：`draft`, `published`, `hidden`
-- 说明：更新文章时应保持空间归属字段可见，便于前端展示当前内容上下文
+- 说明：更新文章时应保持空间归属字段可见，便于前端展示当前内容上下文，媒体字段也应原样回传
 
 ### 6.8 删除文章
 

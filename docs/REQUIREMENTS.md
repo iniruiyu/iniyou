@@ -86,19 +86,20 @@
 - 文章发布需要记录所属空间，便于页面展示当前上下文 / Post publishing must record the owning space so the page can display the current context.
 - 空间名称与二级域名需要独立维护，二级域名前缀只能使用英文字母和数字，且最长 63 个字符 / Space names and subdomains must be maintained independently, and the subdomain prefix may contain letters and numbers only, up to 63 characters.
 - 用户名、域名和空间二级域名都应限制为 63 个字符，保证可直接作为 DNS 子域名使用 / Usernames, domains, and space subdomains should all be limited to 63 characters so they can be used directly as DNS subdomains.
-- 空间列表只展示当前用户可见的空间，不再自动生成默认空间 / Space lists only show spaces visible to the current user, and no default space is auto-generated.
+- 空间列表只展示当前用户创建的空间，个人主页只展示该用户公开的空间，不再自动生成默认空间 / Space lists only show spaces created by the current user, profiles only show that user's public spaces, and no default space is auto-generated.
 
 细化功能：
 
 - 创建空间并设置可见范围
 - 通过二级域名进入空间
 - 通过域名进入个人主页 / Enter the author page through the domain handle
+- 个人主页仅展示公开空间 / Profile pages only show public spaces
 - 修改空间名称
 - 修改空间二级域名
 - 修改空间可见范围
 - 删除空间
-- 在当前空间内发布文章
-- 在当前空间内查看文章列表
+- 在当前空间内发布图文和小视频内容
+- 在当前空间内查看内容流
 - 记录文章所属空间
 - 发布文章
 - 查看文章列表
@@ -121,7 +122,8 @@
 - 空间页面需要统一使用“空间”作为入口名称，不再拆分私人/公共页面 / The space page should use "Space" as the single entry name and no longer split private/public pages.
 - 进入空间后，发布和查看内容都应记录在该空间上下文中 / After entering a space, both publishing and browsing content should be recorded in that space context.
 - 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
-- 文章卡片需要支持删除当前用户自己的内容
+- 空间内容页需要展示当前空间、我的空间列表和空间内容流，并支持图文与小视频附件发布 / The space content page should show the current space, my space list, and the feed, and support image plus short-video attachments.
+- 文章卡片需要支持删除当前用户自己的内容，以及空间创建者删除其空间内内容 / Post cards should support deleting the current user's content, and space creators should be able to delete posts inside their spaces.
 
 ### 5.4 后续扩展
 

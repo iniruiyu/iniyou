@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +9,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'api/api_client.dart';
 import 'controllers/app_actions.dart';
 import 'controllers/chat_media_actions.dart';
+import 'controllers/post_media_actions.dart';
 import 'controllers/post_state_actions.dart';
 import 'controllers/session_actions.dart';
 import 'i18n/app_i18n.dart';
@@ -228,10 +231,12 @@ class _IniyouHomeState extends State<IniyouHome> {
   // Active public space ID.
   // 当前公共空间 ID。
   String? _activePublicSpaceId;
+  // Currently entered space.
+  // 当前进入的空间。
+  SpaceItem? _currentSpace;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
-  String _privatePostStatus = 'draft';
   String _externalProvider = 'evm';
   String _externalChain = 'ethereum';
   String _phoneVisibility = 'private';
@@ -246,6 +251,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   UserProfileItem? _profileUser;
   PostItem? _currentPost;
   List<SpaceItem> _spaces = const [];
+  List<SpaceItem> _profileSpaces = const [];
+  List<PostItem> _spacePosts = const [];
   List<PostItem> _publicPosts = const [];
   List<PostItem> _privatePosts = const [];
   List<PostItem> _profilePosts = const [];
@@ -469,6 +476,9 @@ class _IniyouHomeState extends State<IniyouHome> {
   SpaceItem? _selectedSpaceForVisibility(String visibility) {
     // Resolve the current space for a content visibility scope.
     // 为内容可见范围解析当前空间。
+    if (_currentSpace != null) {
+      return _currentSpace;
+    }
     final activeSpaceId = visibility == 'private'
         ? _activePrivateSpaceId
         : _activePublicSpaceId;
@@ -583,21 +593,20 @@ class _IniyouHomeState extends State<IniyouHome> {
   Future<void> _syncActiveSpaces() async {
     // Keep the selected spaces aligned with the current account data.
     // 让已选空间与当前账号数据保持同步。
-    final privateSpace = _selectedSpaceForVisibility('private');
-    final publicSpace = _selectedSpaceForVisibility('public');
+    final activeSpace = _currentSpace ?? _selectedSpaceForVisibility('public');
     final prefs = _prefs ??= await SharedPreferences.getInstance();
     await _persistSpaceSelection(
       prefs,
       _activePrivateSpaceKey,
-      privateSpace?.id,
+      activeSpace?.id,
     );
-    await _persistSpaceSelection(prefs, _activePublicSpaceKey, publicSpace?.id);
+    await _persistSpaceSelection(prefs, _activePublicSpaceKey, activeSpace?.id);
     if (!mounted) {
       return;
     }
     setState(() {
-      _activePrivateSpaceId = privateSpace?.id;
-      _activePublicSpaceId = publicSpace?.id;
+      _activePrivateSpaceId = activeSpace?.id;
+      _activePublicSpaceId = activeSpace?.id;
     });
   }
 
@@ -619,20 +628,15 @@ class _IniyouHomeState extends State<IniyouHome> {
     // Store the selected space without changing the current page.
     // 仅保存当前空间选择，不直接切换页面。
     final prefs = _prefs ??= await SharedPreferences.getInstance();
-    if (space.type == 'private') {
-      await _persistSpaceSelection(prefs, _activePrivateSpaceKey, space.id);
-    } else {
-      await _persistSpaceSelection(prefs, _activePublicSpaceKey, space.id);
-    }
+    await _persistSpaceSelection(prefs, _activePrivateSpaceKey, space.id);
+    await _persistSpaceSelection(prefs, _activePublicSpaceKey, space.id);
     if (!mounted) {
       return;
     }
     setState(() {
-      if (space.type == 'private') {
-        _activePrivateSpaceId = space.id;
-      } else {
-        _activePublicSpaceId = space.id;
-      }
+      _currentSpace = space;
+      _activePrivateSpaceId = space.id;
+      _activePublicSpaceId = space.id;
     });
   }
 
@@ -866,32 +870,84 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _openPostComposer({
-    required String visibility,
-    required SpaceItem? activeSpace,
+    SpaceItem? activeSpace,
   }) async {
-    // Open the post publishing dialog.
-    // 打开内容发布弹窗。
-    final isPrivate = visibility == 'private';
-    final titleController = isPrivate
-        ? _privatePostTitleController
-        : _publicPostTitleController;
-    final contentController = isPrivate
-        ? _privatePostContentController
-        : _publicPostContentController;
-    final spaces = isPrivate ? privateSpaces(_spaces) : publicSpaces(_spaces);
-    if (spaces.isEmpty) {
-      setState(() => _error = '请先创建对应空间');
+    // Open the unified space post composer dialog.
+    // 打开统一的空间发帖弹窗。
+    final ownedSpaces = _spaces.where((space) => space.userId == _user?.id).toList();
+    if (ownedSpaces.isEmpty) {
+      setState(() => _error = '请先创建空间');
       return;
     }
-    var selectedSpaceId =
-        activeSpace?.id ??
-        _selectedSpaceForVisibility(visibility)?.id ??
-        spaces.first.id;
-    var selectedStatus = isPrivate ? _privatePostStatus : _publicPostStatus;
+    final targetSpace = activeSpace ?? _currentSpace ?? ownedSpaces.first;
+    if (targetSpace.userId != _user?.id) {
+      setState(() => _error = '只有空间创建者可以发帖');
+      return;
+    }
+
+    final titleController = _publicPostTitleController;
+    final contentController = _publicPostContentController;
+    var selectedSpaceId = targetSpace.id;
+    var selectedVisibility = 'public';
+    var selectedStatus = _publicPostStatus;
+    PostAttachmentDraft? selectedAttachment;
+
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         String? dialogError;
+        Widget buildAttachmentPreview(PostAttachmentDraft attachment) {
+          // Preview the selected post media in the composer dialog.
+          // 在发帖弹窗中预览已选媒体。
+          if (attachment.isImage) {
+            final bytes = Uint8List.fromList(base64Decode(attachment.mediaData));
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.memory(
+                bytes,
+                width: double.infinity,
+                height: 220,
+                fit: BoxFit.cover,
+              ),
+            );
+          }
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.video_library_outlined),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(attachment.mediaName),
+                      const SizedBox(height: 4),
+                      Text('${attachment.mediaMime} · ${attachment.sizeLabel}'),
+                    ],
+                  ),
+                ),
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
+                  compact: true,
+                  onPressed: () => openPostAttachment(
+                    mediaMime: attachment.mediaMime,
+                    mediaData: attachment.mediaData,
+                  ),
+                  primaryLabel: '打开',
+                  secondaryLabel: 'Open',
+                ),
+              ],
+            ),
+          );
+        }
+
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
@@ -900,7 +956,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             builder: (context, setDialogState) {
               final selectedSpace = findSpaceById(_spaces, selectedSpaceId);
               return ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
+                constraints: const BoxConstraints(maxWidth: 720),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -908,14 +964,19 @@ class _IniyouHomeState extends State<IniyouHome> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        isPrivate ? '发布私人内容' : '发布公共内容',
+                        '发布空间内容 / Publish space content',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         selectedSpace == null
-                            ? '先选择一个空间，再填写标题和内容。'
+                            ? '先选择一个空间，再填写标题、内容或媒体。'
                             : '当前空间：${selectedSpace.name} · @${selectedSpace.subdomain}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '其他人会按照帖子可见性看到内容，你也可以附加图片或小视频。',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       if (dialogError != null) ...[
                         const SizedBox(height: 12),
@@ -929,10 +990,22 @@ class _IniyouHomeState extends State<IniyouHome> {
                         primaryLabel: '发布空间',
                         secondaryLabel: 'Publish space',
                         value: selectedSpaceId,
-                        items: buildSpaceItems(spaces),
+                        items: buildSpaceItems(ownedSpaces),
                         onChanged: (value) {
                           setDialogState(() {
                             selectedSpaceId = value ?? selectedSpaceId;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      BilingualDropdownField<String>(
+                        primaryLabel: '帖子可见性',
+                        secondaryLabel: 'Post visibility',
+                        value: selectedVisibility,
+                        items: buildPostVisibilityItems(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedVisibility = value ?? selectedVisibility;
                           });
                         },
                       ),
@@ -948,6 +1021,69 @@ class _IniyouHomeState extends State<IniyouHome> {
                         maxLines: 8,
                         decoration: const InputDecoration(labelText: '内容'),
                       ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            compact: true,
+                            onPressed: _loading
+                                ? null
+                                : () async {
+                                    final attachment = await pickPostAttachment('image');
+                                    if (attachment == null) {
+                                      return;
+                                    }
+                                    if (!mounted) {
+                                      return;
+                                    }
+                                    setDialogState(() {
+                                      selectedAttachment = attachment;
+                                    });
+                                  },
+                            primaryLabel: '添加图片',
+                            secondaryLabel: 'Add image',
+                          ),
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            compact: true,
+                            onPressed: _loading
+                                ? null
+                                : () async {
+                                    final attachment = await pickPostAttachment('video');
+                                    if (attachment == null) {
+                                      return;
+                                    }
+                                    if (!mounted) {
+                                      return;
+                                    }
+                                    setDialogState(() {
+                                      selectedAttachment = attachment;
+                                    });
+                                  },
+                            primaryLabel: '添加小视频',
+                            secondaryLabel: 'Add short video',
+                          ),
+                          if (selectedAttachment != null)
+                            BilingualActionButton(
+                              variant: BilingualButtonVariant.text,
+                              compact: true,
+                              onPressed: () {
+                                setDialogState(() {
+                                  selectedAttachment = null;
+                                });
+                              },
+                              primaryLabel: '清除媒体',
+                              secondaryLabel: 'Clear media',
+                            ),
+                        ],
+                      ),
+                      if (selectedAttachment != null) ...[
+                        const SizedBox(height: 12),
+                        buildAttachmentPreview(selectedAttachment!),
+                      ],
                       const SizedBox(height: 12),
                       BilingualDropdownField<String>(
                         primaryLabel: '状态',
@@ -977,38 +1113,28 @@ class _IniyouHomeState extends State<IniyouHome> {
                                 ? null
                                 : () async {
                                     final title = titleController.text.trim();
-                                    final content = contentController.text
-                                        .trim();
-                                    if (title.isEmpty || content.isEmpty) {
+                                    final content = contentController.text.trim();
+                                    if (title.isEmpty ||
+                                        (content.isEmpty &&
+                                            selectedAttachment == null)) {
                                       setDialogState(() {
-                                        dialogError = '标题和内容不能为空';
+                                        dialogError =
+                                            '标题不能为空，内容或媒体至少保留一项';
                                       });
                                       return;
                                     }
                                     Navigator.of(dialogContext).pop();
-                                    if (isPrivate) {
-                                      setState(
-                                        () =>
-                                            _privatePostStatus = selectedStatus,
-                                      );
-                                    } else {
-                                      setState(
-                                        () =>
-                                            _publicPostStatus = selectedStatus,
-                                      );
-                                    }
                                     await _publishPost(
-                                      visibility: visibility,
+                                      visibility: selectedVisibility,
                                       spaceId: selectedSpaceId,
                                       titleController: titleController,
                                       contentController: contentController,
                                       status: selectedStatus,
+                                      attachment: selectedAttachment,
                                     );
                                   },
-                            primaryLabel:
-                                isPrivate ? '保存到私人空间' : '发布到公共空间',
-                            secondaryLabel:
-                                isPrivate ? 'Save to private space' : 'Publish to public space',
+                            primaryLabel: '发布内容',
+                            secondaryLabel: 'Publish content',
                           ),
                         ],
                       ),
@@ -1093,6 +1219,10 @@ class _IniyouHomeState extends State<IniyouHome> {
     });
 
     await _syncActiveSpaces();
+    final activeSpace = _currentSpace ?? _selectedSpaceForVisibility('public');
+    if (activeSpace != null) {
+      await _loadSpacePosts(activeSpace.id, quiet: true);
+    }
 
     if (_profileUser != null) {
       await _loadProfile(_profileUser!.id, quiet: true);
@@ -1165,6 +1295,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _profileUser = null;
       _currentPost = null;
       _spaces = const [];
+      _profileSpaces = const [];
+      _spacePosts = const [];
       _publicPosts = const [];
       _privatePosts = const [];
       _profilePosts = const [];
@@ -1179,6 +1311,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _hostRouteApplied = false;
       _activePrivateSpaceId = null;
       _activePublicSpaceId = null;
+      _currentSpace = null;
       _view = AppView.dashboard;
       _flash = null;
       _error = null;
@@ -1475,11 +1608,13 @@ class _IniyouHomeState extends State<IniyouHome> {
     required TextEditingController titleController,
     required TextEditingController contentController,
     required String status,
+    PostAttachmentDraft? attachment,
   }) async {
     final title = titleController.text.trim();
     final content = contentController.text.trim();
-    if (title.isEmpty || content.isEmpty) {
-      setState(() => _error = '标题和内容不能为空');
+    final hasMedia = attachment?.isMedia == true;
+    if (title.isEmpty || (content.isEmpty && !hasMedia)) {
+      setState(() => _error = '标题不能为空，内容或媒体至少保留一项');
       return;
     }
     await _runBusy(() async {
@@ -1490,24 +1625,55 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: visibility,
         status: status,
         spaceId: spaceId,
+        mediaType: attachment?.mediaType ?? '',
+        mediaName: attachment?.mediaName ?? '',
+        mediaMime: attachment?.mediaMime ?? '',
+        mediaData: attachment?.mediaData ?? '',
       );
       titleController.clear();
       contentController.clear();
       _applyPostUpdate(result.post);
       await _setActiveSpaceById(spaceId, visibility);
-      if (visibility == 'public') {
-        _publicPosts = result.posts;
-      } else {
-        _privatePosts = result.posts;
-      }
+      await _loadSpacePosts(spaceId, quiet: true);
       if (!mounted) {
         return;
       }
       setState(() {
         _view = AppView.space;
-        _flash = visibility == 'public' ? '公共内容已发布' : '私人内容已保存';
+        _flash = '内容已发布';
       });
     });
+  }
+
+  Future<void> _loadSpacePosts(String spaceId, {bool quiet = false}) async {
+    Future<void> action() async {
+      if (!mounted) {
+        return;
+      }
+      if (_api.token == null || spaceId.isEmpty) {
+        setState(() => _spacePosts = const []);
+        return;
+      }
+      final posts = await _api.listSpacePosts(spaceId, visibility: 'all', limit: 50);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spacePosts = posts;
+        final matched = findSpaceById(_spaces, spaceId);
+        if (matched != null) {
+          _currentSpace = matched;
+        }
+      });
+    }
+
+    if (quiet) {
+      try {
+        await action();
+      } catch (_) {}
+      return;
+    }
+    await action();
   }
 
   Future<void> _toggleLike(PostItem post) async {
@@ -1550,12 +1716,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       updated: updated,
       publicPosts: _publicPosts,
       privatePosts: _privatePosts,
+      spacePosts: _spacePosts,
       profilePosts: _profilePosts,
       currentPost: _currentPost,
     );
     setState(() {
       _publicPosts = next.publicPosts;
       _privatePosts = next.privatePosts;
+      _spacePosts = next.spacePosts;
       _profilePosts = next.profilePosts;
       _currentPost = next.currentPost;
     });
@@ -1580,6 +1748,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _profileUser = profile.profileUser;
+        _profileSpaces = profile.spaces;
         _profilePosts = profile.posts;
         _view = AppView.profile;
       });
@@ -1606,11 +1775,18 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: ownProfile ? 'all' : 'public',
         limit: 50,
       );
+      final spaces = await _api.listUserSpaces(
+        profile.id,
+        // Personal pages only show public spaces so the profile layout stays consistent.
+        // 个人主页只展示公开空间，保证布局与可见范围一致。
+        visibility: 'public',
+      );
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
+        _profileSpaces = spaces;
         _profilePosts = posts;
         _view = AppView.profile;
       });
@@ -1637,11 +1813,18 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: ownProfile ? 'all' : 'public',
         limit: 50,
       );
+      final spaces = await _api.listUserSpaces(
+        profile.id,
+        // Personal pages only show public spaces so the profile layout stays consistent.
+        // 个人主页只展示公开空间，保证布局与可见范围一致。
+        visibility: 'public',
+      );
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
+        _profileSpaces = spaces;
         _profilePosts = posts;
         _view = AppView.profile;
       });
@@ -1671,10 +1854,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       _editPostContentController.text = post.content;
       setState(() {
         _currentPost = post;
+        _currentSpace = findSpaceById(_spaces, post.spaceId) ?? _currentSpace;
         _editPostVisibility = post.visibility;
         _editPostStatus = post.status;
         _view = AppView.postDetail;
       });
+      if (post.spaceId.isNotEmpty) {
+        await _loadSpacePosts(post.spaceId, quiet: true);
+      }
     }
 
     if (quiet) {
@@ -1699,6 +1886,10 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: _editPostVisibility,
         status: _editPostStatus,
         spaceId: post.spaceId,
+        mediaType: post.mediaType,
+        mediaName: post.mediaName,
+        mediaMime: post.mediaMime,
+        mediaData: post.mediaData,
       );
       _applyPostUpdate(updated);
       if (!mounted) {
@@ -1970,11 +2161,12 @@ class _IniyouHomeState extends State<IniyouHome> {
       content = LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 1120;
-          final activePrivateSpace = _selectedSpaceForVisibility('private');
-          final activePublicSpace = _selectedSpaceForVisibility('public');
+          final activeSpace = _currentSpace ?? _selectedSpaceForVisibility('public');
+          final activePrivateSpace = activeSpace;
+          final activePublicSpace = activeSpace;
           final dashboardPublicPosts = postsForSpace(
             _publicPosts,
-            activePublicSpace?.id,
+            activeSpace?.id,
           );
           final filteredPrivatePosts = postsForSpace(
             _privatePosts,
@@ -1982,7 +2174,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           );
           final filteredPublicPosts = postsForSpace(
             _publicPosts,
-            activePublicSpace?.id,
+            activeSpace?.id,
           );
           final identityHandle = _user!.domain.isNotEmpty
               ? _user!.domain
@@ -2324,6 +2516,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _externalProvider,
       _externalChain,
     );
+    final activeSpace = activePublicSpace ?? activePrivateSpace;
     return sectionBodyForView(
       _view,
       dashboard: buildDashboardView(
@@ -2339,24 +2532,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       space: buildSpaceView(
         loading: _loading,
         spaces: _spaces,
-        activeSpace: activePublicSpace,
-        privatePosts: filteredPrivatePosts,
-        publicPosts: filteredPublicPosts,
+        activeSpace: activeSpace,
+        spacePosts: _spacePosts,
         user: _user,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
-        onOpenPrivateSpaceComposer: () =>
-            _openSpaceComposer(defaultType: 'private'),
-        onOpenPublicSpaceComposer: () =>
+        onOpenSpaceComposer: () =>
             _openSpaceComposer(defaultType: 'public'),
-        onOpenPrivatePostComposer: () => _openPostComposer(
-          visibility: 'private',
-          activeSpace: activePrivateSpace,
-        ),
-        onOpenPublicPostComposer: () => _openPostComposer(
-          visibility: 'public',
-          activeSpace: activePublicSpace,
-        ),
+        onOpenPostComposer: () => _openPostComposer(activeSpace: activeSpace),
         onEnterSpace: _enterSpace,
         onEditSpace: (space) =>
             _openSpaceComposer(defaultType: space.type, space: space),
@@ -2378,7 +2561,6 @@ class _IniyouHomeState extends State<IniyouHome> {
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
         onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'private'),
         onOpenPostComposer: () => _openPostComposer(
-          visibility: 'private',
           activeSpace: activePrivateSpace,
         ),
         onEnterSpace: _enterSpace,
@@ -2402,7 +2584,6 @@ class _IniyouHomeState extends State<IniyouHome> {
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
         onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'public'),
         onOpenPostComposer: () => _openPostComposer(
-          visibility: 'public',
           activeSpace: activePublicSpace,
         ),
         onEnterSpace: _enterSpace,
@@ -2420,6 +2601,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         user: _user,
         profileUser: _profileUser,
         profilePosts: _profilePosts,
+        profileSpaces: _profileSpaces,
         subscription: _subscription,
         externalAccounts: _externalAccounts,
         friends: _friends,
@@ -2457,6 +2639,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        onEnterSpace: _enterSpace,
         t: _t,
         peerT: _peerT,
       ),

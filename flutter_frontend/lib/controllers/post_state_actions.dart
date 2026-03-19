@@ -4,12 +4,14 @@ class PostStateSnapshot {
   const PostStateSnapshot({
     required this.publicPosts,
     required this.privatePosts,
+    required this.spacePosts,
     required this.profilePosts,
     required this.currentPost,
   });
 
   final List<PostItem> publicPosts;
   final List<PostItem> privatePosts;
+  final List<PostItem> spacePosts;
   final List<PostItem> profilePosts;
   final PostItem? currentPost;
 }
@@ -39,9 +41,16 @@ class PostStateActions {
     required PostItem updated,
     required List<PostItem> publicPosts,
     required List<PostItem> privatePosts,
+    required List<PostItem> spacePosts,
     required List<PostItem> profilePosts,
     required PostItem? currentPost,
   }) {
+    final nextSpacePosts = [...spacePosts];
+    final spaceIndex = nextSpacePosts.indexWhere((post) => post.id == updated.id);
+    if (spaceIndex >= 0) {
+      nextSpacePosts[spaceIndex] = updated;
+    }
+
     final nextProfilePosts = [...profilePosts];
     final profileIndex = nextProfilePosts.indexWhere(
       (post) => post.id == updated.id,
@@ -53,6 +62,7 @@ class PostStateActions {
     return PostStateSnapshot(
       publicPosts: syncVisibility(publicPosts, updated, 'public'),
       privatePosts: syncVisibility(privatePosts, updated, 'private'),
+      spacePosts: nextSpacePosts,
       profilePosts: nextProfilePosts,
       currentPost: currentPost?.id == updated.id ? updated : currentPost,
     );

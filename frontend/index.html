@@ -365,6 +365,22 @@
               :secondary-label="peerLocaleText('posts.openDetail')"
               @click="openPostDetail(post.id)"
             ></bilingual-action-button>
+            <div v-if="post.mediaUrl" class="post-media-preview">
+              <img
+                v-if="post.mediaType === 'image'"
+                :src="post.mediaUrl"
+                :alt="post.mediaName || post.title"
+              />
+              <video
+                v-else-if="post.mediaType === 'video'"
+                :src="post.mediaUrl"
+                controls
+              ></video>
+              <div v-else class="post-media-card">
+                <div class="post-media-title">{{ post.mediaName || t('posts.mediaPreview') }}</div>
+                <div class="post-media-sub">{{ post.mediaMime || post.mediaType }}</div>
+              </div>
+            </div>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
               <bilingual-action-button
@@ -408,17 +424,15 @@
         </div>
       </section>
 
-      <section v-if="view === 'space' || view === 'public'" class="panel">
-        <h2>{{ t('spaces.publicTitle') }}</h2>
-        <p>{{ t('spaces.publicSub') }}</p>
-        <div class="space-toolbar">
+      <section v-if="view === 'space' || view === 'public'" class="panel space-page">
+        <div class="space-page-hero">
           <div>
-            <div class="space-toolbar-kicker">{{ t('spaces.currentLabel') }}</div>
-            <div class="space-toolbar-title">
-              {{ activePublicSpace ? localizedSpaceText('name', activePublicSpace) : t('common.notAvailable') }}
+            <div class="space-toolbar-kicker">{{ t('spaces.publicTitle') }}</div>
+            <div class="space-page-title">
+              {{ activeSpace ? localizedSpaceText('name', activeSpace) : t('spaces.publicTitle') }}
             </div>
-            <div class="space-toolbar-sub">
-              {{ activePublicSpace ? `@${activePublicSpace.subdomain}` : t('posts.spaceRequired') }}
+            <div class="space-page-sub">
+              {{ activeSpace ? `${spaceVisibilityLabel(activeSpace.visibility)} · @${activeSpace.subdomain}` : t('spaces.publicSub') }}
             </div>
           </div>
           <div class="space-toolbar-actions">
@@ -430,67 +444,97 @@
               @click="openSpaceComposer('public')"
             ></bilingual-action-button>
             <bilingual-action-button
+              v-if="user && activeSpace && activeSpace.userId === user.id"
               variant="primary"
               type="button"
               :primary-label="t('posts.publishAction')"
               :secondary-label="peerLocaleText('posts.publishAction')"
-              @click="openPostComposer('public')"
+              @click="openPostComposer(activeSpace)"
             ></bilingual-action-button>
           </div>
         </div>
-        <div class="space-cards">
-          <div
-            class="space-card"
-            :class="{ active: activePublicSpace && space.id === activePublicSpace.id }"
-            v-for="space in publicSpaces"
-            :key="space.id"
-          >
-            <div class="space-tag public">{{ t('spaces.type.public') }}</div>
-            <div v-if="activePublicSpace && space.id === activePublicSpace.id" class="space-badge">
-              {{ t('spaces.currentLabel') }}
-            </div>
-            <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
-            <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
-            <div class="space-meta">@{{ space.subdomain }}</div>
-            <div v-if="space.status && space.status !== 'active'" class="space-meta">{{ statusLabel(space.status) }}</div>
-            <div class="space-card-actions">
-              <bilingual-action-button
-                variant="ghost"
-                compact
-                type="button"
-                :primary-label="t('spaces.enterAction')"
-                :secondary-label="peerLocaleText('spaces.enterAction')"
-                @click="enterSpace(space)"
-              ></bilingual-action-button>
-              <bilingual-action-button
-                v-if="user && space.userId === user.id"
-                variant="ghost"
-                compact
-                type="button"
-                :primary-label="t('spaces.editAction')"
-                :secondary-label="peerLocaleText('spaces.editAction')"
-                @click="openSpaceEditor(space)"
-              ></bilingual-action-button>
-              <bilingual-action-button
-                v-if="user && space.userId === user.id"
-                variant="ghost"
-                compact
-                danger
-                type="button"
-                :primary-label="t('spaces.deleteAction')"
-                :secondary-label="peerLocaleText('spaces.deleteAction')"
-                @click="deleteSpace(space)"
-              ></bilingual-action-button>
+
+        <div class="space-section">
+          <div class="space-section-head">
+            <h3>{{ t('profile.spaces.title') }}</h3>
+            <p>{{ t('profile.spaces.sub') }}</p>
+          </div>
+          <div v-if="ownedSpaces.length === 0" class="empty-state">{{ t('profile.spaces.empty') }}</div>
+          <div class="space-cards">
+            <div
+              class="space-card"
+              :class="{ active: activeSpace && space.id === activeSpace.id }"
+              v-for="space in ownedSpaces"
+              :key="space.id"
+            >
+              <div class="space-tag public">{{ spaceVisibilityLabel(space.visibility) }}</div>
+              <div v-if="activeSpace && space.id === activeSpace.id" class="space-badge">
+                {{ t('spaces.currentLabel') }}
+              </div>
+              <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+              <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+              <div class="space-meta">@{{ space.subdomain }}</div>
+              <div v-if="space.status && space.status !== 'active'" class="space-meta">{{ statusLabel(space.status) }}</div>
+              <div class="space-card-actions">
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('spaces.enterAction')"
+                  :secondary-label="peerLocaleText('spaces.enterAction')"
+                  @click="enterSpace(space)"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  v-if="user && space.userId === user.id"
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('spaces.editAction')"
+                  :secondary-label="peerLocaleText('spaces.editAction')"
+                  @click="openSpaceEditor(space)"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  v-if="user && space.userId === user.id"
+                  variant="ghost"
+                  compact
+                  danger
+                  type="button"
+                  :primary-label="t('spaces.deleteAction')"
+                  :secondary-label="peerLocaleText('spaces.deleteAction')"
+                  @click="deleteSpace(space)"
+                ></bilingual-action-button>
+              </div>
             </div>
           </div>
         </div>
+
         <div class="post-feed">
           <div class="post-composer">
-            <h3>{{ t('posts.feedTitle') }}</h3>
-            <p>{{ t('posts.feedSub') }}</p>
+            <div class="post-header">
+              <div>
+                <h3>{{ t('posts.feedTitle') }}</h3>
+                <p>{{ t('posts.feedSub') }}</p>
+                <div v-if="activeSpace" class="post-meta">
+                  {{ t('spaces.currentLabel') }} · {{ localizedSpaceText('name', activeSpace) }} · {{ spaceVisibilityLabel(activeSpace.visibility) }}
+                </div>
+              </div>
+              <bilingual-action-button
+                v-if="user && activeSpace && activeSpace.userId === user.id"
+                variant="primary"
+                compact
+                type="button"
+                :primary-label="t('posts.publishAction')"
+                :secondary-label="peerLocaleText('posts.publishAction')"
+                @click="openPostComposer(activeSpace)"
+              ></bilingual-action-button>
+            </div>
+            <div v-if="user && activeSpace && activeSpace.userId === user.id" class="post-feed-note">
+              {{ t('posts.creatorHint') }}
+            </div>
           </div>
-          <div v-if="visiblePublicPosts.length === 0" class="empty-state">{{ t('posts.publicEmpty') }}</div>
-          <article class="post-card" v-for="post in visiblePublicPosts" :key="post.id">
+          <div v-if="!activeSpace" class="empty-state">{{ t('posts.spaceRequired') }}</div>
+          <div v-else-if="activeSpacePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
+          <article class="post-card" v-for="post in activeSpacePosts" :key="post.id">
             <div class="post-header">
               <div>
                 <div class="post-author">{{ post.authorName }}</div>
@@ -515,6 +559,22 @@
               :secondary-label="peerLocaleText('posts.openDetail')"
               @click="openPostDetail(post.id)"
             ></bilingual-action-button>
+            <div v-if="post.mediaUrl" class="post-media-preview">
+              <img
+                v-if="post.mediaType === 'image'"
+                :src="post.mediaUrl"
+                :alt="post.mediaName || post.title"
+              />
+              <video
+                v-else-if="post.mediaType === 'video'"
+                :src="post.mediaUrl"
+                controls
+              ></video>
+              <div v-else class="post-media-card">
+                <div class="post-media-title">{{ post.mediaName || t('posts.mediaPreview') }}</div>
+                <div class="post-media-sub">{{ post.mediaMime || post.mediaType }}</div>
+              </div>
+            </div>
             <div class="post-content">{{ post.content }}</div>
             <div class="post-actions">
               <bilingual-action-button
@@ -624,6 +684,39 @@
                   :secondary-label="peerLocaleText('posts.addFriend')"
                   @click="addProfileFriend"
                 ></bilingual-action-button>
+              </div>
+            </div>
+          </div>
+          <div class="space-section">
+            <div class="space-section-head">
+              <h3>{{ t('profile.spaces.title') }}</h3>
+              <p>{{ t('profile.spaces.sub') }}</p>
+            </div>
+            <div v-if="visibleProfileSpaces.length === 0" class="empty-state">{{ t('profile.spaces.empty') }}</div>
+            <div class="space-cards">
+              <div
+                class="space-card"
+                v-for="space in visibleProfileSpaces"
+                :key="space.id"
+                :class="{ active: activeSpace && space.id === activeSpace.id }"
+              >
+                <div class="space-tag public">{{ spaceVisibilityLabel(space.visibility) }}</div>
+                <div v-if="activeSpace && space.id === activeSpace.id" class="space-badge">
+                  {{ t('spaces.currentLabel') }}
+                </div>
+                <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+                <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+                <div class="space-meta">@{{ space.subdomain }}</div>
+                <div class="space-card-actions">
+                  <bilingual-action-button
+                    variant="ghost"
+                    compact
+                    type="button"
+                    :primary-label="t('spaces.enterAction')"
+                    :secondary-label="peerLocaleText('spaces.enterAction')"
+                    @click="enterSpace(space)"
+                  ></bilingual-action-button>
+                </div>
               </div>
             </div>
           </div>
@@ -772,6 +865,22 @@
               </div>
             </div>
             <div class="post-title">{{ currentPost.title }}</div>
+            <div v-if="currentPost.mediaUrl" class="post-media-preview">
+              <img
+                v-if="currentPost.mediaType === 'image'"
+                :src="currentPost.mediaUrl"
+                :alt="currentPost.mediaName || currentPost.title"
+              />
+              <video
+                v-else-if="currentPost.mediaType === 'video'"
+                :src="currentPost.mediaUrl"
+                controls
+              ></video>
+              <div v-else class="post-media-card">
+                <div class="post-media-title">{{ currentPost.mediaName || t('posts.mediaPreview') }}</div>
+                <div class="post-media-sub">{{ currentPost.mediaMime || currentPost.mediaType }}</div>
+              </div>
+            </div>
             <div class="post-content">{{ currentPost.content }}</div>
             <div class="post-actions">
               <bilingual-action-button
@@ -816,6 +925,56 @@
               <form class="form">
                 <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="editPostDraft.title" />
                 <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="editPostDraft.content"></textarea>
+                <div class="post-media-tools">
+                  <div class="post-media-tools-head">
+                    <div class="post-media-tools-title">{{ t('posts.mediaPreview') }}</div>
+                    <div class="post-media-tools-sub">{{ editPostDraft.mediaName || t('common.notAvailable') }}</div>
+                  </div>
+                  <div class="post-media-actions">
+                    <bilingual-action-button
+                      variant="ghost"
+                      compact
+                      type="button"
+                      :primary-label="t('posts.attachImage')"
+                      :secondary-label="peerLocaleText('posts.attachImage')"
+                      @click="pickPostMedia('edit', 'image')"
+                    ></bilingual-action-button>
+                    <bilingual-action-button
+                      variant="ghost"
+                      compact
+                      type="button"
+                      :primary-label="t('posts.attachVideo')"
+                      :secondary-label="peerLocaleText('posts.attachVideo')"
+                      @click="pickPostMedia('edit', 'video')"
+                    ></bilingual-action-button>
+                    <bilingual-action-button
+                      v-if="editPostDraft.mediaUrl"
+                      variant="ghost"
+                      compact
+                      danger
+                      type="button"
+                      :primary-label="t('posts.clearMedia')"
+                      :secondary-label="peerLocaleText('posts.clearMedia')"
+                      @click="clearPostMedia('edit')"
+                    ></bilingual-action-button>
+                  </div>
+                  <div v-if="editPostDraft.mediaUrl" class="post-media-preview">
+                    <img
+                      v-if="editPostDraft.mediaType === 'image'"
+                      :src="editPostDraft.mediaUrl"
+                      :alt="editPostDraft.mediaName || currentPost.title"
+                    />
+                    <video
+                      v-else-if="editPostDraft.mediaType === 'video'"
+                      :src="editPostDraft.mediaUrl"
+                      controls
+                    ></video>
+                    <div v-else class="post-media-card">
+                      <div class="post-media-title">{{ editPostDraft.mediaName || t('posts.mediaPreview') }}</div>
+                      <div class="post-media-sub">{{ editPostDraft.mediaMime || editPostDraft.mediaType }}</div>
+                    </div>
+                  </div>
+                </div>
                 <bilingual-select-field
                   :primary-label="t('posts.visibilityLabel')"
                   :secondary-label="peerLocaleText('posts.visibilityLabel')"
@@ -1158,6 +1317,56 @@
             ></bilingual-select-field>
             <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="postDraft.title" />
             <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="postDraft.content"></textarea>
+            <div class="post-media-tools">
+              <div class="post-media-tools-head">
+                <div class="post-media-tools-title">{{ t('posts.mediaPreview') }}</div>
+                <div class="post-media-tools-sub">{{ postDraft.mediaName || t('common.notAvailable') }}</div>
+              </div>
+              <div class="post-media-actions">
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.attachImage')"
+                  :secondary-label="peerLocaleText('posts.attachImage')"
+                  @click="pickPostMedia('create', 'image')"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.attachVideo')"
+                  :secondary-label="peerLocaleText('posts.attachVideo')"
+                  @click="pickPostMedia('create', 'video')"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  v-if="postDraft.mediaUrl"
+                  variant="ghost"
+                  compact
+                  danger
+                  type="button"
+                  :primary-label="t('posts.clearMedia')"
+                  :secondary-label="peerLocaleText('posts.clearMedia')"
+                  @click="clearPostMedia('create')"
+                ></bilingual-action-button>
+              </div>
+              <div v-if="postDraft.mediaUrl" class="post-media-preview">
+                <img
+                  v-if="postDraft.mediaType === 'image'"
+                  :src="postDraft.mediaUrl"
+                  :alt="postDraft.mediaName || postDraft.title"
+                />
+                <video
+                  v-else-if="postDraft.mediaType === 'video'"
+                  :src="postDraft.mediaUrl"
+                  controls
+                ></video>
+                <div v-else class="post-media-card">
+                  <div class="post-media-title">{{ postDraft.mediaName || t('posts.mediaPreview') }}</div>
+                  <div class="post-media-sub">{{ postDraft.mediaMime || postDraft.mediaType }}</div>
+                </div>
+              </div>
+            </div>
             <bilingual-select-field
               :primary-label="t('posts.statusLabel')"
               :secondary-label="peerLocaleText('posts.statusLabel')"

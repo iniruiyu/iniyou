@@ -155,6 +155,11 @@ const app = createApp({
               sub: '查看已绑定的链上账号。',
               empty: '尚未绑定链上账号。',
             },
+            spaces: {
+              title: '公开空间',
+              sub: '查看当前用户公开展示的空间。',
+              empty: '当前没有公开空间。',
+            },
           },
           profileMenu: {
             title: '个人主页菜单',
@@ -308,11 +313,12 @@ const app = createApp({
           },
           posts: {
             feedTitle: '空间内容流',
-            feedSub: '发布你的近况、想法和项目更新。',
+            feedSub: '创建者可以在进入空间后发帖，其他人可查看并互动。',
             privateFeedTitle: '空间内容',
             privateFeedSub: '查看你发布的文章。',
             profileFeedTitle: '作者内容',
             profileFeedSub: '浏览该作者公开发布的文章。',
+            creatorHint: '只有空间创建者可以在这里发帖，其他人可查看并点赞评论。',
             titlePlaceholder: '文章标题',
             contentPlaceholder: '写点什么，分享给大家...',
             publishAction: '发布文章',
@@ -355,6 +361,10 @@ const app = createApp({
             statusDraft: '草稿',
             statusPublished: '已发布',
             statusHidden: '已隐藏',
+            attachImage: '添加图片',
+            attachVideo: '添加小视频',
+            clearMedia: '清除媒体',
+            mediaPreview: '媒体预览',
           },
           levels: {
             title: '会员等级',
@@ -998,6 +1008,12 @@ const app = createApp({
       // Selected profile post list.
       // 当前查看的用户主页文章列表。
       profilePosts: [],
+      // Selected profile space list.
+      // 当前查看的用户主页空间列表。
+      profileSpaces: [],
+      // Currently entered space object.
+      // 当前进入的空间对象。
+      currentSpace: null,
       // Current post detail.
       // 当前文章详情。
       currentPost: null,
@@ -1009,6 +1025,11 @@ const app = createApp({
         visibility: 'public',
         status: 'published',
         spaceId: '',
+        mediaType: '',
+        mediaName: '',
+        mediaMime: '',
+        mediaData: '',
+        mediaUrl: '',
       },
       // Post edit form.
       // 文章编辑表单。
@@ -1019,7 +1040,15 @@ const app = createApp({
         visibility: 'public',
         status: 'published',
         spaceId: '',
+        mediaType: '',
+        mediaName: '',
+        mediaMime: '',
+        mediaData: '',
+        mediaUrl: '',
       },
+      // Posts in the currently open space.
+      // 当前打开空间的帖子列表。
+      spacePosts: [],
       // Per-post comment drafts.
       // 每篇文章的评论草稿。
       commentDrafts: {},
@@ -1270,11 +1299,30 @@ const app = createApp({
     visiblePublicPosts() {
       return this.postsForSpace(this.posts, this.activePublicSpace?.id || '');
     },
+    activeSpace() {
+      return this.currentSpace || this.activePublicSpace || this.activePrivateSpace || null;
+    },
+    activeSpacePosts() {
+      return this.postsForSpace(this.spacePosts, this.activeSpace?.id || '');
+    },
+    ownedSpaces() {
+      if (!this.user?.id) {
+        return [];
+      }
+      return this.spaces.filter((space) => space && space.userId === this.user.id);
+    },
+    visibleProfileSpaces() {
+      return Array.isArray(this.profileSpaces) ? this.profileSpaces : [];
+    },
     privateSpaces() {
-      return this.spaces.filter((s) => s.type === 'private');
+      // Keep the legacy helper aligned with the owned-space-only model.
+      // 让旧的辅助方法与“只看自己创建的空间”模型保持一致。
+      return this.ownedSpaces;
     },
     publicSpaces() {
-      return this.spaces.filter((s) => s.type === 'public');
+      // Keep the legacy helper aligned with the owned-space-only model.
+      // 让旧的辅助方法与“只看自己创建的空间”模型保持一致。
+      return this.ownedSpaces;
     },
   },
   watch: {
@@ -1317,13 +1365,19 @@ const app = createApp({
       const spaceName = item.space_name || '';
       const spaceSubdomain = item.space_subdomain || '';
       const spaceType = item.space_type || '';
+      const mediaType = item.media_type || '';
+      const mediaName = item.media_name || '';
+      const mediaMime = item.media_mime || '';
+      const mediaData = item.media_data || '';
       const spaceLabel = spaceName && spaceSubdomain
         ? `${spaceName} · @${spaceSubdomain}`
         : spaceName || spaceSubdomain || spaceType || item.visibility || '';
+      const mediaMimeType = mediaMime || this.inferAttachmentMime(mediaType, mediaName, mediaMime);
       return {
         id: item.id,
         userId: item.user_id,
         spaceId: item.space_id || '',
+        spaceUserId: item.space_user_id || '',
         spaceName,
         spaceSubdomain,
         spaceType,
@@ -1331,6 +1385,11 @@ const app = createApp({
         authorName: item.author_name,
         title: item.title,
         content: item.content,
+        mediaType,
+        mediaName,
+        mediaMime,
+        mediaData,
+        mediaUrl: mediaData ? `data:${mediaMimeType};base64,${mediaData}` : '',
         status: item.status || 'published',
         visibility: item.visibility || 'public',
         likesCount: Number(item.likes_count || 0),
@@ -1437,21 +1496,23 @@ const app = createApp({
     resolveSpaceForVisibility(visibility, preferredSpaceId = '') {
       // Resolve the active space for a visibility scope.
       // 为可见性范围解析当前空间。
-      const type = visibility === 'private' ? 'private' : 'public';
+      if (this.currentSpace) {
+        return this.currentSpace;
+      }
       const preferred = this.findSpaceById(preferredSpaceId);
-      if (preferred && preferred.type === type) {
+      if (preferred) {
         return preferred;
       }
-      const activeId = type === 'private' ? this.activePrivateSpaceId : this.activePublicSpaceId;
+      const activeId = this.activePublicSpaceId || this.activePrivateSpaceId;
       const active = this.findSpaceById(activeId);
-      if (active && active.type === type) {
+      if (active) {
         return active;
       }
       const hostSpace = this.spaceFromHost();
-      if (hostSpace && hostSpace.type === type) {
+      if (hostSpace) {
         return hostSpace;
       }
-      return this.spaces.find((space) => space.type === type) || null;
+      return this.spaces[0] || null;
     },
     selectedSpaceIdForVisibility(visibility, preferredSpaceId = '') {
       const space = this.resolveSpaceForVisibility(visibility, preferredSpaceId);
@@ -1460,11 +1521,7 @@ const app = createApp({
     managedSpacesForVisibility(visibility) {
       // Collect spaces the current user can actually publish into.
       // 汇总当前用户真正可以发布内容的空间。
-      const type = visibility === 'private' ? 'private' : 'public';
-      const source = type === 'private' ? this.privateSpaces : this.publicSpaces;
-      return source
-        .filter((space) => space.userId === this.user.id)
-        .filter((space) => type === 'private' || space.visibility !== 'private');
+      return this.ownedSpaces;
     },
     managedSpaceIdForVisibility(visibility, preferredSpaceId = '') {
       // Return a publishable space ID for the current viewer.
@@ -1474,7 +1531,7 @@ const app = createApp({
       if (preferred) {
         return preferred.id;
       }
-      const activeId = visibility === 'private' ? this.activePrivateSpaceId : this.activePublicSpaceId;
+      const activeId = this.activePublicSpaceId || this.activePrivateSpaceId;
       const active = spaces.find((space) => space.id === activeId);
       if (active) {
         return active.id;
@@ -1491,10 +1548,9 @@ const app = createApp({
     syncActiveSpaces() {
       // Keep active spaces aligned with the current data set.
       // 让当前空间与最新空间列表保持同步。
-      const privateSpace = this.resolveSpaceForVisibility('private', this.activePrivateSpaceId);
-      const publicSpace = this.resolveSpaceForVisibility('public', this.activePublicSpaceId);
-      this.activePrivateSpaceId = privateSpace ? privateSpace.id : '';
-      this.activePublicSpaceId = publicSpace ? publicSpace.id : '';
+      const activeSpace = this.currentSpace || this.resolveSpaceForVisibility('public', this.activePublicSpaceId || this.activePrivateSpaceId);
+      this.activePrivateSpaceId = activeSpace ? activeSpace.id : '';
+      this.activePublicSpaceId = activeSpace ? activeSpace.id : '';
       this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, this.activePrivateSpaceId);
       this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, this.activePublicSpaceId);
     },
@@ -1504,21 +1560,20 @@ const app = createApp({
       if (!space) {
         return;
       }
-      if (space.type === 'private') {
-        this.activePrivateSpaceId = space.id;
-        this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, space.id);
-        return;
-      }
+      this.currentSpace = space;
+      this.activePrivateSpaceId = space.id;
       this.activePublicSpaceId = space.id;
+      this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, space.id);
       this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, space.id);
     },
-    enterSpace(space) {
+    async enterSpace(space) {
       // Enter a space and switch to the matching page.
       // 进入空间并切换到对应页面。
       if (!space) {
         return;
       }
       this.setActiveSpace(space);
+      await this.loadSpacePosts(space.id);
       this.view = 'space';
     },
     openSpaceComposer(type) {
@@ -1563,22 +1618,79 @@ const app = createApp({
       this.spaceDraft.description = '';
       this.spaceDraft.subdomain = '';
     },
-    openPostComposer(visibility) {
-      // Open the post composer dialog.
-      // 打开文章发布弹窗。
-      const targetVisibility = visibility === 'private' ? 'private' : 'public';
-      const activeSpaceId = this.managedSpaceIdForVisibility(targetVisibility, this.postDraft.spaceId);
-      const activeSpace = activeSpaceId ? this.findSpaceById(activeSpaceId) : null;
-      if (!activeSpace) {
+    openPostComposer(space) {
+      // Open the post composer dialog for the active space.
+      // 为当前空间打开文章发布弹窗。
+      const activeSpace = space && space.id ? space : this.activeSpace;
+      if (!activeSpace || activeSpace.userId !== this.user.id) {
         this.setError(this.t('posts.spaceRequired'));
         return;
       }
-      this.postDraft.visibility = targetVisibility;
+      this.postDraft.title = '';
+      this.postDraft.content = '';
+      this.postDraft.visibility = 'public';
+      this.postDraft.status = 'published';
       this.postDraft.spaceId = activeSpace.id;
+      this.clearPostMedia('create');
       this.postModalOpen = true;
     },
     closePostComposer() {
+      // Close the post composer and clear media state.
+      // 关闭文章发布弹窗并清理媒体状态。
       this.postModalOpen = false;
+      this.postDraft.title = '';
+      this.postDraft.content = '';
+      this.postDraft.visibility = 'public';
+      this.postDraft.status = 'published';
+      this.postDraft.spaceId = '';
+      this.clearPostMedia('create');
+    },
+    clearPostMedia(target = 'create') {
+      // Clear post media fields for create or edit state.
+      // 清空发布态或编辑态的文章媒体字段。
+      const draft = target === 'edit' ? this.editPostDraft : this.postDraft;
+      draft.mediaType = '';
+      draft.mediaName = '';
+      draft.mediaMime = '';
+      draft.mediaData = '';
+      draft.mediaUrl = '';
+    },
+    pickPostMedia(target = 'create', preferredType = 'image') {
+      // Open the browser file chooser for a post media draft.
+      // 打开浏览器文件选择器以选择文章媒体。
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = preferredType === 'video' ? 'video/*' : 'image/*';
+      input.multiple = false;
+      input.addEventListener('change', (event) => {
+        this.handlePostMediaPick(target, event);
+      }, { once: true });
+      input.click();
+    },
+    async handlePostMediaPick(target, event) {
+      // Read an image or video file into the post media draft.
+      // 读取图片或视频文件并写入文章媒体草稿。
+      const input = event?.target;
+      const file = input?.files?.[0];
+      if (!file) {
+        return;
+      }
+      const draft = target === 'edit' ? this.editPostDraft : this.postDraft;
+      const inferredMime = this.inferAttachmentMime(
+        file.type.startsWith('video/') ? 'video' : 'image',
+        file.name,
+        file.type || '',
+      );
+      const mediaType = inferredMime.startsWith('video/') ? 'video' : 'image';
+      const bytes = await file.arrayBuffer();
+      draft.mediaType = mediaType;
+      draft.mediaName = file.name;
+      draft.mediaMime = inferredMime;
+      draft.mediaData = this.bytesToBase64(new Uint8Array(bytes));
+      draft.mediaUrl = `data:${inferredMime};base64,${draft.mediaData}`;
+      if (input) {
+        input.value = '';
+      }
     },
     getLanguageMeta(code) {
       // Normalize language metadata for built-in and runtime locales.
@@ -2012,6 +2124,8 @@ const app = createApp({
         direction: '',
       };
       this.profilePosts = [];
+      this.profileSpaces = [];
+      this.currentSpace = null;
       this.currentPost = null;
       this.spaceModalOpen = false;
       this.postModalOpen = false;
@@ -2025,8 +2139,14 @@ const app = createApp({
       this.postDraft.visibility = 'public';
       this.postDraft.status = 'published';
       this.postDraft.spaceId = '';
-      this.editPostDraft = { id: '', title: '', content: '', visibility: 'public', status: 'published', spaceId: '' };
+      this.postDraft.mediaType = '';
+      this.postDraft.mediaName = '';
+      this.postDraft.mediaMime = '';
+      this.postDraft.mediaData = '';
+      this.postDraft.mediaUrl = '';
+      this.editPostDraft = { id: '', title: '', content: '', visibility: 'public', status: 'published', spaceId: '', mediaType: '', mediaName: '', mediaMime: '', mediaData: '', mediaUrl: '' };
       this.commentDrafts = {};
+      this.spacePosts = [];
       this.friends = [];
       this.newFriendQuery = '';
       this.friendSearchResults = [];
@@ -2301,9 +2421,13 @@ const app = createApp({
       return this.t(`posts.status${String(status).charAt(0).toUpperCase()}${String(status).slice(1)}`) || status;
     },
     canEditPost(post) {
-      // Allow editing only for the current user's own posts.
-      // 仅允许编辑当前用户自己的文章。
-      return Boolean(post && post.userId === this.user.id);
+      // Allow editing by the post author or the owning space creator.
+      // 允许文章作者或空间创建者编辑内容。
+      return Boolean(
+        post &&
+        this.user &&
+        (post.userId === this.user.id || post.spaceUserId === this.user.id),
+      );
     },
     isCurrentLevel(level) {
       // Check whether the level card matches the current user tier.
@@ -2813,7 +2937,19 @@ const app = createApp({
       const data = await res.json();
       if (Array.isArray(data.items)) {
         this.spaces = data.items.map((item) => this.mapSpaceItem(item));
+        if (this.currentSpace?.id) {
+          const refreshed = this.findSpaceById(this.currentSpace.id);
+          if (refreshed) {
+            this.currentSpace = refreshed;
+          }
+        }
         this.syncActiveSpaces();
+        const activeSpace = this.currentSpace || this.activeSpace;
+        if (activeSpace?.id) {
+          await this.loadSpacePosts(activeSpace.id);
+        } else {
+          this.spacePosts = [];
+        }
       }
     },
     async loadSubscription() {
@@ -2878,6 +3014,25 @@ const app = createApp({
       if (Array.isArray(data.items)) {
         this.posts = data.items.map((item) => this.mapPostItem(item));
       }
+    },
+    async loadSpacePosts(spaceID) {
+      // Load posts for the currently selected space.
+      // 加载当前选中空间的帖子流。
+      if (!this.token || !spaceID) {
+        this.spacePosts = [];
+        return;
+      }
+      const encoded = encodeURIComponent(spaceID);
+      const res = await fetch(`${this.spaceApiBase}/spaces/${encoded}/posts?visibility=all&limit=50`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      this.spacePosts = Array.isArray(data.items)
+        ? data.items.map((item) => this.mapPostItem(item))
+        : [];
     },
     async loadPrivatePosts() {
       // Load posts created by the current user.
@@ -2957,6 +3112,7 @@ const app = createApp({
       this.profilePosts = Array.isArray(data.items)
         ? data.items.map((item) => this.mapPostItem(item))
         : [];
+      await this.loadProfileSpaces(this.profileUser.id || userID);
       if (this.profilePosts[0]?.authorName) {
         this.profileUser.name = this.profilePosts[0].authorName;
       }
@@ -2966,6 +3122,25 @@ const app = createApp({
       // 重置为个人主页的会员等级标签。
       this.profileTab = 'levels';
       this.view = 'profile';
+    },
+    async loadProfileSpaces(userID) {
+      // Load public spaces for the opened profile.
+      // 加载当前主页的公开空间。
+      if (!this.token || !userID) {
+        this.profileSpaces = [];
+        return;
+      }
+      const encoded = encodeURIComponent(String(userID).trim());
+      const res = await fetch(`${this.spaceApiBase}/users/${encoded}/spaces?visibility=public`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return;
+      }
+      const data = await res.json();
+      this.profileSpaces = Array.isArray(data.items)
+        ? data.items.map((item) => this.mapSpaceItem(item))
+        : [];
     },
     async openProfileByDomain(domain) {
       // Resolve a domain identity card into the corresponding profile.
@@ -3036,10 +3211,12 @@ const app = createApp({
       }
       const item = await res.json();
       this.currentPost = this.mapPostItem(item);
-      const selectedSpaceId = this.selectedSpaceIdForVisibility(item.visibility, item.space_id);
-      const selectedSpace = this.findSpaceById(selectedSpaceId);
+      const selectedSpace = this.findSpaceById(item.space_id) ||
+        this.visibleProfileSpaces.find((space) => space.id === item.space_id) ||
+        (this.currentSpace?.id === item.space_id ? this.currentSpace : null);
       if (selectedSpace) {
         this.setActiveSpace(selectedSpace);
+        await this.loadSpacePosts(selectedSpace.id);
       }
       this.editPostDraft = {
         id: item.id,
@@ -3047,7 +3224,12 @@ const app = createApp({
         content: item.content,
         visibility: item.visibility,
         status: item.status || 'published',
-        spaceId: selectedSpaceId,
+        spaceId: item.space_id || '',
+        mediaType: item.mediaType || '',
+        mediaName: item.mediaName || '',
+        mediaMime: item.mediaMime || '',
+        mediaData: item.mediaData || '',
+        mediaUrl: item.mediaUrl || '',
       };
       this.view = 'postDetail';
     },
@@ -3096,10 +3278,19 @@ const app = createApp({
       // Create a new social post.
       // 创建新的社交文章。
       this.clearFeedback();
-      if (!this.token || !this.postDraft.title.trim() || !this.postDraft.content.trim()) {
+      if (!this.token || !this.postDraft.title.trim()) {
         return;
       }
-      const spaceId = this.selectedSpaceIdForVisibility(this.postDraft.visibility, this.postDraft.spaceId);
+      const spaceId = String(this.postDraft.spaceId || '').trim();
+      const space = this.findSpaceById(spaceId);
+      if (!space || space.userId !== this.user.id) {
+        this.setError(this.t('posts.spaceRequired'));
+        return;
+      }
+      if (!this.postDraft.content.trim() && !this.postDraft.mediaData.trim()) {
+        this.setError(this.t('posts.publishError'));
+        return;
+      }
       if (!spaceId) {
         this.setError(this.t('posts.spaceRequired'));
         return;
@@ -3116,6 +3307,10 @@ const app = createApp({
           visibility: this.postDraft.visibility,
           status: this.postDraft.status,
           space_id: spaceId,
+          media_type: this.postDraft.mediaType,
+          media_name: this.postDraft.mediaName,
+          media_mime: this.postDraft.mediaMime,
+          media_data: this.postDraft.mediaData,
         }),
       });
       if (!res.ok) {
@@ -3123,15 +3318,17 @@ const app = createApp({
         return;
       }
       this.postDraft.spaceId = spaceId;
-      const selectedSpace = this.findSpaceById(spaceId);
-      if (selectedSpace) {
-        this.setActiveSpace(selectedSpace);
-        this.view = 'space';
-      }
+      this.view = 'space';
+      await this.loadSpacePosts(spaceId);
       this.postDraft.title = '';
       this.postDraft.content = '';
       this.postDraft.visibility = 'public';
       this.postDraft.status = 'published';
+      this.postDraft.mediaType = '';
+      this.postDraft.mediaName = '';
+      this.postDraft.mediaMime = '';
+      this.postDraft.mediaData = '';
+      this.postDraft.mediaUrl = '';
       this.postModalOpen = false;
       await this.loadPosts();
       await this.loadPrivatePosts();
@@ -3148,10 +3345,7 @@ const app = createApp({
       }
       await this.openPostDetail(post.id);
       const selectedPost = this.currentPost || post;
-      const spaceId = this.selectedSpaceIdForVisibility(
-        selectedPost.visibility,
-        selectedPost.spaceId,
-      );
+      const spaceId = selectedPost.spaceId || '';
       this.editPostDraft = {
         id: selectedPost.id,
         title: selectedPost.title,
@@ -3159,6 +3353,11 @@ const app = createApp({
         visibility: selectedPost.visibility,
         status: selectedPost.status || 'published',
         spaceId,
+        mediaType: selectedPost.mediaType || '',
+        mediaName: selectedPost.mediaName || '',
+        mediaMime: selectedPost.mediaMime || '',
+        mediaData: selectedPost.mediaData || '',
+        mediaUrl: selectedPost.mediaUrl || '',
       };
       this.view = 'postDetail';
     },
@@ -3166,10 +3365,19 @@ const app = createApp({
       // Persist the current post edit form.
       // 保存当前文章编辑表单。
       this.clearFeedback();
-      if (!this.token || !this.editPostDraft.id || !this.editPostDraft.title.trim() || !this.editPostDraft.content.trim()) {
+      if (!this.token || !this.editPostDraft.id || !this.editPostDraft.title.trim()) {
         return;
       }
-      const spaceId = this.selectedSpaceIdForVisibility(this.editPostDraft.visibility, this.editPostDraft.spaceId);
+      const spaceId = String(this.editPostDraft.spaceId || '').trim();
+      const space = this.findSpaceById(spaceId);
+      if (!space || space.userId !== this.user.id) {
+        this.setError(this.t('posts.spaceRequired'));
+        return;
+      }
+      if (!this.editPostDraft.content.trim() && !this.editPostDraft.mediaData.trim()) {
+        this.setError(this.t('posts.editError'));
+        return;
+      }
       if (!spaceId) {
         this.setError(this.t('posts.spaceRequired'));
         return;
@@ -3186,6 +3394,10 @@ const app = createApp({
           visibility: this.editPostDraft.visibility,
           status: this.editPostDraft.status,
           space_id: spaceId,
+          media_type: this.editPostDraft.mediaType,
+          media_name: this.editPostDraft.mediaName,
+          media_mime: this.editPostDraft.mediaMime,
+          media_data: this.editPostDraft.mediaData,
         }),
       });
       if (!res.ok) {
@@ -3194,6 +3406,7 @@ const app = createApp({
       }
       await this.loadPosts();
       await this.loadPrivatePosts();
+      await this.loadSpacePosts(spaceId);
       await this.openPostDetail(this.editPostDraft.id);
       this.setFlash(this.t('posts.editSuccess'));
     },
@@ -3213,6 +3426,7 @@ const app = createApp({
       }
       await this.loadPosts();
       await this.loadPrivatePosts();
+      await this.loadSpacePosts(post.spaceId || this.activeSpace?.id || '');
       if (this.currentPost?.id === post.id) {
         await this.openPostDetail(post.id);
       }
@@ -3242,6 +3456,7 @@ const app = createApp({
       this.commentDrafts[post.id] = '';
       await this.loadPosts();
       await this.loadPrivatePosts();
+      await this.loadSpacePosts(post.spaceId || this.activeSpace?.id || '');
       if (this.currentPost?.id === post.id) {
         await this.openPostDetail(post.id);
       }
@@ -3263,6 +3478,7 @@ const app = createApp({
       }
       await this.loadPosts();
       await this.loadPrivatePosts();
+      await this.loadSpacePosts(post.spaceId || this.activeSpace?.id || '');
       if (this.currentPost?.id === post.id) {
         await this.openPostDetail(post.id);
       }
@@ -3434,6 +3650,7 @@ const app = createApp({
         const updatedSpace = this.mapSpaceItem(item);
         await this.loadSpaces();
         this.setActiveSpace(updatedSpace);
+        await this.loadSpacePosts(updatedSpace.id);
         this.view = 'space';
         this.closeSpaceComposer();
         this.setFlash(this.t('spaces.editSuccess'));
@@ -3461,6 +3678,7 @@ const app = createApp({
       const createdSpace = this.mapSpaceItem(item);
       await this.loadSpaces();
       this.setActiveSpace(createdSpace);
+      await this.loadSpacePosts(createdSpace.id);
       this.view = 'space';
       this.closeSpaceComposer();
       this.setFlash(this.t('spaces.createSuccess'));
@@ -3492,6 +3710,7 @@ const app = createApp({
       const relatedPostIds = new Set([
         ...this.posts.filter((post) => post.spaceId === space.id).map((post) => post.id),
         ...this.privatePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
+        ...this.spacePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
         ...this.profilePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
         ...(this.currentPost && this.currentPost.spaceId === space.id ? [this.currentPost.id] : []),
       ]);
@@ -3509,10 +3728,18 @@ const app = createApp({
           visibility: 'public',
           status: 'published',
           spaceId: '',
+          mediaType: '',
+          mediaName: '',
+          mediaMime: '',
+          mediaData: '',
+          mediaUrl: '',
         };
       }
       if (this.spaceDraft.id === space.id) {
         this.closeSpaceComposer();
+      }
+      if (this.currentSpace && this.currentSpace.id === space.id) {
+        this.currentSpace = null;
       }
       if (this.currentPost && this.currentPost.spaceId === space.id) {
         this.currentPost = null;
@@ -3523,6 +3750,11 @@ const app = createApp({
           visibility: 'public',
           status: 'published',
           spaceId: '',
+          mediaType: '',
+          mediaName: '',
+          mediaMime: '',
+          mediaData: '',
+          mediaUrl: '',
         };
         if (this.view === 'postDetail') {
           this.view = 'space';
@@ -3531,6 +3763,7 @@ const app = createApp({
       await this.loadSpaces();
       await this.loadPosts();
       await this.loadPrivatePosts();
+      await this.loadSpacePosts(this.activeSpace?.id || '');
       if (this.view === 'profile' && this.profileUser.id === this.user.id) {
         await this.openProfile(this.profileUser.id, this.profileUser.name);
       }
@@ -3548,6 +3781,7 @@ const app = createApp({
       if (!confirmed) {
         return;
       }
+      const spaceId = post.spaceId || this.activeSpace?.id || '';
       const res = await fetch(`${this.spaceApiBase}/posts/${post.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${this.token}` },
@@ -3565,6 +3799,11 @@ const app = createApp({
           visibility: 'public',
           status: 'published',
           spaceId: '',
+          mediaType: '',
+          mediaName: '',
+          mediaMime: '',
+          mediaData: '',
+          mediaUrl: '',
         };
       }
       if (this.currentPost && this.currentPost.id === post.id) {
@@ -3576,6 +3815,11 @@ const app = createApp({
           visibility: 'public',
           status: 'published',
           spaceId: '',
+          mediaType: '',
+          mediaName: '',
+          mediaMime: '',
+          mediaData: '',
+          mediaUrl: '',
         };
         if (this.view === 'postDetail') {
           this.view = 'space';
@@ -3583,6 +3827,7 @@ const app = createApp({
       }
       await this.loadPosts();
       await this.loadPrivatePosts();
+      await this.loadSpacePosts(spaceId);
       if (this.view === 'profile' && this.profileUser.id === this.user.id) {
         await this.openProfile(this.profileUser.id, this.profileUser.name);
       }

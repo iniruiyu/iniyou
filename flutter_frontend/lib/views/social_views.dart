@@ -21,6 +21,7 @@ class ProfileView extends StatelessWidget {
     required this.user,
     required this.profileUser,
     required this.profilePosts,
+    required this.profileSpaces,
     required this.subscription,
     required this.connectedChains,
     required this.displayNameController,
@@ -52,6 +53,7 @@ class ProfileView extends StatelessWidget {
     required this.onDeletePost,
     required this.onOpenProfile,
     required this.onOpenPostDetail,
+    required this.onEnterSpace,
     required this.t,
     required this.peerT,
   });
@@ -59,6 +61,7 @@ class ProfileView extends StatelessWidget {
   final CurrentUser? user;
   final UserProfileItem? profileUser;
   final List<PostItem> profilePosts;
+  final List<SpaceItem> profileSpaces;
   final SubscriptionItem? subscription;
   final List<String> connectedChains;
   final TextEditingController displayNameController;
@@ -100,6 +103,7 @@ class ProfileView extends StatelessWidget {
   final ValueChanged<PostItem> onDeletePost;
   final ValueChanged<String> onOpenProfile;
   final ValueChanged<String> onOpenPostDetail;
+  final ValueChanged<SpaceItem> onEnterSpace;
   final String Function(String key) t;
   final String Function(String key) peerT;
 
@@ -326,8 +330,16 @@ class ProfileView extends StatelessWidget {
                   primaryLabel: '发起聊天',
                   secondaryLabel: 'Start chat',
                 ),
-            ],
+              ],
           ),
+        const SizedBox(height: 16),
+        SpaceListSection(
+          title: isOwnProfile ? '我的公开空间 / My public spaces' : '公开空间 / Public spaces',
+          spaces: profileSpaces,
+          activeSpaceId: null,
+          currentUserId: user?.id,
+          onEnterSpace: onEnterSpace,
+        ),
         const SizedBox(height: 16),
         Card(
           shape: RoundedRectangleBorder(
@@ -469,7 +481,8 @@ class PostDetailView extends StatelessWidget {
       return InfoCard(title: '文章详情', lines: const ['先从公共空间或个人主页打开一篇文章。']);
     }
 
-    final isOwnPost = user != null && post.userId == user!.id;
+    final canManagePost =
+        user != null && (post.userId == user!.id || post.spaceUserId == user!.id);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -480,10 +493,10 @@ class PostDetailView extends StatelessWidget {
           onShare: onShare,
           onComment: onComment,
           onOpenAuthor: onOpenAuthor,
-          onDelete: isOwnPost ? onDeletePost : null,
+          onDelete: canManagePost ? onDeletePost : null,
         ),
         const SizedBox(height: 16),
-        if (isOwnPost)
+        if (canManagePost)
           Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),

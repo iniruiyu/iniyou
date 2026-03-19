@@ -182,12 +182,17 @@ class PostItem {
     required this.id,
     required this.userId,
     required this.spaceId,
+    required this.spaceUserId,
     required this.spaceName,
     required this.spaceSubdomain,
     required this.spaceType,
     required this.authorName,
     required this.title,
     required this.content,
+    required this.mediaType,
+    required this.mediaName,
+    required this.mediaMime,
+    required this.mediaData,
     required this.status,
     required this.visibility,
     required this.likesCount,
@@ -201,12 +206,17 @@ class PostItem {
   final String id;
   final String userId;
   final String spaceId;
+  final String spaceUserId;
   final String spaceName;
   final String spaceSubdomain;
   final String spaceType;
   final String authorName;
   final String title;
   final String content;
+  final String mediaType;
+  final String mediaName;
+  final String mediaMime;
+  final String mediaData;
   final String status;
   final String visibility;
   final int likesCount;
@@ -217,6 +227,20 @@ class PostItem {
   final List<PostComment> comments;
 
   String get createdAtLabel => formatDateTime(createdAt);
+  String get mediaUrl {
+    // Build a browser-friendly data URL for inline media previews.
+    // 构建便于浏览器内联预览的 data URL。
+    if (mediaData.isEmpty) {
+      return '';
+    }
+    final mime = mediaMime.isNotEmpty ? mediaMime : 'application/octet-stream';
+    return 'data:$mime;base64,$mediaData';
+  }
+
+  bool get hasMedia => mediaData.isNotEmpty;
+  bool get isImage => mediaType == 'image';
+  bool get isVideo => mediaType == 'video';
+
   String get spaceLabel {
     if (spaceName.isNotEmpty && spaceSubdomain.isNotEmpty) {
       return '$spaceName · @$spaceSubdomain';
@@ -238,12 +262,17 @@ class PostItem {
       id: (json['id'] ?? '').toString(),
       userId: (json['user_id'] ?? '').toString(),
       spaceId: (json['space_id'] ?? '').toString(),
+      spaceUserId: (json['space_user_id'] ?? '').toString(),
       spaceName: (json['space_name'] ?? '').toString(),
       spaceSubdomain: (json['space_subdomain'] ?? '').toString(),
       spaceType: (json['space_type'] ?? '').toString(),
       authorName: (json['author_name'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       content: (json['content'] ?? '').toString(),
+      mediaType: (json['media_type'] ?? 'text').toString(),
+      mediaName: (json['media_name'] ?? '').toString(),
+      mediaMime: (json['media_mime'] ?? '').toString(),
+      mediaData: (json['media_data'] ?? '').toString(),
       status: (json['status'] ?? 'published').toString(),
       visibility: (json['visibility'] ?? 'public').toString(),
       likesCount: toInt(json['likes_count']),
@@ -472,6 +501,36 @@ class ChatMessage {
         (json['expires_at'] ?? json['ExpiresAt'] ?? '').toString(),
       ),
     );
+  }
+}
+
+class PostAttachmentDraft {
+  PostAttachmentDraft({
+    required this.mediaType,
+    required this.mediaName,
+    required this.mediaMime,
+    required this.mediaData,
+    required this.originalSizeBytes,
+  });
+
+  final String mediaType;
+  final String mediaName;
+  final String mediaMime;
+  final String mediaData;
+  final int originalSizeBytes;
+
+  bool get isMedia => mediaType.isNotEmpty;
+  bool get isImage => mediaType == 'image';
+  bool get isVideo => mediaType == 'video';
+  String get sizeLabel => formatByteSize(originalSizeBytes);
+  String get mediaUrl {
+    // Reuse the raw payload as a data URL for preview and open actions.
+    // 复用原始载荷生成 data URL，供预览和打开操作使用。
+    if (mediaData.isEmpty) {
+      return '';
+    }
+    final mime = mediaMime.isNotEmpty ? mediaMime : 'application/octet-stream';
+    return 'data:$mime;base64,$mediaData';
   }
 }
 
