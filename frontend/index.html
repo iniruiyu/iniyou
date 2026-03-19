@@ -449,13 +449,13 @@
               :secondary-label="peerLocaleText('spaces.settingsAction')"
               @click="openSpaceEditor(currentSpace)"
             ></bilingual-action-button>
-            <bilingual-action-button
-              variant="ghost"
-              type="button"
-              :primary-label="t('spaces.publishAction')"
-              :secondary-label="peerLocaleText('spaces.publishAction')"
-              @click="openPostComposer(currentSpace)"
-            ></bilingual-action-button>
+              <bilingual-action-button
+                variant="ghost"
+                type="button"
+                :primary-label="t('posts.publishAction')"
+                :secondary-label="peerLocaleText('posts.publishAction')"
+                @click="openPostComposer(currentSpace)"
+              ></bilingual-action-button>
             <bilingual-action-button
               variant="ghost"
               danger
