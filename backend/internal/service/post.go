@@ -41,12 +41,13 @@ type PostView struct {
 type CommentView struct {
 	// Comment payload returned to clients.
 	// 返回给客户端的评论视图。
-	ID         string    `json:"id"`
-	PostID     string    `json:"post_id"`
-	UserID     string    `json:"user_id"`
-	AuthorName string    `json:"author_name"`
-	Content    string    `json:"content"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID              string    `json:"id"`
+	PostID          string    `json:"post_id"`
+	UserID          string    `json:"user_id"`
+	ParentCommentID *string   `json:"parent_comment_id,omitempty"`
+	AuthorName      string    `json:"author_name"`
+	Content         string    `json:"content"`
+	CreatedAt       time.Time `json:"created_at"`
 }
 
 func CreatePost(db *gorm.DB, userID string, title string, content string, visibility string, spaceID string) (PostView, error) {
@@ -338,10 +339,11 @@ func DeletePost(db *gorm.DB, userID string, postID string) error {
 	})
 }
 
-func AddComment(db *gorm.DB, userID string, postID string, content string) (PostView, error) {
+func AddComment(db *gorm.DB, userID string, postID string, content string, parentCommentID string) (PostView, error) {
 	// Add a comment to a post.
 	// 为文章新增评论。
 	content = strings.TrimSpace(content)
+	parentCommentID = strings.TrimSpace(parentCommentID)
 	if content == "" {
 		return PostView{}, errors.New("content required")
 	}
@@ -349,13 +351,26 @@ func AddComment(db *gorm.DB, userID string, postID string, content string) (Post
 	if err != nil {
 		return PostView{}, err
 	}
+	var resolvedParentCommentID *string
+	if parentCommentID != "" {
+		var parentComment models.Comment
+		if err := db.First(&parentComment, "id = ? AND post_id = ?", parentCommentID, post.ID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return PostView{}, errors.New("parent comment not found")
+			}
+			return PostView{}, err
+		}
+		parentID := parentComment.ID
+		resolvedParentCommentID = &parentID
+	}
 	comment := models.Comment{
-		PostID:    post.ID,
-		UserID:    userID,
-		Content:   content,
-		Status:    "published",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		PostID:          post.ID,
+		UserID:          userID,
+		ParentCommentID: resolvedParentCommentID,
+		Content:         content,
+		Status:          "published",
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 	if err := db.Create(&comment).Error; err != nil {
 		return PostView{}, err
@@ -462,12 +477,13 @@ func hydratePostView(db *gorm.DB, viewerID string, friendIDs map[string]struct{}
 			return PostView{}, err
 		}
 		view.Comments = append(view.Comments, CommentView{
-			ID:         comment.ID,
-			PostID:     comment.PostID,
-			UserID:     comment.UserID,
-			AuthorName: fallbackDisplayName(author),
-			Content:    comment.Content,
-			CreatedAt:  comment.CreatedAt,
+			ID:              comment.ID,
+			PostID:          comment.PostID,
+			UserID:          comment.UserID,
+			ParentCommentID: comment.ParentCommentID,
+			AuthorName:      fallbackDisplayName(author),
+			Content:         comment.Content,
+			CreatedAt:       comment.CreatedAt,
 		})
 	}
 	return view, nil

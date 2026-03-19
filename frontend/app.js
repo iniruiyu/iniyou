@@ -279,6 +279,7 @@ const app = createApp({
             createSub: '名称、二级域名和可见范围可以独立设置，留空时会自动生成。',
             editTitle: '编辑空间',
             editSub: '修改名称、描述、二级域名和可见范围，名称和域名互不关联。',
+            settingsAction: '设置空间资料',
             typeLabel: '空间类型',
             namePlaceholder: '空间名称',
             descPlaceholder: '空间描述',
@@ -318,7 +319,8 @@ const app = createApp({
             privateFeedSub: '查看你发布的文章。',
             profileFeedTitle: '作者内容',
             profileFeedSub: '浏览该作者公开发布的文章。',
-            creatorHint: '只有空间创建者可以在这里发帖，其他人可查看并点赞评论。',
+            creatorHint: '只有空间创建者可以在这里发帖、设置空间资料并管理帖子，其他人可查看并点赞、评论、回复。',
+            viewerHint: '你当前以访客身份浏览该空间，只能点赞、评论和回复。',
             titlePlaceholder: '文章标题',
             contentPlaceholder: '写点什么，分享给大家...',
             publishAction: '发布文章',
@@ -337,6 +339,10 @@ const app = createApp({
             commentPlaceholder: '写下你的评论...',
             commentAction: '发送评论',
             commentError: '评论失败，请稍后重试。',
+            reply: '回复',
+            replyPlaceholder: '写下回复...',
+            replyAction: '发送回复',
+            cancelReply: '取消回复',
             share: '转发',
             shareError: '转发失败，请稍后重试。',
             deleteAction: '删除文章',
@@ -670,12 +676,13 @@ const app = createApp({
             createSub: 'Name, subdomain, and visibility are independent; leave the subdomain blank to auto-generate one.',
             editTitle: 'Edit Space',
             editSub: 'Rename the space and change its subdomain and visibility independently.',
+            settingsAction: 'Space settings',
             typeLabel: 'Space Type',
             namePlaceholder: 'Space name',
-              descPlaceholder: 'Space description',
-              subdomainLabel: 'Subdomain',
-              subdomainHint: 'Letters and numbers only, up to 63 characters; leave blank to auto-generate.',
-              subdomainEditHint: 'Letters and numbers only, up to 63 characters.',
+            descPlaceholder: 'Space description',
+            subdomainLabel: 'Subdomain',
+            subdomainHint: 'Letters and numbers only, up to 63 characters; leave blank to auto-generate.',
+            subdomainEditHint: 'Letters and numbers only, up to 63 characters.',
             createAction: 'Create Space',
             editAction: 'Edit Space',
             saveAction: 'Save Changes',
@@ -709,6 +716,8 @@ const app = createApp({
             privateFeedSub: 'Review your posts.',
             profileFeedTitle: 'Author Feed',
             profileFeedSub: 'Browse posts published by this author.',
+            creatorHint: 'Only the space creator can post here, update space settings, and manage posts; other users can view, like, comment, and reply.',
+            viewerHint: 'You are viewing this space as a guest, so you can only like, comment, and reply.',
             titlePlaceholder: 'Post title',
             contentPlaceholder: 'Write something to share...',
             publishAction: 'Publish Post',
@@ -727,6 +736,10 @@ const app = createApp({
             commentPlaceholder: 'Write a comment...',
             commentAction: 'Send Comment',
             commentError: 'Comment failed. Try again later.',
+            reply: 'Reply',
+            replyPlaceholder: 'Write a reply...',
+            replyAction: 'Send Reply',
+            cancelReply: 'Cancel Reply',
             share: 'Share',
             shareError: 'Sharing failed. Try again later.',
             deleteAction: 'Delete Post',
@@ -1052,6 +1065,10 @@ const app = createApp({
       // Per-post comment drafts.
       // 每篇文章的评论草稿。
       commentDrafts: {},
+      // Per-comment reply drafts and active reply targets.
+      // 每条评论的回复草稿与当前展开的回复目标。
+      replyDrafts: {},
+      commentReplyTargets: {},
       // Membership levels.
       // 会员等级数据。
       levels: [
@@ -1357,9 +1374,37 @@ const app = createApp({
       return {
         id: comment.id,
         authorName: comment.author_name,
+        parentCommentId: comment.parent_comment_id || '',
         content: comment.content,
         createdAt: comment.created_at,
       };
+    },
+    commentThreadItems(comments) {
+      // Flatten nested comments into a stable display order.
+      // 将嵌套评论展开为稳定的展示顺序。
+      const items = Array.isArray(comments) ? comments : [];
+      const buckets = new Map();
+      items.forEach((comment) => {
+        const parentId = String(comment.parentCommentId || '').trim();
+        if (!buckets.has(parentId)) {
+          buckets.set(parentId, []);
+        }
+        buckets.get(parentId).push(comment);
+      });
+      const ordered = [];
+      const visit = (parentId, depth) => {
+        const siblings = (buckets.get(parentId) || []).slice().sort((left, right) => {
+          const leftAt = Date.parse(left.createdAt || '') || 0;
+          const rightAt = Date.parse(right.createdAt || '') || 0;
+          return leftAt - rightAt;
+        });
+        siblings.forEach((comment) => {
+          ordered.push({ comment, depth });
+          visit(comment.id, depth + 1);
+        });
+      };
+      visit('', 0);
+      return ordered;
     },
     mapPostItem(item) {
       const spaceName = item.space_name || '';
@@ -1889,6 +1934,7 @@ const app = createApp({
               publicSub: '分享內容、展示專案、連結更多人。',
               createTitle: '建立空間',
               createSub: '名稱、二級網域和可見範圍可以獨立設定，留空時會自動生成。',
+              settingsAction: '空間設定',
               typeLabel: '空間類型',
               namePlaceholder: '空間名稱',
               descPlaceholder: '空間描述',
@@ -1921,6 +1967,8 @@ const app = createApp({
             posts: {
               feedTitle: '空間內容流',
               feedSub: '發布你的近況、想法與專案更新。',
+              creatorHint: '只有空間建立者可以在這裡發帖、設定空間資料並管理文章，其他人可查看並按讚、評論、回覆。',
+              viewerHint: '你目前以訪客身份瀏覽這個空間，只能按讚、評論和回覆。',
               titlePlaceholder: '文章標題',
               contentPlaceholder: '寫點什麼，分享給大家...',
               publishAction: '發布文章',
@@ -1937,6 +1985,10 @@ const app = createApp({
               commentPlaceholder: '寫下你的評論...',
               commentAction: '送出評論',
               commentError: '評論失敗，請稍後重試。',
+              reply: '回覆',
+              replyPlaceholder: '寫下回覆...',
+              replyAction: '送出回覆',
+              cancelReply: '取消回覆',
               share: '轉發',
               shareError: '轉發失敗，請稍後重試。',
               privateLabel: '僅自己可見',
@@ -2146,6 +2198,8 @@ const app = createApp({
       this.postDraft.mediaUrl = '';
       this.editPostDraft = { id: '', title: '', content: '', visibility: 'public', status: 'published', spaceId: '', mediaType: '', mediaName: '', mediaMime: '', mediaData: '', mediaUrl: '' };
       this.commentDrafts = {};
+      this.replyDrafts = {};
+      this.commentReplyTargets = {};
       this.spacePosts = [];
       this.friends = [];
       this.newFriendQuery = '';
@@ -2428,6 +2482,32 @@ const app = createApp({
         this.user &&
         (post.userId === this.user.id || post.spaceUserId === this.user.id),
       );
+    },
+    toggleCommentReply(postID, commentID) {
+      // Toggle the reply composer for a single comment thread.
+      // 切换单条评论的回复输入框。
+      if (!postID || !commentID) {
+        return;
+      }
+      const current = this.commentReplyTargets[postID] || '';
+      if (current === commentID) {
+        delete this.commentReplyTargets[postID];
+        return;
+      }
+      this.commentReplyTargets[postID] = commentID;
+      if (typeof this.replyDrafts[commentID] !== 'string') {
+        this.replyDrafts[commentID] = '';
+      }
+    },
+    cancelCommentReply(postID, commentID) {
+      // Close a reply composer and clear the draft for that branch.
+      // 关闭回复输入框并清理对应草稿。
+      if (postID && this.commentReplyTargets[postID] === commentID) {
+        delete this.commentReplyTargets[postID];
+      }
+      if (commentID) {
+        delete this.replyDrafts[commentID];
+      }
     },
     isCurrentLevel(level) {
       // Check whether the level card matches the current user tier.
@@ -3431,11 +3511,13 @@ const app = createApp({
         await this.openPostDetail(post.id);
       }
     },
-    async submitComment(post) {
-      // Submit a comment to a post.
-      // 向文章提交评论。
+    async submitComment(post, parentCommentId = '') {
+      // Submit a comment or reply to a post.
+      // 向文章提交评论或回复。
       this.clearFeedback();
-      const content = this.commentDrafts[post.id] || '';
+      const rootDraft = this.commentDrafts[post.id] || '';
+      const replyDraft = parentCommentId ? this.replyDrafts[parentCommentId] || '' : '';
+      const content = parentCommentId ? replyDraft : rootDraft;
       if (!this.token || !post || !content.trim()) {
         return;
       }
@@ -3447,13 +3529,21 @@ const app = createApp({
         },
         body: JSON.stringify({
           content: content.trim(),
+          parent_comment_id: parentCommentId || '',
         }),
       });
       if (!res.ok) {
         this.setError(this.t('posts.commentError'));
         return;
       }
-      this.commentDrafts[post.id] = '';
+      if (parentCommentId) {
+        delete this.replyDrafts[parentCommentId];
+        if (this.commentReplyTargets[post.id] === parentCommentId) {
+          delete this.commentReplyTargets[post.id];
+        }
+      } else {
+        this.commentDrafts[post.id] = '';
+      }
       await this.loadPosts();
       await this.loadPrivatePosts();
       await this.loadSpacePosts(post.spaceId || this.activeSpace?.id || '');
@@ -3717,6 +3807,8 @@ const app = createApp({
       relatedPostIds.forEach((postId) => {
         delete this.commentDrafts[postId];
       });
+      this.replyDrafts = {};
+      this.commentReplyTargets = {};
       if (this.postDraft.spaceId === space.id) {
         this.postDraft.spaceId = '';
       }
@@ -3791,6 +3883,8 @@ const app = createApp({
         return;
       }
       delete this.commentDrafts[post.id];
+      this.replyDrafts = {};
+      this.commentReplyTargets = {};
       if (this.editPostDraft.id === post.id) {
         this.editPostDraft = {
           id: '',

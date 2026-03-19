@@ -122,8 +122,10 @@
 - 空间页面需要统一使用“空间”作为入口名称，不再拆分私人/公共页面 / The space page should use "Space" as the single entry name and no longer split private/public pages.
 - 进入空间后，发布和查看内容都应记录在该空间上下文中 / After entering a space, both publishing and browsing content should be recorded in that space context.
 - 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
-- 空间内容页需要展示当前空间、我的空间列表和空间内容流，并支持图文与小视频附件发布 / The space content page should show the current space, my space list, and the feed, and support image plus short-video attachments.
+- 空间内容页需要展示当前空间和空间内容流，并支持图文与小视频附件发布 / The space content page should show the current space and the feed, and support image plus short-video attachments.
+- 空间内容页不再重复展示个人空间列表，空间列表入口保留在首页与个人主页 / The space content page should not repeat the owned-space list; the space list entry stays on the home and profile pages.
 - 文章卡片需要支持删除当前用户自己的内容，以及空间创建者删除其空间内内容 / Post cards should support deleting the current user's content, and space creators should be able to delete posts inside their spaces.
+- 评论需要支持楼中楼回复 / Comments should support threaded replies.
 
 ### 5.4 后续扩展
 

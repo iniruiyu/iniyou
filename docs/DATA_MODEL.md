@@ -161,6 +161,10 @@
 - `content`
 - `status`
 
+说明：
+
+- `parent_comment_id` 用于楼中楼回复，空值表示一级评论 / `parent_comment_id` is used for threaded replies, and a null value means a top-level comment.
+
 #### `post_likes`
 
 - `id`
@@ -238,7 +242,7 @@
 - `benefits` 与 `user_benefits` 为一对多关系
 - `users` 与 `posts` 为一对多关系
 - `spaces` 与 `posts` 为一对多关系
-- `posts` 与 `comments` 为一对多关系
+- `posts` 与 `comments` 为一对多关系，`comments` 通过 `parent_comment_id` 构成树状回复 / `posts` and `comments` are one-to-many, and `comments` form a threaded reply tree through `parent_comment_id`.
 - `posts` 与 `post_likes` 为一对多关系
 - `posts` 与 `post_shares` 为一对多关系
 - `posts.media_*` 用于承载图文和小视频附件 / `posts.media_*` carries image and short-video attachments.

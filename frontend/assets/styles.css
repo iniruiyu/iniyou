@@ -825,8 +825,52 @@ body {
   margin-top: 4px;
 }
 
+/* Space content page / 空间内容页 */
+.space-page {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(110, 231, 255, 0.08), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(255, 184, 107, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(16, 22, 31, 0.98), rgba(8, 12, 18, 0.98));
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.space-page-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(110, 231, 255, 0.12);
+  background: linear-gradient(135deg, rgba(18, 26, 37, 0.95), rgba(11, 16, 24, 0.9));
+}
+
+.space-page-title {
+  margin-top: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(22px, 4vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.space-page-sub,
+.space-page-note,
+.post-feed-note {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.space-page-note {
+  color: var(--primary);
+}
+
 .post-feed {
-  margin-top: 28px;
+  margin-top: 22px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -834,15 +878,33 @@ body {
 
 .post-composer,
 .post-card {
-  background: var(--surface-soft);
+  background: linear-gradient(180deg, rgba(20, 28, 40, 0.92), rgba(14, 18, 26, 0.92));
   border-radius: 18px;
   padding: 18px;
   border: 1px solid var(--border);
 }
 
+.post-composer {
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
+}
+
+.post-feed-note {
+  opacity: 0.88;
+}
+
+.post-header,
+.post-actions,
+.post-comment-form,
+.post-comment-reply-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.post-title,
 .post-composer h3,
-.post-author,
-.post-title {
+.post-author {
   font-family: 'Space Grotesk', sans-serif;
 }
 
@@ -917,15 +979,6 @@ body {
   width: 100%;
 }
 
-.post-header,
-.post-actions,
-.post-comment-form {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .profile-actions {
   display: flex;
   gap: 10px;
@@ -940,7 +993,8 @@ body {
 .post-meta,
 .post-comment-count,
 .post-comment-author,
-.post-comment-text {
+.post-comment-text,
+.post-comment-meta {
   color: var(--muted);
   font-size: 12px;
 }
@@ -960,13 +1014,28 @@ body {
   margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+}
+
+.post-comment-thread {
+  position: relative;
+  padding-inline-start: calc(var(--comment-depth, 0) * 18px);
+}
+
+.post-comment-thread::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(var(--comment-depth, 0) * 18px);
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: rgba(110, 231, 255, 0.1);
 }
 
 .post-comment {
   padding: 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
   border: 1px solid var(--border);
 }
 
@@ -979,13 +1048,28 @@ body {
   margin-top: 14px;
 }
 
-.post-comment-form input {
+.post-comment-form input,
+.post-comment-reply-form input {
   flex: 1;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 12px;
   color: var(--text);
+}
+
+.post-comment-reply-form {
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.post-comment-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .level-grid {
@@ -2128,9 +2212,18 @@ button:disabled {
   .post-actions,
   .profile-actions,
   .post-comment-form,
+  .post-comment-reply-form,
   .subscription {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .space-page-hero {
+    flex-direction: column;
+  }
+
+  .space-toolbar-actions {
+    width: 100%;
   }
 
   .landing-shell {
@@ -2180,5 +2273,13 @@ button:disabled {
     left: 0;
     right: auto;
     width: 100%;
+  }
+
+  .post-comment-thread {
+    padding-inline-start: 0;
+  }
+
+  .post-comment-thread::before {
+    inset-inline-start: 0;
   }
 }

@@ -28,7 +28,8 @@ type createPostRequest struct {
 }
 
 type commentRequest struct {
-	Content string `json:"content"`
+	Content         string `json:"content"`
+	ParentCommentID string `json:"parent_comment_id"`
 }
 
 func (h *PostHandler) ListPosts(c *gin.Context) {
@@ -196,7 +197,7 @@ func (h *PostHandler) AddComment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	item, err := service.AddComment(h.DB, uid, c.Param("id"), req.Content)
+	item, err := service.AddComment(h.DB, uid, c.Param("id"), req.Content, req.ParentCommentID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

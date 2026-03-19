@@ -210,7 +210,10 @@
 
 - `POST /api/v1/posts/{id}/comments`
 - 用途：创建评论
-- 请求字段建议：`content`
+- 请求字段建议：`content`, `parent_comment_id`
+- 说明：
+  - `parent_comment_id` 为空时表示一级评论
+  - `parent_comment_id` 不为空时表示对指定评论的楼中楼回复 / When `parent_comment_id` is set, the request creates a threaded reply to that comment
 
 ### 6.10 点赞文章
 
