@@ -29,23 +29,71 @@ class BilingualActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // Keep the action label on the active language only.
     // 仅保留当前语言按钮文案，避免双语堆叠挤占布局。
+    final theme = Theme.of(context);
     final child = _BilingualActionButtonLabel(
       primaryLabel: primaryLabel,
       compact: compact,
     );
+    final style = ButtonStyle(
+      visualDensity: VisualDensity.compact,
+      padding: WidgetStateProperty.all(
+        EdgeInsets.symmetric(
+          horizontal: compact ? 14 : 18,
+          vertical: compact ? 11 : 14,
+        ),
+      ),
+      minimumSize: WidgetStateProperty.all(
+        Size(compact ? 0 : 92, compact ? 38 : 46),
+      ),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(compact ? 999 : 18),
+        ),
+      ),
+      textStyle: WidgetStateProperty.resolveWith((states) {
+        final enabled = !states.contains(WidgetState.disabled);
+        return (compact ? theme.textTheme.labelMedium : theme.textTheme.labelLarge)
+            ?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: enabled ? null : theme.colorScheme.onSurface.withValues(alpha: 0.38),
+            );
+      }),
+    );
     Widget button;
     switch (variant) {
       case BilingualButtonVariant.filled:
-        button = FilledButton(onPressed: onPressed, child: child);
+        button = FilledButton(
+          style: style,
+          onPressed: onPressed,
+          child: child,
+        );
         break;
       case BilingualButtonVariant.tonal:
-        button = FilledButton.tonal(onPressed: onPressed, child: child);
+        button = FilledButton.tonal(
+          style: style,
+          onPressed: onPressed,
+          child: child,
+        );
         break;
       case BilingualButtonVariant.outlined:
-        button = OutlinedButton(onPressed: onPressed, child: child);
+        button = OutlinedButton(
+          style: style.copyWith(
+            side: WidgetStateProperty.all(
+              BorderSide(color: theme.colorScheme.outlineVariant),
+            ),
+          ),
+          onPressed: onPressed,
+          child: child,
+        );
         break;
       case BilingualButtonVariant.text:
-        button = TextButton(onPressed: onPressed, child: child);
+        button = TextButton(
+          style: style.copyWith(
+            foregroundColor: WidgetStateProperty.all(theme.colorScheme.primary),
+          ),
+          onPressed: onPressed,
+          child: child,
+        );
         break;
     }
     final safeTooltip = tooltip?.trim() ?? '';

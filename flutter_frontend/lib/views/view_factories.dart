@@ -81,6 +81,9 @@ Widget buildSpaceView({
   final canPublish = user != null &&
       selectedSpace != null &&
       selectedSpace.userId == user.id;
+  final canManageSelectedSpace = selectedSpace != null &&
+      user != null &&
+      selectedSpace.userId == user.id;
   return DefaultTabController(
     length: 2,
     child: Column(
@@ -88,6 +91,39 @@ Widget buildSpaceView({
       children: [
         InfoCard(
           title: localizedText(languageCode, '空间', 'Space', '空間'),
+          trailing: canManageSelectedSpace
+              ? SizedBox(
+                  width: 300,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.end,
+                    children: [
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: () => onEditSpace(selectedSpace),
+                        primaryLabel: localizedText(languageCode, '设置空间资料', 'Edit space details', '設定空間資料'),
+                        secondaryLabel: 'Edit space details',
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.filled,
+                        compact: true,
+                        onPressed: () => onOpenPostComposer(),
+                        primaryLabel: localizedText(languageCode, '发布文章', 'Publish post', '發布文章'),
+                        secondaryLabel: 'Publish post',
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.text,
+                        compact: true,
+                        onPressed: () => onDeleteSpace(selectedSpace),
+                        primaryLabel: localizedText(languageCode, '删除空间', 'Delete space', '刪除空間'),
+                        secondaryLabel: 'Delete space',
+                      ),
+                    ],
+                  ),
+                )
+              : null,
           lines: [
             localizedText(languageCode, '只显示自己创建的空间。', 'Only spaces you created are listed here.', '只顯示自己建立的空間。'),
             localizedText(languageCode, '进入空间后才显示空间内容，网站导航会收起为独立空间壳层。', 'Space content only appears after entry, and the site navigation collapses into a dedicated space shell.', '進入空間後才顯示空間內容，網站導覽會收起為獨立空間殼層。'),
@@ -148,14 +184,6 @@ Widget buildSpaceView({
                                 onDeleteSpace: onDeleteSpace,
                                 languageCode: languageCode,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          InfoCard(
-                            title: localizedText(languageCode, '空间导航', 'Space navigation', '空間導覽'),
-                            lines: [
-                              localizedText(languageCode, '返回按钮会离开当前空间壳层。', 'The back button leaves the dedicated space shell.', '返回按鈕會離開目前空間殼層。'),
-                              localizedText(languageCode, '创建入口被放到了最后一个选项卡。', 'The create entry is placed as the last tab.', '建立入口已放到最後一個選項卡。'),
                             ],
                           ),
                         ],
