@@ -51,6 +51,10 @@ const app = createApp({
       // Sidebar collapsed state.
       // 侧边栏折叠状态。
       sidebarCollapsed: false,
+      // Space shell mode state.
+      // 空间独立壳层状态。
+      spacePanelTab: 'owned',
+      spaceOwnedExpanded: false,
       // JWT token.
       // JWT 令牌。
       token: '',
@@ -275,11 +279,21 @@ const app = createApp({
             pageSub: '先进入空间，再查看这个空间的帖子。',
             pageEmptyTitle: '尚未进入空间',
             pageEmpty: '先从下方空间列表选择并进入一个空间。',
+            backAction: '返回首页',
             pageNavTitle: '空间导航',
             pageNavSub: '查看当前空间、自己的空间和常用入口。',
             currentTitle: '当前空间',
             myTitle: '我的空间',
             mySub: '只显示你创建的空间。',
+            mySpacesToggle: '点击查看我的空间',
+            workspaceTitle: '空间工作台',
+            workspaceSub: '进入空间后才显示内容、设置与发布入口。',
+            spaceSettingsTitle: '当前空间设置',
+            spaceSettingsSub: '可在这里继续设置名称、域名、主题和背景。',
+            createTab: '创建空间',
+            ownedTab: '我的空间',
+            appearanceTitle: '主题与背景',
+            appearanceSub: '后续会接入空间级主题和背景图。',
             privateTitle: '空间',
             privateSub: '查看可见空间并管理内容。',
             publicTitle: '空间',
@@ -688,11 +702,19 @@ const app = createApp({
             pageSub: 'Enter a space first, then view its posts.',
             pageEmptyTitle: 'No space entered',
             pageEmpty: 'Pick a space from the list below and enter it first.',
+            backAction: 'Back to home',
             pageNavTitle: 'Space Navigation',
             pageNavSub: 'See the current space, your own spaces, and common shortcuts.',
             currentTitle: 'Current Space',
             myTitle: 'My Spaces',
             mySub: 'Only the spaces you created are listed.',
+            mySpacesToggle: 'Show my spaces',
+            workspaceTitle: 'Space workspace',
+            workspaceSub: 'Content, settings, and publishing only appear after entry.',
+            spaceSettingsTitle: 'Current space settings',
+            spaceSettingsSub: 'Adjust the name, domain, theme, and background here.',
+            createTab: 'Create space',
+            ownedTab: 'My spaces',
             privateTitle: 'Space',
             privateSub: 'Browse visible spaces and manage content.',
             publicTitle: 'Space',
@@ -1357,6 +1379,9 @@ const app = createApp({
     activeSpacePosts() {
       return this.postsForSpace(this.spacePosts, this.currentSpace?.id || '');
     },
+    isSpaceShell() {
+      return this.view === 'space' && Boolean(this.currentSpace);
+    },
     ownedSpaces() {
       if (!this.user?.id) {
         return [];
@@ -1655,7 +1680,7 @@ const app = createApp({
       }
       this.setActiveSpace(space);
       await this.loadSpacePosts(space.id);
-      this.view = 'space';
+      this.enterSpaceShell();
     },
     openSpaceComposer(type) {
       // Open the space composer dialog in create mode.
@@ -1968,11 +1993,21 @@ const app = createApp({
               pageSub: '先進入空間，再查看這個空間的貼文。',
               pageEmptyTitle: '尚未進入空間',
               pageEmpty: '先從下方空間列表選擇並進入一個空間。',
+              backAction: '返回首頁',
               pageNavTitle: '空間導覽',
               pageNavSub: '查看目前空間、自己的空間與常用入口。',
               currentTitle: '目前空間',
               myTitle: '我的空間',
               mySub: '只顯示你建立的空間。',
+              mySpacesToggle: '查看我的空間',
+              workspaceTitle: '空間工作台',
+              workspaceSub: '進入空間後才顯示內容、設定與發布入口。',
+              spaceSettingsTitle: '目前空間設定',
+              spaceSettingsSub: '可在這裡繼續設定名稱、網域、主題和背景。',
+              createTab: '建立空間',
+              ownedTab: '我的空間',
+              appearanceTitle: '主題與背景',
+              appearanceSub: '後續會接入空間級主題和背景圖。',
               privateTitle: '空間',
               privateSub: '查看可見空間並管理內容。',
               publicTitle: '空間',
@@ -2951,6 +2986,32 @@ const app = createApp({
       // 切换侧边栏折叠状态。
       this.sidebarCollapsed = !this.sidebarCollapsed;
     },
+    enterSpaceShell() {
+      // Switch into the dedicated space shell.
+      // 切换进入独立空间壳层。
+      this.view = 'space';
+    },
+    leaveSpaceShell() {
+      // Leave the dedicated space shell and return to the dashboard.
+      // 离开独立空间壳层并返回首页。
+      this.view = 'dashboard';
+      this.spaceOwnedExpanded = false;
+      this.spacePanelTab = 'owned';
+    },
+    toggleSpaceOwnedPanel() {
+      // Toggle the owned-space panel inside the space workspace.
+      // 切换空间工作台中的“我的空间”面板。
+      this.spaceOwnedExpanded = !this.spaceOwnedExpanded;
+      if (this.spaceOwnedExpanded && this.spacePanelTab !== 'owned') {
+        this.spacePanelTab = 'owned';
+      }
+    },
+    openSpaceWorkspaceTab(tab) {
+      // Open a workspace tab and ensure the panel is expanded.
+      // 打开工作台选项卡并确保面板已展开。
+      this.spaceOwnedExpanded = true;
+      this.spacePanelTab = tab;
+    },
     toggleChatQuickPanel() {
       // Toggle the chat quick panel instead of keeping it always visible.
       // 切换聊天快捷面板，避免表情框一直占据输入区。
@@ -3864,7 +3925,8 @@ const app = createApp({
         await this.loadSpaces();
         this.setActiveSpace(updatedSpace);
         await this.loadSpacePosts(updatedSpace.id);
-        this.view = 'space';
+        this.enterSpaceShell();
+        this.openSpaceWorkspaceTab('owned');
         this.closeSpaceComposer();
         this.setFlash(this.t('spaces.editSuccess'));
         return;
@@ -3892,7 +3954,8 @@ const app = createApp({
       await this.loadSpaces();
       this.setActiveSpace(createdSpace);
       await this.loadSpacePosts(createdSpace.id);
-      this.view = 'space';
+      this.enterSpaceShell();
+      this.openSpaceWorkspaceTab('owned');
       this.closeSpaceComposer();
       this.setFlash(this.t('spaces.createSuccess'));
     },
