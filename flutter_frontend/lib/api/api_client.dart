@@ -67,20 +67,18 @@ class ApiClient {
     String emailVisibility = '',
     String ageVisibility = '',
     String genderVisibility = '',
-  }) async =>
-      CurrentUser.fromJson(
-        await _put(accountBase, '/me', {
-          'display_name': displayName,
-          'username': username,
-          'domain': domain,
-          'signature': signature,
-          if (phoneVisibility.isNotEmpty) 'phone_visibility': phoneVisibility,
-          if (emailVisibility.isNotEmpty) 'email_visibility': emailVisibility,
-          if (ageVisibility.isNotEmpty) 'age_visibility': ageVisibility,
-          if (genderVisibility.isNotEmpty)
-            'gender_visibility': genderVisibility,
-        }),
-      );
+  }) async => CurrentUser.fromJson(
+    await _put(accountBase, '/me', {
+      'display_name': displayName,
+      'username': username,
+      'domain': domain,
+      'signature': signature,
+      if (phoneVisibility.isNotEmpty) 'phone_visibility': phoneVisibility,
+      if (emailVisibility.isNotEmpty) 'email_visibility': emailVisibility,
+      if (ageVisibility.isNotEmpty) 'age_visibility': ageVisibility,
+      if (genderVisibility.isNotEmpty) 'gender_visibility': genderVisibility,
+    }),
+  );
 
   Future<List<SpaceItem>> listSpaces() async =>
       _list(await _get(spaceBase, '/spaces'), SpaceItem.fromJson);
@@ -237,10 +235,9 @@ class ApiClient {
     int limit = 50,
   }) async {
     final encoded = Uri.encodeComponent(spaceId);
-    final query = Uri(queryParameters: {
-      'visibility': visibility,
-      'limit': '$limit',
-    }).query;
+    final query = Uri(
+      queryParameters: {'visibility': visibility, 'limit': '$limit'},
+    ).query;
     return _list(
       await _get(spaceBase, '/spaces/$encoded/posts?$query'),
       PostItem.fromJson,
@@ -323,18 +320,11 @@ class ApiClient {
     });
   }
 
-  Future<SubscriptionItem?> fetchSubscription() async {
-    final json = await _get(accountBase, '/subscriptions/current');
-    if ((json['plan_id'] ?? '').toString().isEmpty) {
-      return null;
-    }
-    return SubscriptionItem.fromJson(json);
+  Future<void> activateMembershipLevel(String planId) async {
+    // Keep the billing call internal so the UI only talks about membership levels.
+    // 保留账单接口的内部调用，让界面只展示会员等级概念。
+    await _post(accountBase, '/subscriptions', {'plan_id': planId});
   }
-
-  Future<SubscriptionItem> activateSubscription(String planId) async =>
-      SubscriptionItem.fromJson(
-        await _post(accountBase, '/subscriptions', {'plan_id': planId}),
-      );
 
   Future<List<ExternalAccountItem>> listExternalAccounts() async => _list(
     await _get(accountBase, '/external-accounts'),

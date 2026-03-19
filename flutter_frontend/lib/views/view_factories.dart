@@ -595,12 +595,10 @@ Widget buildProfileView({
   required CurrentUser? user,
   required UserProfileItem? profileUser,
   required List<PostItem> profilePosts,
-  required SubscriptionItem? subscription,
   required List<ExternalAccountItem> externalAccounts,
   required List<FriendItem> friends,
   required String currentLevel,
   required ValueChanged<String> onActivateLevel,
-  required ValueChanged<String> onActivatePlan,
   required TextEditingController displayNameController,
   required TextEditingController usernameController,
   required TextEditingController domainController,
@@ -636,7 +634,6 @@ Widget buildProfileView({
     user: user,
     profileUser: profileUser,
     profilePosts: profilePosts,
-    subscription: subscription,
     connectedChains: connectedChains(externalAccounts),
     displayNameController: displayNameController,
     usernameController: usernameController,
@@ -652,7 +649,6 @@ Widget buildProfileView({
     onProfileTabChanged: onProfileTabChanged,
     currentLevel: currentLevel,
     onActivateLevel: onActivateLevel,
-    onActivatePlan: onActivatePlan,
     onSaveProfile: onSaveProfile,
     onPhoneVisibilityChanged: onPhoneVisibilityChanged,
     onEmailVisibilityChanged: onEmailVisibilityChanged,
@@ -757,18 +753,6 @@ Widget buildLevelsView({
   return LevelsView(
     currentLevel: currentLevel,
     onActivateLevel: onActivateLevel,
-  );
-}
-
-Widget buildSubscriptionView({
-  required SubscriptionItem? subscription,
-  required bool loading,
-  required ValueChanged<String> onActivatePlan,
-}) {
-  return SubscriptionView(
-    subscription: subscription,
-    loading: loading,
-    onActivatePlan: onActivatePlan,
   );
 }
 

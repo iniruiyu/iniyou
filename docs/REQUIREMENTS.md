@@ -130,7 +130,7 @@
   - 空间内容中的图片和视频需要保持原始比例显示，图片上传应尽量先转换为 WebP 格式再提交 / Space content images and videos should keep their original aspect ratio, and image uploads should be converted to WebP when possible before submission.
   - Vue 文章编辑应使用独立弹窗完成，避免在正文下方内联展开编辑区 / Vue post editing should use a dedicated modal instead of expanding an inline editor below the article.
   - 文章卡片需要支持删除当前用户自己的内容，以及空间创建者删除其空间内内容 / Post cards should support deleting the current user's content, and space creators should be able to delete posts inside their spaces.
-- 变更型操作需要先更新本地状态再刷新服务端数据，删除空间或文章后必须立即清理当前空间与相关缓存，订阅和外部账号变更也要同步更新界面 / Mutation actions must update local state before refreshing server data; deleting spaces or posts must immediately clear the current space and related caches, and subscription and external-account changes must update the UI at once.
+- 变更型操作需要先更新本地状态再刷新服务端数据，删除空间或文章后必须立即清理当前空间与相关缓存，会员等级升级和外部账号变更也要同步更新界面；前端不再保留独立订阅页面或订阅状态对象 / Mutation actions must update local state before refreshing server data; deleting spaces or posts must immediately clear the current space and related caches, membership-level upgrades and external-account changes must update the UI at once, and the frontend must no longer keep a separate subscription page or subscription state object.
 - 评论需要支持楼中楼回复 / Comments should support threaded replies.
 
 ### 5.4 后续扩展

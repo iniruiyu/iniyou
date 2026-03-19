@@ -56,7 +56,9 @@ class CurrentUser {
       domain: (json['domain'] ?? '').toString(),
       displayName: (json['display_name'] ?? '').toString(),
       signature: (json['signature'] ?? '').toString(),
-      age: json['age'] is int ? json['age'] as int : int.tryParse((json['age'] ?? '').toString()),
+      age: json['age'] is int
+          ? json['age'] as int
+          : int.tryParse((json['age'] ?? '').toString()),
       gender: (json['gender'] ?? '').toString(),
       phoneVisibility: (json['phone_visibility'] ?? 'private').toString(),
       emailVisibility: (json['email_visibility'] ?? 'private').toString(),
@@ -106,7 +108,9 @@ class UserProfileItem {
       signature: (json['signature'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
       phone: (json['phone'] ?? '').toString(),
-      age: json['age'] is int ? json['age'] as int : int.tryParse((json['age'] ?? '').toString()),
+      age: json['age'] is int
+          ? json['age'] as int
+          : int.tryParse((json['age'] ?? '').toString()),
       gender: (json['gender'] ?? '').toString(),
       status: (json['status'] ?? 'active').toString(),
       relationStatus: (json['relation_status'] ?? '').toString(),
@@ -562,33 +566,6 @@ class ChatAttachmentDraft {
 
   bool get isMedia => messageType != 'text';
   String get sizeLabel => formatByteSize(originalSizeBytes);
-}
-
-class SubscriptionItem {
-  SubscriptionItem({
-    required this.planId,
-    required this.status,
-    required this.startedAt,
-    required this.endedAt,
-  });
-
-  final String planId;
-  final String status;
-  final DateTime? startedAt;
-  final DateTime? endedAt;
-
-  String get startedAtLabel =>
-      startedAt == null ? '-' : formatDateTime(startedAt!);
-  String get endedAtLabel => endedAt == null ? '-' : formatDateTime(endedAt!);
-
-  factory SubscriptionItem.fromJson(Map<String, dynamic> json) {
-    return SubscriptionItem(
-      planId: (json['plan_id'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
-      startedAt: DateTime.tryParse((json['started_at'] ?? '').toString()),
-      endedAt: DateTime.tryParse((json['ended_at'] ?? '').toString()),
-    );
-  }
 }
 
 class ExternalAccountItem {

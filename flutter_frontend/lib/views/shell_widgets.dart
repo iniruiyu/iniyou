@@ -50,7 +50,6 @@ class ShellSidebar extends StatelessWidget {
   const ShellSidebar({
     super.key,
     required this.user,
-    required this.subscription,
     required this.conversations,
     required this.pendingFriendCount,
     required this.selectedViewKey,
@@ -60,7 +59,6 @@ class ShellSidebar extends StatelessWidget {
   });
 
   final CurrentUser user;
-  final SubscriptionItem? subscription;
   final List<ConversationItem> conversations;
   final int pendingFriendCount;
   final String selectedViewKey;
@@ -97,7 +95,6 @@ class ShellSidebar extends StatelessWidget {
               if (user.username.isNotEmpty) '@${user.username}',
               if (user.signature.isNotEmpty) user.signature,
               '${t('sidebar.level')}: ${user.level}',
-              '${t('sidebar.plan')}: ${subscription?.planId.isNotEmpty == true ? subscription!.planId : 'basic'}',
               '${t('sidebar.unread')}: ${conversations.fold<int>(0, (sum, item) => sum + item.unreadCount)}',
             ],
           ),

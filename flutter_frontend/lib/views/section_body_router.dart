@@ -11,7 +11,6 @@ Widget sectionBodyForView(
   required Widget profile,
   required Widget postDetail,
   required Widget levels,
-  required Widget subscription,
   required Widget blockchain,
   required Widget friends,
   required Widget chat,
@@ -29,8 +28,6 @@ Widget sectionBodyForView(
       return postDetail;
     case AppView.levels:
       return levels;
-    case AppView.subscription:
-      return subscription;
     case AppView.blockchain:
       return blockchain;
     case AppView.friends:

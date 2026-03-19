@@ -159,13 +159,12 @@ enum AppView {
   profile,
   postDetail,
   levels,
-  subscription,
   blockchain,
   friends,
   chat,
 }
 
-enum ProfileTab { levels, subscription, blockchain }
+enum ProfileTab { levels, blockchain }
 
 class IniyouHome extends StatefulWidget {
   const IniyouHome({super.key});
@@ -263,7 +262,6 @@ class _IniyouHomeState extends State<IniyouHome> {
   List<ConversationItem> _conversations = const [];
   List<ChatMessage> _messages = const [];
   List<ExternalAccountItem> _externalAccounts = const [];
-  SubscriptionItem? _subscription;
   FriendItem? _activeChat;
   ChatAttachmentDraft? _chatAttachment;
 
@@ -1386,7 +1384,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       _privatePosts = dashboard.privatePosts;
       _friends = dashboard.friends;
       _conversations = dashboard.conversations;
-      _subscription = dashboard.subscription;
       _externalAccounts = dashboard.externalAccounts;
       _currentSpace = _resolvedCurrentSpace();
       if (_currentSpace == null) {
@@ -1483,7 +1480,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       _conversations = const [];
       _messages = const [];
       _externalAccounts = const [];
-      _subscription = null;
       _activeChat = null;
       _chatAttachment = null;
       _hostRouteApplied = false;
@@ -1549,10 +1545,6 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
     if (view == AppView.levels) {
       _openProfileTab(ProfileTab.levels);
-      return;
-    }
-    if (view == AppView.subscription) {
-      _openProfileTab(ProfileTab.subscription);
       return;
     }
     if (view == AppView.blockchain) {
@@ -2350,17 +2342,16 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _activatePlan(String planId) async {
     await _runBusy(() async {
-      final result = await AppActions.activatePlan(_api, planId);
+      final updatedUser = await AppActions.activatePlan(_api, planId);
       if (!mounted) {
         return;
       }
       setState(() {
-        _subscription = result.subscription;
-        _user = result.user;
+        _user = updatedUser;
         if (_profileUser?.id == _user?.id) {
           _profileUser = UserProfileItem.fromCurrentUser(_user!);
         }
-        _flash = '订阅已更新';
+        _flash = '会员等级已更新';
       });
     });
   }
@@ -2545,7 +2536,6 @@ class _IniyouHomeState extends State<IniyouHome> {
   Widget _buildSidebar() {
     return ShellSidebar(
       user: _user!,
-      subscription: _subscription,
       conversations: _conversations,
       pendingFriendCount: _pendingFriendCount,
       selectedViewKey: sidebarViewKey(_view),
@@ -2894,12 +2884,10 @@ class _IniyouHomeState extends State<IniyouHome> {
         user: _user,
         profileUser: _profileUser,
         profilePosts: _profilePosts,
-        subscription: _subscription,
         externalAccounts: _externalAccounts,
         friends: _friends,
         currentLevel: _user?.level ?? 'basic',
         onActivateLevel: _activatePlan,
-        onActivatePlan: _activatePlan,
         displayNameController: _displayNameController,
         usernameController: _usernameController,
         domainController: _domainController,
@@ -2965,11 +2953,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       levels: buildLevelsView(
         currentLevel: _user?.level ?? 'basic',
         onActivateLevel: _activatePlan,
-      ),
-      subscription: buildSubscriptionView(
-        subscription: _subscription,
-        loading: _loading,
-        onActivatePlan: _activatePlan,
       ),
       blockchain: buildBlockchainView(
         loading: _loading,

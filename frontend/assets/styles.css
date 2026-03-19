@@ -1432,7 +1432,7 @@ body {
   font-size: 13px;
 }
 
-.subscription {
+.account-summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1442,11 +1442,11 @@ body {
   border: 1px solid var(--border);
 }
 
-.subscription-title {
+.account-summary-title {
   font-weight: 600;
 }
 
-.subscription-sub {
+.account-summary-sub {
   color: var(--muted);
   font-size: 12px;
   margin-top: 6px;
@@ -2530,7 +2530,7 @@ html[dir='rtl'] .landing-actions {
   flex-direction: row-reverse;
 }
 
-html[dir='rtl'] .subscription {
+html[dir='rtl'] .account-summary {
   flex-direction: row-reverse;
 }
 
@@ -2630,7 +2630,7 @@ button:disabled {
   .profile-actions,
   .post-comment-form,
   .post-comment-reply-form,
-  .subscription {
+  .account-summary {
     flex-direction: column;
     align-items: stretch;
   }

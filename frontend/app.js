@@ -143,16 +143,13 @@ const app = createApp({
             },
             tabs: {
               levels: '会员等级',
-              subscription: '订阅',
               blockchain: '链上账号',
             },
             levels: {
               title: '会员等级',
               sub: '选择适合你的会员等级方案。',
-            },
-            subscription: {
-              title: '订阅概览',
-              sub: '查看订阅方案与到期时间。',
+              upgradeSuccess: '会员等级已更新。',
+              upgradeError: '会员等级升级失败，请稍后重试。',
             },
             blockchain: {
               title: '链上账号概览',
@@ -167,7 +164,7 @@ const app = createApp({
           },
           profileMenu: {
             title: '个人主页菜单',
-            subtitle: '会员等级、订阅、链上账号',
+            subtitle: '会员等级与链上账号',
           },
           theme: {
             title: '外观皮肤',
@@ -190,7 +187,6 @@ const app = createApp({
             profile: '用户主页',
             postDetail: '文章详情',
             levels: '会员等级',
-            subscription: '订阅',
             blockchain: '链上账号',
             friends: '好友',
             chat: '实时聊天',
@@ -217,21 +213,19 @@ const app = createApp({
             profile: '用户主页',
             postDetail: '文章详情',
             levels: '会员等级',
-            subscription: '订阅管理',
             blockchain: '链上账号',
             friends: '好友',
             chat: '实时聊天',
           },
           pageSub: {
             auth: '快速进入你的身份卡与空间',
-            dashboard: '账户摘要与空间信息',
+            dashboard: '账户摘要、会员等级与空间信息',
             space: '查看可见空间并发布内容',
             private: '查看可见空间并发布内容',
             public: '浏览可见空间与内容',
             profile: '查看作者的公开内容与互动记录',
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
-            subscription: '管理订阅与权益',
             blockchain: '管理外部区块链账号绑定',
             friends: '建立联系与私聊',
             chat: '实时沟通与反馈',
@@ -254,9 +248,8 @@ const app = createApp({
           },
           dashboard: {
             overviewTitle: '账号概览',
-            overviewSub: '清晰掌控你的会员等级、订阅状态与空间使用情况。',
+            overviewSub: '清晰掌控你的会员等级与空间使用情况。',
             levelStat: '会员等级',
-            planStat: '订阅状态',
             friendStat: '好友数量',
             blockchainStat: '链上账号',
             profileTitle: '资料设置',
@@ -399,18 +392,8 @@ const app = createApp({
             title: '会员等级',
             upgrade: '升级',
             current: '当前等级',
-          },
-          subscription: {
-            title: '订阅管理',
-            currentPlan: '当前方案',
-            status: '订阅状态',
-            startedAt: '开始时间',
-            expiresAt: '到期时间',
-            renew: '续订',
-            activate: '立即开通',
-            empty: '当前还没有有效订阅。',
-            actionSuccess: '订阅已生效。',
-            actionError: '订阅操作失败，请稍后重试。',
+            upgradeSuccess: '会员等级已更新。',
+            upgradeError: '会员等级升级失败，请稍后重试。',
           },
           blockchain: {
             title: '链上账号绑定',
@@ -570,16 +553,13 @@ const app = createApp({
             },
             tabs: {
               levels: 'Membership',
-              subscription: 'Subscription',
               blockchain: 'Blockchain',
             },
             levels: {
               title: 'Membership Levels',
               sub: 'Choose the right membership tier.',
-            },
-            subscription: {
-              title: 'Subscription Overview',
-              sub: 'Review your plan and renewal timeline.',
+              upgradeSuccess: 'Membership level updated.',
+              upgradeError: 'Membership level upgrade failed. Try again later.',
             },
             blockchain: {
               title: 'Blockchain Overview',
@@ -589,7 +569,7 @@ const app = createApp({
           },
           profileMenu: {
             title: 'Profile Menu',
-            subtitle: 'Membership, Subscription, and Blockchain',
+            subtitle: 'Membership and Blockchain',
           },
           theme: {
             title: 'Theme',
@@ -614,7 +594,6 @@ const app = createApp({
             profile: 'Profile',
             postDetail: 'Post Detail',
             levels: 'Membership',
-            subscription: 'Subscription',
             blockchain: 'Blockchain',
             friends: 'Friends',
             chat: 'Live Chat',
@@ -641,21 +620,19 @@ const app = createApp({
             profile: 'Profile',
             postDetail: 'Post Detail',
             levels: 'Membership',
-            subscription: 'Subscription',
             blockchain: 'Blockchain Accounts',
             friends: 'Friends',
             chat: 'Live Chat',
           },
           pageSub: {
             auth: 'Enter your identity card and space quickly',
-            dashboard: 'Account summary and space insights',
+            dashboard: 'Account summary, membership, and space insights',
             space: 'Browse visible spaces and publish content',
             private: 'Browse visible spaces and publish content',
             public: 'Browse visible spaces and content',
             profile: 'Browse this author\'s public posts and activity',
             postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
-            subscription: 'Manage plan and benefits',
             blockchain: 'Manage external blockchain account bindings',
             friends: 'Build connections and chat privately',
             chat: 'Real-time communication and feedback',
@@ -678,9 +655,8 @@ const app = createApp({
           },
           dashboard: {
             overviewTitle: 'Account Overview',
-            overviewSub: 'Track your level, subscription, and space usage clearly.',
+            overviewSub: 'Track your level and space usage clearly.',
             levelStat: 'Membership',
-            planStat: 'Subscription',
             friendStat: 'Friends',
             blockchainStat: 'Blockchain',
             profileTitle: 'Profile Settings',
@@ -817,18 +793,8 @@ const app = createApp({
             title: 'Membership Levels',
             upgrade: 'Upgrade',
             current: 'Current Tier',
-          },
-          subscription: {
-            title: 'Subscription',
-            currentPlan: 'Current Plan',
-            status: 'Status',
-            startedAt: 'Started At',
-            expiresAt: 'Expires At',
-            renew: 'Renew',
-            activate: 'Activate',
-            empty: 'There is no active subscription yet.',
-            actionSuccess: 'Subscription is active now.',
-            actionError: 'Subscription action failed. Try again later.',
+            upgradeSuccess: 'Membership level updated.',
+            upgradeError: 'Membership level upgrade failed. Try again later.',
           },
           blockchain: {
             title: 'Blockchain Accounts',
@@ -957,14 +923,6 @@ const app = createApp({
         genderVisibility: 'private',
         level: 'Premium',
         planKey: 'monthly',
-      },
-      // Current subscription data.
-      // 当前订阅数据。
-      subscription: {
-        planID: '',
-        status: 'inactive',
-        startedAt: '',
-        endedAt: '',
       },
       // External blockchain account bindings.
       // 外部区块链账号绑定数据。
@@ -1270,10 +1228,6 @@ const app = createApp({
     },
     wsStatusText() {
       return this.t(`ws.${this.wsStatusKey}`);
-    },
-    localizedPlan() {
-      const planKey = this.subscription.planID || this.user.planKey;
-      return this.t(`plans.${planKey}`) || planKey;
     },
     localizedLevelName() {
       return this.t(`plans.${String(this.user.level || '').toLowerCase()}`) || this.user.level;
@@ -1964,7 +1918,6 @@ const app = createApp({
               private: '私人空間',
               public: '公共空間',
               levels: '會員等級',
-              subscription: '訂閱',
               blockchain: '鏈上帳號',
               friends: '好友',
               chat: '即時聊天',
@@ -1997,10 +1950,15 @@ const app = createApp({
             },
             tabs: {
               levels: '會員等級',
-              subscription: '訂閱',
               blockchain: '鏈上帳號',
             },
+            levels: {
+              title: '會員等級',
+              sub: '選擇適合你的會員等級方案。',
+              upgradeSuccess: '會員等級已更新。',
+              upgradeError: '會員等級升級失敗，請稍後重試。',
             },
+          },
             ws: {
               statusLabel: '連線狀態',
               unreadLabel: '未讀訊息',
@@ -2019,19 +1977,17 @@ const app = createApp({
               private: '空間',
               public: '空間',
               levels: '會員等級',
-              subscription: '訂閱管理',
               blockchain: '鏈上帳號',
               friends: '好友',
               chat: '即時聊天',
             },
             pageSub: {
-              auth: '快速進入你的身份卡與空間',
-              dashboard: '帳戶摘要與空間資訊',
+            auth: '快速進入你的身份卡與空間',
+              dashboard: '帳戶摘要、會員等級與空間資訊',
               space: '查看可見空間並發布內容',
               private: '查看可見空間並發布內容',
               public: '瀏覽可見空間與內容',
               levels: '選擇適合你的會員等級',
-              subscription: '管理訂閱與權益',
               blockchain: '管理外部鏈上帳號綁定',
               friends: '建立聯繫與私聊',
               chat: '即時溝通與回饋',
@@ -2052,11 +2008,10 @@ const app = createApp({
               loginError: '登入失敗，請檢查帳號和密碼。',
               registerError: '註冊失敗，請檢查輸入資訊。',
             },
-            dashboard: {
+          dashboard: {
               overviewTitle: '帳號概覽',
-              overviewSub: '清楚掌握你的會員等級、訂閱狀態與空間使用情況。',
+              overviewSub: '清楚掌握你的會員等級與空間使用情況。',
               levelStat: '會員等級',
-              planStat: '訂閱狀態',
               friendStat: '好友數量',
               blockchainStat: '鏈上帳號',
               profileTitle: '資料設定',
@@ -2160,18 +2115,6 @@ const app = createApp({
               privateLabel: '僅自己可見',
               publicLabel: '公開',
               backToFeed: '返回空間',
-            },
-            subscription: {
-              title: '訂閱管理',
-              currentPlan: '目前方案',
-              status: '訂閱狀態',
-              startedAt: '開始時間',
-              expiresAt: '到期時間',
-              renew: '續訂',
-              activate: '立即開通',
-              empty: '目前還沒有有效訂閱。',
-              actionSuccess: '訂閱已生效。',
-              actionError: '訂閱操作失敗，請稍後重試。',
             },
             blockchain: {
               title: '鏈上帳號綁定',
@@ -2313,12 +2256,6 @@ const app = createApp({
         name: this.t('common.guest'),
         level: 'Basic',
         planKey: 'monthly',
-      };
-      this.subscription = {
-        planID: '',
-        status: 'inactive',
-        startedAt: '',
-        endedAt: '',
       };
       this.externalAccounts = [];
       this.externalAccountDraft = {
@@ -3229,7 +3166,6 @@ const app = createApp({
           return;
         }
         await this.loadSpaces();
-        await this.loadSubscription();
         await this.loadExternalAccounts();
         await this.loadPosts();
         await this.loadPrivatePosts();
@@ -3276,7 +3212,6 @@ const app = createApp({
           return;
         }
         await this.loadSpaces();
-        await this.loadSubscription();
         await this.loadExternalAccounts();
         await this.loadPosts();
         await this.loadPrivatePosts();
@@ -3359,26 +3294,6 @@ const app = createApp({
           this.spacePosts = [];
         }
       }
-    },
-    async loadSubscription() {
-      // Load the latest subscription for the current user.
-      // 加载当前用户最新订阅。
-      if (!this.token) {
-        return;
-      }
-      const res = await fetch(`${this.apiBase}/subscriptions/current`, {
-        headers: { Authorization: `Bearer ${this.token}` },
-      });
-      if (!res.ok) {
-        return;
-      }
-      const data = await res.json();
-      this.subscription = {
-        planID: data.plan_id || '',
-        status: data.status || 'inactive',
-        startedAt: data.started_at || '',
-        endedAt: data.ended_at || '',
-      };
     },
     async loadExternalAccounts() {
       // Load current user's blockchain account bindings.
@@ -3957,9 +3872,9 @@ const app = createApp({
       await this.loadMe();
       this.setFlash(this.t('dashboard.saveSuccess'));
     },
-    async createSubscription(planID = 'premium') {
-      // Create or renew the default monthly subscription.
-      // 创建或续订指定会员订阅。
+    async activateMembershipLevel(planID = 'premium') {
+      // Upgrade the membership level through the billing endpoint.
+      // 通过账单接口升级会员等级，前端不再展示订阅概念。
       this.clearFeedback();
       if (!this.token) {
         return;
@@ -3975,12 +3890,11 @@ const app = createApp({
         }),
       });
       if (!res.ok) {
-        this.setError(this.t('subscription.actionError'));
+        this.setError(this.t('levels.upgradeError'));
         return;
       }
-      await this.loadSubscription();
       await this.loadMe();
-      this.setFlash(this.t('subscription.actionSuccess'));
+      this.setFlash(this.t('levels.upgradeSuccess'));
     },
     async bindExternalAccount() {
       // Create a new blockchain account binding for the current user.
@@ -4763,12 +4677,11 @@ const app = createApp({
     if (stored) {
       this.token = stored;
       this.view = 'dashboard';
-      this.loadMe().then(async () => {
+    this.loadMe().then(async () => {
         if (!this.token) {
           return;
         }
         await this.loadSpaces();
-        await this.loadSubscription();
         await this.loadExternalAccounts();
         await this.loadPosts();
         await this.loadPrivatePosts();

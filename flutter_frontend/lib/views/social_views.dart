@@ -23,7 +23,6 @@ class ProfileView extends StatelessWidget {
     required this.user,
     required this.profileUser,
     required this.profilePosts,
-    required this.subscription,
     required this.connectedChains,
     required this.displayNameController,
     required this.usernameController,
@@ -39,7 +38,6 @@ class ProfileView extends StatelessWidget {
     required this.onProfileTabChanged,
     required this.currentLevel,
     required this.onActivateLevel,
-    required this.onActivatePlan,
     required this.onSaveProfile,
     required this.onPhoneVisibilityChanged,
     required this.onEmailVisibilityChanged,
@@ -63,7 +61,6 @@ class ProfileView extends StatelessWidget {
   final CurrentUser? user;
   final UserProfileItem? profileUser;
   final List<PostItem> profilePosts;
-  final SubscriptionItem? subscription;
   final List<String> connectedChains;
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
@@ -87,9 +84,6 @@ class ProfileView extends StatelessWidget {
   // Activate membership level.
   // 激活会员等级回调。
   final ValueChanged<String> onActivateLevel;
-  // Activate subscription plan.
-  // 激活订阅方案回调。
-  final ValueChanged<String> onActivatePlan;
   final VoidCallback onSaveProfile;
   final ValueChanged<String> onPhoneVisibilityChanged;
   final ValueChanged<String> onEmailVisibilityChanged;
@@ -128,11 +122,12 @@ class ProfileView extends StatelessWidget {
 
     final isOwnProfile = user != null && profile.id == user!.id;
     final hasBlockchain = connectedChains.isNotEmpty;
-    // Ensure blockchain tab is hidden when there are no accounts.
+    // Ensure the blockchain tab is hidden when there are no accounts.
     // 链上账号为空时隐藏对应选项卡。
-    final effectiveTab = !hasBlockchain && profileTab == ProfileTab.blockchain
-        ? ProfileTab.levels
-        : profileTab;
+    final effectiveTab =
+        !hasBlockchain && profileTab == ProfileTab.blockchain
+            ? ProfileTab.levels
+            : profileTab;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -405,12 +400,6 @@ class ProfileView extends StatelessWidget {
                   selected: effectiveTab == ProfileTab.levels,
                   onSelected: (_) => onProfileTabChanged(ProfileTab.levels),
                 ),
-                ChoiceChip(
-                  label: Text(t('profile.tab.subscription')),
-                  selected: effectiveTab == ProfileTab.subscription,
-                  onSelected: (_) =>
-                      onProfileTabChanged(ProfileTab.subscription),
-                ),
                 if (hasBlockchain)
                   ChoiceChip(
                     label: Text(t('profile.tab.blockchain')),
@@ -432,12 +421,6 @@ class ProfileView extends StatelessWidget {
                 onActivateLevel: onActivateLevel,
               ),
             ],
-          )
-        else if (effectiveTab == ProfileTab.subscription)
-          SubscriptionView(
-            subscription: subscription,
-            loading: loading,
-            onActivatePlan: onActivatePlan,
           )
         else if (hasBlockchain)
           Column(

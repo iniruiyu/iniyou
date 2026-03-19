@@ -2,12 +2,7 @@ import '../models/app_models.dart';
 import '../main.dart' show AppView;
 import '../widgets/app_cards.dart';
 
-String localizedText(
-  String languageCode,
-  String zh,
-  String en, [
-  String? tw,
-]) {
+String localizedText(String languageCode, String zh, String en, [String? tw]) {
   // Resolve a short UI label for the currently selected language.
   // 根据当前设置语言解析短句式界面文案。
   switch (languageCode) {
@@ -114,7 +109,7 @@ List<String> connectedChains(List<ExternalAccountItem> externalAccounts) {
 List<SummaryCardData> buildHomeSummaryCards({
   required List<SpaceItem> spaces,
   required List<FriendItem> friends,
-  required SubscriptionItem? subscription,
+  required String membershipLevel,
   required List<ExternalAccountItem> externalAccounts,
   required String Function(String key) t,
   required String languageCode,
@@ -127,12 +122,7 @@ List<SummaryCardData> buildHomeSummaryCards({
     SummaryCardData(
       t('summary.spaces'),
       '${visibleSpaces.length}',
-      localizedText(
-        languageCode,
-        '可见空间总数',
-        'Visible spaces',
-        '可見空間總數',
-      ),
+      localizedText(languageCode, '可见空间总数', 'Visible spaces', '可見空間總數'),
     ),
     SummaryCardData(
       t('summary.friends'),
@@ -140,9 +130,14 @@ List<SummaryCardData> buildHomeSummaryCards({
       '${t('summary.totalRelations')} ${friends.length}',
     ),
     SummaryCardData(
-      t('summary.subscription'),
-      subscription?.planId.isNotEmpty == true ? subscription!.planId : 'basic',
-      '${t('summary.status')} ${subscription?.status ?? t('summary.inactive')}',
+      localizedText(languageCode, '会员等级', 'Membership level', '會員等級'),
+      membershipLevel.isNotEmpty ? membershipLevel : 'basic',
+      localizedText(
+        languageCode,
+        '只保留会员等级，不再展示订阅状态。',
+        'Keep only the membership level and drop the legacy billing snapshot.',
+        '只保留會員等級，不再顯示訂閱狀態。',
+      ),
     ),
     SummaryCardData(
       t('summary.chains'),
@@ -197,8 +192,6 @@ String pageTitleForView(
           : t('page.postDetail');
     case AppView.levels:
       return t('page.levels');
-    case AppView.subscription:
-      return t('page.subscription');
     case AppView.blockchain:
       return t('page.blockchain');
     case AppView.friends:
@@ -228,8 +221,6 @@ String pageSubtitleForView(
       return t('subtitle.postDetail');
     case AppView.levels:
       return t('subtitle.levels');
-    case AppView.subscription:
-      return t('subtitle.subscription');
     case AppView.blockchain:
       return t('subtitle.blockchain');
     case AppView.friends:
@@ -256,8 +247,6 @@ String sidebarViewKey(AppView view) {
       return 'space';
     case AppView.levels:
       return 'profile';
-    case AppView.subscription:
-      return 'profile';
     case AppView.blockchain:
       return 'profile';
     case AppView.friends:
@@ -279,8 +268,6 @@ AppView appViewFromKey(String key) {
       return AppView.profile;
     case 'levels':
       return AppView.levels;
-    case 'subscription':
-      return AppView.subscription;
     case 'blockchain':
       return AppView.blockchain;
     case 'friends':

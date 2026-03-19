@@ -9,7 +9,6 @@ class DashboardBundle {
     required this.privatePosts,
     required this.friends,
     required this.conversations,
-    required this.subscription,
     required this.externalAccounts,
   });
 
@@ -19,7 +18,6 @@ class DashboardBundle {
   final List<PostItem> privatePosts;
   final List<FriendItem> friends;
   final List<ConversationItem> conversations;
-  final SubscriptionItem? subscription;
   final List<ExternalAccountItem> externalAccounts;
 }
 
@@ -79,13 +77,6 @@ class SpaceCreateBundle {
   final List<SpaceItem> spaces;
 }
 
-class SubscriptionBundle {
-  const SubscriptionBundle({required this.subscription, required this.user});
-
-  final SubscriptionItem subscription;
-  final CurrentUser user;
-}
-
 class AppActions {
   const AppActions._();
 
@@ -97,7 +88,6 @@ class AppActions {
       api.listPosts(visibility: 'private', limit: 50),
       api.listFriends(),
       api.listConversations(),
-      api.fetchSubscription(),
       api.listExternalAccounts(),
     ]);
 
@@ -108,8 +98,7 @@ class AppActions {
       privatePosts: results[2] as List<PostItem>,
       friends: results[3] as List<FriendItem>,
       conversations: results[4] as List<ConversationItem>,
-      subscription: results[5] as SubscriptionItem?,
-      externalAccounts: results[6] as List<ExternalAccountItem>,
+      externalAccounts: results[5] as List<ExternalAccountItem>,
     );
   }
 
@@ -258,18 +247,14 @@ class AppActions {
     );
   }
 
-  static Future<SubscriptionBundle> activatePlan(
-    ApiClient api,
-    String planId,
-  ) async {
+  static Future<CurrentUser> activatePlan(ApiClient api, String planId) async {
+    // Upgrade the membership level and then refresh the account snapshot.
+    // 升级会员等级后刷新账号快照，避免前端保留订阅对象。
     final results = await Future.wait([
-      api.activateSubscription(planId),
+      api.activateMembershipLevel(planId),
       api.fetchMe(),
     ]);
-    return SubscriptionBundle(
-      subscription: results[0] as SubscriptionItem,
-      user: results[1] as CurrentUser,
-    );
+    return results[1] as CurrentUser;
   }
 
   static Future<List<ExternalAccountItem>> bindExternalAccountAndReload(

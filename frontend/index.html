@@ -95,7 +95,7 @@
             <div>
               <div class="profile-name">{{ user.name }}</div>
               <div class="profile-level">{{ user.domain ? `@${user.domain}` : (user.username ? `@${user.username}` : user.id) }}</div>
-              <div class="profile-level">{{ localizedLevelName }} · {{ localizedPlan }}</div>
+              <div class="profile-level">{{ localizedLevelName }}</div>
             </div>
             <settings-menu :app="appContext"></settings-menu>
             <button v-if="isLoggedIn" class="ghost compact" @click="logout">{{ t('auth.logout') }}</button>
@@ -178,10 +178,6 @@
               <div class="stat-value">{{ localizedLevelName }}</div>
             </div>
             <div class="stat">
-              <div class="stat-title">{{ t('dashboard.planStat') }}</div>
-              <div class="stat-value">{{ localizedPlan }}</div>
-            </div>
-            <div class="stat">
               <div class="stat-title">{{ t('dashboard.friendStat') }}</div>
               <div class="stat-value">{{ acceptedFriends.length }}</div>
             </div>
@@ -261,10 +257,10 @@
         <div class="panel">
           <h2>{{ t('dashboard.blockchainTitle') }}</h2>
           <p>{{ t('dashboard.blockchainSub') }}</p>
-          <div class="subscription">
+          <div class="account-summary">
             <div>
-              <div class="subscription-title">{{ t('dashboard.blockchainStat') }}: {{ activeExternalAccounts.length }}</div>
-              <div class="subscription-sub">{{ t('blockchain.connectedChains') }}: {{ connectedChainText }}</div>
+              <div class="account-summary-title">{{ t('dashboard.blockchainStat') }}: {{ activeExternalAccounts.length }}</div>
+              <div class="account-summary-sub">{{ t('blockchain.connectedChains') }}: {{ connectedChainText }}</div>
             </div>
             <bilingual-action-button
               variant="primary"
@@ -750,7 +746,6 @@
           </div>
           <div class="profile-tabs">
             <button class="profile-tab" :class="{active: profileTab === 'levels'}" @click="profileTab = 'levels'">{{ t('profile.tabs.levels') }}</button>
-            <button class="profile-tab" :class="{active: profileTab === 'subscription'}" @click="profileTab = 'subscription'">{{ t('profile.tabs.subscription') }}</button>
             <button v-if="hasBlockchainAccounts" class="profile-tab" :class="{active: profileTab === 'blockchain'}" @click="profileTab = 'blockchain'">{{ t('profile.tabs.blockchain') }}</button>
           </div>
           <div class="profile-tab-panel" v-if="profileTab === 'levels'">
@@ -765,25 +760,9 @@
                     <li v-for="feature in localizedLevelText('features', level)" :key="feature">{{ feature }}</li>
                   </ul>
                   <button v-if="isCurrentLevel(level)" class="ghost" disabled>{{ t('levels.current') }}</button>
-                  <button v-else class="ghost" @click="createSubscription(level.planID)">{{ t('levels.upgrade') }}</button>
+                  <button v-else class="ghost" @click="activateMembershipLevel(level.planID)">{{ t('levels.upgrade') }}</button>
                 </div>
               </div>
-            </div>
-          </div>
-          <div class="profile-tab-panel" v-else-if="profileTab === 'subscription'">
-            <div class="panel">
-              <h3>{{ t('profile.subscription.title') }}</h3>
-              <p>{{ t('profile.subscription.sub') }}</p>
-              <div class="subscription">
-                <div>
-                  <div class="subscription-title">{{ t('subscription.currentPlan') }}: {{ localizedPlan }}</div>
-                  <div class="subscription-sub">{{ t('subscription.status') }}: {{ statusLabel(subscription.status) }}</div>
-                  <div class="subscription-sub">{{ t('subscription.startedAt') }}: {{ formatDateTime(subscription.startedAt) }}</div>
-                  <div class="subscription-sub">{{ t('subscription.expiresAt') }}: {{ formatDateTime(subscription.endedAt) }}</div>
-                </div>
-                <button class="primary" @click="createSubscription(subscription.planID || 'premium')">{{ subscription.planID ? t('subscription.renew') : t('subscription.activate') }}</button>
-              </div>
-              <div v-if="!subscription.planID" class="empty-state">{{ t('subscription.empty') }}</div>
             </div>
           </div>
           <div class="profile-tab-panel" v-else-if="profileTab === 'blockchain' && hasBlockchainAccounts">
