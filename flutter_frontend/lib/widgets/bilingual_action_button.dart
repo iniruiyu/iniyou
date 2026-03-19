@@ -30,77 +30,144 @@ class BilingualActionButton extends StatelessWidget {
     // Keep the action label on the active language only.
     // 仅保留当前语言按钮文案，避免双语堆叠挤占布局。
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final enabled = onPressed != null;
+    final radius = BorderRadius.circular(compact ? 999 : 18);
+    final padding = EdgeInsets.symmetric(
+      horizontal: compact ? 14 : 18,
+      vertical: compact ? 11 : 14,
+    );
     final child = _BilingualActionButtonLabel(
       primaryLabel: primaryLabel,
       compact: compact,
     );
-    final style = ButtonStyle(
-      visualDensity: VisualDensity.compact,
-      padding: WidgetStateProperty.all(
-        EdgeInsets.symmetric(
-          horizontal: compact ? 14 : 18,
-          vertical: compact ? 11 : 14,
-        ),
-      ),
-      minimumSize: WidgetStateProperty.all(
-        Size(compact ? 0 : 92, compact ? 38 : 46),
-      ),
-      shape: WidgetStateProperty.all(
-        RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(compact ? 999 : 18),
-        ),
-      ),
-      textStyle: WidgetStateProperty.resolveWith((states) {
-        final enabled = !states.contains(WidgetState.disabled);
-        return (compact ? theme.textTheme.labelMedium : theme.textTheme.labelLarge)
-            ?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: enabled ? null : theme.colorScheme.onSurface.withValues(alpha: 0.38),
-            );
-      }),
-    );
-    Widget button;
-    switch (variant) {
-      case BilingualButtonVariant.filled:
-        button = FilledButton(
-          style: style,
-          onPressed: onPressed,
-          child: child,
-        );
-        break;
-      case BilingualButtonVariant.tonal:
-        button = FilledButton.tonal(
-          style: style,
-          onPressed: onPressed,
-          child: child,
-        );
-        break;
-      case BilingualButtonVariant.outlined:
-        button = OutlinedButton(
-          style: style.copyWith(
-            side: WidgetStateProperty.all(
-              BorderSide(color: theme.colorScheme.outlineVariant),
+    final content = switch (variant) {
+      BilingualButtonVariant.filled => Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: enabled
+                  ? [
+                      colorScheme.primary,
+                      Color.lerp(colorScheme.primary, colorScheme.tertiary, 0.24) ?? colorScheme.primary,
+                    ]
+                  : [
+                      colorScheme.surfaceContainerHighest,
+                      colorScheme.surfaceContainerHighest,
+                    ],
             ),
-          ),
+            borderRadius: radius,
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.22),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                : const [],
+        ),
+        child: _ActionButtonSurface(
           onPressed: onPressed,
+          padding: padding,
+          radius: radius,
+          foreground: colorScheme.onPrimary,
           child: child,
-        );
-        break;
-      case BilingualButtonVariant.text:
-        button = TextButton(
-          style: style.copyWith(
-            foregroundColor: WidgetStateProperty.all(theme.colorScheme.primary),
-          ),
+        ),
+        ),
+      BilingualButtonVariant.tonal => Container(
+          decoration: BoxDecoration(
+            color: enabled ? colorScheme.secondaryContainer : colorScheme.surfaceContainerHighest,
+            borderRadius: radius,
+            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.55)),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : const [],
+        ),
+        child: _ActionButtonSurface(
           onPressed: onPressed,
+          padding: padding,
+          radius: radius,
+          foreground: colorScheme.onSecondaryContainer,
           child: child,
-        );
-        break;
-    }
+        ),
+        ),
+      BilingualButtonVariant.outlined => Container(
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: radius,
+            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: enabled ? 0.8 : 0.4)),
+        ),
+        child: _ActionButtonSurface(
+          onPressed: onPressed,
+          padding: padding,
+          radius: radius,
+          foreground: colorScheme.primary,
+          child: child,
+        ),
+      ),
+      BilingualButtonVariant.text => _ActionButtonSurface(
+          onPressed: onPressed,
+          padding: padding,
+          radius: radius,
+          foreground: colorScheme.primary,
+          child: child,
+        ),
+    };
     final safeTooltip = tooltip?.trim() ?? '';
     if (safeTooltip.isEmpty) {
-      return button;
+      return content;
     }
-    return Tooltip(message: safeTooltip, child: button);
+    return Tooltip(message: safeTooltip, child: content);
+  }
+}
+
+class _ActionButtonSurface extends StatelessWidget {
+  const _ActionButtonSurface({
+    required this.onPressed,
+    required this.padding,
+    required this.radius,
+    required this.foreground,
+    required this.child,
+  });
+
+  final VoidCallback? onPressed;
+  final EdgeInsets padding;
+  final BorderRadius radius;
+  final Color foreground;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: onPressed,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 150),
+          opacity: enabled ? 1 : 0.55,
+          child: Padding(
+            padding: padding,
+            child: DefaultTextStyle.merge(
+              style: TextStyle(color: foreground),
+              child: IconTheme.merge(
+                data: IconThemeData(color: foreground),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
