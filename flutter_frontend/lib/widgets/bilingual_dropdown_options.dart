@@ -61,7 +61,25 @@ List<DropdownMenuItem<String>> buildSpaceTypeItems() {
     ),
     DropdownMenuItem(
       value: 'public',
-      child: Text('公共空间 / Public space'),
+      child: Text('空间 / Space'),
+    ),
+  ];
+}
+
+List<DropdownMenuItem<String>> buildSpaceVisibilityItems() {
+  // Shared space visibility choices / 共用空间可见范围选项。
+  return const [
+    DropdownMenuItem(
+      value: 'public',
+      child: Text('所有人可见 / Public'),
+    ),
+    DropdownMenuItem(
+      value: 'friends',
+      child: Text('好友可见 / Friends only'),
+    ),
+    DropdownMenuItem(
+      value: 'private',
+      child: Text('仅自己可见 / Only me'),
     ),
   ];
 }

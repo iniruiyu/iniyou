@@ -137,6 +137,7 @@ class SpaceItem {
     required this.id,
     required this.userId,
     required this.type,
+    required this.visibility,
     required this.subdomain,
     required this.name,
     required this.description,
@@ -148,6 +149,7 @@ class SpaceItem {
   final String id;
   final String userId;
   final String type;
+  final String visibility;
   final String subdomain;
   final String name;
   final String description;
@@ -164,6 +166,7 @@ class SpaceItem {
       id: (json['id'] ?? '').toString(),
       userId: (json['user_id'] ?? '').toString(),
       type: (json['type'] ?? '').toString(),
+      visibility: (json['visibility'] ?? json['type'] ?? 'public').toString(),
       subdomain: (json['subdomain'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),

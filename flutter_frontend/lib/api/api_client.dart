@@ -87,12 +87,14 @@ class ApiClient {
 
   Future<SpaceItem> createSpace({
     required String type,
+    required String visibility,
     required String name,
     required String description,
     String? subdomain,
   }) async {
     final body = {
       'type': type,
+      'visibility': visibility,
       'name': name,
       'description': description,
       if ((subdomain ?? '').trim().isNotEmpty) 'subdomain': subdomain!.trim(),
@@ -105,12 +107,14 @@ class ApiClient {
     required String name,
     required String description,
     required String subdomain,
+    required String visibility,
   }) async {
     return SpaceItem.fromJson(
       await _patch(spaceBase, '/spaces/$id', {
         'name': name,
         'description': description,
         'subdomain': subdomain,
+        'visibility': visibility,
       }),
     );
   }

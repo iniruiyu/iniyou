@@ -126,11 +126,13 @@
 - `name`
 - `description`
 - `status`
+- `visibility`
 
 说明：
 
 - `source` 用于区分用户创建空间与系统种子空间，当前约定为 `user` 或 `system`
 - `subdomain` 作为空间入口标识，需要与前端和后端保持一致
+- `visibility` 控制空间对当前用户的可见范围，当前约定为 `public`、`friends` 或 `private` / `visibility` controls whether a space is visible to everyone, friends only, or only the owner.
 - `spaces` 与 `posts` 由独立空间服务管理，账号服务只保留身份域数据
 
 #### `posts`

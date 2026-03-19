@@ -102,10 +102,10 @@ const app = createApp({
             previewLabel: 'Auth Flow',
             previewTitle: '未登录态聚焦在账号流程',
             previewSub: '账号入口、语言设置和功能说明分区清晰，避免在首页提前展示完整业务模块。',
-            featurePrivateTitle: '私人空间',
-            featurePrivateSub: '沉淀草稿、笔记和仅自己可见的记录。',
-            featurePublicTitle: '公共空间',
-            featurePublicSub: '展示项目、发布内容并建立公开连接。',
+            featurePrivateTitle: '可见范围',
+            featurePrivateSub: '按需设置所有人可见、好友可见或仅自己可见。',
+            featurePublicTitle: '空间',
+            featurePublicSub: '展示项目、发布内容并建立连接。',
             featureLiveTitle: '实时互动',
             featureLiveSub: '登录后进入聊天、好友和资料工作台。',
           },
@@ -203,6 +203,8 @@ const app = createApp({
             auth: '登录 / 注册',
             dashboard: '账号主页',
             space: '空间',
+            private: '空间',
+            public: '空间',
             profile: '用户主页',
             postDetail: '文章详情',
             levels: '会员等级',
@@ -214,7 +216,9 @@ const app = createApp({
           pageSub: {
             auth: '快速进入你的身份卡与空间',
             dashboard: '账户摘要与空间信息',
-            space: '管理你的私人空间、公共空间与内容',
+            space: '查看可见空间并发布内容',
+            private: '查看可见空间并发布内容',
+            public: '浏览可见空间与内容',
             profile: '查看作者的公开内容与互动记录',
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
@@ -247,7 +251,7 @@ const app = createApp({
             friendStat: '好友数量',
             blockchainStat: '链上账号',
             spaceSummaryTitle: '空间摘要',
-            spaceSummarySub: '私人空间用于沉淀，公共空间用于分享。',
+            spaceSummarySub: '空间用于展示与分享，创建者可以单独设置可见范围。',
             profileTitle: '资料设置',
             profileSub: '更新展示名称和用户名，主页与聊天窗口会同步显示。',
             blockchainTitle: '链上扩展',
@@ -262,14 +266,14 @@ const app = createApp({
             saveError: '资料更新失败，请稍后重试。',
           },
           spaces: {
-            privateTitle: '私人空间',
-            privateSub: '用于自我整理、草稿与私密记录。',
-            publicTitle: '公共空间',
+            privateTitle: '空间',
+            privateSub: '查看可见空间并管理内容。',
+            publicTitle: '空间',
             publicSub: '分享内容、展示项目、连接更多人。',
             createTitle: '创建空间',
-            createSub: '名称和二级域名可以独立设置，留空时会自动生成。',
+            createSub: '名称、二级域名和可见范围可以独立设置，留空时会自动生成。',
             editTitle: '编辑空间',
-            editSub: '修改名称、描述和二级域名，名称和域名互不关联。',
+            editSub: '修改名称、描述、二级域名和可见范围，名称和域名互不关联。',
             typeLabel: '空间类型',
             namePlaceholder: '空间名称',
             descPlaceholder: '空间描述',
@@ -281,6 +285,7 @@ const app = createApp({
             saveAction: '保存修改',
             currentLabel: '当前空间',
             enterAction: '进入空间',
+            visibilityLabel: '可见范围',
             createSuccess: '空间已创建',
             createError: '空间创建失败，请检查名称后重试。',
             editSuccess: '空间已更新。',
@@ -292,15 +297,20 @@ const app = createApp({
             subdomainRequired: '编辑空间时二级域名不能为空。',
             subdomainError: '二级域名只能包含英文字母和数字，且最长 63 个字符。',
             type: {
-              private: '私人',
-              public: '公共',
+              private: '空间',
+              public: '空间',
+            },
+            visibility: {
+              public: '所有人可见',
+              friends: '好友可见',
+              private: '仅自己可见',
             },
           },
           posts: {
-            feedTitle: '公共内容流',
+            feedTitle: '空间内容流',
             feedSub: '发布你的近况、想法和项目更新。',
-            privateFeedTitle: '我的内容',
-            privateFeedSub: '查看你发布的私人和公开文章。',
+            privateFeedTitle: '空间内容',
+            privateFeedSub: '查看你发布的文章。',
             profileFeedTitle: '作者内容',
             profileFeedSub: '浏览该作者公开发布的文章。',
             titlePlaceholder: '文章标题',
@@ -312,9 +322,9 @@ const app = createApp({
             publishSuccess: '文章已发布。',
             publishError: '文章发布失败，请稍后重试。',
             privateEmpty: '当前空间里还没有文章。',
-            publicEmpty: '公共内容流里还没有文章，先发布第一篇吧。',
+            publicEmpty: '空间里还没有文章，先发布第一篇吧。',
             profileEmpty: '该作者还没有公开文章。',
-            empty: '公共内容流还没有文章，先发布第一篇吧。',
+            empty: '空间里还没有文章，先发布第一篇吧。',
             like: '点赞',
             unlike: '取消点赞',
             comment: '评论',
@@ -461,8 +471,8 @@ const app = createApp({
           },
         },
         'en-US': {
-          htmlTitle: 'Account Service · Private & Public Spaces',
-          brandSub: 'Private + Public Spaces',
+          htmlTitle: 'Account Service · Space',
+          brandSub: 'Identity card + Space',
           landing: {
             heroPill: 'Complete auth before entering the workspace',
             heroTitle: 'Finish the account flow first, then enter the dashboard.',
@@ -476,10 +486,10 @@ const app = createApp({
             previewLabel: 'Auth Flow',
             previewTitle: 'Keep the signed-out state focused on account flow',
             previewSub: 'Separate account entry, language settings, and feature guidance clearly instead of exposing the full workspace before login.',
-            featurePrivateTitle: 'Private Space',
-            featurePrivateSub: 'Capture drafts, notes, and content only you can see.',
-            featurePublicTitle: 'Public Space',
-            featurePublicSub: 'Showcase projects, publish updates, and build public connections.',
+            featurePrivateTitle: 'Visibility',
+            featurePrivateSub: 'Set content to visible to everyone, friends only, or only you.',
+            featurePublicTitle: 'Space',
+            featurePublicSub: 'Showcase projects, publish updates, and build connections.',
             featureLiveTitle: 'Live Collaboration',
             featureLiveSub: 'Open chat, friends, and profile tools after sign-in.',
           },
@@ -552,8 +562,8 @@ const app = createApp({
             auth: 'Sign In / Sign Up',
             dashboard: 'Dashboard',
             space: 'Space',
-            private: 'Private Space',
-            public: 'Public Space',
+            private: 'Space',
+            public: 'Space',
             profile: 'Profile',
             postDetail: 'Post Detail',
             levels: 'Membership',
@@ -579,8 +589,8 @@ const app = createApp({
             auth: 'Sign In / Sign Up',
             dashboard: 'Dashboard',
             space: 'Space',
-            private: 'Private Space',
-            public: 'Public Space',
+            private: 'Space',
+            public: 'Space',
             profile: 'Profile',
             postDetail: 'Post Detail',
             levels: 'Membership',
@@ -590,11 +600,11 @@ const app = createApp({
             chat: 'Live Chat',
           },
           pageSub: {
-            auth: 'Enter your private and public spaces quickly',
+            auth: 'Enter your identity card and space quickly',
             dashboard: 'Account summary and space insights',
-            space: 'Manage your spaces and content in one place',
-            private: 'Keep personal content organized',
-            public: 'Showcase content and connect',
+            space: 'Browse visible spaces and publish content',
+            private: 'Browse visible spaces and publish content',
+            public: 'Browse visible spaces and content',
             profile: 'Browse this author\'s public posts and activity',
             postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
@@ -605,7 +615,7 @@ const app = createApp({
           },
           auth: {
             welcomeTitle: 'Welcome Back',
-            welcomeSub: 'Sign in to access your private and public spaces.',
+            welcomeSub: 'Sign in to access your space.',
             createTitle: 'Create Account',
             createSub: 'Join membership plans and unlock larger spaces.',
             accountPlaceholder: 'Email / Phone / Username / Domain',
@@ -627,7 +637,7 @@ const app = createApp({
             friendStat: 'Friends',
             blockchainStat: 'Blockchain',
             spaceSummaryTitle: 'Space Summary',
-            spaceSummarySub: 'Private spaces for focus, public spaces for sharing.',
+            spaceSummarySub: 'Spaces are for showing and sharing, with visibility set by the creator.',
             profileTitle: 'Profile Settings',
             profileSub: 'Update your display name and username for the dashboard and chat header.',
             blockchainTitle: 'Blockchain Extension',
@@ -642,14 +652,14 @@ const app = createApp({
             saveError: 'Profile update failed. Try again later.',
           },
           spaces: {
-            privateTitle: 'Private Space',
-            privateSub: 'For personal notes, drafts, and private records.',
-            publicTitle: 'Public Space',
+            privateTitle: 'Space',
+            privateSub: 'Browse visible spaces and manage content.',
+            publicTitle: 'Space',
             publicSub: 'Share updates, showcase projects, and connect widely.',
             createTitle: 'Create Space',
-            createSub: 'Name and subdomain are independent; leave the subdomain blank to auto-generate one.',
+            createSub: 'Name, subdomain, and visibility are independent; leave the subdomain blank to auto-generate one.',
             editTitle: 'Edit Space',
-            editSub: 'Rename the space and change its subdomain independently.',
+            editSub: 'Rename the space and change its subdomain and visibility independently.',
             typeLabel: 'Space Type',
             namePlaceholder: 'Space name',
               descPlaceholder: 'Space description',
@@ -661,6 +671,7 @@ const app = createApp({
             saveAction: 'Save Changes',
             currentLabel: 'Current Space',
             enterAction: 'Enter Space',
+            visibilityLabel: 'Visibility',
             createSuccess: 'Space created',
             createError: 'Space creation failed. Check the name and try again.',
             editSuccess: 'Space updated.',
@@ -672,15 +683,20 @@ const app = createApp({
             subdomainRequired: 'A subdomain is required when editing a space.',
             subdomainError: 'The subdomain may contain letters and numbers only, up to 63 characters.',
             type: {
-              private: 'Private',
-              public: 'Public',
+              private: 'Space',
+              public: 'Space',
+            },
+            visibility: {
+              public: 'Visible to everyone',
+              friends: 'Friends only',
+              private: 'Only me',
             },
           },
           posts: {
-            feedTitle: 'Public Feed',
+            feedTitle: 'Space Feed',
             feedSub: 'Share updates, ideas, and project progress.',
-            privateFeedTitle: 'My Posts',
-            privateFeedSub: 'Review your private and public posts.',
+            privateFeedTitle: 'Space Content',
+            privateFeedSub: 'Review your posts.',
             profileFeedTitle: 'Author Feed',
             profileFeedSub: 'Browse posts published by this author.',
             titlePlaceholder: 'Post title',
@@ -692,9 +708,9 @@ const app = createApp({
             publishSuccess: 'Post published.',
             publishError: 'Publishing failed. Try again later.',
             privateEmpty: 'No posts in this space yet.',
-            publicEmpty: 'The public feed is empty. Publish the first post.',
+            publicEmpty: 'The space feed is empty. Publish the first post.',
             profileEmpty: 'This author has no public posts yet.',
-            empty: 'The public feed is empty. Publish the first post.',
+            empty: 'The space feed is empty. Publish the first post.',
             like: 'Like',
             unlike: 'Unlike',
             comment: 'Comment',
@@ -916,7 +932,8 @@ const app = createApp({
       // 空间创建表单。
       spaceDraft: {
         id: '',
-        type: 'private',
+        type: 'public',
+        visibility: 'public',
         name: '',
         description: '',
         subdomain: '',
@@ -1014,8 +1031,8 @@ const app = createApp({
           planID: 'basic',
           price: { 'zh-CN': '免费', 'en-US': 'Free' },
           features: {
-            'zh-CN': ['基础空间', '好友聊天', '公共空间展示'],
-            'en-US': ['Base space quota', 'Friend chat', 'Public showcase'],
+            'zh-CN': ['基础空间', '好友聊天', '空间展示'],
+            'en-US': ['Base space quota', 'Friend chat', 'Space showcase'],
           },
         },
         {
@@ -1023,8 +1040,8 @@ const app = createApp({
           planID: 'premium',
           price: { 'zh-CN': '¥19/月', 'en-US': '$19/mo' },
           features: {
-            'zh-CN': ['更大私人空间', '高级主题', '优先支持'],
-            'en-US': ['Larger private space', 'Advanced themes', 'Priority support'],
+            'zh-CN': ['更大空间额度', '高级主题', '优先支持'],
+            'en-US': ['Larger space quota', 'Advanced themes', 'Priority support'],
           },
         },
         {
@@ -1110,20 +1127,13 @@ const app = createApp({
       if (this.view === 'profile' && (this.profileUser.domain || this.profileUser.username)) {
         return `@${this.profileUser.domain || this.profileUser.username}`;
       }
-      if (this.view === 'space') {
+      if (this.view === 'space' || this.view === 'private' || this.view === 'public') {
+        const activeSpace = this.activePublicSpace;
+        const label = activeSpace ? this.localizedSpaceText('name', activeSpace) : '';
+        if (label) {
+          return `${this.t('pageTitle.space')} · ${label}`;
+        }
         return this.t('pageTitle.space');
-      }
-      if (this.view === 'private' && this.activePrivateSpace) {
-        const label = this.localizedSpaceText('name', this.activePrivateSpace);
-        if (label) {
-          return `${this.t('pageTitle.private')} · ${label}`;
-        }
-      }
-      if (this.view === 'public' && this.activePublicSpace) {
-        const label = this.localizedSpaceText('name', this.activePublicSpace);
-        if (label) {
-          return `${this.t('pageTitle.public')} · ${label}`;
-        }
       }
       return this.t(`pageTitle.${this.view}`) || this.t('pageTitle.dashboard');
     },
@@ -1139,14 +1149,12 @@ const app = createApp({
       if (this.view === 'profile' && this.profileUser.name) {
         return this.t('posts.profileFeedSub');
       }
-      if (this.view === 'space') {
+      if (this.view === 'space' || this.view === 'private' || this.view === 'public') {
+        const activeSpace = this.activePublicSpace;
+        if (activeSpace?.subdomain) {
+          return `${this.t('pageSub.space')} · @${activeSpace.subdomain}`;
+        }
         return this.t('pageSub.space');
-      }
-      if (this.view === 'private' && this.activePrivateSpace?.subdomain) {
-        return `${this.t('pageSub.private')} · @${this.activePrivateSpace.subdomain}`;
-      }
-      if (this.view === 'public' && this.activePublicSpace?.subdomain) {
-        return `${this.t('pageSub.public')} · @${this.activePublicSpace.subdomain}`;
       }
       return this.t(`pageSub.${this.view}`) || '';
     },
@@ -1342,6 +1350,7 @@ const app = createApp({
       return {
         id: item.id,
         type: item.type || 'private',
+        visibility: item.visibility || (item.type === 'private' ? 'private' : 'public'),
         subdomain,
         status: item.status || 'active',
         name: {
@@ -1448,6 +1457,30 @@ const app = createApp({
       const space = this.resolveSpaceForVisibility(visibility, preferredSpaceId);
       return space ? space.id : '';
     },
+    managedSpacesForVisibility(visibility) {
+      // Collect spaces the current user can actually publish into.
+      // 汇总当前用户真正可以发布内容的空间。
+      const type = visibility === 'private' ? 'private' : 'public';
+      const source = type === 'private' ? this.privateSpaces : this.publicSpaces;
+      return source
+        .filter((space) => space.userId === this.user.id)
+        .filter((space) => type === 'private' || space.visibility !== 'private');
+    },
+    managedSpaceIdForVisibility(visibility, preferredSpaceId = '') {
+      // Return a publishable space ID for the current viewer.
+      // 返回当前用户可发布内容的空间 ID。
+      const spaces = this.managedSpacesForVisibility(visibility);
+      const preferred = spaces.find((space) => space.id === preferredSpaceId);
+      if (preferred) {
+        return preferred.id;
+      }
+      const activeId = visibility === 'private' ? this.activePrivateSpaceId : this.activePublicSpaceId;
+      const active = spaces.find((space) => space.id === activeId);
+      if (active) {
+        return active.id;
+      }
+      return spaces[0]?.id || '';
+    },
     persistActiveSpace(storageKey, spaceId) {
       if (spaceId) {
         localStorage.setItem(storageKey, spaceId);
@@ -1486,13 +1519,14 @@ const app = createApp({
         return;
       }
       this.setActiveSpace(space);
-      this.view = space.type === 'private' ? 'private' : 'public';
+      this.view = 'space';
     },
     openSpaceComposer(type) {
       // Open the space composer dialog in create mode.
       // 以创建模式打开空间弹窗。
       this.spaceDraft.id = '';
       this.spaceDraft.type = type === 'public' ? 'public' : 'private';
+      this.spaceDraft.visibility = this.spaceDraft.type === 'private' ? 'private' : 'public';
       this.spaceDraft.name = '';
       this.spaceDraft.description = '';
       this.spaceDraft.subdomain = '';
@@ -1504,8 +1538,12 @@ const app = createApp({
       if (!space || !space.id) {
         return;
       }
+      if (space.userId !== this.user.id) {
+        return;
+      }
       this.spaceDraft.id = space.id;
       this.spaceDraft.type = space.type === 'public' ? 'public' : 'private';
+      this.spaceDraft.visibility = space.visibility || (space.type === 'private' ? 'private' : 'public');
       this.spaceDraft.name = this.localizedSpaceText('name', space);
       this.spaceDraft.description = this.localizedSpaceText('desc', space);
       this.spaceDraft.subdomain = space.subdomain || '';
@@ -1519,7 +1557,8 @@ const app = createApp({
       // 关闭空间弹窗并重置草稿状态。
       this.spaceModalOpen = false;
       this.spaceDraft.id = '';
-      this.spaceDraft.type = 'private';
+      this.spaceDraft.type = 'public';
+      this.spaceDraft.visibility = 'public';
       this.spaceDraft.name = '';
       this.spaceDraft.description = '';
       this.spaceDraft.subdomain = '';
@@ -1528,8 +1567,8 @@ const app = createApp({
       // Open the post composer dialog.
       // 打开文章发布弹窗。
       const targetVisibility = visibility === 'private' ? 'private' : 'public';
-      const activeSpaceId = this.selectedSpaceIdForVisibility(targetVisibility, this.postDraft.spaceId);
-      const activeSpace = this.findSpaceById(activeSpaceId);
+      const activeSpaceId = this.managedSpaceIdForVisibility(targetVisibility, this.postDraft.spaceId);
+      const activeSpace = activeSpaceId ? this.findSpaceById(activeSpaceId) : null;
       if (!activeSpace) {
         this.setError(this.t('posts.spaceRequired'));
         return;
@@ -1673,8 +1712,8 @@ const app = createApp({
               auth: '登入 / 註冊',
               dashboard: '帳號主頁',
               space: '空間',
-              private: '私人空間',
-              public: '公共空間',
+              private: '空間',
+              public: '空間',
               levels: '會員等級',
               subscription: '訂閱管理',
               blockchain: '鏈上帳號',
@@ -1682,11 +1721,11 @@ const app = createApp({
               chat: '即時聊天',
             },
             pageSub: {
-              auth: '快速進入你的私人空間與公共空間',
+              auth: '快速進入你的身份卡與空間',
               dashboard: '帳戶摘要與空間資訊',
-              space: '在同一個入口管理私人空間、公共空間與內容',
-              private: '沉澱個人內容',
-              public: '展示公共內容與連結',
+              space: '查看可見空間並發布內容',
+              private: '查看可見空間並發布內容',
+              public: '瀏覽可見空間與內容',
               levels: '選擇適合你的會員等級',
               subscription: '管理訂閱與權益',
               blockchain: '管理外部鏈上帳號綁定',
@@ -1695,7 +1734,7 @@ const app = createApp({
             },
             auth: {
               welcomeTitle: '歡迎回來',
-              welcomeSub: '登入後進入你的私人空間與公共空間。',
+              welcomeSub: '登入後進入你的空間。',
               createTitle: '建立新帳號',
               createSub: '加入會員體系，解鎖更大空間與更多互動。',
               accountPlaceholder: '信箱 / 手機 / 使用者名稱 / 域名',
@@ -1717,7 +1756,7 @@ const app = createApp({
               friendStat: '好友數量',
               blockchainStat: '鏈上帳號',
               spaceSummaryTitle: '空間摘要',
-              spaceSummarySub: '私人空間用於沉澱，公共空間用於分享。',
+              spaceSummarySub: '空間用於展示與分享，建立者可單獨設定可見範圍。',
               profileTitle: '資料設定',
               profileSub: '更新顯示名稱與使用者名稱，主頁與聊天視窗會同步顯示。',
               blockchainTitle: '鏈上擴展',
@@ -1732,10 +1771,12 @@ const app = createApp({
               saveError: '資料更新失敗，請稍後重試。',
             },
             spaces: {
-              privateSub: '用於自我整理、草稿與私密記錄。',
+              privateTitle: '空間',
+              privateSub: '查看可見空間並管理內容。',
+              publicTitle: '空間',
               publicSub: '分享內容、展示專案、連結更多人。',
               createTitle: '建立空間',
-              createSub: '新增一個私人空間或公共空間。',
+              createSub: '名稱、二級網域和可見範圍可以獨立設定，留空時會自動生成。',
               typeLabel: '空間類型',
               namePlaceholder: '空間名稱',
               descPlaceholder: '空間描述',
@@ -1743,16 +1784,30 @@ const app = createApp({
               subdomainHint: '僅允許英文字母和數字，長度不超過 63，留空時後端會自動生成。',
               subdomainEditHint: '僅允許英文字母和數字，長度不超過 63。',
               createAction: '建立空間',
+              editAction: '編輯空間',
+              saveAction: '儲存修改',
               currentLabel: '目前空間',
               enterAction: '進入空間',
+              visibilityLabel: '可見範圍',
               createSuccess: '空間已建立',
               createError: '空間建立失敗，請檢查名稱後重試。',
+              editSuccess: '空間已更新。',
+              editError: '空間更新失敗，請稍後重試。',
+              deleteAction: '刪除空間',
+              deleteConfirm: '刪除空間後，該空間及其內容都會被移除，是否繼續？',
+              deleteSuccess: '空間已刪除。',
+              deleteError: '空間刪除失敗，請稍後重試。',
               subdomainRequired: '編輯空間時二級網域不能為空。',
               subdomainError: '二級網域只能包含英文字母和數字，且最長 63 個字元。',
-              type: { private: '私人', public: '公共' },
+              type: { private: '空間', public: '空間' },
+              visibility: {
+                public: '所有人可見',
+                friends: '好友可見',
+                private: '僅自己可見',
+              },
             },
             posts: {
-              feedTitle: '公共內容流',
+              feedTitle: '空間內容流',
               feedSub: '發布你的近況、想法與專案更新。',
               titlePlaceholder: '文章標題',
               contentPlaceholder: '寫點什麼，分享給大家...',
@@ -1763,9 +1818,9 @@ const app = createApp({
               publishSuccess: '文章已發布。',
               publishError: '文章發布失敗，請稍後重試。',
               privateEmpty: '目前空間裡還沒有文章。',
-              publicEmpty: '公共內容流裡還沒有文章，先發布第一篇吧。',
+              publicEmpty: '空間裡還沒有文章，先發布第一篇吧。',
               profileEmpty: '該作者還沒有公開文章。',
-              empty: '公共內容流還沒有文章，先發布第一篇吧。',
+              empty: '空間裡還沒有文章，先發布第一篇吧。',
               unlike: '取消按讚',
               commentPlaceholder: '寫下你的評論...',
               commentAction: '送出評論',
@@ -2168,13 +2223,47 @@ const app = createApp({
         },
       ];
     },
+    spaceVisibilityOptions() {
+      // Shared space visibility choices / 共用空间可见范围选项。
+      return [
+        {
+          value: 'public',
+          primaryLabel: this.t('spaces.visibility.public'),
+          secondaryLabel: this.peerLocaleText('spaces.visibility.public'),
+        },
+        {
+          value: 'friends',
+          primaryLabel: this.t('spaces.visibility.friends'),
+          secondaryLabel: this.peerLocaleText('spaces.visibility.friends'),
+        },
+        {
+          value: 'private',
+          primaryLabel: this.t('spaces.visibility.private'),
+          secondaryLabel: this.peerLocaleText('spaces.visibility.private'),
+        },
+      ];
+    },
+    syncSpaceDraftVisibility(type) {
+      // Keep the draft visibility aligned with the chosen space type.
+      // 让空间草稿的可见范围与选择的空间类型保持一致。
+      if (type === 'private') {
+        this.spaceDraft.visibility = 'private';
+        return;
+      }
+      if (!this.spaceDraft.visibility || this.spaceDraft.visibility === 'private') {
+        this.spaceDraft.visibility = 'public';
+      }
+    },
     spaceOptions(spaces) {
       // Keep the space picker labels focused on the actual space name and handle.
       // 空间选择器直接展示空间名称与句柄，避免二级域名入口信息被截断。
-      return (Array.isArray(spaces) ? spaces : []).map((space) => ({
-        value: space.id,
-        label: `${this.localizedSpaceText('name', space)} · @${space.subdomain}`,
-      }));
+      return (Array.isArray(spaces) ? spaces : [])
+        .filter((space) => space && space.userId === this.user.id)
+        .filter((space) => space.type !== 'public' || space.visibility !== 'private')
+        .map((space) => ({
+          value: space.id,
+          label: `${this.localizedSpaceText('name', space)} · @${space.subdomain}`,
+        }));
     },
     blockchainProviderChoiceOptions() {
       // Provider labels / 提供方选项：保留简短代码名，避免下拉过宽。
@@ -2198,6 +2287,15 @@ const app = createApp({
     },
     visibilityLabel(visibility) {
       return visibility === 'private' ? this.t('posts.privateLabel') : this.t('posts.publicLabel');
+    },
+    spaceVisibilityLabel(visibility) {
+      if (visibility === 'friends') {
+        return this.t('spaces.visibility.friends');
+      }
+      if (visibility === 'private') {
+        return this.t('spaces.visibility.private');
+      }
+      return this.t('spaces.visibility.public');
     },
     postStatusLabel(status) {
       return this.t(`posts.status${String(status).charAt(0).toUpperCase()}${String(status).slice(1)}`) || status;
@@ -3298,13 +3396,14 @@ const app = createApp({
       this.setFlash(this.t('blockchain.removeSuccess'));
     },
     async createSpace() {
-      // Create or update a private/public space from the current form.
-      // 根据当前表单创建或更新私人/公共空间。
+      // Create or update a space from the current form.
+      // 根据当前表单创建或更新空间。
       this.clearFeedback();
       if (!this.token || !this.spaceDraft.name.trim()) {
         return;
       }
       const subdomain = this.spaceDraft.subdomain.trim().toLowerCase();
+      const visibility = this.spaceDraft.type === 'private' ? 'private' : (this.spaceDraft.visibility || 'public');
       if (subdomain && !this.isValidSpaceSubdomain(subdomain)) {
         this.setError(this.t('spaces.subdomainError'));
         return;
@@ -3324,6 +3423,7 @@ const app = createApp({
             name: this.spaceDraft.name.trim(),
             description: this.spaceDraft.description.trim(),
             subdomain,
+            visibility,
           }),
         });
         if (!res.ok) {
@@ -3347,6 +3447,7 @@ const app = createApp({
         },
         body: JSON.stringify({
           type: this.spaceDraft.type,
+          visibility,
           name: this.spaceDraft.name.trim(),
           description: this.spaceDraft.description.trim(),
           ...(subdomain ? { subdomain } : {}),
@@ -3369,6 +3470,10 @@ const app = createApp({
       // 删除一个空间以及其下属全部内容。
       this.clearFeedback();
       if (!this.token || !space || !space.id) {
+        return;
+      }
+      if (space.userId !== this.user.id) {
+        this.setError(this.t('spaces.editError'));
         return;
       }
       const label = this.localizedSpaceText('name', space) || space.subdomain || space.id;

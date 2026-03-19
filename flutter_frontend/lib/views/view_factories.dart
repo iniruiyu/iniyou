@@ -52,6 +52,7 @@ Widget buildDashboardView({
 Widget buildSpaceView({
   required bool loading,
   required List<SpaceItem> spaces,
+  required SpaceItem? activeSpace,
   required List<PostItem> privatePosts,
   required List<PostItem> publicPosts,
   required CurrentUser? user,
@@ -70,42 +71,24 @@ Widget buildSpaceView({
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
 }) {
-  // Combine private and public space entry points into one page.
-  // 将私人空间与公共空间入口合并到同一页面。
+  // Combine the visible space entry points into one page.
+  // 将可见空间入口合并到同一页面。
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       InfoCard(
         title: '空间总览',
         lines: const [
-          '在同一页面管理自己的空间、公共空间与内容发布。',
+          '在同一页面管理可见空间与内容发布。',
           '域名身份和空间二级域名都可以直接作为入口。',
         ],
       ),
       const SizedBox(height: 16),
-      buildPrivateView(
-        loading: loading,
-        activeSpace: firstSpaceOfType(spaces, 'private'),
-        spaces: spaces,
-        privatePosts: privatePosts,
-        user: user,
-        commentControllerFor: commentControllerFor,
-        onOpenSpaceComposer: onOpenPrivateSpaceComposer,
-        onOpenPostComposer: onOpenPrivatePostComposer,
-        onEnterSpace: onEnterSpace,
-        onEditSpace: onEditSpace,
-        onDeleteSpace: onDeleteSpace,
-        onToggleLike: onToggleLike,
-        onSharePost: onSharePost,
-        onCommentPost: onCommentPost,
-        onDeletePost: onDeletePost,
-        onOpenProfile: onOpenProfile,
-        onOpenPostDetail: onOpenPostDetail,
-      ),
-      const SizedBox(height: 24),
       buildPublicView(
         loading: loading,
-        activeSpace: firstSpaceOfType(spaces, 'public'),
+        // Keep the visible space card synced with the currently selected space.
+        // 让可见空间卡片始终跟随当前选中的空间。
+        activeSpace: activeSpace ?? firstSpaceOfType(spaces, 'public'),
         spaces: spaces,
         publicPosts: publicPosts,
         user: user,
@@ -179,6 +162,7 @@ Widget buildPrivateView({
         title: '私人空间列表',
         spaces: privateSpaces(spaces),
         activeSpaceId: activeSpace?.id,
+        currentUserId: user?.id,
         onEnterSpace: onEnterSpace,
         onEditSpace: onEditSpace,
         onDeleteSpace: onDeleteSpace,
@@ -224,8 +208,8 @@ Widget buildPublicView({
     children: [
       SpaceComposerCard(
         loading: loading,
-        title: '创建公共空间',
-        subtitle: '公共空间适合对外展示项目和发布公开内容。',
+        title: '创建空间',
+        subtitle: '空间适合对外展示项目，也可以设置好友可见或仅自己可见。',
         detailLines: const ['创建后会生成可识别的二级域名，便于从外部直接进入。'],
         buttonPrimaryLabel: '打开创建弹窗',
         buttonSecondaryLabel: 'Open create dialog',
@@ -235,12 +219,12 @@ Widget buildPublicView({
       const SizedBox(height: 16),
       PostComposerCard(
         loading: loading,
-        title: '发布公共内容',
-        subtitle: '公开文章会出现在公共空间和作者主页。',
+        title: '发布空间内容',
+        subtitle: '空间文章会出现在空间和作者主页。',
         detailLines: [
           if (activeSpace != null)
             '当前空间：${activeSpace.name} · @${activeSpace.subdomain}',
-          '发布时会记录所属公共空间，便于后续查看和分享。',
+          '发布时会记录所属空间，便于后续查看和分享。',
         ],
         buttonPrimaryLabel: '打开发布弹窗',
         buttonSecondaryLabel: 'Open publish dialog',
@@ -249,9 +233,10 @@ Widget buildPublicView({
       ),
       const SizedBox(height: 16),
       SpaceListSection(
-        title: '公共空间列表',
+        title: '空间列表',
         spaces: publicSpaces(spaces),
         activeSpaceId: activeSpace?.id,
+        currentUserId: user?.id,
         onEnterSpace: onEnterSpace,
         onEditSpace: onEditSpace,
         onDeleteSpace: onDeleteSpace,
@@ -259,7 +244,7 @@ Widget buildPublicView({
       const SizedBox(height: 16),
       PostStreamSection(
         posts: publicPosts,
-        emptyText: '公共空间里还没有内容。',
+        emptyText: '空间里还没有内容。',
         commentControllerFor: commentControllerFor,
         onLike: onToggleLike,
         onShare: onSharePost,

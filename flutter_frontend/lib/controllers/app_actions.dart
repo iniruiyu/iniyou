@@ -138,12 +138,14 @@ class AppActions {
   static Future<SpaceCreateBundle> createSpaceAndReload(
     ApiClient api, {
     required String type,
+    required String visibility,
     required String name,
     required String description,
     String? subdomain,
   }) async {
     final created = await api.createSpace(
       type: type,
+      visibility: visibility,
       name: name,
       description: description,
       subdomain: subdomain,

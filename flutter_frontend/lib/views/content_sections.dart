@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import '../widgets/app_cards.dart';
 import '../widgets/bilingual_action_button.dart';
+import 'view_state_helpers.dart';
 
 class TopSummaryRow extends StatelessWidget {
   const TopSummaryRow({super.key, required this.width, required this.cards});
@@ -54,6 +55,9 @@ class DashboardOverviewView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = width < 980;
+    // Show only public-type spaces in the dashboard summary.
+    // 仪表盘摘要只展示公共类型空间，隐藏旧的私人空间入口。
+    final visibleSpaces = publicSpaces(spaces);
     final left = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -71,8 +75,8 @@ class DashboardOverviewView extends StatelessWidget {
         InfoCard(
           title: '快捷入口',
           lines: const [
-            '进入空间管理草稿、公开内容和空间入口',
-            '公开内容会出现在公共空间，也能打开作者主页',
+            '进入空间管理草稿、可见空间和空间入口',
+            '空间内容会出现在空间页，也能打开作者主页',
             '好友和聊天页面保持关系与实时消息联动',
           ],
           trailing: BilingualActionButton(
@@ -92,22 +96,20 @@ class DashboardOverviewView extends StatelessWidget {
         InfoCard(
           title: '空间摘要',
           lines: [
-            if (activePrivateSpace != null)
-              '当前私人：${activePrivateSpace!.name} · @${activePrivateSpace!.subdomain}',
             if (activePublicSpace != null)
-              '当前公共：${activePublicSpace!.name} · @${activePublicSpace!.subdomain}',
-            for (final space in spaces.take(4))
-              '${space.type.toUpperCase()} · ${space.name} · @${space.subdomain}',
-            if (spaces.isEmpty) '当前还没有空间，先创建一个空间。',
+              '当前空间：${activePublicSpace!.name} · @${activePublicSpace!.subdomain}',
+            for (final space in visibleSpaces.take(4))
+              '${spaceVisibilityLabel(space.visibility)} · ${space.name} · @${space.subdomain}',
+            if (visibleSpaces.isEmpty) '当前还没有可见空间，先创建一个空间。',
           ],
         ),
         const SizedBox(height: 16),
         InfoCard(
-          title: '最近公共内容',
+          title: '最近空间内容',
           lines: [
             for (final post in publicPosts.take(3))
               '${post.authorName}: ${post.title}',
-            if (publicPosts.isEmpty) '公共空间里还没有内容。',
+            if (publicPosts.isEmpty) '空间里还没有内容。',
           ],
           trailing: BilingualActionButton(
             variant: BilingualButtonVariant.tonal,
@@ -254,6 +256,7 @@ class SpaceListSection extends StatelessWidget {
     required this.title,
     required this.spaces,
     required this.activeSpaceId,
+    required this.currentUserId,
     required this.onEnterSpace,
     this.onEditSpace,
     this.onDeleteSpace,
@@ -262,6 +265,7 @@ class SpaceListSection extends StatelessWidget {
   final String title;
   final List<SpaceItem> spaces;
   final String? activeSpaceId;
+  final String? currentUserId;
   final ValueChanged<SpaceItem> onEnterSpace;
   final ValueChanged<SpaceItem>? onEditSpace;
   final ValueChanged<SpaceItem>? onDeleteSpace;
@@ -307,7 +311,9 @@ class SpaceListSection extends StatelessWidget {
                           const SizedBox(height: 10),
                           Text(space.description),
                           const SizedBox(height: 8),
-                          Text('类型: ${space.type}'),
+                          Text('类型: ${spaceTypeLabel(space.type)}'),
+                          const SizedBox(height: 4),
+                          Text('可见性: ${spaceVisibilityLabel(space.visibility)}'),
                           const SizedBox(height: 4),
                           Text('二级域名: @${space.subdomain}'),
                           const SizedBox(height: 14),
@@ -322,7 +328,7 @@ class SpaceListSection extends StatelessWidget {
                                 primaryLabel: '进入空间',
                                 secondaryLabel: 'Enter space',
                               ),
-                              if (onEditSpace != null)
+                              if (onEditSpace != null && currentUserId != null && space.userId == currentUserId)
                                 BilingualActionButton(
                                   variant: BilingualButtonVariant.tonal,
                                   compact: true,
@@ -330,7 +336,7 @@ class SpaceListSection extends StatelessWidget {
                                   primaryLabel: '编辑',
                                   secondaryLabel: 'Edit',
                                 ),
-                              if (onDeleteSpace != null)
+                              if (onDeleteSpace != null && currentUserId != null && space.userId == currentUserId)
                                 BilingualActionButton(
                                   variant: BilingualButtonVariant.text,
                                   compact: true,

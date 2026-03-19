@@ -265,3 +265,5 @@ new-project/
 - 2026-03-18：优化 Flutter 聊天表情面板、新消息提醒卡片和主题视觉层次 / Refined the Flutter chat emoji panel, reminder card, and theme depth.
 - 2026-03-18：同步 Vue 聊天表情面板关闭交互并收紧折叠菜单按钮贴边 / Synced Vue chat emoji panel close behavior and tightened the collapsed menu button to the edge.
 - 2026-03-18：完成聊天表情面板收起、Vue 同步与提醒卡强化，并记录收尾状态 / Finished chat quick panel collapse, Vue sync, and reminder card emphasis, with a final progress note.
+- 2026-03-19：统一空间入口为单一“空间”页，并将首页摘要改为仅展示公共可见空间 / Unified the space entry into a single “Space” page and limited home summaries to publicly visible spaces.
+- 2026-03-19：补齐空间页当前选中空间同步，并限制空间卡片编辑/删除仅对创建者可见 / Synced the currently selected space in the space page and limited space card edit/delete actions to creators only.

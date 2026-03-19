@@ -31,6 +31,9 @@ func main() {
 	if err := service.MarkLegacySystemSpaces(database); err != nil {
 		log.Fatalf("legacy space migration error: %v", err)
 	}
+	if err := service.BackfillLegacySpaceVisibility(database); err != nil {
+		log.Fatalf("legacy visibility backfill error: %v", err)
+	}
 
 	spaceHandler := &handler.AccountHandler{
 		DB:        database,

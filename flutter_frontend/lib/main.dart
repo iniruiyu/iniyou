@@ -662,6 +662,11 @@ class _IniyouHomeState extends State<IniyouHome> {
         : defaultType == 'private'
         ? 'private'
         : 'public';
+    var selectedVisibility = isEditing
+        ? space.visibility
+        : selectedType == 'private'
+        ? 'private'
+        : 'public';
     _spaceNameController.text = isEditing ? space.name : '';
     _spaceDescriptionController.text = isEditing ? space.description : '';
     _spaceSubdomainController.text = isEditing ? space.subdomain : '';
@@ -701,7 +706,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                         Text(
                           isEditing
                               ? '名称和二级域名可以独立修改，二级域名只能包含英文字母和数字，且最长 63 个字符。'
-                              : '选择私人或公共空间，然后补充名称、描述和二级域名。名称和二级域名互不关联，二级域名最长 63 个字符。',
+                              : '选择空间类型并设置可见范围，然后补充名称、描述和二级域名。名称和二级域名互不关联，二级域名最长 63 个字符。',
                         ),
                         const SizedBox(height: 20),
                         BilingualDropdownField<String>(
@@ -714,6 +719,36 @@ class _IniyouHomeState extends State<IniyouHome> {
                               : (value) {
                                   setDialogState(() {
                                     selectedType = value ?? selectedType;
+                                    if (selectedType == 'private') {
+                                      selectedVisibility = 'private';
+                                    } else if (selectedVisibility == 'private') {
+                                      selectedVisibility = 'public';
+                                    }
+                                    if (_spaceSubdomainController.text
+                                        .trim()
+                                        .isEmpty) {
+                                      final suggestion = _suggestSpaceSubdomain(
+                                        _spaceNameController.text,
+                                        selectedType,
+                                      );
+                                      if (suggestion.isNotEmpty) {
+                                        _spaceSubdomainController.text = suggestion;
+                                      }
+                                    }
+                                  });
+                                },
+                        ),
+                        const SizedBox(height: 12),
+                        BilingualDropdownField<String>(
+                          primaryLabel: '可见范围',
+                          secondaryLabel: 'Visibility',
+                          value: selectedVisibility,
+                          items: buildSpaceVisibilityItems(),
+                          onChanged: selectedType == 'private'
+                              ? null
+                              : (value) {
+                                  setDialogState(() {
+                                    selectedVisibility = value ?? selectedVisibility;
                                   });
                                 },
                         ),
@@ -802,6 +837,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       await _saveSpace(
                                         space: space,
                                         type: selectedType,
+                                        visibility: selectedVisibility,
                                         name: name,
                                         description: description,
                                         subdomain: subdomain,
@@ -1282,6 +1318,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   Future<void> _saveSpace({
     SpaceItem? space,
     required String type,
+    required String visibility,
     required String name,
     required String description,
     required String subdomain,
@@ -1313,6 +1350,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         final result = await AppActions.createSpaceAndReload(
           _api,
           type: type,
+          visibility: visibility,
           name: name.trim(),
           description: description.trim(),
           subdomain: normalizedSubdomain.isEmpty ? null : normalizedSubdomain,
@@ -1334,6 +1372,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         name: name.trim(),
         description: description.trim(),
         subdomain: normalizedSubdomain,
+        visibility: visibility,
       );
       _spaces = _spaces
           .map((item) => item.id == updated.id ? updated : item)
@@ -2300,6 +2339,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       space: buildSpaceView(
         loading: _loading,
         spaces: _spaces,
+        activeSpace: activePublicSpace,
         privatePosts: filteredPrivatePosts,
         publicPosts: filteredPublicPosts,
         user: _user,

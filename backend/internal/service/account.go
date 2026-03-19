@@ -24,6 +24,94 @@ var (
 	usernamePattern       = regexp.MustCompile(`^[a-z0-9]+$`)
 )
 
+func defaultSpaceVisibility(spaceType string) string {
+	// Pick the default visibility based on the space type.
+	// 根据空间类型选择默认可见范围。
+	switch strings.ToLower(strings.TrimSpace(spaceType)) {
+	case "private":
+		return "private"
+	default:
+		return "public"
+	}
+}
+
+func normalizeSpaceVisibilityValue(spaceType string, requested string, current string) (string, error) {
+	// Normalize the requested space visibility and fall back safely when omitted.
+	// 规范化请求的空间可见范围，并在未填写时安全回退。
+	value := strings.ToLower(strings.TrimSpace(requested))
+	if value == "" {
+		value = strings.ToLower(strings.TrimSpace(current))
+	}
+	if value == "" {
+		value = defaultSpaceVisibility(spaceType)
+	}
+	switch value {
+	case "public", "friends", "private":
+		return value, nil
+	default:
+		return "", errors.New("space visibility must be public, friends, or private")
+	}
+}
+
+func spaceVisibilityValue(space models.Space) string {
+	// Resolve a stored visibility value with legacy-safe defaults.
+	// 读取空间可见范围时兼容历史数据默认值。
+	visibility := strings.ToLower(strings.TrimSpace(space.Visibility))
+	if visibility == "" {
+		return defaultSpaceVisibility(space.Type)
+	}
+	switch visibility {
+	case "public", "friends", "private":
+		return visibility
+	default:
+		return defaultSpaceVisibility(space.Type)
+	}
+}
+
+func loadAcceptedFriendIDs(db *gorm.DB, userID string) (map[string]struct{}, error) {
+	// Load accepted friend IDs for a viewer so visibility checks stay local.
+	// 载入当前用户的已通过好友 ID，便于本地完成可见性校验。
+	var friends []models.Friend
+	if err := db.Where(
+		"status = ? AND (user_id = ? OR friend_id = ?)",
+		"accepted",
+		userID,
+		userID,
+	).Find(&friends).Error; err != nil {
+		return nil, err
+	}
+
+	items := make(map[string]struct{}, len(friends))
+	for _, friend := range friends {
+		if friend.UserID == userID {
+			items[friend.FriendID] = struct{}{}
+			continue
+		}
+		items[friend.UserID] = struct{}{}
+	}
+	return items, nil
+}
+
+func canViewSpace(viewerID string, friendIDs map[string]struct{}, space models.Space) bool {
+	// Decide whether the current viewer can see a space.
+	// 判断当前查看者是否可以看到某个空间。
+	if strings.ToLower(strings.TrimSpace(space.Status)) != "active" {
+		return false
+	}
+	if strings.TrimSpace(space.UserID) == strings.TrimSpace(viewerID) {
+		return true
+	}
+	switch spaceVisibilityValue(space) {
+	case "public":
+		return true
+	case "friends":
+		_, ok := friendIDs[space.UserID]
+		return ok
+	default:
+		return false
+	}
+}
+
 type FriendView struct {
 	// Friend relation view for API consumption.
 	// 提供给接口层使用的好友关系视图。
@@ -422,10 +510,11 @@ func buildUserUsername(db *gorm.DB, userID string, seed string) (string, error) 
 	return buildUniqueHostLabel(db, base, userID, "")
 }
 
-func CreateSpace(db *gorm.DB, userID string, spaceType string, name string, desc string, subdomain string) (models.Space, error) {
+func CreateSpace(db *gorm.DB, userID string, spaceType string, visibility string, name string, desc string, subdomain string) (models.Space, error) {
 	// Create a private/public space for a user.
 	// 为用户创建私人/公共空间。
 	spaceType = strings.ToLower(strings.TrimSpace(spaceType))
+	visibility = strings.ToLower(strings.TrimSpace(visibility))
 	name = strings.TrimSpace(name)
 	desc = strings.TrimSpace(desc)
 	if spaceType != "private" && spaceType != "public" {
@@ -433,6 +522,14 @@ func CreateSpace(db *gorm.DB, userID string, spaceType string, name string, desc
 	}
 	if name == "" {
 		return models.Space{}, errors.New("space name required")
+	}
+
+	resolvedVisibility, err := normalizeSpaceVisibilityValue(spaceType, visibility, "")
+	if err != nil {
+		return models.Space{}, err
+	}
+	if spaceType == "private" {
+		resolvedVisibility = "private"
 	}
 
 	resolvedSubdomain, err := buildSpaceSubdomain(db, userID, spaceType, name, subdomain)
@@ -444,6 +541,7 @@ func CreateSpace(db *gorm.DB, userID string, spaceType string, name string, desc
 		UserID:      userID,
 		Type:        spaceType,
 		Source:      "user",
+		Visibility:  resolvedVisibility,
 		Subdomain:   resolvedSubdomain,
 		Name:        name,
 		Description: desc,
@@ -456,13 +554,24 @@ func CreateSpace(db *gorm.DB, userID string, spaceType string, name string, desc
 }
 
 func ListSpaces(db *gorm.DB, userID string) ([]models.Space, error) {
-	// List spaces of a user.
-	// 列出用户的空间。
+	// List all spaces visible to the current viewer.
+	// 列出当前查看者可见的全部空间。
 	var spaces []models.Space
-	if err := db.Where("user_id = ? AND COALESCE(source, '') <> ?", userID, "system").Order("created_at asc").Find(&spaces).Error; err != nil {
+	if err := db.Where("COALESCE(source, '') <> ?", "system").Order("created_at asc").Find(&spaces).Error; err != nil {
 		return nil, err
 	}
-	return spaces, nil
+	friendIDs, err := loadAcceptedFriendIDs(db, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]models.Space, 0, len(spaces))
+	for _, space := range spaces {
+		if canViewSpace(userID, friendIDs, space) {
+			items = append(items, space)
+		}
+	}
+	return items, nil
 }
 
 func buildSpaceSubdomain(db *gorm.DB, userID string, spaceType string, name string, requested string) (string, error) {
@@ -560,7 +669,7 @@ func loadOwnedSpaceByID(db *gorm.DB, userID string, spaceID string) (models.Spac
 	return space, nil
 }
 
-func UpdateSpace(db *gorm.DB, userID string, spaceID string, name string, desc string, subdomain string) (models.Space, error) {
+func UpdateSpace(db *gorm.DB, userID string, spaceID string, name string, desc string, subdomain string, visibility string) (models.Space, error) {
 	// Update an existing space owned by the current user.
 	// 更新当前用户拥有的空间。
 	name = strings.TrimSpace(name)
@@ -582,10 +691,18 @@ func UpdateSpace(db *gorm.DB, userID string, spaceID string, name string, desc s
 	if err != nil {
 		return models.Space{}, err
 	}
+	resolvedVisibility, err := normalizeSpaceVisibilityValue(space.Type, visibility, space.Visibility)
+	if err != nil {
+		return models.Space{}, err
+	}
+	if space.Type == "private" {
+		resolvedVisibility = "private"
+	}
 
 	updates := map[string]any{
 		"name":        name,
 		"description": desc,
+		"visibility":  resolvedVisibility,
 		"subdomain":   resolvedSubdomain,
 		"updated_at":  time.Now(),
 	}
@@ -655,6 +772,22 @@ func MarkLegacySystemSpaces(db *gorm.DB) error {
 		Where("((name = ? AND subdomain LIKE ?) OR (name = ? AND subdomain LIKE ?))",
 			"我的私人空间", "private-%", "我的公共空间", "public-%").
 		Update("source", "system").Error
+}
+
+func BackfillLegacySpaceVisibility(db *gorm.DB) error {
+	// Backfill visibility for legacy rows so space routing stays deterministic.
+	// 为历史记录回填可见范围，确保空间路由结果稳定。
+	if err := db.Model(&models.Space{}).
+		Where("COALESCE(visibility, '') = '' AND type = ?", "private").
+		Update("visibility", "private").Error; err != nil {
+		return err
+	}
+	if err := db.Model(&models.Space{}).
+		Where("COALESCE(visibility, '') = '' AND type = ?", "public").
+		Update("visibility", "public").Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSearchView, error) {

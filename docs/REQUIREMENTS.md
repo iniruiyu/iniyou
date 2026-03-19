@@ -80,22 +80,22 @@
 
 - 社交能力是首批核心业务之一
 - 内容、互动和聊天能力后续可能继续拆分细化
-- 空间能力属于社交内容的入口层，内容浏览和发布必须先进入对应空间上下文
-- 空间能力由独立空间服务提供，账号服务只保留身份与资料相关的核心字段
-- 创建空间时需要生成稳定的二级域名标识，方便后续通过子域名进入空间
-- 文章发布需要记录所属空间，便于页面展示当前上下文
-- 空间名称与二级域名需要独立维护，二级域名前缀只能使用英文字母和数字，且最长 63 个字符
+- 空间能力属于社交内容的入口层，内容浏览和发布必须先进入对应空间上下文 / Space is the entry layer for social content, and browsing or publishing content must happen inside the current space context.
+- 空间能力由独立空间服务提供，账号服务只保留身份与资料相关的核心字段 / Space capabilities are provided by an independent space service, while the account service only keeps identity- and profile-related core fields.
+- 创建空间时需要生成稳定的二级域名标识，方便后续通过子域名进入空间 / Creating a space must generate a stable subdomain handle so it can be entered through the subdomain later.
+- 文章发布需要记录所属空间，便于页面展示当前上下文 / Post publishing must record the owning space so the page can display the current context.
+- 空间名称与二级域名需要独立维护，二级域名前缀只能使用英文字母和数字，且最长 63 个字符 / Space names and subdomains must be maintained independently, and the subdomain prefix may contain letters and numbers only, up to 63 characters.
 - 用户名、域名和空间二级域名都应限制为 63 个字符，保证可直接作为 DNS 子域名使用 / Usernames, domains, and space subdomains should all be limited to 63 characters so they can be used directly as DNS subdomains.
-- 个人空间列表只展示当前用户创建的空间，不再自动生成默认空间
+- 空间列表只展示当前用户可见的空间，不再自动生成默认空间 / Space lists only show spaces visible to the current user, and no default space is auto-generated.
 
 细化功能：
 
-- 创建私人空间
-- 创建公共空间
+- 创建空间并设置可见范围
 - 通过二级域名进入空间
 - 通过域名进入个人主页 / Enter the author page through the domain handle
 - 修改空间名称
 - 修改空间二级域名
+- 修改空间可见范围
 - 删除空间
 - 在当前空间内发布文章
 - 在当前空间内查看文章列表
@@ -115,11 +115,11 @@
 
 ### 5.3 空间相关
 
-- 空间创建入口需要同时支持私人空间和公共空间
-- 空间列表需要展示空间名称、类型和二级域名
-- 空间卡片需要支持进入、改名、改域名和删除
-- 空间页面需要合并展示私人空间和公共空间，统一使用“空间”作为入口名称
-- 进入空间后，发布和查看内容都应记录在该空间上下文中
+- 空间创建入口需要在同一表单中同时设置名称、二级域名和可见范围 / The space creation entry should set the name, subdomain, and visibility scope in one form.
+- 空间列表需要展示空间名称、可见范围和二级域名 / Space lists should show the space name, visibility scope, and subdomain.
+- 空间卡片需要支持进入、改名、改域名、改可见范围和删除，且只有创建者可见编辑与删除入口 / Space cards should support enter, rename, subdomain changes, visibility updates, and deletion, and edit/delete actions should only be visible to the creator.
+- 空间页面需要统一使用“空间”作为入口名称，不再拆分私人/公共页面 / The space page should use "Space" as the single entry name and no longer split private/public pages.
+- 进入空间后，发布和查看内容都应记录在该空间上下文中 / After entering a space, both publishing and browsing content should be recorded in that space context.
 - 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
 - 文章卡片需要支持删除当前用户自己的内容
 

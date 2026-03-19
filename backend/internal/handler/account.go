@@ -31,6 +31,7 @@ type loginRequest struct {
 
 type spaceRequest struct {
 	Type        string `json:"type"`
+	Visibility  string `json:"visibility"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Subdomain   string `json:"subdomain"`
@@ -40,6 +41,7 @@ type updateSpaceRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Subdomain   string `json:"subdomain"`
+	Visibility  string `json:"visibility"`
 }
 
 type friendRequest struct {
@@ -206,7 +208,7 @@ func (h *AccountHandler) CreateSpace(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	space, err := service.CreateSpace(h.DB, uid, req.Type, req.Name, req.Description, req.Subdomain)
+	space, err := service.CreateSpace(h.DB, uid, req.Type, req.Visibility, req.Name, req.Description, req.Subdomain)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -223,7 +225,7 @@ func (h *AccountHandler) UpdateSpace(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-	space, err := service.UpdateSpace(h.DB, uid, c.Param("id"), req.Name, req.Description, req.Subdomain)
+	space, err := service.UpdateSpace(h.DB, uid, c.Param("id"), req.Name, req.Description, req.Subdomain, req.Visibility)
 	if err != nil {
 		status := http.StatusBadRequest
 		if errors.Is(err, gorm.ErrRecordNotFound) {

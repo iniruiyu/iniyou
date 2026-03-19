@@ -36,6 +36,25 @@ SpaceItem? firstSpaceOfType(List<SpaceItem> spaces, String type) {
   return null;
 }
 
+String spaceTypeLabel(String type) {
+  // Map legacy space types to bilingual display labels.
+  // 将历史空间类型映射为双语展示标签。
+  return '空间 / Space';
+}
+
+String spaceVisibilityLabel(String visibility) {
+  // Map space visibility values to bilingual display labels.
+  // 将空间可见性映射为双语展示标签。
+  switch (visibility) {
+    case 'friends':
+      return '好友可见 / Friends only';
+    case 'private':
+      return '仅自己可见 / Only me';
+    default:
+      return '所有人可见 / Public';
+  }
+}
+
 List<SpaceItem> privateSpaces(List<SpaceItem> spaces) {
   return spaces.where((space) => space.type == 'private').toList();
 }
@@ -69,11 +88,14 @@ List<SummaryCardData> buildHomeSummaryCards({
   required String Function(String key) t,
 }) {
   final chains = connectedChains(externalAccounts);
+  // Count only public-type spaces in the dashboard summary.
+  // 仪表盘摘要只统计公共类型空间，避免把旧私人空间算进去。
+  final visibleSpaces = publicSpaces(spaces);
   return [
     SummaryCardData(
       t('summary.spaces'),
-      '${spaces.length}',
-      '${t('summary.private')} ${privateSpaces(spaces).length} / ${t('summary.public')} ${publicSpaces(spaces).length}',
+      '${visibleSpaces.length}',
+      '可见空间总数 / Total visible spaces',
     ),
     SummaryCardData(
       t('summary.friends'),

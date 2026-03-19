@@ -168,7 +168,7 @@
 - 说明：
   - 公开主页使用 `visibility=public`
   - 当前用户自己的内容列表可使用 `visibility=all`
-  - 返回建议补充 `space_id`, `space_name`, `space_subdomain`, `space_type`，便于页面展示文章所属空间
+  - 返回建议补充 `space_id`, `space_name`, `space_subdomain`, `space_type`, `space_visibility`，便于页面展示文章所属空间与可见范围
 
 ### 6.6 发布文章
 
@@ -178,7 +178,7 @@
 - 说明：
   - `space_id` 用于记录当前文章所属空间
   - 如果前端已进入空间上下文，发布时应优先携带当前空间 ID
-  - `visibility` 应与空间类型保持一致，避免跨空间发布
+  - `visibility` 应与空间可见范围保持一致，避免跨空间发布
 
 ### 6.7 更新文章
 
@@ -279,27 +279,28 @@
 ### 6.19 空间创建与进入
 
 - `GET /api/v1/spaces`
-- 用途：获取当前用户创建的空间列表
-- 返回字段建议：`id`, `user_id`, `type`, `subdomain`, `name`, `description`, `status`, `created_at`, `updated_at`
+- 用途：获取当前用户可见的空间列表
+- 返回字段建议：`id`, `user_id`, `type`, `visibility`, `subdomain`, `name`, `description`, `status`, `created_at`, `updated_at`
 - 说明：`subdomain` 仅允许英文字母和数字，且最长 63 个字符
+- 说明：前端应统一以“空间”作为入口名称，不再拆分私人/公共页面
 - 前端联动建议：
   - 空间列表页用于选择当前进入的空间
-  - 空间卡片应展示 `subdomain`，并将其作为子域名入口标识
-  - 空间页应在进入后统一展示私人/公共分区，并在当前空间上下文内发布内容
+  - 空间卡片应展示 `subdomain` 和 `visibility`，并将其作为子域名入口与可见范围标识
+  - 空间页应在进入后统一展示单一“空间”入口，并在当前空间上下文内发布内容
 
 - `POST /api/v1/spaces`
-- 用途：创建新的私人空间或公共空间
-- 请求字段建议：`type`, `name`, `description`, `subdomain`
+- 用途：创建新的空间并设置可见范围
+- 请求字段建议：`type`, `visibility`, `name`, `description`, `subdomain`
 - 说明：
   - `subdomain` 可由前端预填或由后端根据名称自动生成
   - `subdomain` 只能包含英文字母和数字，且最长 63 个字符
   - 创建成功后返回空间完整信息，前端应将其作为当前进入空间
 
 - `PATCH /api/v1/spaces/{id}`
-- 用途：更新当前用户自己的空间名称、描述和二级域名
-- 请求字段建议：`name`, `description`, `subdomain`
+- 用途：更新当前用户自己的空间名称、描述、二级域名和可见范围
+- 请求字段建议：`name`, `description`, `subdomain`, `visibility`
 - 说明：
-  - 名称和二级域名独立修改，二级域名变更后应立即影响子域名入口
+  - 名称、二级域名和可见范围独立修改，二级域名变更后应立即影响子域名入口
   - 仅允许英文字母和数字作为二级域名前缀，且最长 63 个字符
 
 - `DELETE /api/v1/spaces/{id}`

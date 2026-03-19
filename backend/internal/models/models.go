@@ -32,6 +32,7 @@ type Space struct {
 	UserID      string    `gorm:"index" json:"user_id"`
 	Type        string    `gorm:"type:varchar(20)" json:"type"`
 	Source      string    `gorm:"type:varchar(20);default:user" json:"source,omitempty"`
+	Visibility  string    `gorm:"type:varchar(20);default:public" json:"visibility"`
 	Subdomain   string    `gorm:"type:varchar(120);uniqueIndex" json:"subdomain"`
 	Name        string    `gorm:"type:varchar(100)" json:"name"`
 	Description string    `gorm:"type:text" json:"description"`

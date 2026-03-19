@@ -160,8 +160,8 @@
           <div class="space-cards">
             <div
               class="space-card"
-              :class="{ active: (activePrivateSpace && space.id === activePrivateSpace.id) || (activePublicSpace && space.id === activePublicSpace.id) }"
-              v-for="space in spaces"
+              :class="{ active: activePublicSpace && space.id === activePublicSpace.id }"
+              v-for="space in publicSpaces"
               :key="space.id"
             >
               <div class="space-tag" :class="space.type">{{ t(`spaces.type.${space.type}`) }}</div>
@@ -265,7 +265,7 @@
         </div>
       </section>
 
-      <section v-if="view === 'space' || view === 'private'" class="panel">
+      <section v-if="false" class="panel">
         <h2>{{ t('spaces.privateTitle') }}</h2>
         <p>{{ t('spaces.privateSub') }}</p>
         <div class="space-toolbar">
@@ -308,6 +308,7 @@
             </div>
             <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
             <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+            <div class="space-meta">{{ spaceVisibilityLabel(space.visibility) }}</div>
             <div class="space-meta">@{{ space.subdomain }}</div>
             <div v-if="space.status && space.status !== 'active'" class="space-meta">{{ statusLabel(space.status) }}</div>
             <div class="space-card-actions">
@@ -320,6 +321,7 @@
                 @click="enterSpace(space)"
               ></bilingual-action-button>
               <bilingual-action-button
+                v-if="user && space.userId === user.id"
                 variant="ghost"
                 compact
                 type="button"
@@ -328,6 +330,7 @@
                 @click="openSpaceEditor(space)"
               ></bilingual-action-button>
               <bilingual-action-button
+                v-if="user && space.userId === user.id"
                 variant="ghost"
                 compact
                 danger
@@ -460,6 +463,7 @@
                 @click="enterSpace(space)"
               ></bilingual-action-button>
               <bilingual-action-button
+                v-if="user && space.userId === user.id"
                 variant="ghost"
                 compact
                 type="button"
@@ -468,6 +472,7 @@
                 @click="openSpaceEditor(space)"
               ></bilingual-action-button>
               <bilingual-action-button
+                v-if="user && space.userId === user.id"
                 variant="ghost"
                 compact
                 danger
@@ -816,7 +821,7 @@
                   :secondary-label="peerLocaleText('posts.visibilityLabel')"
                   v-model="editPostDraft.visibility"
                   :options="postVisibilityOptions()"
-                  @change="editPostDraft.spaceId = selectedSpaceIdForVisibility($event, editPostDraft.spaceId)"
+                  @change="editPostDraft.spaceId = managedSpaceIdForVisibility($event, editPostDraft.spaceId)"
                 ></bilingual-select-field>
                 <bilingual-select-field
                   :primary-label="t('posts.spaceLabel')"
@@ -1090,14 +1095,21 @@
             <button class="ghost compact" type="button" @click="closeSpaceComposer">×</button>
           </div>
           <form class="form modal-form" @submit.prevent="createSpace">
-            <bilingual-select-field
-              :primary-label="t('spaces.typeLabel')"
-              :secondary-label="peerLocaleText('spaces.typeLabel')"
-              v-model="spaceDraft.type"
-              :disabled="Boolean(spaceDraft.id)"
-              :options="spaceTypeOptions()"
-              @change="!spaceDraft.id && (spaceDraft.subdomain = spaceDraft.subdomain.trim() || suggestSpaceSubdomain(spaceDraft.name, $event))"
-            ></bilingual-select-field>
+              <bilingual-select-field
+                :primary-label="t('spaces.typeLabel')"
+                :secondary-label="peerLocaleText('spaces.typeLabel')"
+                v-model="spaceDraft.type"
+                :disabled="Boolean(spaceDraft.id)"
+                :options="spaceTypeOptions()"
+                @change="syncSpaceDraftVisibility($event); !spaceDraft.id && (spaceDraft.subdomain = spaceDraft.subdomain.trim() || suggestSpaceSubdomain(spaceDraft.name, $event))"
+              ></bilingual-select-field>
+              <bilingual-select-field
+                :primary-label="t('spaces.visibilityLabel')"
+                :secondary-label="peerLocaleText('spaces.visibilityLabel')"
+                v-model="spaceDraft.visibility"
+                :disabled="spaceDraft.type === 'private'"
+                :options="spaceVisibilityOptions()"
+              ></bilingual-select-field>
             <input
               type="text"
               :placeholder="t('spaces.namePlaceholder')"
@@ -1131,13 +1143,13 @@
             <button class="ghost compact" type="button" @click="closePostComposer">×</button>
           </div>
           <form class="form modal-form" @submit.prevent="createPost">
-            <bilingual-select-field
-              :primary-label="t('posts.visibilityLabel')"
-              :secondary-label="peerLocaleText('posts.visibilityLabel')"
-              v-model="postDraft.visibility"
-              :options="postVisibilityOptions()"
-              @change="postDraft.spaceId = selectedSpaceIdForVisibility($event, postDraft.spaceId)"
-            ></bilingual-select-field>
+              <bilingual-select-field
+                :primary-label="t('posts.visibilityLabel')"
+                :secondary-label="peerLocaleText('posts.visibilityLabel')"
+                v-model="postDraft.visibility"
+                :options="postVisibilityOptions()"
+              @change="postDraft.spaceId = managedSpaceIdForVisibility($event, postDraft.spaceId)"
+              ></bilingual-select-field>
             <bilingual-select-field
               :primary-label="t('posts.spaceLabel')"
               :secondary-label="peerLocaleText('posts.spaceLabel')"

@@ -13,23 +13,24 @@ import (
 type PostView struct {
 	// Post payload returned to clients.
 	// 返回给客户端的文章视图。
-	ID             string        `json:"id"`
-	UserID         string        `json:"user_id"`
-	SpaceID        string        `json:"space_id,omitempty"`
-	SpaceName      string        `json:"space_name,omitempty"`
-	SpaceSubdomain string        `json:"space_subdomain,omitempty"`
-	SpaceType      string        `json:"space_type,omitempty"`
-	AuthorName     string        `json:"author_name"`
-	Title          string        `json:"title"`
-	Content        string        `json:"content"`
-	Status         string        `json:"status"`
-	Visibility     string        `json:"visibility"`
-	LikesCount     int64         `json:"likes_count"`
-	CommentsCount  int64         `json:"comments_count"`
-	SharesCount    int64         `json:"shares_count"`
-	LikedByMe      bool          `json:"liked_by_me"`
-	CreatedAt      time.Time     `json:"created_at"`
-	Comments       []CommentView `json:"comments,omitempty"`
+	ID              string        `json:"id"`
+	UserID          string        `json:"user_id"`
+	SpaceID         string        `json:"space_id,omitempty"`
+	SpaceName       string        `json:"space_name,omitempty"`
+	SpaceSubdomain  string        `json:"space_subdomain,omitempty"`
+	SpaceType       string        `json:"space_type,omitempty"`
+	SpaceVisibility string        `json:"space_visibility,omitempty"`
+	AuthorName      string        `json:"author_name"`
+	Title           string        `json:"title"`
+	Content         string        `json:"content"`
+	Status          string        `json:"status"`
+	Visibility      string        `json:"visibility"`
+	LikesCount      int64         `json:"likes_count"`
+	CommentsCount   int64         `json:"comments_count"`
+	SharesCount     int64         `json:"shares_count"`
+	LikedByMe       bool          `json:"liked_by_me"`
+	CreatedAt       time.Time     `json:"created_at"`
+	Comments        []CommentView `json:"comments,omitempty"`
 }
 
 type CommentView struct {
@@ -305,10 +306,17 @@ func SharePost(db *gorm.DB, userID string, postID string) (PostView, error) {
 func buildPostViews(db *gorm.DB, viewerID string, posts []models.Post) ([]PostView, error) {
 	// Expand posts with author names, counts, and comments.
 	// 为文章补充作者名、计数和评论。
+	friendIDs, err := loadAcceptedFriendIDs(db, viewerID)
+	if err != nil {
+		return nil, err
+	}
 	items := make([]PostView, 0, len(posts))
 	for _, post := range posts {
-		view, err := hydratePostView(db, viewerID, post)
+		view, err := hydratePostView(db, viewerID, friendIDs, post)
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
 			return nil, err
 		}
 		items = append(items, view)
@@ -316,7 +324,7 @@ func buildPostViews(db *gorm.DB, viewerID string, posts []models.Post) ([]PostVi
 	return items, nil
 }
 
-func hydratePostView(db *gorm.DB, viewerID string, post models.Post) (PostView, error) {
+func hydratePostView(db *gorm.DB, viewerID string, friendIDs map[string]struct{}, post models.Post) (PostView, error) {
 	var user models.User
 	if err := db.Select("id", "display_name", "email", "phone").First(&user, "id = ?", post.UserID).Error; err != nil {
 		return PostView{}, err
@@ -326,20 +334,24 @@ func hydratePostView(db *gorm.DB, viewerID string, post models.Post) (PostView, 
 	if err != nil {
 		return PostView{}, err
 	}
+	if !canViewSpace(viewerID, friendIDs, space) {
+		return PostView{}, gorm.ErrRecordNotFound
+	}
 
 	view := PostView{
-		ID:             post.ID,
-		UserID:         post.UserID,
-		SpaceID:        space.ID,
-		SpaceName:      space.Name,
-		SpaceSubdomain: space.Subdomain,
-		SpaceType:      space.Type,
-		AuthorName:     fallbackDisplayName(user),
-		Title:          post.Title,
-		Content:        post.Content,
-		Status:         post.Status,
-		Visibility:     post.Visibility,
-		CreatedAt:      post.CreatedAt,
+		ID:              post.ID,
+		UserID:          post.UserID,
+		SpaceID:         space.ID,
+		SpaceName:       space.Name,
+		SpaceSubdomain:  space.Subdomain,
+		SpaceType:       space.Type,
+		SpaceVisibility: spaceVisibilityValue(space),
+		AuthorName:      fallbackDisplayName(user),
+		Title:           post.Title,
+		Content:         post.Content,
+		Status:          post.Status,
+		Visibility:      post.Visibility,
+		CreatedAt:       post.CreatedAt,
 	}
 
 	_ = db.Model(&models.PostLike{}).Where("post_id = ?", post.ID).Count(&view.LikesCount).Error
@@ -404,11 +416,11 @@ func resolvePostSpaceForView(db *gorm.DB, post models.Post) (models.Space, error
 	// Resolve the space metadata for a post response.
 	// 为文章响应解析空间元数据。
 	if strings.TrimSpace(post.SpaceID) != "" {
-		space, err := loadOwnedSpaceByID(db, post.UserID, post.SpaceID)
+		var space models.Space
+		err := db.First(&space, "id = ?", post.SpaceID).Error
 		if err == nil {
 			return space, nil
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.Space{}, err
 		}
 	}
