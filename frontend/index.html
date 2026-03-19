@@ -198,31 +198,6 @@
           </div>
         </div>
         <div class="panel">
-          <h2>{{ t('dashboard.spaceSummaryTitle') }}</h2>
-          <p>{{ t('dashboard.spaceSummarySub') }}</p>
-          <div class="space-cards">
-            <div
-              class="space-card"
-              :class="{ active: activePublicSpace && space.id === activePublicSpace.id }"
-              v-for="space in publicSpaces"
-              :key="space.id"
-            >
-              <div class="space-tag" :class="space.type">{{ t(`spaces.type.${space.type}`) }}</div>
-              <div v-if="(activePrivateSpace && space.id === activePrivateSpace.id) || (activePublicSpace && space.id === activePublicSpace.id)" class="space-badge">
-                {{ t('spaces.currentLabel') }}
-              </div>
-              <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
-              <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
-              <div class="space-meta">@{{ space.subdomain }}</div>
-              <div class="space-card-actions">
-                <button class="ghost compact" type="button" @click="enterSpace(space)">{{ t('spaces.enterAction') }}</button>
-                <button class="ghost compact" type="button" @click="openSpaceEditor(space)">{{ t('spaces.editAction') }}</button>
-                <button class="ghost compact danger" type="button" @click="deleteSpace(space)">{{ t('spaces.deleteAction') }}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
           <h2>{{ t('profile.identity.title') }}</h2>
           <p>{{ t('profile.identity.sub') }}</p>
           <form class="form identity-form">

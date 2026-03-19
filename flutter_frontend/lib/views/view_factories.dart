@@ -30,10 +30,7 @@ String normalizeBlockchainChain(String provider, String chain) {
 Widget buildDashboardView({
   required double width,
   required CurrentUser user,
-  required List<SpaceItem> spaces,
   required List<PostItem> publicPosts,
-  required SpaceItem? activePrivateSpace,
-  required SpaceItem? activePublicSpace,
   required VoidCallback onOpenPublicSpace,
   required ValueChanged<String> onOpenPostDetail,
   required String languageCode,
@@ -41,10 +38,7 @@ Widget buildDashboardView({
   return DashboardOverviewView(
     width: width,
     user: user,
-    spaces: spaces,
     publicPosts: publicPosts,
-    activePrivateSpace: activePrivateSpace,
-    activePublicSpace: activePublicSpace,
     onOpenPublicSpace: onOpenPublicSpace,
     onOpenPostDetail: onOpenPostDetail,
     languageCode: languageCode,

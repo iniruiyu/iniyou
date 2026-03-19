@@ -35,10 +35,7 @@ class DashboardOverviewView extends StatelessWidget {
     super.key,
     required this.width,
     required this.user,
-    required this.spaces,
     required this.publicPosts,
-    required this.activePrivateSpace,
-    required this.activePublicSpace,
     required this.onOpenPublicSpace,
     required this.onOpenPostDetail,
     required this.languageCode,
@@ -46,10 +43,7 @@ class DashboardOverviewView extends StatelessWidget {
 
   final double width;
   final CurrentUser user;
-  final List<SpaceItem> spaces;
   final List<PostItem> publicPosts;
-  final SpaceItem? activePrivateSpace;
-  final SpaceItem? activePublicSpace;
   final VoidCallback onOpenPublicSpace;
   final ValueChanged<String> onOpenPostDetail;
   final String languageCode;
@@ -57,9 +51,6 @@ class DashboardOverviewView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = width < 980;
-    // Show only public-type spaces in the dashboard summary.
-    // 仪表盘摘要只展示公共类型空间，隐藏旧的私人空间入口。
-    final visibleSpaces = publicSpaces(spaces);
     final left = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -97,18 +88,6 @@ class DashboardOverviewView extends StatelessWidget {
     final right = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InfoCard(
-          title: localizedText(languageCode, '空间摘要', 'Space summary', '空間摘要'),
-          lines: [
-            if (activePublicSpace != null)
-              '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${activePublicSpace!.name} · @${activePublicSpace!.subdomain}',
-            for (final space in visibleSpaces.take(4))
-              '${spaceVisibilityLabel(space.visibility, languageCode)} · ${space.name} · @${space.subdomain}',
-            if (visibleSpaces.isEmpty)
-              localizedText(languageCode, '当前还没有可见空间，先创建一个空间。', 'No visible spaces yet. Create one first.', '目前還沒有可見空間，先建立一個空間。'),
-          ],
-        ),
-        const SizedBox(height: 16),
         InfoCard(
           title: localizedText(languageCode, '最近空间内容', 'Recent space content', '最近空間內容'),
           lines: [

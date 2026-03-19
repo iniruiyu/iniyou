@@ -2522,10 +2522,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       dashboard: buildDashboardView(
         width: width,
         user: _user!,
-        spaces: _spaces,
         publicPosts: dashboardPublicPosts,
-        activePrivateSpace: activePrivateSpace,
-        activePublicSpace: activePublicSpace,
         onOpenPublicSpace: () => _navigateTo(AppView.space),
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
