@@ -143,6 +143,26 @@ body {
   border-right: 1px solid var(--border);
 }
 
+/* Light-theme sidebar contrast / 浅色主题侧栏对比度：深色侧栏始终保持浅色文字。 */
+.sidebar,
+.sidebar .nav-item,
+.sidebar .nav-icon,
+.sidebar .brand-title {
+  color: #f2f5f8;
+}
+
+.sidebar .brand-sub,
+.sidebar .lang-label,
+.sidebar .nav-item-control .nav-label,
+.sidebar .status,
+.sidebar-fab-label {
+  color: rgba(242, 245, 248, 0.72);
+}
+
+.sidebar .nav-item:disabled {
+  color: rgba(242, 245, 248, 0.42);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -618,6 +638,52 @@ body {
 .identity-field textarea,
 .identity-field select {
   width: 100%;
+}
+
+/* Form select skin / 表单下拉皮肤 */
+.identity-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-height: 44px;
+  padding: 12px 42px 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    var(--surface-soft);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.2;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.identity-field select:hover {
+  border-color: rgba(110, 231, 255, 0.34);
+}
+
+.identity-field select:focus {
+  outline: none;
+  border-color: rgba(110, 231, 255, 0.58);
+  box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.16);
+}
+
+.identity-field select:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 
 .primary {
@@ -1987,24 +2053,30 @@ body {
 }
 
 .settings-dropdown {
+  /* Settings panel card / 设置面板卡片：沿用当前主题变量，避免切换主题后出现生硬的原生控件。 */
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  width: min(320px, 90vw);
-  padding: 16px;
-  border-radius: 18px;
-  background: var(--surface);
+  width: min(360px, 92vw);
+  padding: 18px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(110, 231, 255, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   z-index: 20;
 }
 
 .settings-header {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
 .settings-eyebrow {
@@ -2020,9 +2092,62 @@ body {
   font-weight: 600;
 }
 
+.settings-section {
+  /* Section card / 分区卡片：把语言、主题和新增语言拆成独立视觉块。 */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    var(--surface-soft);
+}
+
+.settings-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.settings-section-note {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.settings-form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-dropdown .lang-input,
+.settings-dropdown .lang-textarea {
+  border-radius: 14px;
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    var(--surface-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.settings-dropdown .lang-input::placeholder,
+.settings-dropdown .lang-textarea::placeholder {
+  color: var(--muted);
+}
+
 .settings-action {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .landing-shell {

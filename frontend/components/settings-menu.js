@@ -50,30 +50,46 @@ window.SettingsMenu = {
           <div class="settings-eyebrow">{{ app.t('settings.customize') }}</div>
           <div class="settings-title">{{ app.t('i18n.title') }}</div>
         </div>
-        <bilingual-select-field
-          :primary-label="app.t('i18n.choose')"
-          :secondary-label="app.peerLocaleText('i18n.choose')"
-          v-model="app.locale"
-          :options="languageSelectOptions()"
-        ></bilingual-select-field>
-        <div class="lang-add-title">{{ app.t('theme.title') }}</div>
-        <bilingual-select-field
-          :primary-label="app.t('theme.label')"
-          :secondary-label="app.peerLocaleText('theme.label')"
-          v-model="app.theme"
-          :options="themeSelectOptions()"
-          @change="app.applyTheme()"
-        ></bilingual-select-field>
-        <div class="lang-add-title">{{ app.t('i18n.addTitle') }}</div>
-        <input class="lang-input" type="text" :placeholder="app.t('i18n.codePlaceholder')" v-model="app.newLanguage.code" />
-        <input class="lang-input" type="text" :placeholder="app.t('i18n.namePlaceholder')" v-model="app.newLanguage.name" />
-        <bilingual-select-field
-          :primary-label="app.t('i18n.dirLabel')"
-          :secondary-label="app.peerLocaleText('i18n.dirLabel')"
-          v-model="app.newLanguage.dir"
-          :options="directionSelectOptions()"
-        ></bilingual-select-field>
-        <textarea class="lang-textarea" :placeholder="app.t('i18n.jsonPlaceholder')" v-model="app.newLanguage.json"></textarea>
+        <!-- Split the panel into calm card-like sections / 将面板拆成更安静的卡片分区。 -->
+        <section class="settings-section">
+          <div class="settings-section-head">
+            <div class="settings-section-title">{{ app.t('i18n.choose') }}</div>
+          </div>
+          <bilingual-select-field
+            :primary-label="app.t('i18n.choose')"
+            :secondary-label="app.peerLocaleText('i18n.choose')"
+            v-model="app.locale"
+            :options="languageSelectOptions()"
+          ></bilingual-select-field>
+        </section>
+        <section class="settings-section">
+          <div class="settings-section-head">
+            <div class="settings-section-title">{{ app.t('theme.title') }}</div>
+          </div>
+          <bilingual-select-field
+            :primary-label="app.t('theme.label')"
+            :secondary-label="app.peerLocaleText('theme.label')"
+            v-model="app.theme"
+            :options="themeSelectOptions()"
+            @change="app.applyTheme()"
+          ></bilingual-select-field>
+        </section>
+        <section class="settings-section">
+          <div class="settings-section-head">
+            <div class="settings-section-title">{{ app.t('i18n.addTitle') }}</div>
+          </div>
+          <div class="settings-form-grid">
+            <input class="lang-input" type="text" :placeholder="app.t('i18n.codePlaceholder')" v-model="app.newLanguage.code" />
+            <input class="lang-input" type="text" :placeholder="app.t('i18n.namePlaceholder')" v-model="app.newLanguage.name" />
+            <bilingual-select-field
+              :primary-label="app.t('i18n.dirLabel')"
+              :secondary-label="app.peerLocaleText('i18n.dirLabel')"
+              v-model="app.newLanguage.dir"
+              :options="directionSelectOptions()"
+            ></bilingual-select-field>
+            <textarea class="lang-textarea" :placeholder="app.t('i18n.jsonPlaceholder')" v-model="app.newLanguage.json"></textarea>
+          </div>
+        </section>
         <bilingual-action-button
           variant="primary"
           type="button"

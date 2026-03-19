@@ -284,3 +284,5 @@ new-project/
 - 2026-03-19：收紧空间页为单层头部布局，去掉重复英雄块，并让好友/聊天页顶部不再重复标题与空间域名字段 / Tightened the space page into a single header layout, removed the duplicated hero block, and stopped friend/chat pages from repeating titles and space domain fields.
 - 2026-03-19：修正 Vue 空间头部的条件渲染，确保空间工作台导航只在空间页显示 / Fixed Vue space-header conditional rendering so the space workspace navigation appears only on the space page.
 - 2026-03-19：移除账号首页的空间摘要卡，并同步收紧 Flutter dashboard 的空间摘要区域 / Removed the space-summary card from the account homepage and tightened the Flutter dashboard space summary area.
+- 2026-03-19：重做 Vue 主题设置弹层的分区与控件皮肤，避免浅色主题下出现生硬的原生下拉样式 / Reworked the Vue theme-settings dropdown sections and control skin to avoid harsh native select styling in the light theme.
+- 2026-03-19：修正浅色主题下深色侧栏的文字对比度，确保导航与设置入口始终可读 / Fixed the text contrast for the dark sidebar in the light theme so navigation and settings remain readable.
