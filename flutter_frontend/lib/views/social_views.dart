@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:archive/archive.dart';
 
 import '../controllers/chat_media_actions.dart';
+import '../controllers/post_media_actions.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import 'view_state_helpers.dart';
@@ -115,7 +116,12 @@ class ProfileView extends StatelessWidget {
       return InfoCard(
         title: localizedText(languageCode, '个人主页', 'Profile', '個人主頁'),
         lines: [
-          localizedText(languageCode, '尚未加载资料，点击左侧个人主页重新进入。', 'Profile data is not loaded yet. Tap the profile entry on the left to reopen it.', '尚未載入資料，點擊左側個人主頁重新進入。'),
+          localizedText(
+            languageCode,
+            '尚未加载资料，点击左侧个人主页重新进入。',
+            'Profile data is not loaded yet. Tap the profile entry on the left to reopen it.',
+            '尚未載入資料，點擊左側個人主頁重新進入。',
+          ),
         ],
       );
     }
@@ -189,13 +195,13 @@ class ProfileView extends StatelessWidget {
                     child: TextField(
                       controller: usernameController,
                       maxLength: 63,
-                      buildCounter: (
-                        BuildContext context, {
-                        required int currentLength,
-                        required bool isFocused,
-                        required int? maxLength,
-                      }) =>
-                          null,
+                      buildCounter:
+                          (
+                            BuildContext context, {
+                            required int currentLength,
+                            required bool isFocused,
+                            required int? maxLength,
+                          }) => null,
                       decoration: InputDecoration(
                         hintText: t('dashboard.usernamePlaceholder'),
                       ),
@@ -211,13 +217,13 @@ class ProfileView extends StatelessWidget {
                     child: TextField(
                       controller: domainController,
                       maxLength: 63,
-                      buildCounter: (
-                        BuildContext context, {
-                        required int currentLength,
-                        required bool isFocused,
-                        required int? maxLength,
-                      }) =>
-                          null,
+                      buildCounter:
+                          (
+                            BuildContext context, {
+                            required int currentLength,
+                            required bool isFocused,
+                            required int? maxLength,
+                          }) => null,
                       decoration: InputDecoration(
                         hintText: t('profile.identity.domainPlaceholder'),
                       ),
@@ -249,51 +255,65 @@ class ProfileView extends StatelessWidget {
                         children: [
                           SizedBox(
                             width: fieldWidth,
-                          child: BilingualDropdownField<String>(
-                            primaryLabel: t('profile.identity.phoneVisibility'),
-                            secondaryLabel: peerT('profile.identity.phoneVisibility'),
-                            value: phoneVisibility,
-                            items: buildIdentityVisibilityItems(languageCode),
-                            onChanged: (value) => onPhoneVisibilityChanged(
-                              value ?? phoneVisibility,
+                            child: BilingualDropdownField<String>(
+                              primaryLabel: t(
+                                'profile.identity.phoneVisibility',
+                              ),
+                              secondaryLabel: peerT(
+                                'profile.identity.phoneVisibility',
+                              ),
+                              value: phoneVisibility,
+                              items: buildIdentityVisibilityItems(languageCode),
+                              onChanged: (value) => onPhoneVisibilityChanged(
+                                value ?? phoneVisibility,
+                              ),
                             ),
-                          ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                          child: BilingualDropdownField<String>(
-                            primaryLabel: t('profile.identity.emailVisibility'),
-                            secondaryLabel: peerT('profile.identity.emailVisibility'),
-                            value: emailVisibility,
-                            items: buildIdentityVisibilityItems(languageCode),
-                            onChanged: (value) => onEmailVisibilityChanged(
-                              value ?? emailVisibility,
+                            child: BilingualDropdownField<String>(
+                              primaryLabel: t(
+                                'profile.identity.emailVisibility',
+                              ),
+                              secondaryLabel: peerT(
+                                'profile.identity.emailVisibility',
+                              ),
+                              value: emailVisibility,
+                              items: buildIdentityVisibilityItems(languageCode),
+                              onChanged: (value) => onEmailVisibilityChanged(
+                                value ?? emailVisibility,
+                              ),
                             ),
-                          ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                          child: BilingualDropdownField<String>(
-                            primaryLabel: t('profile.identity.ageVisibility'),
-                            secondaryLabel: peerT('profile.identity.ageVisibility'),
-                            value: ageVisibility,
-                            items: buildIdentityVisibilityItems(languageCode),
-                            onChanged: (value) => onAgeVisibilityChanged(
-                              value ?? ageVisibility,
+                            child: BilingualDropdownField<String>(
+                              primaryLabel: t('profile.identity.ageVisibility'),
+                              secondaryLabel: peerT(
+                                'profile.identity.ageVisibility',
+                              ),
+                              value: ageVisibility,
+                              items: buildIdentityVisibilityItems(languageCode),
+                              onChanged: (value) => onAgeVisibilityChanged(
+                                value ?? ageVisibility,
+                              ),
                             ),
-                          ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                          child: BilingualDropdownField<String>(
-                            primaryLabel: t('profile.identity.genderVisibility'),
-                            secondaryLabel: peerT('profile.identity.genderVisibility'),
-                            value: genderVisibility,
-                            items: buildIdentityVisibilityItems(languageCode),
-                            onChanged: (value) => onGenderVisibilityChanged(
-                              value ?? genderVisibility,
+                            child: BilingualDropdownField<String>(
+                              primaryLabel: t(
+                                'profile.identity.genderVisibility',
+                              ),
+                              secondaryLabel: peerT(
+                                'profile.identity.genderVisibility',
+                              ),
+                              value: genderVisibility,
+                              items: buildIdentityVisibilityItems(languageCode),
+                              onChanged: (value) => onGenderVisibilityChanged(
+                                value ?? genderVisibility,
+                              ),
                             ),
-                          ),
                           ),
                         ],
                       );
@@ -301,15 +321,25 @@ class ProfileView extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    localizedText(languageCode, '域名与昵称分离，域名会用于二级域名路由和登录入口。', 'The domain is separate from the nickname and used for subdomain routing and login.', '網域與暱稱分離，網域會用於二級網域路由和登入入口。'),
+                    localizedText(
+                      languageCode,
+                      '域名与昵称分离，域名会用于二级域名路由和登录入口。',
+                      'The domain is separate from the nickname and used for subdomain routing and login.',
+                      '網域與暱稱分離，網域會用於二級網域路由和登入入口。',
+                    ),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 16),
-                    // Profile save action uses the shared bilingual button.
-                    // 个人资料保存动作统一使用双语按钮组件。
-                    BilingualActionButton(
-                      onPressed: loading ? null : onSaveProfile,
-                    primaryLabel: localizedText(languageCode, '保存身份卡', 'Save identity card', '儲存身分卡'),
+                  // Profile save action uses the shared bilingual button.
+                  // 个人资料保存动作统一使用双语按钮组件。
+                  BilingualActionButton(
+                    onPressed: loading ? null : onSaveProfile,
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '保存身份卡',
+                      'Save identity card',
+                      '儲存身分卡',
+                    ),
                     secondaryLabel: 'Save identity card',
                   ),
                 ],
@@ -325,7 +355,12 @@ class ProfileView extends StatelessWidget {
                 BilingualActionButton(
                   variant: BilingualButtonVariant.tonal,
                   onPressed: () => onAddFriend(profile.id),
-                  primaryLabel: localizedText(languageCode, '添加好友', 'Add friend', '新增好友'),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '添加好友',
+                    'Add friend',
+                    '新增好友',
+                  ),
                   secondaryLabel: 'Add friend',
                 ),
               if (profile.relationStatus == 'pending' &&
@@ -333,17 +368,27 @@ class ProfileView extends StatelessWidget {
                 BilingualActionButton(
                   variant: BilingualButtonVariant.tonal,
                   onPressed: () => onAcceptFriend(profile.id),
-                  primaryLabel: localizedText(languageCode, '接受好友', 'Accept friend', '接受好友'),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '接受好友',
+                    'Accept friend',
+                    '接受好友',
+                  ),
                   secondaryLabel: 'Accept friend',
                 ),
               if (profile.relationStatus == 'accepted')
                 BilingualActionButton(
                   variant: BilingualButtonVariant.tonal,
                   onPressed: onStartChat,
-                  primaryLabel: localizedText(languageCode, '发起聊天', 'Start chat', '發起聊天'),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '发起聊天',
+                    'Start chat',
+                    '發起聊天',
+                  ),
                   secondaryLabel: 'Start chat',
                 ),
-              ],
+            ],
           ),
         Card(
           shape: RoundedRectangleBorder(
@@ -426,8 +471,18 @@ class ProfileView extends StatelessWidget {
         PostStreamSection(
           posts: profilePosts,
           emptyText: isOwnProfile
-              ? localizedText(languageCode, '你还没有发布内容。', 'You have not posted anything yet.', '你還沒有發布內容。')
-              : localizedText(languageCode, '这个用户还没有公开内容。', 'This user has no public content yet.', '這個使用者還沒有公開內容。'),
+              ? localizedText(
+                  languageCode,
+                  '你还没有发布内容。',
+                  'You have not posted anything yet.',
+                  '你還沒有發布內容。',
+                )
+              : localizedText(
+                  languageCode,
+                  '这个用户还没有公开内容。',
+                  'This user has no public content yet.',
+                  '這個使用者還沒有公開內容。',
+                ),
           commentControllerFor: commentControllerFor,
           onLike: onToggleLike,
           onShare: onSharePost,
@@ -452,10 +507,13 @@ class PostDetailView extends StatelessWidget {
     required this.commentController,
     required this.editTitleController,
     required this.editContentController,
+    required this.editAttachment,
     required this.editVisibility,
     required this.editStatus,
     required this.onEditVisibilityChanged,
     required this.onEditStatusChanged,
+    required this.onPickEditAttachment,
+    required this.onClearEditAttachment,
     required this.onLike,
     required this.onShare,
     required this.onComment,
@@ -471,10 +529,13 @@ class PostDetailView extends StatelessWidget {
   final TextEditingController commentController;
   final TextEditingController editTitleController;
   final TextEditingController editContentController;
+  final PostAttachmentDraft? editAttachment;
   final String editVisibility;
   final String editStatus;
   final ValueChanged<String> onEditVisibilityChanged;
   final ValueChanged<String> onEditStatusChanged;
+  final Future<void> Function(String mediaType) onPickEditAttachment;
+  final VoidCallback onClearEditAttachment;
   final VoidCallback onLike;
   final VoidCallback onShare;
   final VoidCallback onComment;
@@ -490,13 +551,20 @@ class PostDetailView extends StatelessWidget {
       return InfoCard(
         title: localizedText(languageCode, '文章详情', 'Post detail', '文章詳情'),
         lines: [
-          localizedText(languageCode, '先从公共空间或个人主页打开一篇文章。', 'Open a post from a public space or profile first.', '先從公開空間或個人主頁打開一篇文章。'),
+          localizedText(
+            languageCode,
+            '先从公共空间或个人主页打开一篇文章。',
+            'Open a post from a public space or profile first.',
+            '先從公開空間或個人主頁打開一篇文章。',
+          ),
         ],
       );
     }
 
     final canManagePost =
-        user != null && (post.userId == user!.id || post.spaceUserId == user!.id);
+        user != null &&
+        (post.userId == user!.id || post.spaceUserId == user!.id);
+    final currentAttachment = editAttachment;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -528,7 +596,12 @@ class PostDetailView extends StatelessWidget {
                   TextField(
                     controller: editTitleController,
                     decoration: InputDecoration(
-                      labelText: localizedText(languageCode, '标题', 'Title', '標題'),
+                      labelText: localizedText(
+                        languageCode,
+                        '标题',
+                        'Title',
+                        '標題',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -537,9 +610,69 @@ class PostDetailView extends StatelessWidget {
                     minLines: 4,
                     maxLines: 8,
                     decoration: InputDecoration(
-                      labelText: localizedText(languageCode, '内容', 'Content', '內容'),
+                      labelText: localizedText(
+                        languageCode,
+                        '内容',
+                        'Content',
+                        '內容',
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: loading
+                            ? null
+                            : () => onPickEditAttachment('image'),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '添加图片',
+                          'Add image',
+                          '新增圖片',
+                        ),
+                        secondaryLabel: 'Add image',
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: loading
+                            ? null
+                            : () => onPickEditAttachment('video'),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '添加小视频',
+                          'Add short video',
+                          '新增小影片',
+                        ),
+                        secondaryLabel: 'Add short video',
+                      ),
+                      if (currentAttachment != null)
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.text,
+                          compact: true,
+                          onPressed: loading ? null : onClearEditAttachment,
+                          primaryLabel: localizedText(
+                            languageCode,
+                            '清除媒体',
+                            'Clear media',
+                            '清除媒體',
+                          ),
+                          secondaryLabel: 'Clear media',
+                        ),
+                    ],
+                  ),
+                  if (currentAttachment != null) ...[
+                    const SizedBox(height: 12),
+                    _EditAttachmentPreview(
+                      attachment: currentAttachment,
+                      languageCode: languageCode,
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
@@ -548,7 +681,12 @@ class PostDetailView extends StatelessWidget {
                       SizedBox(
                         width: 180,
                         child: BilingualDropdownField<String>(
-                          primaryLabel: localizedText(languageCode, '可见性', 'Visibility', '可見性'),
+                          primaryLabel: localizedText(
+                            languageCode,
+                            '可见性',
+                            'Visibility',
+                            '可見性',
+                          ),
                           secondaryLabel: 'Visibility',
                           value: editVisibility,
                           items: buildPostVisibilityItems(languageCode),
@@ -559,7 +697,12 @@ class PostDetailView extends StatelessWidget {
                       SizedBox(
                         width: 180,
                         child: BilingualDropdownField<String>(
-                          primaryLabel: localizedText(languageCode, '状态', 'Status', '狀態'),
+                          primaryLabel: localizedText(
+                            languageCode,
+                            '状态',
+                            'Status',
+                            '狀態',
+                          ),
                           secondaryLabel: 'Status',
                           value: editStatus,
                           items: buildPostStatusItems(languageCode),
@@ -567,14 +710,23 @@ class PostDetailView extends StatelessWidget {
                               onEditStatusChanged(value ?? editStatus),
                         ),
                       ),
-                      // Edit save action uses the shared bilingual button.
-                      // 编辑保存动作统一使用双语按钮组件。
-                      BilingualActionButton(
-                        onPressed: loading ? null : onSaveEdits,
-                        primaryLabel: localizedText(languageCode, '保存修改', 'Save changes', '儲存修改'),
-                        secondaryLabel: 'Save changes',
-                      ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    // Save button is separated from the field grid so the layout stays aligned.
+                    // 保存按钮与字段网格分离，避免横向对齐错位。
+                    child: BilingualActionButton(
+                      onPressed: loading ? null : onSaveEdits,
+                      primaryLabel: localizedText(
+                        languageCode,
+                        '保存修改',
+                        'Save changes',
+                        '儲存修改',
+                      ),
+                      secondaryLabel: 'Save changes',
+                    ),
                   ),
                 ],
               ),
@@ -582,6 +734,117 @@ class PostDetailView extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+class _EditAttachmentPreview extends StatelessWidget {
+  const _EditAttachmentPreview({
+    required this.attachment,
+    required this.languageCode,
+  });
+
+  final PostAttachmentDraft attachment;
+  final String languageCode;
+
+  @override
+  Widget build(BuildContext context) {
+    if (attachment.isImage) {
+      final bytes = _decodeMediaBytes(attachment.mediaData);
+      if (bytes != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            onTap: () => openPostAttachment(
+              mediaMime: attachment.mediaMime,
+              mediaData: attachment.mediaData,
+            ),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.memory(
+                bytes,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              attachment.isVideo
+                  ? Icons.video_library_outlined
+                  : Icons.image_outlined,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    attachment.mediaName.isNotEmpty
+                        ? attachment.mediaName
+                        : localizedText(
+                            languageCode,
+                            '媒体附件',
+                            'Media attachment',
+                            '媒體附件',
+                          ),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    attachment.mediaMime.isNotEmpty
+                        ? '${attachment.mediaMime} · ${attachment.sizeLabel}'
+                        : attachment.sizeLabel,
+                  ),
+                  const SizedBox(height: 8),
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => openPostAttachment(
+                      mediaMime: attachment.mediaMime,
+                      mediaData: attachment.mediaData,
+                    ),
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '打开附件',
+                      'Open attachment',
+                      '開啟附件',
+                    ),
+                    secondaryLabel: 'Open attachment',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Uint8List? _decodeMediaBytes(String data) {
+  try {
+    return Uint8List.fromList(base64Decode(data));
+  } catch (_) {
+    return null;
   }
 }
 
@@ -637,7 +900,12 @@ class FriendsView extends StatelessWidget {
                       child: TextField(
                         controller: searchController,
                         decoration: InputDecoration(
-                          labelText: localizedText(languageCode, '搜索 display name、邮箱、手机号、用户 ID', 'Search display name, email, phone, or user ID', '搜尋顯示名稱、信箱、手機號碼或使用者 ID'),
+                          labelText: localizedText(
+                            languageCode,
+                            '搜索 display name、邮箱、手机号、用户 ID',
+                            'Search display name, email, phone, or user ID',
+                            '搜尋顯示名稱、信箱、手機號碼或使用者 ID',
+                          ),
                         ),
                         onSubmitted: (_) => onSearch(),
                       ),
@@ -647,7 +915,12 @@ class FriendsView extends StatelessWidget {
                     // 搜索动作统一使用双语按钮组件。
                     BilingualActionButton(
                       onPressed: loading ? null : onSearch,
-                      primaryLabel: localizedText(languageCode, '搜索', 'Search', '搜尋'),
+                      primaryLabel: localizedText(
+                        languageCode,
+                        '搜索',
+                        'Search',
+                        '搜尋',
+                      ),
                       secondaryLabel: 'Search',
                     ),
                   ],
@@ -673,8 +946,18 @@ class FriendsView extends StatelessWidget {
                                   ? () => onAddFriend(item.id)
                                   : null,
                               primaryLabel: item.relationStatus.isEmpty
-                                  ? localizedText(languageCode, '添加好友', 'Add friend', '新增好友')
-                                  : localizedText(languageCode, '已存在关系', 'Relationship exists', '已有關係'),
+                                  ? localizedText(
+                                      languageCode,
+                                      '添加好友',
+                                      'Add friend',
+                                      '新增好友',
+                                    )
+                                  : localizedText(
+                                      languageCode,
+                                      '已存在关系',
+                                      'Relationship exists',
+                                      '已有關係',
+                                    ),
                               secondaryLabel: item.relationStatus.isEmpty
                                   ? 'Add friend'
                                   : 'Relationship exists',
@@ -710,7 +993,12 @@ class FriendsView extends StatelessWidget {
                         BilingualActionButton(
                           variant: BilingualButtonVariant.tonal,
                           onPressed: () => onOpenProfile(friend.id),
-                          primaryLabel: localizedText(languageCode, '主页', 'Profile', '主頁'),
+                          primaryLabel: localizedText(
+                            languageCode,
+                            '主页',
+                            'Profile',
+                            '主頁',
+                          ),
                           secondaryLabel: 'Profile',
                         ),
                         if (friend.direction == 'incoming' &&
@@ -718,7 +1006,12 @@ class FriendsView extends StatelessWidget {
                           BilingualActionButton(
                             variant: BilingualButtonVariant.tonal,
                             onPressed: () => onAcceptFriend(friend.id),
-                            primaryLabel: localizedText(languageCode, '接受', 'Accept', '接受'),
+                            primaryLabel: localizedText(
+                              languageCode,
+                              '接受',
+                              'Accept',
+                              '接受',
+                            ),
                             secondaryLabel: 'Accept',
                           )
                         else
@@ -727,7 +1020,12 @@ class FriendsView extends StatelessWidget {
                             onPressed: friend.status == 'accepted'
                                 ? () => onStartChat(friend)
                                 : null,
-                            primaryLabel: localizedText(languageCode, '聊天', 'Chat', '聊天'),
+                            primaryLabel: localizedText(
+                              languageCode,
+                              '聊天',
+                              'Chat',
+                              '聊天',
+                            ),
                             secondaryLabel: 'Chat',
                           ),
                       ],

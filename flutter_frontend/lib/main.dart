@@ -245,6 +245,9 @@ class _IniyouHomeState extends State<IniyouHome> {
   String _genderVisibility = 'private';
   String _editPostVisibility = 'public';
   String _editPostStatus = 'published';
+  // Attachment draft for the post editor.
+  // 文章编辑器使用的附件草稿。
+  PostAttachmentDraft? _editPostAttachment;
   AppView _view = AppView.dashboard;
 
   CurrentUser? _user;
@@ -365,6 +368,30 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 解析双语标签的另一种语言，保持主副语言分层展示。
     final peerLanguageCode = _languageCode == 'en-US' ? 'zh-CN' : 'en-US';
     return AppI18n.tr(peerLanguageCode, key);
+  }
+
+  PostAttachmentDraft? _draftAttachmentFromPost(PostItem post) {
+    // Rebuild an attachment draft from an existing post so edits can preserve or replace it.
+    // 将已有文章还原为附件草稿，便于编辑时保留或替换媒体。
+    if (!post.hasMedia) {
+      return null;
+    }
+    final inferredMediaType = post.mediaType.isNotEmpty
+        ? post.mediaType
+        : (post.mediaMime.startsWith('video/') ? 'video' : 'image');
+    var decodedSize = 0;
+    try {
+      decodedSize = base64Decode(post.mediaData).length;
+    } catch (_) {
+      decodedSize = post.mediaData.length;
+    }
+    return PostAttachmentDraft(
+      mediaType: inferredMediaType,
+      mediaName: post.mediaName,
+      mediaMime: post.mediaMime,
+      mediaData: post.mediaData,
+      originalSizeBytes: decodedSize,
+    );
   }
 
   int get _unreadMessageCount =>
@@ -727,14 +754,24 @@ class _IniyouHomeState extends State<IniyouHome> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          isEditing ? _l('编辑空间', 'Edit space', '編輯空間') : _l('创建空间', 'Create space', '建立空間'),
+                          isEditing
+                              ? _l('编辑空间', 'Edit space', '編輯空間')
+                              : _l('创建空间', 'Create space', '建立空間'),
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           isEditing
-                              ? _l('名称和二级域名可以独立修改，二级域名只能包含英文字母和数字，且最长 63 个字符。', 'The name and subdomain can be edited independently; the subdomain must use letters and numbers only, up to 63 characters.', '名稱和二級網域可以獨立修改，二級網域只能包含英文字母和數字，且最長 63 個字元。')
-                              : _l('选择空间类型并设置可见范围，然后补充名称、描述和二级域名。名称和二级域名互不关联，二级域名最长 63 个字符。', 'Choose the space type and visibility, then fill in the name, description, and subdomain. The name and subdomain are independent, and the subdomain can be up to 63 characters.', '選擇空間類型並設定可見範圍，然後補充名稱、描述和二級網域。名稱和二級網域互不關聯，二級網域最長 63 個字元。'),
+                              ? _l(
+                                  '名称和二级域名可以独立修改，二级域名只能包含英文字母和数字，且最长 63 个字符。',
+                                  'The name and subdomain can be edited independently; the subdomain must use letters and numbers only, up to 63 characters.',
+                                  '名稱和二級網域可以獨立修改，二級網域只能包含英文字母和數字，且最長 63 個字元。',
+                                )
+                              : _l(
+                                  '选择空间类型并设置可见范围，然后补充名称、描述和二级域名。名称和二级域名互不关联，二级域名最长 63 个字符。',
+                                  'Choose the space type and visibility, then fill in the name, description, and subdomain. The name and subdomain are independent, and the subdomain can be up to 63 characters.',
+                                  '選擇空間類型並設定可見範圍，然後補充名稱、描述和二級網域。名稱和二級網域互不關聯，二級網域最長 63 個字元。',
+                                ),
                         ),
                         const SizedBox(height: 20),
                         BilingualDropdownField<String>(
@@ -749,7 +786,8 @@ class _IniyouHomeState extends State<IniyouHome> {
                                     selectedType = value ?? selectedType;
                                     if (selectedType == 'private') {
                                       selectedVisibility = 'private';
-                                    } else if (selectedVisibility == 'private') {
+                                    } else if (selectedVisibility ==
+                                        'private') {
                                       selectedVisibility = 'public';
                                     }
                                     if (_spaceSubdomainController.text
@@ -760,7 +798,8 @@ class _IniyouHomeState extends State<IniyouHome> {
                                         selectedType,
                                       );
                                       if (suggestion.isNotEmpty) {
-                                        _spaceSubdomainController.text = suggestion;
+                                        _spaceSubdomainController.text =
+                                            suggestion;
                                       }
                                     }
                                   });
@@ -776,14 +815,17 @@ class _IniyouHomeState extends State<IniyouHome> {
                               ? null
                               : (value) {
                                   setDialogState(() {
-                                    selectedVisibility = value ?? selectedVisibility;
+                                    selectedVisibility =
+                                        value ?? selectedVisibility;
                                   });
                                 },
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _spaceNameController,
-                          decoration: InputDecoration(labelText: _l('空间名称', 'Space name', '空間名稱')),
+                          decoration: InputDecoration(
+                            labelText: _l('空间名称', 'Space name', '空間名稱'),
+                          ),
                           onChanged: isEditing
                               ? null
                               : (value) {
@@ -808,10 +850,22 @@ class _IniyouHomeState extends State<IniyouHome> {
                           controller: _spaceSubdomainController,
                           maxLength: 63,
                           decoration: InputDecoration(
-                            labelText: _l('二级域名（可选）', 'Subdomain (optional)', '二級網域（可選）'),
+                            labelText: _l(
+                              '二级域名（可选）',
+                              'Subdomain (optional)',
+                              '二級網域（可選）',
+                            ),
                             helperText: isEditing
-                                ? _l('仅允许英文字母和数字，且最长 63 个字符。', 'Letters and numbers only, up to 63 characters.', '僅允許英文字母和數字，且最長 63 個字元。')
-                                : _l('仅允许英文字母和数字，最长 63 个字符，留空时后端会自动生成。', 'Letters and numbers only, up to 63 characters. Leave it blank to auto-generate.', '僅允許英文字母和數字，最長 63 個字元，留空時後端會自動生成。'),
+                                ? _l(
+                                    '仅允许英文字母和数字，且最长 63 个字符。',
+                                    'Letters and numbers only, up to 63 characters.',
+                                    '僅允許英文字母和數字，且最長 63 個字元。',
+                                  )
+                                : _l(
+                                    '仅允许英文字母和数字，最长 63 个字符，留空时后端会自动生成。',
+                                    'Letters and numbers only, up to 63 characters. Leave it blank to auto-generate.',
+                                    '僅允許英文字母和數字，最長 63 個字元，留空時後端會自動生成。',
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -819,7 +873,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                           controller: _spaceDescriptionController,
                           minLines: 3,
                           maxLines: 5,
-                          decoration: InputDecoration(labelText: _l('空间描述', 'Space description', '空間描述')),
+                          decoration: InputDecoration(
+                            labelText: _l('空间描述', 'Space description', '空間描述'),
+                          ),
                         ),
                         const SizedBox(height: 20),
                         Wrap(
@@ -850,14 +906,23 @@ class _IniyouHomeState extends State<IniyouHome> {
                                               .trim()
                                               .toLowerCase();
                                       if (name.isEmpty) {
-                                        setState(() => _error = _l('空间名称不能为空', 'Space name cannot be empty', '空間名稱不能為空'));
+                                        setState(
+                                          () => _error = _l(
+                                            '空间名称不能为空',
+                                            'Space name cannot be empty',
+                                            '空間名稱不能為空',
+                                          ),
+                                        );
                                         return;
                                       }
                                       if (subdomain.isNotEmpty &&
                                           !_isValidSpaceSubdomain(subdomain)) {
                                         setState(
-                                          () => _error =
-                                              _l('二级域名只能包含英文字母和数字，且最长 63 个字符', 'The subdomain can contain letters and numbers only, up to 63 characters.', '二級網域只能包含英文字母和數字，且最長 63 個字元'),
+                                          () => _error = _l(
+                                            '二级域名只能包含英文字母和数字，且最长 63 个字符',
+                                            'The subdomain can contain letters and numbers only, up to 63 characters.',
+                                            '二級網域只能包含英文字母和數字，且最長 63 個字元',
+                                          ),
                                         );
                                         return;
                                       }
@@ -871,9 +936,12 @@ class _IniyouHomeState extends State<IniyouHome> {
                                         subdomain: subdomain,
                                       );
                                     },
-                              primaryLabel: isEditing ? _l('保存修改', 'Save changes', '儲存修改') : _l('创建空间', 'Create space', '建立空間'),
-                              secondaryLabel:
-                                  isEditing ? 'Save changes' : 'Create space',
+                              primaryLabel: isEditing
+                                  ? _l('保存修改', 'Save changes', '儲存修改')
+                                  : _l('创建空间', 'Create space', '建立空間'),
+                              secondaryLabel: isEditing
+                                  ? 'Save changes'
+                                  : 'Create space',
                             ),
                           ],
                         ),
@@ -893,9 +961,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
   }
 
-  Future<void> _openPostComposer({
-    SpaceItem? activeSpace,
-  }) async {
+  Future<void> _openPostComposer({SpaceItem? activeSpace}) async {
     // Open the unified space post composer dialog.
     // 打开统一的空间发帖弹窗。
     final ownedSpaces = uniqueSpacesById(
@@ -911,7 +977,13 @@ class _IniyouHomeState extends State<IniyouHome> {
         : findSpaceById(ownedSpaces, selectedTargetSpace.id);
     final effectiveTargetSpace = targetSpace ?? ownedSpaces.first;
     if (effectiveTargetSpace.userId != _user?.id) {
-      setState(() => _error = _l('只有空间创建者可以发帖', 'Only the space creator can publish posts', '只有空間建立者可以發帖'));
+      setState(
+        () => _error = _l(
+          '只有空间创建者可以发帖',
+          'Only the space creator can publish posts',
+          '只有空間建立者可以發帖',
+        ),
+      );
       return;
     }
 
@@ -930,7 +1002,9 @@ class _IniyouHomeState extends State<IniyouHome> {
           // Preview the selected post media in the composer dialog.
           // 在发帖弹窗中预览已选媒体。
           if (attachment.isImage) {
-            final bytes = Uint8List.fromList(base64Decode(attachment.mediaData));
+            final bytes = Uint8List.fromList(
+              base64Decode(attachment.mediaData),
+            );
             return ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: AspectRatio(
@@ -964,7 +1038,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                       children: [
                         Text(attachment.mediaName),
                         const SizedBox(height: 4),
-                        Text('${attachment.mediaMime} · ${attachment.sizeLabel}'),
+                        Text(
+                          '${attachment.mediaMime} · ${attachment.sizeLabel}',
+                        ),
                       ],
                     ),
                   ),
@@ -1006,12 +1082,20 @@ class _IniyouHomeState extends State<IniyouHome> {
                       const SizedBox(height: 8),
                       Text(
                         selectedSpace == null
-                            ? _l('先选择一个空间，再填写标题、内容或媒体。', 'Select a space first, then fill in the title, content, or media.', '先選擇一個空間，再填寫標題、內容或媒體。')
+                            ? _l(
+                                '先选择一个空间，再填写标题、内容或媒体。',
+                                'Select a space first, then fill in the title, content, or media.',
+                                '先選擇一個空間，再填寫標題、內容或媒體。',
+                              )
                             : '${_l('当前空间', 'Current space', '目前空間')}: ${selectedSpace.name} · @${selectedSpace.subdomain}',
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _l('其他人会按照帖子可见性看到内容，你也可以附加图片或小视频。', 'Others will see the post according to its visibility, and you can attach images or short videos.', '其他人會依照貼文可見性看到內容，你也可以附加圖片或小影片。'),
+                        _l(
+                          '其他人会按照帖子可见性看到内容，你也可以附加图片或小视频。',
+                          'Others will see the post according to its visibility, and you can attach images or short videos.',
+                          '其他人會依照貼文可見性看到內容，你也可以附加圖片或小影片。',
+                        ),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       if (dialogError != null) ...[
@@ -1029,7 +1113,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                         items: buildSpaceItems(ownedSpaces),
                         onChanged: (value) {
                           setDialogState(() {
-                            final nextValue = value == null ? null : findSpaceById(ownedSpaces, value);
+                            final nextValue = value == null
+                                ? null
+                                : findSpaceById(ownedSpaces, value);
                             if (nextValue != null) {
                               selectedSpaceId = nextValue.id;
                             }
@@ -1051,14 +1137,18 @@ class _IniyouHomeState extends State<IniyouHome> {
                       const SizedBox(height: 12),
                       TextField(
                         controller: titleController,
-                        decoration: InputDecoration(labelText: _l('标题', 'Title', '標題')),
+                        decoration: InputDecoration(
+                          labelText: _l('标题', 'Title', '標題'),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: contentController,
                         minLines: 4,
                         maxLines: 8,
-                        decoration: InputDecoration(labelText: _l('内容', 'Content', '內容')),
+                        decoration: InputDecoration(
+                          labelText: _l('内容', 'Content', '內容'),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -1071,7 +1161,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                             onPressed: _loading
                                 ? null
                                 : () async {
-                                    final attachment = await pickPostAttachment('image');
+                                    final attachment = await pickPostAttachment(
+                                      'image',
+                                    );
                                     if (attachment == null) {
                                       return;
                                     }
@@ -1091,7 +1183,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                             onPressed: _loading
                                 ? null
                                 : () async {
-                                    final attachment = await pickPostAttachment('video');
+                                    final attachment = await pickPostAttachment(
+                                      'video',
+                                    );
                                     if (attachment == null) {
                                       return;
                                     }
@@ -1102,7 +1196,11 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       selectedAttachment = attachment;
                                     });
                                   },
-                            primaryLabel: _l('添加小视频', 'Add short video', '新增小影片'),
+                            primaryLabel: _l(
+                              '添加小视频',
+                              'Add short video',
+                              '新增小影片',
+                            ),
                             secondaryLabel: 'Add short video',
                           ),
                           if (selectedAttachment != null)
@@ -1152,13 +1250,17 @@ class _IniyouHomeState extends State<IniyouHome> {
                                 ? null
                                 : () async {
                                     final title = titleController.text.trim();
-                                    final content = contentController.text.trim();
+                                    final content = contentController.text
+                                        .trim();
                                     if (title.isEmpty ||
                                         (content.isEmpty &&
                                             selectedAttachment == null)) {
-                                        setDialogState(() {
-                                          dialogError =
-                                            _l('标题不能为空，内容或媒体至少保留一项', 'Title cannot be empty; keep at least content or media.', '標題不能為空，內容或媒體至少保留一項');
+                                      setDialogState(() {
+                                        dialogError = _l(
+                                          '标题不能为空，内容或媒体至少保留一项',
+                                          'Title cannot be empty; keep at least content or media.',
+                                          '標題不能為空，內容或媒體至少保留一項',
+                                        );
                                       });
                                       return;
                                     }
@@ -1540,21 +1642,41 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 根据弹窗草稿创建或更新空间。
     final normalizedSubdomain = subdomain.toLowerCase().trim();
     if (name.trim().isEmpty) {
-      setState(() => _error = _l('空间名称不能为空', 'Space name cannot be empty', '空間名稱不能為空'));
+      setState(
+        () => _error = _l('空间名称不能为空', 'Space name cannot be empty', '空間名稱不能為空'),
+      );
       return;
     }
     if (space == null &&
         normalizedSubdomain.isNotEmpty &&
         !_isValidSpaceSubdomain(normalizedSubdomain)) {
-      setState(() => _error = _l('二级域名只能包含英文字母和数字，且最长 63 个字符', 'The subdomain can contain letters and numbers only, up to 63 characters.', '二級網域只能包含英文字母和數字，且最長 63 個字元'));
+      setState(
+        () => _error = _l(
+          '二级域名只能包含英文字母和数字，且最长 63 个字符',
+          'The subdomain can contain letters and numbers only, up to 63 characters.',
+          '二級網域只能包含英文字母和數字，且最長 63 個字元',
+        ),
+      );
       return;
     }
     if (space != null && normalizedSubdomain.isEmpty) {
-      setState(() => _error = _l('二级域名不能为空', 'The subdomain cannot be empty', '二級網域不能為空'));
+      setState(
+        () => _error = _l(
+          '二级域名不能为空',
+          'The subdomain cannot be empty',
+          '二級網域不能為空',
+        ),
+      );
       return;
     }
     if (space != null && !_isValidSpaceSubdomain(normalizedSubdomain)) {
-      setState(() => _error = _l('二级域名只能包含英文字母和数字，且最长 63 个字符', 'The subdomain can contain letters and numbers only, up to 63 characters.', '二級網域只能包含英文字母和數字，且最長 63 個字元'));
+      setState(
+        () => _error = _l(
+          '二级域名只能包含英文字母和数字，且最长 63 个字符',
+          'The subdomain can contain letters and numbers only, up to 63 characters.',
+          '二級網域只能包含英文字母和數字，且最長 63 個字元',
+        ),
+      );
       return;
     }
 
@@ -1580,7 +1702,8 @@ class _IniyouHomeState extends State<IniyouHome> {
           _editPostVisibility = 'public';
           _editPostStatus = 'published';
           _view = AppView.space;
-          _flash = '${_l('已创建空间', 'Space created', '空間已建立')} · @${result.space.subdomain}';
+          _flash =
+              '${_l('已创建空间', 'Space created', '空間已建立')} · @${result.space.subdomain}';
         });
         return;
       }
@@ -1597,19 +1720,20 @@ class _IniyouHomeState extends State<IniyouHome> {
           .toList();
       await _setActiveSpace(updated);
       await _refreshAll();
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _currentPost = null;
-          _editPostTitleController.clear();
-          _editPostContentController.clear();
-          _editPostVisibility = 'public';
-          _editPostStatus = 'published';
-          _view = AppView.space;
-          _flash = '${_l('空间已更新', 'Space updated', '空間已更新')} · @${updated.subdomain}';
-        });
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _currentPost = null;
+        _editPostTitleController.clear();
+        _editPostContentController.clear();
+        _editPostVisibility = 'public';
+        _editPostStatus = 'published';
+        _view = AppView.space;
+        _flash =
+            '${_l('空间已更新', 'Space updated', '空間已更新')} · @${updated.subdomain}';
       });
+    });
   }
 
   Future<void> _deleteSpace(SpaceItem space) async {
@@ -1617,7 +1741,11 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 删除可管理空间及其全部内容。
     final confirmed = await _confirmDangerousAction(
       title: _l('删除空间', 'Delete space', '刪除空間'),
-      message: _l('删除空间后，该空间下的文章、评论、点赞和转发记录都会一并删除，是否继续？', 'Deleting the space will remove its posts, comments, likes, and shares. Continue?', '刪除空間後，該空間下的文章、評論、按讚和轉發記錄都會一併刪除，是否繼續？'),
+      message: _l(
+        '删除空间后，该空间下的文章、评论、点赞和转发记录都会一并删除，是否继续？',
+        'Deleting the space will remove its posts, comments, likes, and shares. Continue?',
+        '刪除空間後，該空間下的文章、評論、按讚和轉發記錄都會一併刪除，是否繼續？',
+      ),
       confirmLabel: _l('删除', 'Delete', '刪除'),
       confirmSecondaryLabel: 'Delete',
     );
@@ -1645,10 +1773,18 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _spaces = _spaces.where((item) => item.id != space.id).toList();
-        _publicPosts = _publicPosts.where((post) => post.spaceId != space.id).toList();
-        _privatePosts = _privatePosts.where((post) => post.spaceId != space.id).toList();
-        _profilePosts = _profilePosts.where((post) => post.spaceId != space.id).toList();
-        _spacePosts = _spacePosts.where((post) => post.spaceId != space.id).toList();
+        _publicPosts = _publicPosts
+            .where((post) => post.spaceId != space.id)
+            .toList();
+        _privatePosts = _privatePosts
+            .where((post) => post.spaceId != space.id)
+            .toList();
+        _profilePosts = _profilePosts
+            .where((post) => post.spaceId != space.id)
+            .toList();
+        _spacePosts = _spacePosts
+            .where((post) => post.spaceId != space.id)
+            .toList();
         _currentSpace = _resolvedCurrentSpace();
         if (_activePrivateSpaceId == space.id) {
           _activePrivateSpaceId = null;
@@ -1667,24 +1803,36 @@ class _IniyouHomeState extends State<IniyouHome> {
           }
         }
       });
-        final prefs = _prefs ??= await SharedPreferences.getInstance();
-        await _persistSpaceSelection(prefs, _activePrivateSpaceKey, _activePrivateSpaceId);
-        await _persistSpaceSelection(prefs, _activePublicSpaceKey, _activePublicSpaceId);
-        await _refreshAll();
-        if (!mounted) {
-          return;
-        }
-        _openSpaceWorkspace();
-        setState(() => _flash = _l('空间已删除', 'Space deleted', '空間已刪除'));
-      });
-    }
+      final prefs = _prefs ??= await SharedPreferences.getInstance();
+      await _persistSpaceSelection(
+        prefs,
+        _activePrivateSpaceKey,
+        _activePrivateSpaceId,
+      );
+      await _persistSpaceSelection(
+        prefs,
+        _activePublicSpaceKey,
+        _activePublicSpaceId,
+      );
+      await _refreshAll();
+      if (!mounted) {
+        return;
+      }
+      _openSpaceWorkspace();
+      setState(() => _flash = _l('空间已删除', 'Space deleted', '空間已刪除'));
+    });
+  }
 
   Future<void> _deletePost(PostItem post) async {
     // Delete a managed post and all of its interactions.
     // 删除可管理文章及其所有互动记录。
     final confirmed = await _confirmDangerousAction(
       title: _l('删除文章', 'Delete post', '刪除文章'),
-      message: _l('删除文章后，关联的评论、点赞和转发记录都会一并删除，是否继续？', 'Deleting the post will also remove its comments, likes, and shares. Continue?', '刪除文章後，關聯的評論、按讚和轉發記錄都會一併刪除，是否繼續？'),
+      message: _l(
+        '删除文章后，关联的评论、点赞和转发记录都会一并删除，是否继续？',
+        'Deleting the post will also remove its comments, likes, and shares. Continue?',
+        '刪除文章後，關聯的評論、按讚和轉發記錄都會一併刪除，是否繼續？',
+      ),
       confirmLabel: _l('删除', 'Delete', '刪除'),
       confirmSecondaryLabel: 'Delete',
     );
@@ -1699,10 +1847,16 @@ class _IniyouHomeState extends State<IniyouHome> {
         return;
       }
       setState(() {
-        _publicPosts = _publicPosts.where((item) => item.id != post.id).toList();
-        _privatePosts = _privatePosts.where((item) => item.id != post.id).toList();
+        _publicPosts = _publicPosts
+            .where((item) => item.id != post.id)
+            .toList();
+        _privatePosts = _privatePosts
+            .where((item) => item.id != post.id)
+            .toList();
         _spacePosts = _spacePosts.where((item) => item.id != post.id).toList();
-        _profilePosts = _profilePosts.where((item) => item.id != post.id).toList();
+        _profilePosts = _profilePosts
+            .where((item) => item.id != post.id)
+            .toList();
         _currentSpace = _resolvedCurrentSpace();
         if (currentPost?.id == post.id) {
           _currentPost = null;
@@ -1735,7 +1889,13 @@ class _IniyouHomeState extends State<IniyouHome> {
     final content = contentController.text.trim();
     final hasMedia = attachment?.isMedia == true;
     if (title.isEmpty || (content.isEmpty && !hasMedia)) {
-      setState(() => _error = _l('标题不能为空，内容或媒体至少保留一项', 'Title cannot be empty; keep at least content or media.', '標題不能為空，內容或媒體至少保留一項'));
+      setState(
+        () => _error = _l(
+          '标题不能为空，内容或媒体至少保留一项',
+          'Title cannot be empty; keep at least content or media.',
+          '標題不能為空，內容或媒體至少保留一項',
+        ),
+      );
       return;
     }
     await _runBusy(() async {
@@ -1775,7 +1935,11 @@ class _IniyouHomeState extends State<IniyouHome> {
         setState(() => _spacePosts = const []);
         return;
       }
-      final posts = await _api.listSpacePosts(spaceId, visibility: 'all', limit: 50);
+      final posts = await _api.listSpacePosts(
+        spaceId,
+        visibility: 'all',
+        limit: 50,
+      );
       if (!mounted) {
         return;
       }
@@ -1911,10 +2075,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     await action();
   }
 
-  Future<void> _loadProfileByDomain(
-    String domain, {
-    bool quiet = false,
-  }) async {
+  Future<void> _loadProfileByDomain(String domain, {bool quiet = false}) async {
     Future<void> action() async {
       final profile = await _api.fetchUserProfileByDomain(domain);
       final ownProfile = _user?.id == profile.id;
@@ -1955,11 +2116,13 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       _editPostTitleController.text = post.title;
       _editPostContentController.text = post.content;
+      final attachmentDraft = _draftAttachmentFromPost(post);
       setState(() {
         _currentPost = post;
         _currentSpace = findSpaceById(_spaces, post.spaceId);
         _editPostVisibility = post.visibility;
         _editPostStatus = post.status;
+        _editPostAttachment = attachmentDraft;
         _view = AppView.postDetail;
       });
       if (post.spaceId.isNotEmpty) {
@@ -1981,6 +2144,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (post == null) {
       return;
     }
+    final attachment = _editPostAttachment;
     await _runBusy(() async {
       final updated = await _api.updatePost(
         id: post.id,
@@ -1989,10 +2153,10 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: _editPostVisibility,
         status: _editPostStatus,
         spaceId: post.spaceId,
-        mediaType: post.mediaType,
-        mediaName: post.mediaName,
-        mediaMime: post.mediaMime,
-        mediaData: post.mediaData,
+        mediaType: attachment?.mediaType ?? '',
+        mediaName: attachment?.mediaName ?? '',
+        mediaMime: attachment?.mediaMime ?? '',
+        mediaData: attachment?.mediaData ?? '',
       );
       _applyPostUpdate(updated);
       if (!mounted) {
@@ -2000,6 +2164,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _currentPost = updated;
+        _editPostAttachment = _draftAttachmentFromPost(updated);
         _flash = '文章已更新';
       });
     });
@@ -2197,6 +2362,26 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
         _flash = '订阅已更新';
       });
+    });
+  }
+
+  Future<void> _pickEditPostAttachment(String mediaType) async {
+    // Let the editor choose a new attachment using the same picker as publish.
+    // 让编辑器复用与发布一致的附件选择器。
+    final attachment = await pickPostAttachment(mediaType);
+    if (attachment == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _editPostAttachment = attachment;
+    });
+  }
+
+  void _clearEditPostAttachment() {
+    // Remove the current editor attachment so the update can clear media cleanly.
+    // 清除当前编辑附件，以便更新时同步移除媒体。
+    setState(() {
+      _editPostAttachment = null;
     });
   }
 
@@ -2449,9 +2634,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         ? const Color(0xFFFFB86B)
         : const Color(0xFF6EE7FF);
     final title = pendingFriend != null ? '好友提醒' : '新消息提醒';
-    final subtitle = pendingFriend != null
-        ? '有新的好友请求正在等待处理。'
-        : '有未读消息正在等待你查看。';
+    final subtitle = pendingFriend != null ? '有新的好友请求正在等待处理。' : '有未读消息正在等待你查看。';
 
     return Card(
       elevation: 16,
@@ -2468,10 +2651,9 @@ class _IniyouHomeState extends State<IniyouHome> {
             end: Alignment.bottomRight,
             colors: [
               accentColor.withValues(alpha: 0.24),
-              Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.96),
+              Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.96),
             ],
           ),
         ),
@@ -2521,9 +2703,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                           children: [
                             Text(
                               title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                             const SizedBox(height: 4),
@@ -2550,9 +2730,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                           pendingFriend != null
                               ? '$_pendingFriendCount 个'
                               : '$_unreadMessageCount 条',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
+                          style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(
                                 color: accentColor,
                                 fontWeight: FontWeight.w800,
@@ -2566,16 +2744,14 @@ class _IniyouHomeState extends State<IniyouHome> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.72),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surface.withValues(alpha: 0.72),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .outlineVariant
-                            .withValues(alpha: 0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                       ),
                     ),
                     child: Column(
@@ -2641,22 +2817,22 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-              space: buildSpaceView(
-                  context: context,
-                  loading: _loading,
-                  spaces: _spaces,
-                  activeSpace: _resolvedCurrentSpace(),
-                spacePosts: _spacePosts,
-                user: _user,
-                commentControllerFor: (postId) =>
-                    _commentControllers.putIfAbsent(postId, TextEditingController.new),
-                  onOpenSpaceComposer: () =>
-                      _openSpaceComposer(defaultType: 'public'),
-                  onOpenPostComposer: () => _openPostComposer(activeSpace: _resolvedCurrentSpace()),
-                  onLeaveSpace: _openSpaceWorkspace,
-                  onEnterSpace: _enterSpace,
-                  onEditSpace: (space) =>
-                      _openSpaceComposer(defaultType: space.type, space: space),
+      space: buildSpaceView(
+        context: context,
+        loading: _loading,
+        spaces: _spaces,
+        activeSpace: _resolvedCurrentSpace(),
+        spacePosts: _spacePosts,
+        user: _user,
+        commentControllerFor: (postId) =>
+            _commentControllers.putIfAbsent(postId, TextEditingController.new),
+        onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'public'),
+        onOpenPostComposer: () =>
+            _openPostComposer(activeSpace: _resolvedCurrentSpace()),
+        onLeaveSpace: _openSpaceWorkspace,
+        onEnterSpace: _enterSpace,
+        onEditSpace: (space) =>
+            _openSpaceComposer(defaultType: space.type, space: space),
         onDeleteSpace: _deleteSpace,
         onToggleLike: _toggleLike,
         onSharePost: _sharePost,
@@ -2666,16 +2842,16 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-              privateSpace: buildPrivateView(
-                loading: _loading,
-                activeSpace: _resolvedCurrentSpace() ?? activePrivateSpace,
-                spaces: _spaces,
-                privatePosts: filteredPrivatePosts,
-                user: _user,
+      privateSpace: buildPrivateView(
+        loading: _loading,
+        activeSpace: _resolvedCurrentSpace() ?? activePrivateSpace,
+        spaces: _spaces,
+        privatePosts: filteredPrivatePosts,
+        user: _user,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
-                onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'private'),
-                onOpenPostComposer: () => _openPostComposer(
+        onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'private'),
+        onOpenPostComposer: () => _openPostComposer(
           activeSpace: _resolvedCurrentSpace() ?? activePrivateSpace,
         ),
         onEnterSpace: _enterSpace,
@@ -2690,16 +2866,16 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-              publicSpace: buildPublicView(
-                loading: _loading,
-                activeSpace: _resolvedCurrentSpace() ?? activePublicSpace,
-                spaces: _spaces,
-                publicPosts: filteredPublicPosts,
-                user: _user,
+      publicSpace: buildPublicView(
+        loading: _loading,
+        activeSpace: _resolvedCurrentSpace() ?? activePublicSpace,
+        spaces: _spaces,
+        publicPosts: filteredPublicPosts,
+        user: _user,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
-                onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'public'),
-                onOpenPostComposer: () => _openPostComposer(
+        onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'public'),
+        onOpenPostComposer: () => _openPostComposer(
           activeSpace: _resolvedCurrentSpace() ?? activePublicSpace,
         ),
         onEnterSpace: _enterSpace,
@@ -2768,11 +2944,14 @@ class _IniyouHomeState extends State<IniyouHome> {
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
         editTitleController: _editPostTitleController,
         editContentController: _editPostContentController,
+        editAttachment: _editPostAttachment,
         editVisibility: _editPostVisibility,
         editStatus: _editPostStatus,
         onEditVisibilityChanged: (value) =>
             setState(() => _editPostVisibility = value),
         onEditStatusChanged: (value) => setState(() => _editPostStatus = value),
+        onPickEditAttachment: _pickEditPostAttachment,
+        onClearEditAttachment: _clearEditPostAttachment,
         onToggleLike: _toggleLike,
         onSharePost: _sharePost,
         onCommentPost: _comment,

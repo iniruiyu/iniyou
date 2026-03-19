@@ -246,6 +246,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-19：修复 Flutter 发布附件在非 Web 端空实现导致的图片/视频失效，并补齐文章编辑的附件按钮、预览与保存对齐 / Fixed Flutter publish attachments failing on non-web builds due to a stub implementation, and added edit attachment buttons, preview, and aligned save actions.
 - 2026-03-17：同步双前端导航与个人主页结构调整 / Synced dual-frontend navigation and profile structure updates.
 - 2026-03-17：收敛首批语言范围并保留 RTL 扩展 / Reduced built-in language scope while reserving RTL extension.
 - 2026-03-18：补充空间子域名、空间上下文与弹窗式创建路径 / Added space subdomain, active space context, and modal-based creation flow.
