@@ -286,3 +286,4 @@ new-project/
 - 2026-03-19：移除账号首页的空间摘要卡，并同步收紧 Flutter dashboard 的空间摘要区域 / Removed the space-summary card from the account homepage and tightened the Flutter dashboard space summary area.
 - 2026-03-19：重做 Vue 主题设置弹层的分区与控件皮肤，避免浅色主题下出现生硬的原生下拉样式 / Reworked the Vue theme-settings dropdown sections and control skin to avoid harsh native select styling in the light theme.
 - 2026-03-19：修正浅色主题下深色侧栏的文字对比度，确保导航与设置入口始终可读 / Fixed the text contrast for the dark sidebar in the light theme so navigation and settings remain readable.
+- 2026-03-19：收紧 Vue 空间概览，让页面只保留工作台选项卡和空间卡片，并将进入空间后的内容流独立展示 / Tightened the Vue space overview so it keeps only the workbench tabs and space cards, with the entered-space content flow shown separately.

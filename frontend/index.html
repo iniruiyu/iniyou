@@ -111,16 +111,10 @@
         <div class="space-topbar-left">
           <button class="ghost compact" type="button" @click="leaveSpaceShell">{{ t('spaces.backAction') }}</button>
           <div>
-            <div class="space-shell-kicker">{{ t('spaces.workspaceTitle') }}</div>
             <div class="page-title">{{ pageTitle }}</div>
-            <div class="page-sub">{{ pageSub }}</div>
           </div>
         </div>
         <div class="space-topbar-actions">
-          <div class="space-shell-summary">
-            <div class="profile-name">{{ currentSpace ? localizedSpaceText('name', currentSpace) : t('spaces.pageTitle') }}</div>
-            <div class="profile-level">{{ currentSpace ? spaceVisibilityLabel(currentSpace.visibility) : t('spaces.pageEmptyTitle') }}</div>
-          </div>
           <div v-if="user && currentSpace && currentSpace.userId === user.id" class="space-toolbar-actions">
             <bilingual-action-button
               variant="ghost"
@@ -442,101 +436,82 @@
         </div>
       </section>
 
+      <!-- Space overview / 空间概览：仅保留工作台选项卡和空间卡片，进入空间后再展示内容流。 -->
       <section v-if="view === 'space' || view === 'public'" class="panel space-page">
-        <div class="space-shell-grid">
-          <div class="space-nav-grid">
-            <div class="space-nav-card">
-              <div class="space-toolbar-kicker">{{ t('spaces.pageNavTitle') }}</div>
-              <div class="space-nav-title">{{ t('spaces.pageNavSub') }}</div>
-              <div class="space-nav-links">
-                <button class="ghost compact" type="button" @click="leaveSpaceShell">{{ t('spaces.backAction') }}</button>
-                <button class="ghost compact" type="button" @click="openSpaceWorkspaceTab('owned')">{{ t('spaces.ownedTab') }}</button>
-                <button class="ghost compact" type="button" @click="openSpaceWorkspaceTab('create')">{{ t('spaces.createTab') }}</button>
-              </div>
-            </div>
-            <div class="space-nav-card">
-              <div class="space-toolbar-kicker">{{ t('spaces.myTitle') }}</div>
-              <button class="ghost compact space-nav-toggle" type="button" @click="toggleSpaceOwnedPanel">{{ t('spaces.mySpacesToggle') }}</button>
-              <div class="space-nav-meta">{{ ownedSpaces.length }} · {{ t('spaces.mySub') }}</div>
-            </div>
+        <div v-if="spaceOwnedExpanded" class="space-workbench">
+          <div class="space-workbench-tabs">
+            <button
+              class="space-tab"
+              type="button"
+              :class="{ active: spacePanelTab === 'owned' }"
+              @click="openSpaceWorkspaceTab('owned')"
+            >
+              {{ t('spaces.ownedTab') }}
+            </button>
+            <button
+              class="space-tab"
+              type="button"
+              :class="{ active: spacePanelTab === 'create' }"
+              @click="openSpaceWorkspaceTab('create')"
+            >
+              {{ t('spaces.createTab') }}
+            </button>
           </div>
-
-          <div v-if="spaceOwnedExpanded" class="space-workbench">
-            <div class="space-workbench-tabs">
-              <button
-                class="space-tab"
-                type="button"
-                :class="{ active: spacePanelTab === 'owned' }"
-                @click="openSpaceWorkspaceTab('owned')"
+          <div v-if="spacePanelTab === 'owned'" class="space-owned-panel">
+            <div v-if="ownedSpaces.length === 0" class="space-tool-sub">{{ t('spaces.pageEmpty') }}</div>
+            <div v-else class="space-cards space-cards-inline">
+              <div
+                class="space-card"
+                v-for="space in ownedSpaces"
+                :key="space.id"
+                :class="{ active: currentSpace && space.id === currentSpace.id }"
               >
-                {{ t('spaces.ownedTab') }}
-              </button>
-              <button
-                class="space-tab"
-                type="button"
-                :class="{ active: spacePanelTab === 'create' }"
-                @click="openSpaceWorkspaceTab('create')"
-              >
-                {{ t('spaces.createTab') }}
-              </button>
-            </div>
-            <div v-if="spacePanelTab === 'owned'" class="space-owned-panel">
-              <div v-if="ownedSpaces.length === 0" class="space-tool-sub">{{ t('spaces.pageEmpty') }}</div>
-              <div v-else class="space-cards space-cards-inline">
-                <div
-                  class="space-card"
-                  v-for="space in ownedSpaces"
-                  :key="space.id"
-                  :class="{ active: currentSpace && space.id === currentSpace.id }"
-                >
-                  <div class="space-tag" :class="space.type">{{ t(`spaces.type.${space.type}`) }}</div>
-                  <div v-if="currentSpace && space.id === currentSpace.id" class="space-badge">
-                    {{ t('spaces.currentLabel') }}
-                  </div>
-                  <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
-                  <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
-                  <div class="space-meta">{{ spaceVisibilityLabel(space.visibility) }}</div>
-                  <div class="space-meta">@{{ space.subdomain }}</div>
-                  <div class="space-card-actions">
-                    <bilingual-action-button
-                      variant="ghost"
-                      compact
-                      type="button"
-                      :primary-label="t('spaces.enterAction')"
-                      :secondary-label="peerLocaleText('spaces.enterAction')"
-                      @click="enterSpace(space)"
-                    ></bilingual-action-button>
-                    <bilingual-action-button
-                      variant="ghost"
-                      compact
-                      type="button"
-                      :primary-label="t('spaces.editAction')"
-                      :secondary-label="peerLocaleText('spaces.editAction')"
-                      @click="openSpaceEditor(space)"
-                    ></bilingual-action-button>
-                  </div>
+                <div class="space-tag" :class="space.type">{{ t(`spaces.type.${space.type}`) }}</div>
+                <div v-if="currentSpace && space.id === currentSpace.id" class="space-badge">
+                  {{ t('spaces.currentLabel') }}
+                </div>
+                <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+                <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+                <div class="space-meta">{{ spaceVisibilityLabel(space.visibility) }}</div>
+                <div class="space-meta">@{{ space.subdomain }}</div>
+                <div class="space-card-actions">
+                  <bilingual-action-button
+                    variant="ghost"
+                    compact
+                    type="button"
+                    :primary-label="t('spaces.enterAction')"
+                    :secondary-label="peerLocaleText('spaces.enterAction')"
+                    @click="enterSpace(space)"
+                  ></bilingual-action-button>
+                  <bilingual-action-button
+                    variant="ghost"
+                    compact
+                    type="button"
+                    :primary-label="t('spaces.editAction')"
+                    :secondary-label="peerLocaleText('spaces.editAction')"
+                    @click="openSpaceEditor(space)"
+                  ></bilingual-action-button>
                 </div>
               </div>
             </div>
-            <div v-else class="space-tool-card space-create-panel">
-              <div class="space-toolbar-kicker">{{ t('spaces.createTitle') }}</div>
-              <div class="space-tool-title">{{ t('spaces.createSub') }}</div>
-              <div class="space-tool-sub">{{ t('spaces.mySub') }}</div>
-              <div class="space-tool-sub">{{ t('spaces.appearanceSub') }}</div>
-              <div class="space-tool-actions">
-                <bilingual-action-button
-                  variant="primary"
-                  type="button"
-                  :primary-label="t('spaces.createAction')"
-                  :secondary-label="peerLocaleText('spaces.createAction')"
-                  @click="openSpaceComposer('public')"
-                ></bilingual-action-button>
-              </div>
+          </div>
+          <div v-else class="space-tool-card space-create-panel">
+            <div class="space-toolbar-kicker">{{ t('spaces.createTitle') }}</div>
+            <div class="space-tool-title">{{ t('spaces.createSub') }}</div>
+            <div class="space-tool-sub">{{ t('spaces.mySub') }}</div>
+            <div class="space-tool-sub">{{ t('spaces.appearanceSub') }}</div>
+            <div class="space-tool-actions">
+              <bilingual-action-button
+                variant="primary"
+                type="button"
+                :primary-label="t('spaces.createAction')"
+                :secondary-label="peerLocaleText('spaces.createAction')"
+                @click="openSpaceComposer('public')"
+              ></bilingual-action-button>
             </div>
           </div>
         </div>
-
-        <div class="post-feed">
+        <div v-if="currentSpace" class="post-feed">
           <div class="post-composer">
             <div class="post-header">
               <div>
