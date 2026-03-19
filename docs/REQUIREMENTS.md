@@ -278,6 +278,7 @@
 ### 2026-03-19
 
 - Flutter 发布文章时，非 Web 端必须接入真实附件选择器，不能只保留 stub；文章编辑页也必须共享同一套附件状态、预览与清除能力，避免出现“发布能选、编辑不能改”的断链问题 / Flutter post publishing must use a real attachment picker on non-web platforms instead of a stub only; the post editor must share the same attachment state, preview, and clear actions to avoid split workflows where publish works but edit does not.
+- Vue 进入空间时，空间标题与页面说明必须兼容普通字符串和多语言对象，不能直接假设存在 `zh-CN` 键；类似解析函数要先做空值与类型检查，避免直接点“空间”时因标题计算崩溃 / When Vue enters Space, the space title and subtitle must tolerate both plain strings and multilingual objects and must not assume a `zh-CN` key exists; parsing helpers should guard against nulls and types so clicking Space never crashes on title computation.
 - 收口空间相关界面文案为当前语言单语显示，不再同时展示中文和英文 / Collapsed space-related UI labels to the active language only instead of showing bilingual text side by side.
 - 在聊天界面新增好友资料弹窗，支持查看资料并跳转到完整个人主页 / Added a friend profile modal in chat so users can review details and jump to the full profile page.
 - 空间页改为进入后才显示该空间帖子，并增加当前空间导航与设置区 / The space page now shows posts only after entering a space and includes current-space navigation and settings.

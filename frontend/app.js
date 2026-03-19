@@ -1239,7 +1239,7 @@ const app = createApp({
         return `@${this.profileUser.domain || this.profileUser.username}`;
       }
       if (this.view === 'space' || this.view === 'private' || this.view === 'public') {
-        const activeSpace = this.activePublicSpace;
+        const activeSpace = this.currentSpace || this.activePublicSpace || this.activePrivateSpace;
         const label = activeSpace ? this.localizedSpaceText('name', activeSpace) : '';
         if (label) {
           return `${this.t('pageTitle.space')} · ${label}`;
@@ -2591,7 +2591,29 @@ const app = createApp({
       return `${size.toFixed(precision)} ${units[unitIndex]}`;
     },
     localizedSpaceText(field, item) {
-      return item[field][this.locale] || item[field]['zh-CN'] || '';
+      // Resolve a space field safely for both localized objects and plain strings.
+      // 安全解析空间字段，兼容多语言对象与普通字符串。
+      if (!item || !field) {
+        return '';
+      }
+      const value = item[field];
+      if (!value) {
+        return '';
+      }
+      if (typeof value === 'string' || typeof value === 'number') {
+        return String(value);
+      }
+      if (typeof value !== 'object') {
+        return '';
+      }
+      return (
+        value[this.locale] ||
+        value['zh-CN'] ||
+        value['en-US'] ||
+        value['zh-TW'] ||
+        Object.values(value).find((entry) => typeof entry === 'string' && entry) ||
+        ''
+      );
     },
     identityVisibilityOptions() {
       // Shared identity visibility choices / 共用身份资料可见范围选项。
