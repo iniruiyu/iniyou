@@ -55,6 +55,8 @@ class ChatView extends StatefulWidget {
     required this.findFriend,
     required this.onStartChat,
     required this.onOpenProfile,
+    required this.onEnterSpace,
+    required this.loadFriendSpaces,
     required this.onSendMessage,
     required this.onPickAttachment,
     required this.onClearAttachment,
@@ -74,6 +76,8 @@ class ChatView extends StatefulWidget {
   final FriendItem? Function(String id) findFriend;
   final ValueChanged<FriendItem> onStartChat;
   final ValueChanged<String> onOpenProfile;
+  final ValueChanged<SpaceItem> onEnterSpace;
+  final Future<List<SpaceItem>> Function(String userId) loadFriendSpaces;
   final VoidCallback onSendMessage;
   final Future<void> Function(String messageType) onPickAttachment;
   final VoidCallback onClearAttachment;
@@ -187,6 +191,7 @@ class _ChatViewState extends State<ChatView> {
     }
     // Show a compact profile dialog for the current chat friend.
     // 为当前聊天好友弹出紧凑资料弹窗。
+    final friendSpaces = await widget.loadFriendSpaces(friend.id);
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -211,6 +216,66 @@ class _ChatViewState extends State<ChatView> {
                 Text('${_l('状态', 'Status', '狀態')}: ${friend.status}'),
                 const SizedBox(height: 4),
                 Text('${_l('方向', 'Direction', '方向')}: ${friend.direction}'),
+                const SizedBox(height: 16),
+                Text(
+                  _l('对方空间', 'Friend spaces', '對方空間'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _l('这里只显示对方公开的空间和进入入口。', 'Only public spaces and entry points are shown here.', '這裡只顯示對方公開的空間與進入入口。'),
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                if (friendSpaces.isEmpty)
+                  Text(_l('对方还没有公开空间。', 'This friend has no public spaces yet.', '對方還沒有公開空間。'))
+                else
+                  SizedBox(
+                    width: 420,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: friendSpaces
+                          .map(
+                            (space) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        space.name,
+                                        style: theme.textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(space.description),
+                                      const SizedBox(height: 6),
+                                      Text('@${space.subdomain}'),
+                                      const SizedBox(height: 10),
+                                      BilingualActionButton(
+                                        variant: BilingualButtonVariant.tonal,
+                                        compact: true,
+                                        onPressed: () {
+                                          Navigator.of(dialogContext).pop();
+                                          widget.onEnterSpace(space);
+                                        },
+                                        primaryLabel: _l('进入空间', 'Enter space', '進入空間'),
+                                        secondaryLabel: 'Enter space',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
               ],
             ),
           ),

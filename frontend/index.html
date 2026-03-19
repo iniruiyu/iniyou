@@ -821,39 +821,6 @@
               </div>
             </div>
           </div>
-          <div class="space-section">
-            <div class="space-section-head">
-              <h3>{{ t('profile.spaces.title') }}</h3>
-              <p>{{ t('profile.spaces.sub') }}</p>
-            </div>
-            <div v-if="visibleProfileSpaces.length === 0" class="empty-state">{{ t('profile.spaces.empty') }}</div>
-            <div class="space-cards">
-              <div
-                class="space-card"
-                v-for="space in visibleProfileSpaces"
-                :key="space.id"
-                :class="{ active: activeSpace && space.id === activeSpace.id }"
-              >
-                <div class="space-tag public">{{ spaceVisibilityLabel(space.visibility) }}</div>
-                <div v-if="activeSpace && space.id === activeSpace.id" class="space-badge">
-                  {{ t('spaces.currentLabel') }}
-                </div>
-                <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
-                <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
-                <div class="space-meta">@{{ space.subdomain }}</div>
-                <div class="space-card-actions">
-                  <bilingual-action-button
-                    variant="ghost"
-                    compact
-                    type="button"
-                    :primary-label="t('spaces.enterAction')"
-                    :secondary-label="peerLocaleText('spaces.enterAction')"
-                    @click="enterSpace(space)"
-                  ></bilingual-action-button>
-                </div>
-              </div>
-            </div>
-          </div>
           <div class="profile-tabs">
             <button class="profile-tab" :class="{active: profileTab === 'levels'}" @click="profileTab = 'levels'">{{ t('profile.tabs.levels') }}</button>
             <button class="profile-tab" :class="{active: profileTab === 'subscription'}" @click="profileTab = 'subscription'">{{ t('profile.tabs.subscription') }}</button>
@@ -1445,6 +1412,35 @@
             <div v-for="item in friendProfileRows(chatFriendProfile)" :key="item.key" class="friend-profile-card">
               <div class="friend-profile-label">{{ item.label }}</div>
               <div class="friend-profile-value">{{ item.value }}</div>
+            </div>
+          </div>
+          <div class="space-section">
+            <div class="space-section-head">
+              <h3>{{ t('chat.friendSpacesTitle') }}</h3>
+              <p>{{ t('chat.friendSpacesSub') }}</p>
+            </div>
+            <div v-if="chatFriendSpaces.length === 0" class="empty-state">{{ t('chat.friendSpacesEmpty') }}</div>
+            <div class="space-cards">
+              <div
+                class="space-card"
+                v-for="space in chatFriendSpaces"
+                :key="space.id"
+              >
+                <div class="space-tag public">{{ spaceVisibilityLabel(space.visibility) }}</div>
+                <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+                <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+                <div class="space-meta">@{{ space.subdomain }}</div>
+                <div class="space-card-actions">
+                  <bilingual-action-button
+                    variant="ghost"
+                    compact
+                    type="button"
+                    :primary-label="t('spaces.enterAction')"
+                    :secondary-label="peerLocaleText('spaces.enterAction')"
+                    @click="enterSpace(space)"
+                  ></bilingual-action-button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="modal-actions">

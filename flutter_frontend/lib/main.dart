@@ -251,7 +251,6 @@ class _IniyouHomeState extends State<IniyouHome> {
   UserProfileItem? _profileUser;
   PostItem? _currentPost;
   List<SpaceItem> _spaces = const [];
-  List<SpaceItem> _profileSpaces = const [];
   List<PostItem> _spacePosts = const [];
   List<PostItem> _publicPosts = const [];
   List<PostItem> _privatePosts = const [];
@@ -1309,7 +1308,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       _profileUser = null;
       _currentPost = null;
       _spaces = const [];
-      _profileSpaces = const [];
       _spacePosts = const [];
       _publicPosts = const [];
       _privatePosts = const [];
@@ -1762,7 +1760,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _profileUser = profile.profileUser;
-        _profileSpaces = profile.spaces;
         _profilePosts = profile.posts;
         _view = AppView.profile;
       });
@@ -1789,18 +1786,11 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: ownProfile ? 'all' : 'public',
         limit: 50,
       );
-      final spaces = await _api.listUserSpaces(
-        profile.id,
-        // Personal pages only show public spaces so the profile layout stays consistent.
-        // 个人主页只展示公开空间，保证布局与可见范围一致。
-        visibility: 'public',
-      );
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
-        _profileSpaces = spaces;
         _profilePosts = posts;
         _view = AppView.profile;
       });
@@ -1827,18 +1817,11 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: ownProfile ? 'all' : 'public',
         limit: 50,
       );
-      final spaces = await _api.listUserSpaces(
-        profile.id,
-        // Personal pages only show public spaces so the profile layout stays consistent.
-        // 个人主页只展示公开空间，保证布局与可见范围一致。
-        visibility: 'public',
-      );
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
-        _profileSpaces = spaces;
         _profilePosts = posts;
         _view = AppView.profile;
       });
@@ -2620,7 +2603,6 @@ class _IniyouHomeState extends State<IniyouHome> {
         user: _user,
         profileUser: _profileUser,
         profilePosts: _profilePosts,
-        profileSpaces: _profileSpaces,
         subscription: _subscription,
         externalAccounts: _externalAccounts,
         friends: _friends,
@@ -2735,6 +2717,8 @@ class _IniyouHomeState extends State<IniyouHome> {
         loading: _loading,
         onStartChat: _startChat,
         onOpenProfile: _openProfile,
+        onEnterSpace: _enterSpace,
+        loadFriendSpaces: _api.listUserSpaces,
         onSendMessage: _sendMessage,
         onPickAttachment: _pickChatAttachment,
         onClearAttachment: _clearChatAttachment,

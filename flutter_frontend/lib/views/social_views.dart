@@ -22,7 +22,6 @@ class ProfileView extends StatelessWidget {
     required this.user,
     required this.profileUser,
     required this.profilePosts,
-    required this.profileSpaces,
     required this.subscription,
     required this.connectedChains,
     required this.displayNameController,
@@ -63,7 +62,6 @@ class ProfileView extends StatelessWidget {
   final CurrentUser? user;
   final UserProfileItem? profileUser;
   final List<PostItem> profilePosts;
-  final List<SpaceItem> profileSpaces;
   final SubscriptionItem? subscription;
   final List<String> connectedChains;
   final TextEditingController displayNameController;
@@ -347,18 +345,6 @@ class ProfileView extends StatelessWidget {
                 ),
               ],
           ),
-        const SizedBox(height: 16),
-        SpaceListSection(
-          title: isOwnProfile
-              ? localizedText(languageCode, '我的公开空间', 'My public spaces', '我的公開空間')
-              : localizedText(languageCode, '公开空间', 'Public spaces', '公開空間'),
-          spaces: profileSpaces,
-          activeSpaceId: null,
-          currentUserId: user?.id,
-          onEnterSpace: onEnterSpace,
-          languageCode: languageCode,
-        ),
-        const SizedBox(height: 16),
         Card(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),

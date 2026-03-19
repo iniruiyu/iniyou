@@ -481,6 +481,9 @@ const app = createApp({
             mediaFile: '文件',
             friendProfileTitle: '好友资料',
             friendProfileSub: '查看好友的公开资料、联系方式和关系状态。',
+            friendSpacesTitle: '对方空间',
+            friendSpacesSub: '这里只展示对方公开的空间和进入入口。',
+            friendSpacesEmpty: '对方还没有公开空间。',
             viewProfile: '查看资料',
             friendStatus: '好友状态',
             friendDirection: '关系方向',
@@ -898,6 +901,9 @@ const app = createApp({
             mediaFile: 'File',
             friendProfileTitle: 'Friend Profile',
             friendProfileSub: 'View your friend’s public details, contact info, and relationship status.',
+            friendSpacesTitle: 'Friend spaces',
+            friendSpacesSub: 'Only public spaces and entry points are shown here.',
+            friendSpacesEmpty: 'This friend has no public spaces yet.',
             viewProfile: 'View Profile',
             friendStatus: 'Friend Status',
             friendDirection: 'Relation Direction',
@@ -1174,6 +1180,9 @@ const app = createApp({
       // Chat friend profile modal state.
       // 聊天好友资料弹窗状态。
       chatFriendProfile: null,
+      // Chat friend profile spaces.
+      // 聊天好友资料中的空间列表。
+      chatFriendSpaces: [],
       // Chat history.
       // 聊天记录。
       chatMessages: [
@@ -2152,6 +2161,9 @@ const app = createApp({
               mediaFile: '檔案',
               friendProfileTitle: '好友資料',
               friendProfileSub: '查看好友的公開資料、聯絡方式與關係狀態。',
+              friendSpacesTitle: '對方空間',
+              friendSpacesSub: '這裡只展示對方公開的空間與進入入口。',
+              friendSpacesEmpty: '對方還沒有公開空間。',
               viewProfile: '查看資料',
               friendStatus: '好友狀態',
               friendDirection: '關係方向',
@@ -2383,13 +2395,14 @@ const app = createApp({
         },
       ];
     },
-    openChatFriendProfile(friend) {
+    async openChatFriendProfile(friend) {
       // Open the chat friend profile modal with a frozen friend snapshot.
       // 使用冻结的好友快照打开聊天好友资料弹窗。
       if (!friend) {
         return;
       }
       this.closeChatQuickPanel();
+      this.chatFriendSpaces = await this.loadUserPublicSpaces(friend.id);
       this.chatFriendProfile = { ...friend };
     },
     async openChatFriendProfilePage() {
@@ -2406,6 +2419,25 @@ const app = createApp({
       // Close the chat friend profile modal.
       // 关闭聊天好友资料弹窗。
       this.chatFriendProfile = null;
+      this.chatFriendSpaces = [];
+    },
+    async loadUserPublicSpaces(userID) {
+      // Load public spaces for a user identity.
+      // 加载某个用户身份下的公开空间。
+      if (!this.token || !userID) {
+        return [];
+      }
+      const encoded = encodeURIComponent(String(userID).trim());
+      const res = await fetch(`${this.spaceApiBase}/users/${encoded}/spaces?visibility=public`, {
+        headers: { Authorization: `Bearer ${this.token}` },
+      });
+      if (!res.ok) {
+        return [];
+      }
+      const data = await res.json();
+      return Array.isArray(data.items)
+        ? data.items.map((item) => this.mapSpaceItem(item))
+        : [];
     },
     searchResultActionLabel(result) {
       // Render the action label for a user search result.
@@ -3376,7 +3408,7 @@ const app = createApp({
       this.profilePosts = Array.isArray(data.items)
         ? data.items.map((item) => this.mapPostItem(item))
         : [];
-      await this.loadProfileSpaces(this.profileUser.id || userID);
+      this.profileSpaces = [];
       if (this.profilePosts[0]?.authorName) {
         this.profileUser.name = this.profilePosts[0].authorName;
       }
