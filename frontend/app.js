@@ -1352,10 +1352,10 @@ const app = createApp({
       return this.postsForSpace(this.posts, this.activePublicSpace?.id || '');
     },
     activeSpace() {
-      return this.currentSpace || this.activePublicSpace || this.activePrivateSpace || null;
+      return this.currentSpace;
     },
     activeSpacePosts() {
-      return this.postsForSpace(this.spacePosts, this.activeSpace?.id || '');
+      return this.postsForSpace(this.spacePosts, this.currentSpace?.id || '');
     },
     ownedSpaces() {
       if (!this.user?.id) {
@@ -1488,6 +1488,7 @@ const app = createApp({
       const spaceLabel = subdomain ? `${name} · @${subdomain}` : name;
       return {
         id: item.id,
+        userId: item.user_id || '',
         type: item.type || 'private',
         visibility: item.visibility || (item.type === 'private' ? 'private' : 'public'),
         subdomain,

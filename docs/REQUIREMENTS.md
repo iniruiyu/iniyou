@@ -275,6 +275,7 @@
 - 在聊天界面新增好友资料弹窗，支持查看资料并跳转到完整个人主页 / Added a friend profile modal in chat so users can review details and jump to the full profile page.
 - 空间页改为进入后才显示该空间帖子，并增加当前空间导航与设置区 / The space page now shows posts only after entering a space and includes current-space navigation and settings.
 - 空间页导航按钮改为使用现有导航文案键，避免显示原始 key；Flutter 进入空间后立即拉取帖子，避免依赖手动刷新 / The space-page nav buttons now reuse existing nav translation keys instead of showing raw keys, and Flutter fetches posts immediately after entering a space without requiring a manual refresh.
+- Vue 空间页需要同时展示创建入口与“我的空间”列表，并且帖子流只能跟随已进入的当前空间 / The Vue space page must show both the create entry and “My spaces” list, and the feed must follow only the entered current space.
 
 ### 2026-03-18
 

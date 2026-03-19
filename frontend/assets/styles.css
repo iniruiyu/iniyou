@@ -1008,6 +1008,43 @@ body {
   margin-top: 12px;
 }
 
+.space-page-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.space-tool-card {
+  background: linear-gradient(180deg, rgba(110, 231, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.space-tool-title {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.space-tool-sub {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.space-tool-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.space-cards-inline {
+  margin-top: 12px;
+}
+
 .chat-profile-modal {
   width: min(760px, 100%);
 }

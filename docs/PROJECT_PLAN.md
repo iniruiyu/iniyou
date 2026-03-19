@@ -272,3 +272,4 @@ new-project/
 - 2026-03-19：收口空间相关文案为当前语言单语显示，并补充聊天好友资料弹窗 / Collapsed space-related labels to the active language only and added a chat friend profile modal.
 - 2026-03-19：空间页切换为“进入后才显示帖子”的独立内容页，并新增当前空间导航与设置入口 / Turned the space page into an enter-first content page with current-space navigation and settings entry.
 - 2026-03-19：修正 Vue 空间页导航文案键，并让 Flutter 进入空间时立即拉取当前空间帖子 / Fixed the Vue space-page nav labels and made Flutter fetch space posts immediately after entering a space.
+- 2026-03-19：恢复 Vue 空间页的创建入口与“我的空间”列表，并让空间帖子流只依赖已进入的当前空间 / Restored the Vue space-page create entry and “My spaces” list, and bound the feed strictly to the entered current space.
