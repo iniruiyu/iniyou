@@ -550,8 +550,7 @@
               </div>
             </div>
           </div>
-          <div v-if="!currentSpace" class="empty-state">{{ t('spaces.pageEmpty') }}</div>
-          <div v-else-if="activeSpacePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
+          <div v-if="currentSpace && activeSpacePosts.length === 0" class="empty-state">{{ t('posts.empty') }}</div>
           <article class="post-card" v-for="post in activeSpacePosts" :key="post.id">
             <div class="post-header">
               <div>

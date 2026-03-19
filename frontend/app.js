@@ -1378,7 +1378,7 @@ const app = createApp({
       return this.currentSpace;
     },
     activeSpacePosts() {
-      return this.postsForSpace(this.spacePosts, this.currentSpace?.id || '');
+      return this.currentSpace?.id ? this.postsForSpace(this.spacePosts, this.currentSpace.id) : [];
     },
     isSpaceShell() {
       return this.view === 'space' && Boolean(this.currentSpace);
@@ -1655,7 +1655,10 @@ const app = createApp({
     syncActiveSpaces() {
       // Keep active spaces aligned with the current data set.
       // 让当前空间与最新空间列表保持同步。
-      const activeSpace = this.currentSpace || this.resolveSpaceForVisibility('public', this.activePublicSpaceId || this.activePrivateSpaceId);
+      const activeSpace = this.currentSpace && this.findSpaceById(this.currentSpace.id)
+        ? this.currentSpace
+        : null;
+      this.currentSpace = activeSpace;
       this.activePrivateSpaceId = activeSpace ? activeSpace.id : '';
       this.activePublicSpaceId = activeSpace ? activeSpace.id : '';
       this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, this.activePrivateSpaceId);
@@ -3227,9 +3230,7 @@ const app = createApp({
         this.spaces = data.items.map((item) => this.mapSpaceItem(item));
         if (this.currentSpace?.id) {
           const refreshed = this.findSpaceById(this.currentSpace.id);
-          if (refreshed) {
-            this.currentSpace = refreshed;
-          }
+          this.currentSpace = refreshed || null;
         }
         this.syncActiveSpaces();
         const activeSpace = this.currentSpace;
@@ -4042,6 +4043,11 @@ const app = createApp({
       }
       if (this.currentSpace && this.currentSpace.id === space.id) {
         this.currentSpace = null;
+        this.spacePosts = this.spacePosts.filter((post) => post.spaceId !== space.id);
+        this.activePrivateSpaceId = '';
+        this.activePublicSpaceId = '';
+        this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, '');
+        this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, '');
       }
       if (this.currentPost && this.currentPost.spaceId === space.id) {
         this.currentPost = null;
@@ -4065,7 +4071,11 @@ const app = createApp({
       await this.loadSpaces();
       await this.loadPosts();
       await this.loadPrivatePosts();
-      await this.loadSpacePosts(this.activeSpace?.id || '');
+      if (!this.currentSpace) {
+        this.spacePosts = [];
+      }
+      this.enterSpaceShell();
+      this.openSpaceWorkspaceTab('owned');
       if (this.view === 'profile' && this.profileUser.id === this.user.id) {
         await this.openProfile(this.profileUser.id, this.profileUser.name);
       }

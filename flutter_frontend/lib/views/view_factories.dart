@@ -71,7 +71,7 @@ Widget buildSpaceView({
   // 页面聚焦于“自己创建的空间列表 + 当前空间内容流”。
   final ownedSpaces = user == null
       ? <SpaceItem>[]
-      : spaces.where((space) => space.userId == user.id).toList();
+      : uniqueSpacesById(spaces.where((space) => space.userId == user.id).toList());
   final selectedSpace = activeSpace;
   final managedSpace = selectedSpace;
   final canPublish = user != null &&
@@ -217,21 +217,23 @@ Widget buildSpaceView({
         LayoutBuilder(
           builder: (context, constraints) {
             final isWide = constraints.maxWidth >= 1120;
-            final feed = _SpaceFeedCard(
-              languageCode: languageCode,
-              selectedSpace: selectedSpace,
-              spacePosts: spacePosts,
-              canPublish: canPublish,
-              user: user,
-              onOpenPostComposer: onOpenPostComposer,
-              commentControllerFor: commentControllerFor,
-              onToggleLike: onToggleLike,
-              onSharePost: onSharePost,
-              onCommentPost: onCommentPost,
-              onOpenProfile: onOpenProfile,
-              onOpenPostDetail: onOpenPostDetail,
-              onDeletePost: onDeletePost,
-            );
+            final feed = selectedSpace == null
+                ? null
+                : _SpaceFeedCard(
+                    languageCode: languageCode,
+                    selectedSpace: selectedSpace,
+                    spacePosts: spacePosts,
+                    canPublish: canPublish,
+                    user: user,
+                    onOpenPostComposer: onOpenPostComposer,
+                    commentControllerFor: commentControllerFor,
+                    onToggleLike: onToggleLike,
+                    onSharePost: onSharePost,
+                    onCommentPost: onCommentPost,
+                    onOpenProfile: onOpenProfile,
+                    onOpenPostDetail: onOpenPostDetail,
+                    onDeletePost: onDeletePost,
+                  );
             final workspace = _SpaceWorkspaceCard(
               languageCode: languageCode,
               loading: loading,
@@ -243,6 +245,9 @@ Widget buildSpaceView({
               onDeleteSpace: onDeleteSpace,
               onOpenSpaceComposer: onOpenSpaceComposer,
             );
+            if (feed == null) {
+              return workspace;
+            }
             if (isWide) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,7 +326,7 @@ Widget buildPrivateView({
       const SizedBox(height: 16),
       SpaceListSection(
         title: localizedText(languageCode, '私人空间列表', 'Private space list', '私人空間列表'),
-        spaces: privateSpaces(spaces),
+        spaces: uniqueSpacesById(privateSpaces(spaces)),
         activeSpaceId: activeSpace?.id,
         currentUserId: user?.id,
         onEnterSpace: onEnterSpace,
@@ -400,7 +405,7 @@ Widget buildPublicView({
       const SizedBox(height: 16),
       SpaceListSection(
         title: localizedText(languageCode, '空间列表', 'Space list', '空間列表'),
-        spaces: publicSpaces(spaces),
+        spaces: uniqueSpacesById(publicSpaces(spaces)),
         activeSpaceId: activeSpace?.id,
         currentUserId: user?.id,
         onEnterSpace: onEnterSpace,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
+import '../views/view_state_helpers.dart';
 
 String _localizedChoice(
   String languageCode,
@@ -130,7 +131,7 @@ List<DropdownMenuItem<String>> buildSpaceItems(
 ) {
   // Keep the space picker labels focused on the actual space name and handle.
   // 空间选择器直接展示空间名称与句柄，避免把二级域名入口信息截断。
-  return spaces
+  return uniqueSpacesById(spaces)
       .map(
         (space) => DropdownMenuItem<String>(
           value: space.id,

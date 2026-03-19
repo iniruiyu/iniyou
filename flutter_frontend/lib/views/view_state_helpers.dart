@@ -87,6 +87,13 @@ List<SpaceItem> publicSpaces(List<SpaceItem> spaces) {
   return spaces.where((space) => space.type == 'public').toList();
 }
 
+List<SpaceItem> uniqueSpacesById(List<SpaceItem> spaces) {
+  // Drop duplicate space IDs so pickers and cards stay stable after refreshes.
+  // 按空间 ID 去重，避免刷新后下拉框和卡片出现重复项。
+  final seenIds = <String>{};
+  return spaces.where((space) => seenIds.add(space.id)).toList();
+}
+
 List<PostItem> postsForSpace(List<PostItem> posts, String? spaceId) {
   if (spaceId == null || spaceId.isEmpty) {
     return posts;

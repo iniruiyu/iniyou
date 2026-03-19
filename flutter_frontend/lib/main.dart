@@ -616,7 +616,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   Future<void> _syncActiveSpaces() async {
     // Keep the selected spaces aligned with the current account data.
     // 让已选空间与当前账号数据保持同步。
-    final activeSpace = _resolvedCurrentSpace() ?? _selectedSpaceForVisibility('public');
+    final activeSpace = _resolvedCurrentSpace();
     final prefs = _prefs ??= await SharedPreferences.getInstance();
     await _persistSpaceSelection(
       prefs,
@@ -898,20 +898,26 @@ class _IniyouHomeState extends State<IniyouHome> {
   }) async {
     // Open the unified space post composer dialog.
     // 打开统一的空间发帖弹窗。
-    final ownedSpaces = _spaces.where((space) => space.userId == _user?.id).toList();
+    final ownedSpaces = uniqueSpacesById(
+      _spaces.where((space) => space.userId == _user?.id).toList(),
+    );
     if (ownedSpaces.isEmpty) {
       setState(() => _error = _l('请先创建空间', 'Create a space first', '請先建立空間'));
       return;
     }
-    final targetSpace = activeSpace ?? _currentSpace ?? ownedSpaces.first;
-    if (targetSpace.userId != _user?.id) {
+    final selectedTargetSpace = activeSpace ?? _resolvedCurrentSpace();
+    final targetSpace = selectedTargetSpace == null
+        ? null
+        : findSpaceById(ownedSpaces, selectedTargetSpace.id);
+    final effectiveTargetSpace = targetSpace ?? ownedSpaces.first;
+    if (effectiveTargetSpace.userId != _user?.id) {
       setState(() => _error = _l('只有空间创建者可以发帖', 'Only the space creator can publish posts', '只有空間建立者可以發帖'));
       return;
     }
 
     final titleController = _publicPostTitleController;
     final contentController = _publicPostContentController;
-    var selectedSpaceId = targetSpace.id;
+    var selectedSpaceId = effectiveTargetSpace.id;
     var selectedVisibility = 'public';
     var selectedStatus = _publicPostStatus;
     PostAttachmentDraft? selectedAttachment;
@@ -978,7 +984,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           ),
           child: StatefulBuilder(
             builder: (context, setDialogState) {
-              final selectedSpace = findSpaceById(_spaces, selectedSpaceId);
+              final selectedSpace = findSpaceById(ownedSpaces, selectedSpaceId);
               return ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: SingleChildScrollView(
@@ -1017,7 +1023,10 @@ class _IniyouHomeState extends State<IniyouHome> {
                         items: buildSpaceItems(ownedSpaces),
                         onChanged: (value) {
                           setDialogState(() {
-                            selectedSpaceId = value ?? selectedSpaceId;
+                            final nextValue = value == null ? null : findSpaceById(ownedSpaces, value);
+                            if (nextValue != null) {
+                              selectedSpaceId = nextValue.id;
+                            }
                           });
                         },
                       ),
@@ -1239,13 +1248,16 @@ class _IniyouHomeState extends State<IniyouHome> {
       _subscription = dashboard.subscription;
       _externalAccounts = dashboard.externalAccounts;
       _currentSpace = _resolvedCurrentSpace();
+      if (_currentSpace == null) {
+        _spacePosts = const [];
+      }
       if (_activeChat != null) {
         _activeChat = findFriendById(_activeChat!.id, dashboard.friends);
       }
     });
 
     await _syncActiveSpaces();
-    final activeSpace = _resolvedCurrentSpace() ?? _selectedSpaceForVisibility('public');
+    final activeSpace = _resolvedCurrentSpace();
     if (activeSpace != null) {
       await _loadSpacePosts(activeSpace.id, quiet: true);
     }
@@ -2575,18 +2587,18 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenPostDetail: _openPostDetail,
         languageCode: _languageCode,
       ),
-                space: buildSpaceView(
+              space: buildSpaceView(
                   context: context,
                   loading: _loading,
                   spaces: _spaces,
-                  activeSpace: _currentSpace,
+                  activeSpace: _resolvedCurrentSpace(),
                 spacePosts: _spacePosts,
                 user: _user,
                 commentControllerFor: (postId) =>
                     _commentControllers.putIfAbsent(postId, TextEditingController.new),
                 onOpenSpaceComposer: () =>
                     _openSpaceComposer(defaultType: 'public'),
-                onOpenPostComposer: () => _openPostComposer(activeSpace: _currentSpace),
+                onOpenPostComposer: () => _openPostComposer(activeSpace: _resolvedCurrentSpace()),
                 onLeaveSpace: () => _navigateTo(AppView.dashboard),
                 onEnterSpace: _enterSpace,
                 onEditSpace: (space) =>
@@ -2602,7 +2614,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       ),
               privateSpace: buildPrivateView(
                 loading: _loading,
-                activeSpace: _currentSpace ?? activePrivateSpace,
+                activeSpace: _resolvedCurrentSpace() ?? activePrivateSpace,
                 spaces: _spaces,
                 privatePosts: filteredPrivatePosts,
                 user: _user,
@@ -2610,7 +2622,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
                 onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'private'),
                 onOpenPostComposer: () => _openPostComposer(
-          activeSpace: _currentSpace ?? activePrivateSpace,
+          activeSpace: _resolvedCurrentSpace() ?? activePrivateSpace,
         ),
         onEnterSpace: _enterSpace,
         onEditSpace: (space) =>
@@ -2626,7 +2638,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       ),
               publicSpace: buildPublicView(
                 loading: _loading,
-                activeSpace: _currentSpace ?? activePublicSpace,
+                activeSpace: _resolvedCurrentSpace() ?? activePublicSpace,
                 spaces: _spaces,
                 publicPosts: filteredPublicPosts,
                 user: _user,
@@ -2634,7 +2646,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
                 onOpenSpaceComposer: () => _openSpaceComposer(defaultType: 'public'),
                 onOpenPostComposer: () => _openPostComposer(
-          activeSpace: _currentSpace ?? activePublicSpace,
+          activeSpace: _resolvedCurrentSpace() ?? activePublicSpace,
         ),
         onEnterSpace: _enterSpace,
         onEditSpace: (space) =>
