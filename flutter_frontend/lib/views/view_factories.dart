@@ -78,178 +78,182 @@ Widget buildSpaceView({
       ? <SpaceItem>[]
       : spaces.where((space) => space.userId == user.id).toList();
   final selectedSpace = activeSpace;
+  final managedSpace = selectedSpace;
   final canPublish = user != null &&
       selectedSpace != null &&
       selectedSpace.userId == user.id;
-  final canManageSelectedSpace = selectedSpace != null &&
+  final canManageSelectedSpace = managedSpace != null &&
       user != null &&
-      selectedSpace.userId == user.id;
+      managedSpace.userId == user.id;
   return DefaultTabController(
     length: 2,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InfoCard(
-          title: localizedText(languageCode, '空间', 'Space', '空間'),
-          trailing: canManageSelectedSpace
-              ? SizedBox(
-                  width: 300,
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.end,
-                    children: [
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: () => onEditSpace(selectedSpace),
-                        primaryLabel: localizedText(languageCode, '设置空间资料', 'Edit space details', '設定空間資料'),
-                        secondaryLabel: 'Edit space details',
-                      ),
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.filled,
-                        compact: true,
-                        onPressed: () => onOpenPostComposer(),
-                        primaryLabel: localizedText(languageCode, '发布文章', 'Publish post', '發布文章'),
-                        secondaryLabel: 'Publish post',
-                      ),
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.text,
-                        compact: true,
-                        onPressed: () => onDeleteSpace(selectedSpace),
-                        primaryLabel: localizedText(languageCode, '删除空间', 'Delete space', '刪除空間'),
-                        secondaryLabel: 'Delete space',
-                      ),
-                    ],
-                  ),
-                )
-              : null,
-          lines: [
-            localizedText(languageCode, '只显示自己创建的空间。', 'Only spaces you created are listed here.', '只顯示自己建立的空間。'),
-            localizedText(languageCode, '进入空间后才显示空间内容，网站导航会收起为独立空间壳层。', 'Space content only appears after entry, and the site navigation collapses into a dedicated space shell.', '進入空間後才顯示空間內容，網站導覽會收起為獨立空間殼層。'),
-            if (selectedSpace == null)
-              localizedText(languageCode, '先从下方空间入口进入一个空间。', 'Pick a space from the entry list below first.', '先從下方空間入口進入一個空間。'),
-            if (selectedSpace != null)
-              '${localizedText(languageCode, '当前空间', 'Current space', '目前空間')}: ${selectedSpace.spaceLabel}',
-            if (selectedSpace != null)
-              '${localizedText(languageCode, '可见性', 'Visibility', '可見性')}: ${spaceVisibilityLabel(selectedSpace.visibility, languageCode)}',
-          ],
-        ),
-        const SizedBox(height: 16),
-        Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  localizedText(languageCode, '空间工作台', 'Space workspace', '空間工作台'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  localizedText(languageCode, '选项卡会把“我的空间”和“创建空间”收进同一个入口，进入空间后再展示内容。', 'Tabs keep “My spaces” and “Create space” under one entry, and content only appears after entering a space.', '選項卡會把「我的空間」和「建立空間」收進同一個入口，進入空間後再展示內容。'),
-                ),
-                const SizedBox(height: 14),
-                TabBar(
-                  tabs: [
-                    Tab(text: localizedText(languageCode, '我的空间', 'My spaces', '我的空間')),
-                    Tab(text: localizedText(languageCode, '创建空间', 'Create space', '建立空間')),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  height: 460,
-                  child: TabBarView(
-                    children: [
-                      ListView(
-                        padding: EdgeInsets.zero,
-                        children: [
-                          ExpansionTile(
-                            initiallyExpanded: false,
-                            title: Text(localizedText(languageCode, '我的空间', 'My spaces', '我的空間')),
-                            subtitle: Text(
-                              localizedText(languageCode, '点击展开你创建的空间列表。', 'Expand the spaces you created.', '點擊展開你建立的空間列表。'),
-                            ),
-                            children: [
-                              const SizedBox(height: 8),
-                              SpaceListSection(
-                                title: localizedText(languageCode, '我的空间', 'My spaces', '我的空間'),
-                                spaces: ownedSpaces,
-                                activeSpaceId: selectedSpace?.id,
-                                currentUserId: user?.id,
-                                onEnterSpace: onEnterSpace,
-                                onEditSpace: onEditSpace,
-                                onDeleteSpace: onDeleteSpace,
-                                languageCode: languageCode,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SpaceComposerCard(
-                              loading: loading,
-                              title: localizedText(languageCode, '创建空间', 'Create space', '建立空間'),
-                              subtitle: localizedText(languageCode, '名称、二级域名、可见范围和外观会在这里逐步完善。', 'Name, subdomain, visibility, and appearance will be refined here.', '名稱、二級網域、可見範圍和外觀會在這裡逐步完善。'),
-                              detailLines: [
-                                localizedText(languageCode, '空间主题和背景位已预留在布局中。', 'Theme and background slots are reserved in the layout.', '空間主題和背景位已預留在佈局中。'),
-                                localizedText(languageCode, '创建完成后会自动进入新空间。', 'After creation, the new space is entered automatically.', '建立完成後會自動進入新空間。'),
-                              ],
-                              buttonPrimaryLabel: localizedText(languageCode, '打开创建弹窗', 'Open create dialog', '打開建立彈窗'),
-                              buttonSecondaryLabel: 'Open create dialog',
-                              buttonVariant: BilingualButtonVariant.filled,
-                              onSubmit: onOpenSpaceComposer,
-                            ),
-                            const SizedBox(height: 12),
-                            InfoCard(
-                              title: localizedText(languageCode, '空间设置', 'Space settings', '空間設定'),
-                              lines: [
-                                localizedText(languageCode, '后续这里会接入空间级主题和背景图配置。', 'Space-level theme and background configuration will be added here.', '後續這裡會接入空間級主題和背景圖設定。'),
-                                localizedText(languageCode, '当前版本先保留入口和布局。', 'For now, the entry points and layout are reserved.', '目前版本先保留入口與佈局。'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.98),
+                Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (selectedSpace != null)
-          PostStreamSection(
-            posts: spacePosts,
-            emptyText: canPublish
-                ? localizedText(languageCode, '这个空间里还没有内容，点击发布开始创作。', 'There is no content in this space yet. Publish the first post.', '這個空間裡還沒有內容，點擊發布開始創作。')
-                : localizedText(languageCode, '这个空间里还没有内容。', 'There is no content in this space yet.', '這個空間裡還沒有內容。'),
-            commentControllerFor: commentControllerFor,
-            onLike: onToggleLike,
-            onShare: onSharePost,
-            onComment: onCommentPost,
-            onOpenAuthor: onOpenProfile,
-            onOpenDetail: onOpenPostDetail,
-            canEditPost: (post) =>
-                user != null &&
-                (post.userId == user.id || post.spaceUserId == user.id),
-            onDeletePost: onDeletePost,
-            languageCode: languageCode,
-          )
-        else
-          InfoCard(
-            title: localizedText(languageCode, '内容流', 'Feed', '內容流'),
-            lines: [
-              localizedText(languageCode, '先从上面的空间入口选择一个空间。', 'Select a space from the entry panel above first.', '先從上面的空間入口選擇一個空間。'),
-              localizedText(languageCode, '进入后即可浏览内容、点赞和评论。', 'After entering, you can browse content, like, and comment.', '進入後即可瀏覽內容、按讚和評論。'),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.55)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.14),
+                blurRadius: 26,
+                offset: const Offset(0, 14),
+              ),
             ],
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          localizedText(languageCode, '空间首页', 'Space home', '空間首頁'),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                letterSpacing: 0.08,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          selectedSpace?.spaceLabel ?? localizedText(languageCode, '尚未进入空间', 'No space entered', '尚未進入空間'),
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          localizedText(
+                            languageCode,
+                            '先进入空间，再浏览内容、设置空间和发布文章。',
+                            'Enter a space first, then browse content, manage settings, and publish posts.',
+                            '先進入空間，再瀏覽內容、設定空間和發佈文章。',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (canManageSelectedSpace)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.end,
+                      children: [
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.tonal,
+                          compact: true,
+                          onPressed: () => onEditSpace(managedSpace),
+                          primaryLabel: localizedText(languageCode, '设置空间资料', 'Space settings', '設定空間資料'),
+                          secondaryLabel: 'Space settings',
+                        ),
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.filled,
+                          compact: true,
+                          onPressed: () => onOpenPostComposer(),
+                          primaryLabel: localizedText(languageCode, '发布文章', 'Publish post', '發布文章'),
+                          secondaryLabel: 'Publish post',
+                        ),
+                        BilingualActionButton(
+                          variant: BilingualButtonVariant.text,
+                          compact: true,
+                          onPressed: () => onDeleteSpace(managedSpace),
+                          primaryLabel: localizedText(languageCode, '删除空间', 'Delete space', '刪除空間'),
+                          secondaryLabel: 'Delete space',
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _SpaceMetaChip(
+                    title: localizedText(languageCode, '当前空间', 'Current space', '目前空間'),
+                    value: selectedSpace?.name ?? localizedText(languageCode, '未选择', 'Not selected', '未選擇'),
+                  ),
+                  _SpaceMetaChip(
+                    title: localizedText(languageCode, '二级域名', 'Subdomain', '二級網域'),
+                    value: selectedSpace == null ? '@-' : '@${selectedSpace.subdomain}',
+                  ),
+                  _SpaceMetaChip(
+                    title: localizedText(languageCode, '可见性', 'Visibility', '可見性'),
+                    value: selectedSpace == null
+                        ? localizedText(languageCode, '未选择', 'Not selected', '未選擇')
+                        : spaceVisibilityLabel(selectedSpace.visibility, languageCode),
+                  ),
+                  _SpaceMetaChip(
+                    title: localizedText(languageCode, '我的空间', 'My spaces', '我的空間'),
+                    value: '${ownedSpaces.length}',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 1120;
+            final feed = _SpaceFeedCard(
+              languageCode: languageCode,
+              selectedSpace: selectedSpace,
+              spacePosts: spacePosts,
+              canPublish: canPublish,
+              user: user,
+              onOpenPostComposer: onOpenPostComposer,
+              commentControllerFor: commentControllerFor,
+              onToggleLike: onToggleLike,
+              onSharePost: onSharePost,
+              onCommentPost: onCommentPost,
+              onOpenProfile: onOpenProfile,
+              onOpenPostDetail: onOpenPostDetail,
+              onDeletePost: onDeletePost,
+            );
+            final workspace = _SpaceWorkspaceCard(
+              languageCode: languageCode,
+              loading: loading,
+              ownedSpaces: ownedSpaces,
+              selectedSpace: selectedSpace,
+              user: user,
+              onEnterSpace: onEnterSpace,
+              onEditSpace: onEditSpace,
+              onDeleteSpace: onDeleteSpace,
+              onOpenSpaceComposer: onOpenSpaceComposer,
+            );
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: feed),
+                  const SizedBox(width: 16),
+                  SizedBox(width: 380, child: workspace),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                workspace,
+                const SizedBox(height: 16),
+                feed,
+              ],
+            );
+          },
+        ),
       ],
     ),
   );
@@ -680,4 +684,270 @@ Widget buildChatView({
     onClearAttachment: onClearAttachment,
     languageCode: languageCode,
   );
+}
+
+class _SpaceMetaChip extends StatelessWidget {
+  const _SpaceMetaChip({
+    required this.title,
+    required this.value,
+  });
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpaceFeedCard extends StatelessWidget {
+  const _SpaceFeedCard({
+    required this.languageCode,
+    required this.selectedSpace,
+    required this.spacePosts,
+    required this.canPublish,
+    required this.user,
+    required this.onOpenPostComposer,
+    required this.commentControllerFor,
+    required this.onToggleLike,
+    required this.onSharePost,
+    required this.onCommentPost,
+    required this.onOpenProfile,
+    required this.onOpenPostDetail,
+    required this.onDeletePost,
+  });
+
+  final String languageCode;
+  final SpaceItem? selectedSpace;
+  final List<PostItem> spacePosts;
+  final bool canPublish;
+  final CurrentUser? user;
+  final VoidCallback onOpenPostComposer;
+  final TextEditingController Function(String postId) commentControllerFor;
+  final ValueChanged<PostItem> onToggleLike;
+  final ValueChanged<PostItem> onSharePost;
+  final ValueChanged<PostItem> onCommentPost;
+  final ValueChanged<String> onOpenProfile;
+  final ValueChanged<String> onOpenPostDetail;
+  final ValueChanged<PostItem> onDeletePost;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentUserId = user?.id;
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        localizedText(languageCode, '内容流', 'Feed', '內容流'),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              letterSpacing: 0.08,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        selectedSpace == null
+                            ? localizedText(languageCode, '请先进入空间。', 'Enter a space first.', '請先進入空間。')
+                            : localizedText(languageCode, '进入空间后即可浏览内容、点赞和评论。', 'After entering, you can browse content, like, and comment.', '進入空間後即可瀏覽內容、按讚和評論。'),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+                if (canPublish)
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.filled,
+                    compact: true,
+                    onPressed: onOpenPostComposer,
+                    primaryLabel: localizedText(languageCode, '发布文章', 'Publish post', '發布文章'),
+                    secondaryLabel: 'Publish post',
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            if (selectedSpace != null)
+              PostStreamSection(
+                posts: spacePosts,
+                emptyText: canPublish
+                    ? localizedText(languageCode, '这个空间里还没有内容，点击发布开始创作。', 'There is no content in this space yet. Publish the first post.', '這個空間裡還沒有內容，點擊發布開始創作。')
+                    : localizedText(languageCode, '这个空间里还没有内容。', 'There is no content in this space yet.', '這個空間裡還沒有內容。'),
+                commentControllerFor: commentControllerFor,
+                onLike: onToggleLike,
+                onShare: onSharePost,
+                onComment: onCommentPost,
+                onOpenAuthor: onOpenProfile,
+                onOpenDetail: onOpenPostDetail,
+                canEditPost: (post) =>
+                    currentUserId != null &&
+                    (post.userId == currentUserId || post.spaceUserId == currentUserId),
+                onDeletePost: onDeletePost,
+                languageCode: languageCode,
+              )
+            else
+              InfoCard(
+                title: localizedText(languageCode, '内容流', 'Feed', '內容流'),
+                lines: [
+                  localizedText(languageCode, '先从上面的空间入口选择一个空间。', 'Select a space from the entry panel above first.', '先從上面的空間入口選擇一個空間。'),
+                  localizedText(languageCode, '进入后即可浏览内容、点赞和评论。', 'After entering, you can browse content, like, and comment.', '進入後即可瀏覽內容、按讚和評論。'),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SpaceWorkspaceCard extends StatelessWidget {
+  const _SpaceWorkspaceCard({
+    required this.languageCode,
+    required this.loading,
+    required this.ownedSpaces,
+    required this.selectedSpace,
+    required this.user,
+    required this.onEnterSpace,
+    required this.onEditSpace,
+    required this.onDeleteSpace,
+    required this.onOpenSpaceComposer,
+  });
+
+  final String languageCode;
+  final bool loading;
+  final List<SpaceItem> ownedSpaces;
+  final SpaceItem? selectedSpace;
+  final CurrentUser? user;
+  final ValueChanged<SpaceItem> onEnterSpace;
+  final ValueChanged<SpaceItem> onEditSpace;
+  final ValueChanged<SpaceItem> onDeleteSpace;
+  final VoidCallback onOpenSpaceComposer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              localizedText(languageCode, '空间工作台', 'Space workspace', '空間工作台'),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              localizedText(languageCode, '“我的空间”与“创建空间”放在同一个工作台，进入空间后再展示内容。', '"My spaces" and "Create space" share one workspace, and content appears after entering a space.', '「我的空間」與「建立空間」放在同一個工作台，進入空間後再展示內容。'),
+            ),
+            const SizedBox(height: 14),
+            TabBar(
+              tabs: [
+                Tab(text: localizedText(languageCode, '我的空间', 'My spaces', '我的空間')),
+                Tab(text: localizedText(languageCode, '创建空间', 'Create space', '建立空間')),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 500,
+              child: TabBarView(
+                children: [
+                  ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      if (ownedSpaces.isEmpty)
+                        InfoCard(
+                          title: localizedText(languageCode, '我的空间', 'My spaces', '我的空間'),
+                          lines: [
+                            localizedText(languageCode, '当前还没有你创建的空间。', 'You have not created any spaces yet.', '目前還沒有你建立的空間。'),
+                            localizedText(languageCode, '可以先创建一个空间，再进入浏览内容。', 'Create one first, then enter it to browse content.', '可以先建立一個空間，再進入瀏覽內容。'),
+                          ],
+                        )
+                      else
+                        SpaceListSection(
+                          title: localizedText(languageCode, '我的空间', 'My spaces', '我的空間'),
+                          spaces: ownedSpaces,
+                          activeSpaceId: selectedSpace?.id,
+                          currentUserId: user?.id,
+                          onEnterSpace: onEnterSpace,
+                          onEditSpace: onEditSpace,
+                          onDeleteSpace: onDeleteSpace,
+                          languageCode: languageCode,
+                        ),
+                    ],
+                  ),
+                  SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SpaceComposerCard(
+                          loading: loading,
+                          title: localizedText(languageCode, '创建空间', 'Create space', '建立空間'),
+                          subtitle: localizedText(languageCode, '名称、二级域名、可见范围和外观会在这里逐步完善。', 'Name, subdomain, visibility, and appearance will be refined here.', '名稱、二級網域、可見範圍和外觀會在這裡逐步完善。'),
+                          detailLines: [
+                            localizedText(languageCode, '空间主题和背景位已预留在布局中。', 'Theme and background slots are reserved in the layout.', '空間主題和背景位已預留在佈局中。'),
+                            localizedText(languageCode, '创建完成后会自动进入新空间。', 'After creation, the new space is entered automatically.', '建立完成後會自動進入新空間。'),
+                          ],
+                          buttonPrimaryLabel: localizedText(languageCode, '打开创建弹窗', 'Open create dialog', '打開建立彈窗'),
+                          buttonSecondaryLabel: 'Open create dialog',
+                          buttonVariant: BilingualButtonVariant.filled,
+                          onSubmit: onOpenSpaceComposer,
+                        ),
+                        const SizedBox(height: 12),
+                        InfoCard(
+                          title: localizedText(languageCode, '空间设置', 'Space settings', '空間設定'),
+                          lines: [
+                            localizedText(languageCode, '后续这里会接入空间级主题和背景图配置。', 'Space-level theme and background configuration will be added here.', '後續這裡會接入空間級主題和背景圖設定。'),
+                            localizedText(languageCode, '当前版本先保留入口和布局。', 'For now, the entry points and layout are reserved.', '目前版本先保留入口與佈局。'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

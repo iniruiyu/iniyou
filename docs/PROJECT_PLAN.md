@@ -277,3 +277,4 @@ new-project/
 - 2026-03-19：重构空间页为独立壳层，折叠我的空间并将创建入口收口到最后一个选项卡 / Refactored the space page into a dedicated shell, collapsed My Spaces, and moved the create entry into the last tab.
 - 2026-03-19：优化 Flutter 空间按钮视觉，并将空间导航动作收回到空间头部信息卡 / Polished Flutter space buttons and moved space navigation actions back into the space header card.
 - 2026-03-19：进一步美化 Flutter 统一按钮皮肤，为空间主操作加入更明显的层次和渐变 / Further polished the Flutter unified button skin and added stronger depth and gradients to space primary actions.
+- 2026-03-19：将 Flutter 进入空间后的首屏重构为空间横幅 + 内容流/工作台双栏布局 / Reworked the Flutter space entry screen into a space banner with a content-feed/workspace two-column layout.
