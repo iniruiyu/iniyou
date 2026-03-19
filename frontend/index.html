@@ -948,7 +948,7 @@
               ></bilingual-action-button>
               <div class="post-comment-count">{{ t('posts.comment') }} · {{ currentPost.commentsCount }}</div>
             </div>
-            <div v-if="canEditPost(currentPost)" class="post-composer">
+            <div v-if="false" class="post-composer" aria-hidden="true">
               <h3>{{ t('posts.editTitle') }}</h3>
               <form class="form">
                 <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="editPostDraft.title" />
@@ -1095,6 +1095,91 @@
           </article>
         </div>
       </section>
+
+      <div v-if="postEditModalOpen" class="modal-backdrop" @click.self="closePostEditor">
+        <div class="modal post-edit-modal">
+          <div class="modal-header">
+            <div>
+              <div class="space-toolbar-kicker">{{ t('posts.editTitle') }}</div>
+              <div class="modal-title">{{ t('posts.edit') }}</div>
+              <div class="modal-hint">
+                {{ currentPost ? `${t('posts.spaceLabel')} · ${currentPost.spaceLabel}` : t('posts.editTitle') }}
+              </div>
+            </div>
+            <button class="ghost compact" type="button" @click="closePostEditor">×</button>
+          </div>
+          <form class="form modal-form" @submit.prevent="savePostEdit">
+            <input type="text" :placeholder="t('posts.titlePlaceholder')" v-model="editPostDraft.title" />
+            <textarea class="post-textarea" :placeholder="t('posts.contentPlaceholder')" v-model="editPostDraft.content"></textarea>
+            <div class="post-media-tools">
+              <div class="post-media-tools-head">
+                <div class="post-media-tools-title">{{ t('posts.mediaPreview') }}</div>
+                <div class="post-media-tools-sub">{{ editPostDraft.mediaName || t('common.notAvailable') }}</div>
+              </div>
+              <div class="post-media-actions">
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.attachImage')"
+                  :secondary-label="peerLocaleText('posts.attachImage')"
+                  @click="pickPostMedia('edit', 'image')"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.attachVideo')"
+                  :secondary-label="peerLocaleText('posts.attachVideo')"
+                  @click="pickPostMedia('edit', 'video')"
+                ></bilingual-action-button>
+                <bilingual-action-button
+                  v-if="editPostDraft.mediaUrl"
+                  variant="ghost"
+                  compact
+                  danger
+                  type="button"
+                  :primary-label="t('posts.clearMedia')"
+                  :secondary-label="peerLocaleText('posts.clearMedia')"
+                  @click="clearPostMedia('edit')"
+                ></bilingual-action-button>
+              </div>
+              <div v-if="editPostDraft.mediaUrl" class="post-media-preview">
+                <img
+                  v-if="editPostDraft.mediaType === 'image'"
+                  :src="editPostDraft.mediaUrl"
+                  :alt="editPostDraft.mediaName || editPostDraft.title"
+                />
+                <video
+                  v-else-if="editPostDraft.mediaType === 'video'"
+                  :src="editPostDraft.mediaUrl"
+                  controls
+                ></video>
+                <div v-else class="post-media-card">
+                  <div class="post-media-title">{{ editPostDraft.mediaName || t('posts.mediaPreview') }}</div>
+                  <div class="post-media-sub">{{ editPostDraft.mediaMime || editPostDraft.mediaType }}</div>
+                </div>
+              </div>
+            </div>
+            <bilingual-select-field
+              :primary-label="t('posts.visibilityLabel')"
+              :secondary-label="peerLocaleText('posts.visibilityLabel')"
+              v-model="editPostDraft.visibility"
+              :options="postVisibilityOptions()"
+            ></bilingual-select-field>
+            <bilingual-select-field
+              :primary-label="t('posts.statusLabel')"
+              :secondary-label="peerLocaleText('posts.statusLabel')"
+              v-model="editPostDraft.status"
+              :options="postStatusOptions()"
+            ></bilingual-select-field>
+            <div class="modal-actions">
+              <button class="ghost" type="button" @click="closePostEditor">{{ t('common.cancel') }}</button>
+              <button class="primary" type="submit">{{ t('posts.editAction') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       <section v-if="view === 'blockchain'" class="panel">
         <h2>{{ t('blockchain.title') }}</h2>

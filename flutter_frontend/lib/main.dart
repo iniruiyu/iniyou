@@ -933,47 +933,53 @@ class _IniyouHomeState extends State<IniyouHome> {
             final bytes = Uint8List.fromList(base64Decode(attachment.mediaData));
             return ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.memory(
-                bytes,
-                width: double.infinity,
-                height: 220,
-                fit: BoxFit.cover,
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.memory(
+                  bytes,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.contain,
+                ),
               ),
             );
           }
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.video_library_outlined),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(attachment.mediaName),
-                      const SizedBox(height: 4),
-                      Text('${attachment.mediaMime} · ${attachment.sizeLabel}'),
-                    ],
+          return AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.video_library_outlined),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(attachment.mediaName),
+                        const SizedBox(height: 4),
+                        Text('${attachment.mediaMime} · ${attachment.sizeLabel}'),
+                      ],
+                    ),
                   ),
-                ),
-                BilingualActionButton(
-                  variant: BilingualButtonVariant.tonal,
-                  compact: true,
-                  onPressed: () => openPostAttachment(
-                    mediaMime: attachment.mediaMime,
-                    mediaData: attachment.mediaData,
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => openPostAttachment(
+                      mediaMime: attachment.mediaMime,
+                      mediaData: attachment.mediaData,
+                    ),
+                    primaryLabel: _l('打开', 'Open', '開啟'),
+                    secondaryLabel: 'Open',
                   ),
-                  primaryLabel: _l('打开', 'Open', '開啟'),
-                  secondaryLabel: 'Open',
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }

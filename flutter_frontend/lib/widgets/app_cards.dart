@@ -183,61 +183,67 @@ class PostCard extends StatelessWidget {
               mediaMime: post.mediaMime,
               mediaData: post.mediaData,
             ),
-            child: Image.memory(
-              bytes,
-              width: double.infinity,
-              height: 240,
-              fit: BoxFit.cover,
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.memory(
+                bytes,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         );
       }
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            post.isVideo ? Icons.video_library_outlined : Icons.image_outlined,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.mediaName.isNotEmpty ? post.mediaName : '媒体附件',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  post.mediaMime.isNotEmpty
-                      ? '${post.mediaMime} · ${post.mediaType}'
-                      : post.mediaType,
-                ),
-                const SizedBox(height: 8),
-                BilingualActionButton(
-                  variant: BilingualButtonVariant.tonal,
-                  compact: true,
-                  onPressed: () => openPostAttachment(
-                    mediaMime: post.mediaMime,
-                    mediaData: post.mediaData,
-                  ),
-                  primaryLabel: '打开附件',
-                  secondaryLabel: 'Open attachment',
-                ),
-              ],
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              post.isVideo ? Icons.video_library_outlined : Icons.image_outlined,
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    post.mediaName.isNotEmpty ? post.mediaName : '媒体附件',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    post.mediaMime.isNotEmpty
+                        ? '${post.mediaMime} · ${post.mediaType}'
+                        : post.mediaType,
+                  ),
+                  const SizedBox(height: 8),
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => openPostAttachment(
+                      mediaMime: post.mediaMime,
+                      mediaData: post.mediaData,
+                    ),
+                    primaryLabel: '打开附件',
+                    secondaryLabel: 'Open attachment',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

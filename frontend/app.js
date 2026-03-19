@@ -1016,13 +1016,16 @@ const app = createApp({
         name: '',
         description: '',
         subdomain: '',
-      },
-      // Post modal state.
-      // 文章弹窗状态。
-      postModalOpen: false,
-      // Lightweight feedback text.
-      // 轻量反馈文本。
-      flashMessage: '',
+        },
+        // Post modal state.
+        // 文章弹窗状态。
+        postModalOpen: false,
+        // Post edit modal state.
+        // 文章编辑弹窗状态。
+        postEditModalOpen: false,
+        // Lightweight feedback text.
+        // 轻量反馈文本。
+        flashMessage: '',
       errorMessage: '',
       // Language creation form.
       // 新增语言表单。
@@ -1765,6 +1768,71 @@ const app = createApp({
       draft.mediaData = '';
       draft.mediaUrl = '';
     },
+    closePostEditor() {
+      // Close the post edit dialog and reset the edit draft.
+      // 关闭文章编辑弹窗并重置编辑草稿。
+      this.postEditModalOpen = false;
+      this.editPostDraft = {
+        id: '',
+        title: '',
+        content: '',
+        visibility: 'public',
+        status: 'published',
+        spaceId: '',
+        mediaType: '',
+        mediaName: '',
+        mediaMime: '',
+        mediaData: '',
+        mediaUrl: '',
+      };
+    },
+    replaceFileExtension(fileName, nextExtension) {
+      // Replace a file extension when deriving a new media asset name.
+      // 在派生媒体文件名时替换扩展名。
+      const baseName = String(fileName || '').replace(/\.[^.]+$/, '');
+      return `${baseName || 'image'}${nextExtension}`;
+    },
+    async compressImageToWebp(file) {
+      // Convert a picked image into WebP before upload when possible.
+      // 尽量在上传前将选中的图片转换为 WebP。
+      if (!file || !String(file.type || '').startsWith('image/')) {
+        return null;
+      }
+      if (file.type === 'image/webp') {
+        return null;
+      }
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const image = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error('image load failed'));
+          img.src = objectUrl;
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth || image.width;
+        canvas.height = image.naturalHeight || image.height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          return null;
+        }
+        context.drawImage(image, 0, 0);
+        const dataUrl = canvas.toDataURL('image/webp', 1);
+        const commaIndex = dataUrl.indexOf(',');
+        if (commaIndex < 0) {
+          return null;
+        }
+        return {
+          mediaName: this.replaceFileExtension(file.name, '.webp'),
+          mediaMime: 'image/webp',
+          mediaData: dataUrl.slice(commaIndex + 1),
+        };
+      } catch (_error) {
+        return null;
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    },
     pickPostMedia(target = 'create', preferredType = 'image') {
       // Open the browser file chooser for a post media draft.
       // 打开浏览器文件选择器以选择文章媒体。
@@ -1792,9 +1860,23 @@ const app = createApp({
         file.type || '',
       );
       const mediaType = inferredMime.startsWith('video/') ? 'video' : 'image';
+      if (mediaType === 'image') {
+        const webp = await this.compressImageToWebp(file);
+        if (webp) {
+          draft.mediaType = 'image';
+          draft.mediaName = webp.mediaName;
+          draft.mediaMime = webp.mediaMime;
+          draft.mediaData = webp.mediaData;
+          draft.mediaUrl = `data:${webp.mediaMime};base64,${webp.mediaData}`;
+          if (input) {
+            input.value = '';
+          }
+          return;
+        }
+      }
       const bytes = await file.arrayBuffer();
       draft.mediaType = mediaType;
-      draft.mediaName = file.name;
+      draft.mediaName = mediaType === 'image' ? this.replaceFileExtension(file.name, '.webp') : file.name;
       draft.mediaMime = inferredMime;
       draft.mediaData = this.bytesToBase64(new Uint8Array(bytes));
       draft.mediaUrl = `data:${inferredMime};base64,${draft.mediaData}`;
@@ -2273,6 +2355,7 @@ const app = createApp({
       this.currentPost = null;
       this.spaceModalOpen = false;
       this.postModalOpen = false;
+      this.postEditModalOpen = false;
       this.spaceDraft.id = '';
       this.spaceDraft.type = 'private';
       this.spaceDraft.name = '';
@@ -3646,8 +3729,7 @@ const app = createApp({
       if (!this.canEditPost(post)) {
         return;
       }
-      await this.openPostDetail(post.id);
-      const selectedPost = this.currentPost || post;
+      const selectedPost = this.currentPost?.id === post.id ? this.currentPost : post;
       const spaceId = selectedPost.spaceId || '';
       this.editPostDraft = {
         id: selectedPost.id,
@@ -3662,7 +3744,10 @@ const app = createApp({
         mediaData: selectedPost.mediaData || '',
         mediaUrl: selectedPost.mediaUrl || '',
       };
-      this.view = 'postDetail';
+      this.postEditModalOpen = true;
+      if (this.view === 'postDetail' && (!this.currentPost || this.currentPost.id !== selectedPost.id)) {
+        this.currentPost = selectedPost;
+      }
     },
     async savePostEdit() {
       // Persist the current post edit form.
@@ -3710,7 +3795,10 @@ const app = createApp({
       await this.loadPosts();
       await this.loadPrivatePosts();
       await this.loadSpacePosts(spaceId);
-      await this.openPostDetail(this.editPostDraft.id);
+      if (this.currentPost?.id === this.editPostDraft.id) {
+        await this.openPostDetail(this.editPostDraft.id);
+      }
+      this.closePostEditor();
       this.setFlash(this.t('posts.editSuccess'));
     },
     async togglePostLike(post) {
@@ -4051,6 +4139,7 @@ const app = createApp({
           mediaData: '',
           mediaUrl: '',
         };
+        this.postEditModalOpen = false;
       }
       if (this.spaceDraft.id === space.id) {
         this.closeSpaceComposer();
@@ -4133,6 +4222,7 @@ const app = createApp({
           mediaData: '',
           mediaUrl: '',
         };
+        this.postEditModalOpen = false;
       }
       if (this.currentPost && this.currentPost.id === post.id) {
         this.currentPost = null;

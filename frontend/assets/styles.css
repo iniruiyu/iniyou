@@ -1280,6 +1280,40 @@ body {
   margin-top: 14px;
 }
 
+.post-media-preview {
+  margin-top: 12px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(10, 14, 20, 0.92), rgba(24, 32, 44, 0.88));
+  display: grid;
+  place-items: center;
+}
+
+.post-media-preview img,
+.post-media-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.post-media-card {
+  width: 100%;
+  height: 100%;
+  padding: 18px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.post-edit-modal {
+  width: min(860px, 100%);
+}
+
 .post-meta,
 .post-comment-count,
 .post-comment-author,
