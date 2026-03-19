@@ -488,8 +488,9 @@ class _IniyouHomeState extends State<IniyouHome> {
   SpaceItem? _selectedSpaceForVisibility(String visibility) {
     // Resolve the current space for a content visibility scope.
     // 为内容可见范围解析当前空间。
-    if (_currentSpace != null) {
-      return _currentSpace;
+    final resolvedCurrentSpace = _resolvedCurrentSpace();
+    if (resolvedCurrentSpace != null) {
+      return resolvedCurrentSpace;
     }
     final activeSpaceId = visibility == 'private'
         ? _activePrivateSpaceId
@@ -503,6 +504,16 @@ class _IniyouHomeState extends State<IniyouHome> {
       return hostSpace;
     }
     return firstSpaceOfType(_spaces, visibility);
+  }
+
+  SpaceItem? _resolvedCurrentSpace() {
+    // Keep the selected space only when it still exists in the loaded list.
+    // 仅当当前空间仍存在于已加载列表时保留该选择。
+    final currentSpace = _currentSpace;
+    if (currentSpace == null) {
+      return null;
+    }
+    return findSpaceById(_spaces, currentSpace.id);
   }
 
   String? _currentHostLabel() {
@@ -605,7 +616,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   Future<void> _syncActiveSpaces() async {
     // Keep the selected spaces aligned with the current account data.
     // 让已选空间与当前账号数据保持同步。
-    final activeSpace = _currentSpace ?? _selectedSpaceForVisibility('public');
+    final activeSpace = _resolvedCurrentSpace() ?? _selectedSpaceForVisibility('public');
     final prefs = _prefs ??= await SharedPreferences.getInstance();
     await _persistSpaceSelection(
       prefs,
@@ -617,6 +628,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     setState(() {
+      _currentSpace = activeSpace;
       _activePrivateSpaceId = activeSpace?.id;
       _activePublicSpaceId = activeSpace?.id;
     });
@@ -1226,13 +1238,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       _conversations = dashboard.conversations;
       _subscription = dashboard.subscription;
       _externalAccounts = dashboard.externalAccounts;
+      _currentSpace = _resolvedCurrentSpace();
       if (_activeChat != null) {
         _activeChat = findFriendById(_activeChat!.id, dashboard.friends);
       }
     });
 
     await _syncActiveSpaces();
-    final activeSpace = _currentSpace ?? _selectedSpaceForVisibility('public');
+    final activeSpace = _resolvedCurrentSpace() ?? _selectedSpaceForVisibility('public');
     if (activeSpace != null) {
       await _loadSpacePosts(activeSpace.id, quiet: true);
     }
@@ -1562,16 +1575,36 @@ class _IniyouHomeState extends State<IniyouHome> {
       for (final postId in relatedPostIds) {
         _removeCommentController(postId);
       }
-      if (currentPostBelongsToSpace) {
-        _currentPost = null;
-        _editPostTitleController.clear();
-        _editPostContentController.clear();
-        _editPostVisibility = 'public';
-        _editPostStatus = 'published';
-        if (_view == AppView.postDetail) {
-          _view = AppView.space;
-        }
+      if (!mounted) {
+        return;
       }
+      setState(() {
+        _spaces = _spaces.where((item) => item.id != space.id).toList();
+        _publicPosts = _publicPosts.where((post) => post.spaceId != space.id).toList();
+        _privatePosts = _privatePosts.where((post) => post.spaceId != space.id).toList();
+        _profilePosts = _profilePosts.where((post) => post.spaceId != space.id).toList();
+        _spacePosts = _spacePosts.where((post) => post.spaceId != space.id).toList();
+        _currentSpace = _resolvedCurrentSpace();
+        if (_activePrivateSpaceId == space.id) {
+          _activePrivateSpaceId = null;
+        }
+        if (_activePublicSpaceId == space.id) {
+          _activePublicSpaceId = null;
+        }
+        if (currentPostBelongsToSpace) {
+          _currentPost = null;
+          _editPostTitleController.clear();
+          _editPostContentController.clear();
+          _editPostVisibility = 'public';
+          _editPostStatus = 'published';
+          if (_view == AppView.postDetail) {
+            _view = AppView.space;
+          }
+        }
+      });
+      final prefs = _prefs ??= await SharedPreferences.getInstance();
+      await _persistSpaceSelection(prefs, _activePrivateSpaceKey, _activePrivateSpaceId);
+      await _persistSpaceSelection(prefs, _activePublicSpaceKey, _activePublicSpaceId);
       await _refreshAll();
       if (!mounted) {
         return;
@@ -1596,16 +1629,26 @@ class _IniyouHomeState extends State<IniyouHome> {
       final currentPost = _currentPost;
       await _api.deletePost(post.id);
       _removeCommentController(post.id);
-      if (currentPost?.id == post.id) {
-        _currentPost = null;
-        _editPostTitleController.clear();
-        _editPostContentController.clear();
-        _editPostVisibility = 'public';
-        _editPostStatus = 'published';
-        if (_view == AppView.postDetail) {
-          _view = AppView.space;
-        }
+      if (!mounted) {
+        return;
       }
+      setState(() {
+        _publicPosts = _publicPosts.where((item) => item.id != post.id).toList();
+        _privatePosts = _privatePosts.where((item) => item.id != post.id).toList();
+        _spacePosts = _spacePosts.where((item) => item.id != post.id).toList();
+        _profilePosts = _profilePosts.where((item) => item.id != post.id).toList();
+        _currentSpace = _resolvedCurrentSpace();
+        if (currentPost?.id == post.id) {
+          _currentPost = null;
+          _editPostTitleController.clear();
+          _editPostContentController.clear();
+          _editPostVisibility = 'public';
+          _editPostStatus = 'published';
+          if (_view == AppView.postDetail) {
+            _view = AppView.space;
+          }
+        }
+      });
       await _refreshAll();
       if (!mounted) {
         return;
@@ -1672,10 +1715,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _spacePosts = posts;
-        final matched = findSpaceById(_spaces, spaceId);
-        if (matched != null) {
-          _currentSpace = matched;
-        }
+        _currentSpace = findSpaceById(_spaces, spaceId);
       });
     }
 
@@ -1851,7 +1891,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _editPostContentController.text = post.content;
       setState(() {
         _currentPost = post;
-        _currentSpace = findSpaceById(_spaces, post.spaceId) ?? _currentSpace;
+        _currentSpace = findSpaceById(_spaces, post.spaceId);
         _editPostVisibility = post.visibility;
         _editPostStatus = post.status;
         _view = AppView.postDetail;
@@ -2080,21 +2120,23 @@ class _IniyouHomeState extends State<IniyouHome> {
   Future<void> _activatePlan(String planId) async {
     await _runBusy(() async {
       final result = await AppActions.activatePlan(_api, planId);
-      _subscription = result.subscription;
-      _user = result.user;
-      if (_profileUser?.id == _user?.id) {
-        _profileUser = UserProfileItem.fromCurrentUser(_user!);
-      }
       if (!mounted) {
         return;
       }
-      setState(() => _flash = '订阅已更新');
+      setState(() {
+        _subscription = result.subscription;
+        _user = result.user;
+        if (_profileUser?.id == _user?.id) {
+          _profileUser = UserProfileItem.fromCurrentUser(_user!);
+        }
+        _flash = '订阅已更新';
+      });
     });
   }
 
   Future<void> _bindExternalAccount() async {
     await _runBusy(() async {
-      _externalAccounts = await AppActions.bindExternalAccountAndReload(
+      final nextAccounts = await AppActions.bindExternalAccountAndReload(
         _api,
         provider: _externalProvider,
         chain: _externalChain,
@@ -2106,20 +2148,26 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (!mounted) {
         return;
       }
-      setState(() => _flash = '外部账号已绑定');
+      setState(() {
+        _externalAccounts = nextAccounts;
+        _flash = '外部账号已绑定';
+      });
     });
   }
 
   Future<void> _removeExternalAccount(String id) async {
     await _runBusy(() async {
-      _externalAccounts = await AppActions.removeExternalAccountAndReload(
+      final nextAccounts = await AppActions.removeExternalAccountAndReload(
         _api,
         id,
       );
       if (!mounted) {
         return;
       }
-      setState(() => _flash = '外部账号已移除');
+      setState(() {
+        _externalAccounts = nextAccounts;
+        _flash = '外部账号已移除';
+      });
     });
   }
 

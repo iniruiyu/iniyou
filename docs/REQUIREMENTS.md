@@ -125,6 +125,7 @@
 - 空间内容页需要展示当前空间和空间内容流，并支持图文与小视频附件发布 / The space content page should show the current space and the feed, and support image plus short-video attachments.
 - 空间内容页不再重复展示个人空间列表，空间列表入口保留在首页与个人主页 / The space content page should not repeat the owned-space list; the space list entry stays on the home and profile pages.
 - 文章卡片需要支持删除当前用户自己的内容，以及空间创建者删除其空间内内容 / Post cards should support deleting the current user's content, and space creators should be able to delete posts inside their spaces.
+- 变更型操作需要先更新本地状态再刷新服务端数据，删除空间或文章后必须立即清理当前空间与相关缓存，订阅和外部账号变更也要同步更新界面 / Mutation actions must update local state before refreshing server data; deleting spaces or posts must immediately clear the current space and related caches, and subscription and external-account changes must update the UI at once.
 - 评论需要支持楼中楼回复 / Comments should support threaded replies.
 
 ### 5.4 后续扩展
