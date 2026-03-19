@@ -54,7 +54,7 @@ const app = createApp({
       // Space shell mode state.
       // 空间独立壳层状态。
       spacePanelTab: 'owned',
-      spaceOwnedExpanded: false,
+      spaceOwnedExpanded: true,
       // JWT token.
       // JWT 令牌。
       token: '',
@@ -3009,9 +3009,11 @@ const app = createApp({
       this.sidebarCollapsed = !this.sidebarCollapsed;
     },
     enterSpaceShell() {
-      // Switch into the dedicated space shell.
-      // 切换进入独立空间壳层。
+      // Switch into the dedicated space shell and keep the workspace visible.
+      // 切换进入独立空间壳层，并保持工作台默认展开。
       this.view = 'space';
+      this.spaceOwnedExpanded = true;
+      this.spacePanelTab = 'owned';
     },
     leaveSpaceShell() {
       // Leave the dedicated space shell and return to the dashboard.
@@ -3522,12 +3524,12 @@ const app = createApp({
     backFromPostDetail() {
       // Return from detail view to the combined space feed.
       // 从详情页返回合并后的空间内容流。
-      this.view = 'space';
+      this.enterSpaceShell();
     },
     backToPublicFeed() {
       // Return from profile view to the combined space feed.
       // 从用户主页返回合并后的空间内容流。
-      this.view = 'space';
+      this.enterSpaceShell();
     },
     async refreshActiveProfile() {
       // Refresh profile data when the profile page is open.
@@ -3604,7 +3606,7 @@ const app = createApp({
         return;
       }
       this.postDraft.spaceId = spaceId;
-      this.view = 'space';
+      this.enterSpaceShell();
       await this.loadSpacePosts(spaceId);
       this.postDraft.title = '';
       this.postDraft.content = '';
@@ -4057,7 +4059,7 @@ const app = createApp({
           mediaUrl: '',
         };
         if (this.view === 'postDetail') {
-          this.view = 'space';
+          this.enterSpaceShell();
         }
       }
       await this.loadSpaces();
@@ -4124,7 +4126,7 @@ const app = createApp({
           mediaUrl: '',
         };
         if (this.view === 'postDetail') {
-          this.view = 'space';
+          this.enterSpaceShell();
         }
       }
       await this.loadPosts();

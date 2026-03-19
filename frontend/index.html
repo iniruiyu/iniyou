@@ -41,7 +41,7 @@
           <span class="nav-icon">DB</span>
           <span class="nav-label">{{ t('nav.dashboard') }}</span>
         </button>
-        <button class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="view = 'space'">
+        <button class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell">
           <span class="nav-icon">SP</span>
           <span class="nav-label">{{ t('nav.space') }}</span>
         </button>
