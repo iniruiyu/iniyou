@@ -82,7 +82,7 @@
 ### 5.1 一级页面
 
 - 认证页
-- 首页 / 工作台
+- 个人主页 / Personal Home
 - 内容流 / 发布页
 - 个人资料页
 - 好友页
@@ -94,8 +94,8 @@
 ### 5.2 关键页面关系
 
 - 未登录用户先进入登录或注册流程
-- 登录后进入首页或工作台
-- 首页可进入内容流、聊天、个人资料
+- 登录后进入个人主页 / Login should open the personal home.
+- 个人主页可进入内容流、聊天、个人资料 / The personal home should link to the content feed, chat, and profile settings.
 - 个人资料页可进入订阅、外部账号、设置
 - 内容流可进入文章详情、用户主页、互动操作
 - 好友页可发起好友申请，并进入聊天页
@@ -110,7 +110,7 @@
 | Logo | Search | Primary Nav                | User / Setting   |
 +-------------------+-------------------------------------------+
 | Sidebar           | Page Header                              |
-| - Dashboard       +-------------------------------------------+
+| - Personal Home   +-------------------------------------------+
 | - List            | Stats Card | Stats Card | Stats Card     |
 | - Detail          +-------------------------------------------+
 | - Settings        | Main Content Area                        |
@@ -179,8 +179,8 @@
 
 ## 7.4 当前实现映射
 
-- `frontend/` 当前覆盖：认证、内容流、好友、聊天、订阅、外部账号、多语言能力、空间进入与空间创建弹窗
-- `flutter_frontend/` 当前覆盖：未登录落地页、工作台、统一空间页、个人主页、文章详情、好友、聊天、等级、订阅、外部账号、身份卡编辑、空间上下文与弹窗创建入口
+- `frontend/` 当前覆盖：认证、内容流、好友、聊天、订阅、外部账号、多语言能力、空间进入与空间创建弹窗、个人主页单入口与公开空间入口
+- `flutter_frontend/` 当前覆盖：未登录落地页、个人主页、统一空间页、文章详情、好友、聊天、等级、订阅、外部账号、身份卡编辑、空间上下文与弹窗创建入口，工作台摘要已并入个人主页顶部
 - 若某页面只在 Legacy Web 存在而 Flutter 尚未补齐，必须保证导航层级不变，并在页面内提示能力差异
 - 当前聊天页的优化目标包含：媒体附件发送、未读角标、新好友浮动提醒、全屏占满布局、消息滚动与表情/贴纸快捷入口
 
@@ -193,18 +193,18 @@
   - `widgets/`: 可跨页面复用的基础组件
   - `views/`: 页面壳层与页面区块
 - `main.dart` 负责应用入口、全局状态、页面分发与 `setState` 收口，不再承载大段静态 UI 模板或集中式多接口编排
-- 未登录态、工作台区块、社交区块、设置区块和已登录主壳层应继续保持独立文件，避免再次回退到单文件堆叠
+- 未登录态、个人主页区块、社交区块、设置区块和已登录主壳层应继续保持独立文件，避免再次回退到单文件堆叠
 - 已登录页面的大段参数拼装优先放入 `views/view_factories.dart`，避免 `main.dart` 再次膨胀为模板拼装层
 - 新增 Flutter 页面时，优先落到 `views/`，只有跨页面复用价值明确时才放入 `widgets/`
 - 当前 `controllers/` 已用于承接首页刷新、资料加载、详情加载、发帖、空间创建、好友/聊天刷新、订阅激活和外部账号刷新动作；后续如继续抽状态层，可新增 `state/`，但不得破坏当前页面命名和信息架构
 
 ## 8. 核心页面建议
 
-### 8.1 首页 / 工作台
+### 8.1 个人主页
 
-- 展示概览数据
-- 展示最近活动
-- 提供快捷入口
+- 展示个人摘要、会员状态与公开空间入口 / Show personal summary, membership status, and public space entrances.
+- 展示最近活动 / Show recent activity.
+- 提供订阅、资料编辑与设置快捷入口 / Provide quick actions for subscription, profile editing, and settings.
 
 ### 8.2 列表页
 
@@ -251,6 +251,7 @@
   - 隐私设置摘要 / Privacy settings summary
   - 当前会员等级 / Current membership level
   - 公开空间入口 / Public space entrances
+- 个人主页顶部应将原工作台的空间、好友、会员和外部账号统计折叠为一个汇总摘要区 / The top of the personal home should fold the old workspace's space, friend, membership, and external-account stats into a single summary block.
 - 个人主页默认不展示内容流，只展示公开空间入口与必要摘要信息 / Profile pages should not show a content feed by default; they should only show public space entrances and required summary info.
 - 个人主页中的关系动作需要根据当前关系状态切换：
   - 未建立关系：显示“添加好友”
@@ -322,6 +323,7 @@
 ## 13. 进度记录
 
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
+- 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
 - 2026-03-20：继续收紧空间页文案，移除内容流与当前空间设置说明，并在文章图片缩放提示中明确 1600px 上限 / Further tightened the space-page copy, removing feed/current-space-settings text and making the 1600px image cap explicit in article scaling hints.
 - 2026-03-20：调整 Vue 空间首页从导航进入时的展示逻辑，并去掉空状态卡 / Adjusted the Vue space-home navigation entry behavior and removed the empty-state card.
 - 2026-03-20：修复 Vue 主页“空间”入口的事件误传，并保持首页空间列表可见 / Fixed the Vue home “Space” entry event-passing issue and kept the space list visible on the home page.

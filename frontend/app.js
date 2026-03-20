@@ -487,7 +487,7 @@ const app = createApp({
             auth: '登录注册',
             dashboard: '账号主页',
             space: '空间',
-            profile: '用户主页',
+            profile: '个人主页',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -513,7 +513,7 @@ const app = createApp({
             space: '空间',
             private: '空间',
             public: '空间',
-            profile: '用户主页',
+            profile: '个人主页',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -526,7 +526,7 @@ const app = createApp({
             space: '查看可见空间并发布内容',
             private: '查看可见空间并发布内容',
             public: '浏览可见空间与内容',
-            profile: '查看作者的公开内容与互动记录',
+            profile: '查看个人资料、会员等级与公开空间入口',
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
             blockchain: '管理外部区块链账号绑定',
@@ -909,7 +909,7 @@ const app = createApp({
             space: 'Space',
             private: 'Space',
             public: 'Space',
-            profile: 'Profile',
+            profile: 'Personal Home',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain',
@@ -935,7 +935,7 @@ const app = createApp({
             space: 'Space',
             private: 'Space',
             public: 'Space',
-            profile: 'Profile',
+            profile: 'Personal Home',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain Accounts',
@@ -948,7 +948,7 @@ const app = createApp({
             space: 'Browse visible spaces and publish content',
             private: 'Browse visible spaces and publish content',
             public: 'Browse visible spaces and content',
-            profile: 'Browse this author\'s public posts and activity',
+            profile: 'View your profile, membership, and public space entrances.',
             postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
             blockchain: 'Manage external blockchain account bindings',
@@ -1501,7 +1501,7 @@ const app = createApp({
         }
         return this.t('pageTitle.space');
       }
-      return this.t(`pageTitle.${this.view}`) || this.t('pageTitle.dashboard');
+      return this.t(`pageTitle.${this.view}`) || this.t('pageTitle.profile');
     },
     pageSub() {
       if (this.view === 'postDetail' && this.currentPost) {
@@ -2354,6 +2354,7 @@ const app = createApp({
               space: '空間',
               private: '私人空間',
               public: '公共空間',
+              profile: '個人主頁',
               levels: '會員等級',
               blockchain: '鏈上帳號',
               friends: '好友',
@@ -2437,6 +2438,7 @@ const app = createApp({
               space: '空間',
               private: '空間',
               public: '空間',
+              profile: '個人主頁',
               levels: '會員等級',
               blockchain: '鏈上帳號',
               friends: '好友',
@@ -2448,6 +2450,7 @@ const app = createApp({
               space: '查看可見空間並發布內容',
               private: '查看可見空間並發布內容',
               public: '瀏覽可見空間與內容',
+              profile: '查看個人資料、會員等級與公開空間入口',
               levels: '選擇適合你的會員等級',
               blockchain: '管理外部鏈上帳號綁定',
               friends: '建立聯繫與私聊',
@@ -3204,6 +3207,12 @@ const app = createApp({
       // 判断当前等级卡片是否对应用户当前等级。
       return String(this.user.level || '').toLowerCase() === String(level.planID || '').toLowerCase();
     },
+    isKnownMembershipLevel(planID) {
+      // Validate the requested plan against the built-in membership cards.
+      // 校验目标方案是否存在于内建会员卡片中。
+      const target = String(planID || '').toLowerCase();
+      return this.levels.some((level) => String(level.planID || '').toLowerCase() === target);
+    },
     localizedMessageContent(message) {
       if (!message || message.content == null) {
         return '';
@@ -3703,7 +3712,7 @@ const app = createApp({
         }
         const routedToProfile = await this.applyHostRouteFromHost();
         if (!routedToProfile) {
-          this.view = 'dashboard';
+          await this.openMyProfile();
         }
         this.settingsOpen = false;
       }
@@ -3749,7 +3758,7 @@ const app = createApp({
         }
         const routedToProfile = await this.applyHostRouteFromHost();
         if (!routedToProfile) {
-          this.view = 'dashboard';
+          await this.openMyProfile();
         }
         this.settingsOpen = false;
       }
@@ -4384,34 +4393,43 @@ const app = createApp({
       this.setFlash(this.t('dashboard.saveSuccess'));
     },
     async selectMembershipLevel(planID = 'premium') {
-      // Close the level picker first, then apply the selected plan.
-      // 先关闭等级选择弹窗，再应用所选方案。
-      this.closeMembershipModal();
-      await this.activateMembershipLevel(planID);
+      // Apply the selected plan first, then close the sheet on success.
+      // 先提交所选方案，成功后再关闭底部弹层。
+      const saved = await this.activateMembershipLevel(planID);
+      if (saved) {
+        this.closeMembershipModal();
+      }
     },
     async activateMembershipLevel(planID = 'premium') {
       // Upgrade the membership level through the billing endpoint.
       // 通过账单接口升级会员等级，前端不再展示订阅概念。
       this.clearFeedback();
-      if (!this.token) {
-        return;
-      }
-      const res = await fetch(`${this.apiBase}/subscriptions`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan_id: planID,
-        }),
-      });
-      if (!res.ok) {
+      if (!this.token || !this.isKnownMembershipLevel(planID)) {
         this.setError(this.t('levels.upgradeError'));
-        return;
+        return false;
       }
-      await this.loadMe();
-      this.setFlash(this.t('levels.upgradeSuccess'));
+      try {
+        const res = await fetch(`${this.apiBase}/subscriptions`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            plan_id: planID,
+          }),
+        });
+        if (!res.ok) {
+          this.setError(this.t('levels.upgradeError'));
+          return false;
+        }
+        await this.loadMe();
+        this.setFlash(this.t('levels.upgradeSuccess'));
+        return true;
+      } catch (error) {
+        this.setError(this.t('levels.upgradeError'));
+        return false;
+      }
     },
     async bindExternalAccount() {
       // Create a new blockchain account binding for the current user.
@@ -5145,8 +5163,7 @@ const app = createApp({
     const stored = localStorage.getItem('token');
     if (stored) {
       this.token = stored;
-      this.view = 'dashboard';
-    this.loadMe().then(async () => {
+      this.loadMe().then(async () => {
         if (!this.token) {
           return;
         }
@@ -5163,7 +5180,7 @@ const app = createApp({
         }
         const routedToProfile = await this.applyHostRouteFromHost();
         if (!routedToProfile) {
-          this.view = 'dashboard';
+          await this.openMyProfile();
         }
       });
     }

@@ -37,10 +37,6 @@
           <span class="nav-icon">HD</span>
           <span class="nav-label">{{ t('nav.collapse') }}</span>
         </button>
-        <button class="nav-item" data-icon="DB" :class="{active: view === 'dashboard'}" :disabled="!isLoggedIn" @click="view = 'dashboard'">
-          <span class="nav-icon">DB</span>
-          <span class="nav-label">{{ t('nav.dashboard') }}</span>
-        </button>
         <button class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
           <span class="nav-icon">SP</span>
           <span class="nav-label">{{ t('nav.space') }}</span>
@@ -177,105 +173,6 @@
           <button v-if="unreadCount > 0" class="primary compact" type="button" @click="view = 'chat'">{{ t('nav.chat') }}</button>
         </div>
       </div>
-
-      <section v-if="view === 'dashboard'" class="panel-grid">
-        <div class="panel">
-          <h2>{{ t('dashboard.overviewTitle') }}</h2>
-          <p>{{ t('dashboard.overviewSub') }}</p>
-          <div class="stats">
-            <div class="stat">
-              <div class="stat-title">{{ t('dashboard.levelStat') }}</div>
-              <div class="stat-value">{{ localizedLevelName }}</div>
-            </div>
-            <div class="stat">
-              <div class="stat-title">{{ t('dashboard.friendStat') }}</div>
-              <div class="stat-value">{{ acceptedFriends.length }}</div>
-            </div>
-            <div class="stat">
-              <div class="stat-title">{{ t('dashboard.blockchainStat') }}</div>
-              <div class="stat-value">{{ activeExternalAccounts.length }}</div>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="topbar">
-            <div>
-              <h2>{{ t('profile.identity.title') }}</h2>
-              <p>{{ t('profile.identity.sub') }}</p>
-            </div>
-            <bilingual-action-button
-              variant="primary"
-              type="button"
-              :primary-label="t('profile.identity.editAction')"
-              :secondary-label="peerLocaleText('profile.identity.editAction')"
-              @click="openIdentityEditor"
-            ></bilingual-action-button>
-          </div>
-          <div class="panel-grid identity-summary-grid">
-            <div class="panel accent identity-summary-card">
-              <h3>{{ t('profile.identity.personalTitle') }}</h3>
-              <p>{{ t('profile.identity.personalSub') }}</p>
-              <div class="identity-summary-list">
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.nickname') }}</span>
-                  <strong>{{ profileDraft.displayName || t('common.notAvailable') }}</strong>
-                </div>
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.username') }}</span>
-                  <strong>{{ profileDraft.username ? `@${profileDraft.username}` : t('common.notAvailable') }}</strong>
-                </div>
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.domain') }}</span>
-                  <strong>{{ profileDraft.domain ? `@${profileDraft.domain}` : t('common.notAvailable') }}</strong>
-                </div>
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.signature') }}</span>
-                  <strong>{{ profileDraft.signature || t('common.notAvailable') }}</strong>
-                </div>
-              </div>
-            </div>
-            <div class="panel identity-summary-card">
-              <h3>{{ t('profile.identity.privacyTitle') }}</h3>
-              <p>{{ t('profile.identity.privacySub') }}</p>
-              <div class="identity-summary-list">
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.phoneVisibility') }}</span>
-                  <strong>{{ identityVisibilityLabel(profileDraft.phoneVisibility) }}</strong>
-                </div>
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.emailVisibility') }}</span>
-                  <strong>{{ identityVisibilityLabel(profileDraft.emailVisibility) }}</strong>
-                </div>
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.ageVisibility') }}</span>
-                  <strong>{{ identityVisibilityLabel(profileDraft.ageVisibility) }}</strong>
-                </div>
-                <div class="identity-summary-item">
-                  <span>{{ t('profile.identity.genderVisibility') }}</span>
-                  <strong>{{ identityVisibilityLabel(profileDraft.genderVisibility) }}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>{{ t('dashboard.blockchainTitle') }}</h2>
-          <p>{{ t('dashboard.blockchainSub') }}</p>
-          <div class="account-summary">
-            <div>
-              <div class="account-summary-title">{{ t('dashboard.blockchainStat') }}: {{ activeExternalAccounts.length }}</div>
-              <div class="account-summary-sub">{{ t('blockchain.connectedChains') }}: {{ connectedChainText }}</div>
-            </div>
-            <bilingual-action-button
-              variant="primary"
-              type="button"
-              :primary-label="t('blockchain.openManager')"
-              :secondary-label="peerLocaleText('blockchain.openManager')"
-              @click="openProfileTab('blockchain')"
-            ></bilingual-action-button>
-          </div>
-        </div>
-      </section>
 
       <div v-if="identityEditorOpen" class="modal-backdrop modal-backdrop--sheet" @click.self="closeIdentityEditor">
         <div class="modal modal--sheet profile-editor-modal">
@@ -950,6 +847,32 @@
               </div>
             </div>
           </div>
+          <template v-if="profileUser.id === user.id">
+            <div class="panel-grid">
+              <div class="panel">
+                <h2>{{ t('dashboard.overviewTitle') }}</h2>
+                <p>{{ t('dashboard.overviewSub') }}</p>
+                <div class="stats">
+                  <div class="stat">
+                    <div class="stat-title">{{ t('profile.spaces.title') }}</div>
+                    <div class="stat-value">{{ visibleProfileSpaces.length }}</div>
+                  </div>
+                  <div class="stat">
+                    <div class="stat-title">{{ t('dashboard.friendStat') }}</div>
+                    <div class="stat-value">{{ acceptedFriends.length }}</div>
+                  </div>
+                  <div class="stat">
+                    <div class="stat-title">{{ t('dashboard.levelStat') }}</div>
+                    <div class="stat-value">{{ localizedLevelName }}</div>
+                  </div>
+                  <div class="stat">
+                    <div class="stat-title">{{ t('dashboard.blockchainStat') }}</div>
+                    <div class="stat-value">{{ activeExternalAccounts.length }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
           <template v-if="profileUser.id === user.id">
             <div class="profile-summary-grid">
               <div class="panel identity-summary-card">

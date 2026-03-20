@@ -250,7 +250,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   // Whether the current edit draft should clear the existing media.
   // 当前编辑草稿是否需要清除已有媒体。
   bool _editPostMediaCleared = false;
-  AppView _view = AppView.dashboard;
+  AppView _view = AppView.profile;
 
   CurrentUser? _user;
   UserProfileItem? _profileUser;
@@ -339,8 +339,11 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (sessionRestored) {
       try {
         await _refreshAll();
-        await _applyHostRouteFromCurrentHost();
+        final routedToProfile = await _applyHostRouteFromCurrentHost();
         _connectSocket();
+        if (!routedToProfile && _user != null) {
+          await _loadProfile(_user!.id, quiet: true);
+        }
       } catch (_) {
         await _logout(clearRemote: false);
       }
@@ -1743,15 +1746,17 @@ class _IniyouHomeState extends State<IniyouHome> {
         password: _loginPasswordController.text,
       );
       await _refreshAll();
-      await _applyHostRouteFromCurrentHost();
+      final routedToProfile = await _applyHostRouteFromCurrentHost();
       _connectSocket();
       if (!mounted) {
         return;
       }
       setState(() {
         _flash = '登录成功';
-        _view = AppView.dashboard;
       });
+      if (!routedToProfile && _user != null) {
+        await _loadProfile(_user!.id, quiet: true);
+      }
     });
   }
 
@@ -1766,15 +1771,17 @@ class _IniyouHomeState extends State<IniyouHome> {
         password: _registerPasswordController.text,
       );
       await _refreshAll();
-      await _applyHostRouteFromCurrentHost();
+      final routedToProfile = await _applyHostRouteFromCurrentHost();
       _connectSocket();
       if (!mounted) {
         return;
       }
       setState(() {
         _flash = '注册成功';
-        _view = AppView.dashboard;
       });
+      if (!routedToProfile && _user != null) {
+        await _loadProfile(_user!.id, quiet: true);
+      }
     });
   }
 
@@ -1809,7 +1816,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _activePrivateSpaceId = null;
       _activePublicSpaceId = null;
       _currentSpace = null;
-      _view = AppView.dashboard;
+      _view = AppView.profile;
       _flash = null;
       _error = null;
       _displayNameController.clear();
@@ -1862,6 +1869,11 @@ class _IniyouHomeState extends State<IniyouHome> {
   void _navigateTo(AppView view) {
     // Keep profile navigation on the dedicated summary page.
     // 个人主页保持在独立的摘要页，不再重定向到页签。
+    if (view == AppView.dashboard) {
+      // Merge the old dashboard entry into the personal home.
+      // 将旧工作台入口并入个人主页。
+      view = AppView.profile;
+    }
     if (view == AppView.space) {
       _openSpaceWorkspace();
       return;
@@ -2807,7 +2819,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             onRefresh: () => _runBusy(_refreshAll),
             onLogout: _logout,
             onToggleSidebar: _toggleSidebar,
-            onCompactBack: () => _navigateTo(AppView.dashboard),
+            onCompactBack: () => _navigateTo(AppView.profile),
             currentLanguageCode: _languageCode,
             onLanguageChanged: _setLanguage,
             currentThemeKey: _themeKeyValue,
@@ -2860,7 +2872,6 @@ class _IniyouHomeState extends State<IniyouHome> {
     // Top navigation for quick switching.
     // 顶部导航用于快速切换视图。
     final items = [
-      (AppView.dashboard, _t('sidebar.dashboard')),
       (AppView.space, _t('sidebar.space')),
       (AppView.friends, _t('sidebar.friends')),
       (AppView.profile, _t('sidebar.profile')),

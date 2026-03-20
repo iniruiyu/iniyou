@@ -25,6 +25,7 @@
   - Vue 文章发布与编辑支持多图片上传、可删除画廊和随机文件名
   - 文章媒体真实落盘到可配置目录，并在删除文章、删除空间或替换媒体时物理清理服务器文件
   - Flutter 文章发布与编辑支持多图画廊，双前端文章正文统一按 Markdown 渲染
+- 双前端个人主页已合并账号主页与用户主页，Flutter 也已把工作台摘要并入个人主页顶部 / Both frontends now merge the account home and user profile into one personal home, and Flutter folds the workspace summary into the top of the personal home.
 - 双前端空间工作台折叠为顶部按钮，进入具体空间后自动收起，Vue 空间内容流移除冗余说明 / Collapsed the dual-frontend space workspace into a top button that auto-collapses after entering a specific space, and removed redundant Vue feed copy
 - 双前端空间页移除内容流 / 当前空间设置说明卡，并把文章图片缩放上限明确为 1600px / Removed the space feed/current-space-settings info cards in both frontends and made the 1600px article image scaling cap explicit
 - Vue 从主页导航进入“空间”时保持侧边导航可见，空间首页不再展示空状态卡 / Vue now keeps the sidebar visible when entering “Space” from home navigation, and the space home no longer shows the empty-state card
@@ -36,6 +37,7 @@
 - 双前端个人主页已收敛为摘要页，只展示个人资料、隐私设置、会员等级与公开空间入口，不再展示内容流 / Both frontends' profile pages are now summary pages that only show personal info, privacy settings, membership level, and public space entrances, without a content feed.
 - Vue 进入好友空间或自己创建的空间后，空间壳层会收为单列并固定铺满整个视口，样式地址也会通过版本号刷新以避免浏览器命中旧布局缓存 / After entering a friend's space or one of your own spaces, Vue now collapses the shell into a single column and pins the main content to the full viewport, with a versioned stylesheet URL to avoid stale layout caching.
 - 主导航“主页”入口已固定进入当前登录用户自己的主页，他人主页保留独立打开路径 / The main-nav "Profile" entry now always opens the current user's own profile, while other profiles keep a separate open path.
+- Vue 会员等级切换按钮已加固为成功后再关闭切换弹层，避免网络异常时直接中断交互 / The Vue membership switch button is now hardened to close the sheet only after a successful update, avoiding abrupt failures on network errors.
 - 进行中：
   - 内容状态与审核预留
 - 待完成：

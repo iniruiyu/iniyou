@@ -19,11 +19,6 @@ class ShellSidebarItem {
 List<ShellSidebarItem> buildShellSidebarItems(String Function(String key) t) {
   return [
     ShellSidebarItem(
-      viewKey: 'dashboard',
-      label: t('sidebar.dashboard'),
-      icon: Icons.dashboard_outlined,
-    ),
-    ShellSidebarItem(
       viewKey: 'space',
       label: t('sidebar.space'),
       icon: Icons.space_dashboard_outlined,

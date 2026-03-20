@@ -491,7 +491,9 @@ class ProfileSummaryView extends StatelessWidget {
     required this.user,
     required this.profileUser,
     required this.profileSpaces,
+    required this.friends,
     required this.connectedChains,
+    required this.externalAccounts,
     required this.displayNameController,
     required this.usernameController,
     required this.domainController,
@@ -520,7 +522,9 @@ class ProfileSummaryView extends StatelessWidget {
   final CurrentUser? user;
   final UserProfileItem? profileUser;
   final List<SpaceItem> profileSpaces;
+  final List<FriendItem> friends;
   final List<String> connectedChains;
+  final List<ExternalAccountItem> externalAccounts;
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
   final TextEditingController domainController;
@@ -863,9 +867,29 @@ class ProfileSummaryView extends StatelessWidget {
                         ),
                         secondaryLabel: 'Start chat',
                       ),
-                  ],
-                ),
+            ],
+          ),
         ),
+        if (isOwnProfile) ...[
+          const SizedBox(height: 16),
+          // Merge the old dashboard snapshot into the personal home.
+          // 将原工作台概览并入个人主页。
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return TopSummaryRow(
+                width: constraints.maxWidth,
+                cards: buildHomeSummaryCards(
+                  spaces: profileSpaces,
+                  friends: friends,
+                  membershipLevel: currentLevel,
+                  externalAccounts: externalAccounts,
+                  t: t,
+                  languageCode: languageCode,
+                ),
+              );
+            },
+          ),
+        ],
         const SizedBox(height: 16),
         if (isOwnProfile)
           LayoutBuilder(

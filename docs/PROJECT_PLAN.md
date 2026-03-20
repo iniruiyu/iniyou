@@ -44,6 +44,7 @@
 - 在设计确认后再进入前端工程搭建
 - 建立多语言界面基线，覆盖首批内建语言与后续扩展机制
 - 建立账号身份卡与空间单入口基线，账号服务与空间服务按职责拆分
+- 建立个人主页单入口，账号主页与用户主页合并为一个 personal home，避免双前端重复展示同类内容
 
 ### 4.2 前端职责范围
 
@@ -67,7 +68,7 @@
 
 ### 4.4 首批设计产物
 
-- 首页/工作台
+- 个人主页
 - 列表页
 - 详情页
 - 表单页
@@ -247,6 +248,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮的方案收口，并把 Vue 空间内容流说明文案精简为纯帖子内容 / Completed the dual-frontend plan to collapse the workspace into a top button and simplified the Vue space feed copy to post content only.
 - 2026-03-20：继续收紧空间页，移除内容流 / 当前空间设置说明卡，并把文章图片缩放上限明确为 1600px / Further tightened the space page by removing the feed/current-space-settings info cards and making the article image scaling cap explicit at 1600px.
 - 2026-03-20：调整 Vue 空间首页进入逻辑，确保从主页导航进入“空间”时侧边导航保持可见，并移除空状态卡 / Adjusted the Vue space-home entry flow so the sidebar stays visible when entering “Space” from the home navigation and removed the empty-state card.

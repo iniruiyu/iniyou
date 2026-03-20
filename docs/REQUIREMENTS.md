@@ -58,6 +58,7 @@
 - 个人主页中的会员等级只展示当前等级与订阅按钮，切换等级通过底部抽屉完成 / Profile membership should show only the current level and a subscribe button, with level switching done in a bottom sheet.
 - 登录时支持邮箱、手机号、用户名或域名 / Login supports email, phone, username, or domain.
 - 主导航中的“主页”入口必须始终进入当前登录用户自己的主页，查看他人主页需要走独立入口或弹层 / The main-nav "Profile" entry must always open the current logged-in user's own profile; other users' profiles must use a separate entry or modal.
+- 账号主页和用户主页已合并为个人主页，个人主页顶部只保留一个汇总摘要区，工作台统计不再单独作为一页 / The account home and user profile are merged into a single personal home; its top area keeps one summary block, and the old workspace stats are no longer exposed as a separate page.
 - 好友主页入口应优先使用弹层预览，完整个人主页仅在弹层内进一步打开 / Friend profile entry points should prefer a modal preview, and the full profile page should only open from inside that modal.
 
 细化功能：

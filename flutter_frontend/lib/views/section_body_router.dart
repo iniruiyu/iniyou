@@ -17,7 +17,7 @@ Widget sectionBodyForView(
 }) {
   switch (view) {
     case AppView.dashboard:
-      return dashboard;
+      return profile;
     case AppView.space:
     case AppView.privateSpace:
     case AppView.publicSpace:
