@@ -202,7 +202,14 @@ class _ChatViewState extends State<ChatView> {
         }
 
         final theme = Theme.of(dialogContext);
+        // Keep the profile modal scrollable on compact screens so long space lists never clip the CTA.
+        // 让资料弹层在紧凑屏幕下可滚动，避免长空间列表把进入按钮挤出可视区。
         return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          scrollable: true,
           title: Text(_l('好友资料', 'Friend profile', '好友資料')),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -238,49 +245,47 @@ class _ChatViewState extends State<ChatView> {
                 if (friendSpaces.isEmpty)
                   Text(_l('对方还没有公开空间。', 'This friend has no public spaces yet.', '對方還沒有公開空間。'))
                 else
-                  SizedBox(
-                    width: 420,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: friendSpaces
-                          .map(
-                            (space) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(14),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        space.name,
-                                        style: theme.textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: friendSpaces
+                        .map(
+                          (space) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      space.name,
+                                      style: theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w700,
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(space.description),
-                                      const SizedBox(height: 6),
-                                      Text('@${space.subdomain}'),
-                                      const SizedBox(height: 10),
-                                      BilingualActionButton(
-                                        variant: BilingualButtonVariant.tonal,
-                                        compact: true,
-                                        onPressed: () {
-                                          closeDialog();
-                                          widget.onEnterSpace(space);
-                                        },
-                                        primaryLabel: _l('进入空间', 'Enter space', '進入空間'),
-                                        secondaryLabel: 'Enter space',
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(space.description),
+                                    const SizedBox(height: 6),
+                                    Text('@${space.subdomain}'),
+                                    const SizedBox(height: 10),
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.tonal,
+                                      compact: true,
+                                      onPressed: () {
+                                        closeDialog();
+                                        widget.onEnterSpace(space);
+                                      },
+                                      primaryLabel: _l('进入空间', 'Enter space', '進入空間'),
+                                      secondaryLabel: 'Enter space',
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          )
-                          .toList(),
-                    ),
+                          ),
+                        )
+                        .toList(),
                   ),
               ],
             ),
