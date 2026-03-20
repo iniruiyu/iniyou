@@ -56,6 +56,7 @@
 - 每个用户都可以设置唯一域名，域名由英文字母和数字组成，作为身份卡与登录入口；昵称与域名需要分开维护，手机号、年龄、性别、邮箱等个人信息字段需要支持可见范围控制 / Each user can set a unique alphanumeric domain handle used as the identity card and login entry; nickname must stay separate from the domain, and personal fields such as phone, age, gender, and email need visibility scopes.
 - 个人主页中的身份卡需要拆分为个人资料与隐私设置两块，默认仅展示摘要，编辑应通过按钮弹窗完成 / The profile identity card should be split into personal info and privacy settings, show summaries by default, and use a button-driven modal for editing.
 - 个人主页中的会员等级只展示当前等级与订阅按钮，切换等级通过底部抽屉完成 / Profile membership should show only the current level and a subscribe button, with level switching done in a bottom sheet.
+- 个人主页顶部不再保留单独的用户 ID 信息框，用户 ID 下移到个人资料摘要中，修改资料与隐私设置分别通过各自按钮进入 / The personal home should no longer keep a separate user-ID box at the top; the user ID belongs in the personal info summary, and edit/privacy actions should be split into their own buttons.
 - 登录时支持邮箱、手机号、用户名或域名 / Login supports email, phone, username, or domain.
 - 主导航中的“主页”入口必须始终进入当前登录用户自己的主页，查看他人主页需要走独立入口或弹层 / The main-nav "Profile" entry must always open the current logged-in user's own profile; other users' profiles must use a separate entry or modal.
 - 账号主页和用户主页已合并为个人主页，个人主页顶部只保留一个汇总摘要区，工作台统计不再单独作为一页 / The account home and user profile are merged into a single personal home; its top area keeps one summary block, and the old workspace stats are no longer exposed as a separate page.

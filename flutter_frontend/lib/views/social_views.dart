@@ -131,32 +131,80 @@ class ProfileView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InfoCard(
-          title: profile.displayName,
-          lines: [
-            '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
-            if (profile.domain.isNotEmpty)
-              '${localizedText(languageCode, '域名身份', 'Domain identity', '網域身份')}: @${profile.domain}',
-            if (profile.username.isNotEmpty)
-              '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
-            if (profile.signature.isNotEmpty)
-              '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
-            if (profile.email.isNotEmpty)
-              '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email}',
-            if (profile.phone.isNotEmpty)
-              '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone}',
-            if (profile.age != null)
-              '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age}',
-            if (profile.gender.isNotEmpty)
-              '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender}',
-            '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
-            if (!isOwnProfile && profile.relationStatus.isNotEmpty)
-              '${localizedText(languageCode, '关系', 'Relation', '關係')}: ${profile.relationStatus} · ${profile.direction}',
-            if (isOwnProfile && connectedChains.isNotEmpty)
-              '${localizedText(languageCode, '已连接链', 'Connected chains', '已連接鏈')}: ${connectedChains.join(', ')}',
-          ],
-        ),
-        const SizedBox(height: 16),
+        if (!isOwnProfile) ...[
+          InfoCard(
+            title: profile.displayName,
+            lines: [
+              '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
+              if (profile.domain.isNotEmpty)
+                '${localizedText(languageCode, '域名身份', 'Domain identity', '網域身份')}: @${profile.domain}',
+              if (profile.username.isNotEmpty)
+                '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
+              if (profile.signature.isNotEmpty)
+                '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
+              if (profile.email.isNotEmpty)
+                '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email}',
+              if (profile.phone.isNotEmpty)
+                '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone}',
+              if (profile.age != null)
+                '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age}',
+              if (profile.gender.isNotEmpty)
+                '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender}',
+              '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
+              if (profile.relationStatus.isNotEmpty)
+                '${localizedText(languageCode, '关系', 'Relation', '關係')}: ${profile.relationStatus} · ${profile.direction}',
+              if (connectedChains.isNotEmpty)
+                '${localizedText(languageCode, '已连接链', 'Connected chains', '已連接鏈')}: ${connectedChains.join(', ')}',
+            ],
+            trailing: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (profile.relationStatus.isEmpty)
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => onAddFriend(profile.id),
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '添加好友',
+                      'Add friend',
+                      '新增好友',
+                    ),
+                    secondaryLabel: 'Add friend',
+                  ),
+                if (profile.relationStatus == 'pending' &&
+                    profile.direction == 'incoming')
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => onAcceptFriend(profile.id),
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '接受好友',
+                      'Accept friend',
+                      '接受好友',
+                    ),
+                    secondaryLabel: 'Accept friend',
+                  ),
+                if (profile.relationStatus == 'accepted')
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: onStartChat,
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '发起聊天',
+                      'Start chat',
+                      '發起聊天',
+                    ),
+                    secondaryLabel: 'Start chat',
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         if (isOwnProfile)
           Card(
             shape: RoundedRectangleBorder(
@@ -167,11 +215,73 @@ class ProfileView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    localizedText(languageCode, '身份卡', 'Identity card', '身分卡'),
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              localizedText(
+                                languageCode,
+                                '身份卡',
+                                'Identity card',
+                                '身分卡',
+                              ),
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              localizedText(
+                                languageCode,
+                                '下面信息可直接编辑，用户 ID 仅作展示。',
+                                'The fields below are editable, and the user ID is display-only.',
+                                '下方資訊可直接編輯，使用者 ID 僅作展示。',
+                              ),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: loading
+                            ? null
+                            : () => _openProfileEditor(context),
+                        primaryLabel: t('profile.identity.editAction'),
+                        secondaryLabel: peerT('profile.identity.editAction'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t('profile.identity.userId'),
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          profile.id,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   BilingualField(
                     primaryLabel: t('profile.identity.nickname'),
                     secondaryLabel: peerT('profile.identity.nickname'),
@@ -615,12 +725,7 @@ class ProfileSummaryView extends StatelessWidget {
                 vertical: 24,
               ),
               title: Text(
-                localizedText(
-                  languageCode,
-                  '修改个人资料',
-                  'Edit profile',
-                  '修改個人資料',
-                ),
+                localizedText(languageCode, '修改个人资料', 'Edit profile', '修改個人資料'),
               ),
               content: SizedBox(
                 width: 720,
@@ -812,8 +917,6 @@ class ProfileSummaryView extends StatelessWidget {
               '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
             if (!isOwnProfile && profile.relationStatus.isNotEmpty)
               '${localizedText(languageCode, '关系', 'Relation', '關係')}: ${profile.relationStatus} · ${profile.direction}',
-            if (isOwnProfile && connectedChains.isNotEmpty)
-              '${localizedText(languageCode, '已连接链', 'Connected chains', '已連接鏈')}: ${connectedChains.join(', ')}',
           ],
           trailing: isOwnProfile
               ? BilingualActionButton(
@@ -867,8 +970,8 @@ class ProfileSummaryView extends StatelessWidget {
                         ),
                         secondaryLabel: 'Start chat',
                       ),
-            ],
-          ),
+                  ],
+                ),
         ),
         if (isOwnProfile) ...[
           const SizedBox(height: 16),
@@ -962,14 +1065,16 @@ class ProfileSummaryView extends StatelessWidget {
                                 children: [
                                   Text(
                                     t('profile.membership.current'),
-                                    style:
-                                        Theme.of(context).textTheme.labelLarge,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelLarge,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     currentLevel.toUpperCase(),
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge,
                                   ),
                                 ],
                               ),
@@ -979,8 +1084,9 @@ class ProfileSummaryView extends StatelessWidget {
                               variant: BilingualButtonVariant.tonal,
                               onPressed: () => _openMembershipSheet(context),
                               primaryLabel: t('profile.membership.subscribe'),
-                              secondaryLabel:
-                                  peerT('profile.membership.subscribe'),
+                              secondaryLabel: peerT(
+                                'profile.membership.subscribe',
+                              ),
                             ),
                           ],
                         ),
@@ -1092,12 +1198,7 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          localizedText(
-            languageCode,
-            '个人资料',
-            'Personal info',
-            '個人資料',
-          ),
+          localizedText(languageCode, '个人资料', 'Personal info', '個人資料'),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 12),
@@ -1164,9 +1265,23 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        Text(
-          localizedText(languageCode, '隐私设置', 'Privacy settings', '隱私設定'),
-          style: Theme.of(context).textTheme.titleMedium,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                localizedText(languageCode, '隐私设置', 'Privacy settings', '隱私設定'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            BilingualActionButton(
+              variant: BilingualButtonVariant.tonal,
+              compact: true,
+              onPressed: loading ? null : () => _openProfileEditor(context),
+              primaryLabel: t('profile.identity.privacyAction'),
+              secondaryLabel: peerT('profile.identity.privacyAction'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         LayoutBuilder(
@@ -1371,10 +1486,7 @@ class FriendsView extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  friend.displayName,
-                  style: theme.textTheme.titleLarge,
-                ),
+                Text(friend.displayName, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(
                   '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
@@ -1398,12 +1510,7 @@ class FriendsView extends StatelessWidget {
             BilingualActionButton(
               variant: BilingualButtonVariant.text,
               onPressed: () => Navigator.of(dialogContext).pop(),
-              primaryLabel: localizedText(
-                languageCode,
-                '关闭',
-                'Close',
-                '關閉',
-              ),
+              primaryLabel: localizedText(languageCode, '关闭', 'Close', '關閉'),
               secondaryLabel: 'Close',
             ),
             BilingualActionButton(
@@ -1544,7 +1651,8 @@ class FriendsView extends StatelessWidget {
                       children: [
                         BilingualActionButton(
                           variant: BilingualButtonVariant.tonal,
-                          onPressed: () => _openFriendProfileDialog(context, friend),
+                          onPressed: () =>
+                              _openFriendProfileDialog(context, friend),
                           primaryLabel: localizedText(
                             languageCode,
                             '主页',

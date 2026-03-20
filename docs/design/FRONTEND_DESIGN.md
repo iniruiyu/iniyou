@@ -252,6 +252,7 @@
   - 当前会员等级 / Current membership level
   - 公开空间入口 / Public space entrances
 - 个人主页顶部应将原工作台的空间、好友、会员和外部账号统计折叠为一个汇总摘要区 / The top of the personal home should fold the old workspace's space, friend, membership, and external-account stats into a single summary block.
+- 个人资料摘要中应展示用户 ID，修改资料与隐私设置分别通过各自按钮触发 / The personal info summary should show the user ID, and edit/privacy actions should be split into their own buttons.
 - 个人主页默认不展示内容流，只展示公开空间入口与必要摘要信息 / Profile pages should not show a content feed by default; they should only show public space entrances and required summary info.
 - 个人主页中的关系动作需要根据当前关系状态切换：
   - 未建立关系：显示“添加好友”
@@ -261,7 +262,7 @@
 - 用户应可从作者主页返回公共内容流
 - 主导航中的“主页”入口必须固定打开自己的主页；查看他人主页应使用独立入口或好友弹层 / The main-nav "Profile" entry must always open the current user's own profile; viewing others' profiles should use a separate entry or friend modal.
 - 好友主页入口应以弹层优先，完整主页入口放在弹层内 / Friend profile entry points should prefer a modal, with the full profile entry placed inside that modal.
-- 个人资料编辑应通过按钮打开弹窗完成，页面常驻只显示摘要，不显示输入表单 / Profile editing should happen in a button-opened modal, with the page itself showing summaries only and no persistent form fields.
+- 个人资料编辑应通过按钮打开弹窗完成，个人资料摘要应显示用户 ID，页面顶部不再保留单独的用户 ID 卡片 / Profile editing should happen in a button-opened modal, the personal info summary should show the user ID, and the page should no longer keep a separate user-ID card at the top.
 - 会员等级在个人主页只保留当前等级和订阅按钮，点击后在底部抽屉显示等级卡片 / Profile membership should keep only the current level and a subscribe button, with level cards shown in a bottom sheet.
 - 个人资料页应允许编辑用户名、域名和可见范围，用户名同时作为登录别名与个人主页 / 二级域名入口句柄 / The profile page should allow editing the username, domain, and visibility scopes; the username also acts as the login alias and the profile/subdomain handle.
 
@@ -322,6 +323,7 @@
 
 ## 13. 进度记录
 
+- 2026-03-20：重构个人主页顶部用户 ID 信息框，移除顶部独立卡片并将用户 ID 下移到个人资料摘要，同时拆分修改资料/隐私设置按钮 / Reworked the personal-home top user-ID box, removed the separate header card, moved the user ID into the personal info summary, and split the edit/privacy buttons.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
 - 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
 - 2026-03-20：继续收紧空间页文案，移除内容流与当前空间设置说明，并在文章图片缩放提示中明确 1600px 上限 / Further tightened the space-page copy, removing feed/current-space-settings text and making the 1600px image cap explicit in article scaling hints.

@@ -487,6 +487,10 @@ body {
   gap: 12px;
 }
 
+.identity-summary-list--compact {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
 .identity-summary-item {
   display: flex;
   flex-direction: column;
@@ -504,6 +508,10 @@ body {
 
 .identity-summary-item strong {
   word-break: break-word;
+}
+
+.identity-summary-item--wide {
+  grid-column: 1 / -1;
 }
 
 .membership-summary-line {
