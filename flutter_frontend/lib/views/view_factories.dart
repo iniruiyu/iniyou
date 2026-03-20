@@ -688,10 +688,11 @@ Widget buildProfileView({
   required CurrentUser? user,
   required UserProfileItem? profileUser,
   required List<PostItem> profilePosts,
+  required List<SpaceItem> profileSpaces,
   required List<ExternalAccountItem> externalAccounts,
   required List<FriendItem> friends,
   required String currentLevel,
-  required ValueChanged<String> onActivateLevel,
+  required Future<bool> Function(String) onActivateLevel,
   required TextEditingController displayNameController,
   required TextEditingController usernameController,
   required TextEditingController domainController,
@@ -704,7 +705,7 @@ Widget buildProfileView({
   required TextEditingController Function(String postId) commentControllerFor,
   required ProfileTab profileTab,
   required ValueChanged<ProfileTab> onProfileTabChanged,
-  required VoidCallback onSaveProfile,
+  required Future<bool> Function() onSaveProfile,
   required ValueChanged<String> onPhoneVisibilityChanged,
   required ValueChanged<String> onEmailVisibilityChanged,
   required ValueChanged<String> onAgeVisibilityChanged,
@@ -724,10 +725,10 @@ Widget buildProfileView({
   required String Function(String key) t,
   required String Function(String key) peerT,
 }) {
-  return ProfileView(
+  return ProfileSummaryView(
     user: user,
     profileUser: profileUser,
-    profilePosts: profilePosts,
+    profileSpaces: profileSpaces,
     connectedChains: connectedChains(externalAccounts),
     displayNameController: displayNameController,
     usernameController: usernameController,
@@ -738,9 +739,6 @@ Widget buildProfileView({
     ageVisibility: ageVisibility,
     genderVisibility: genderVisibility,
     loading: loading,
-    commentControllerFor: commentControllerFor,
-    profileTab: profileTab,
-    onProfileTabChanged: onProfileTabChanged,
     currentLevel: currentLevel,
     onActivateLevel: onActivateLevel,
     onSaveProfile: onSaveProfile,
@@ -760,13 +758,6 @@ Widget buildProfileView({
         onStartChat(friend);
       }
     },
-    onToggleLike: onToggleLike,
-    onSharePost: onSharePost,
-    onCommentPost: onCommentPost,
-    onDeletePost: onDeletePost,
-    onOpenProfile: onOpenProfile,
-    onOpenPostDetail: onOpenPostDetail,
-    onEditPost: onEditPost,
     onEnterSpace: onEnterSpace,
     languageCode: languageCode,
     t: t,
@@ -823,7 +814,7 @@ Widget buildPostDetailView({
 
 Widget buildLevelsView({
   required String currentLevel,
-  required ValueChanged<String> onActivateLevel,
+  required Future<bool> Function(String) onActivateLevel,
 }) {
   return LevelsView(
     currentLevel: currentLevel,

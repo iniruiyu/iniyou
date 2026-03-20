@@ -260,6 +260,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   List<PostItem> _publicPosts = const [];
   List<PostItem> _privatePosts = const [];
   List<PostItem> _profilePosts = const [];
+  List<SpaceItem> _profileSpaces = const [];
   List<FriendItem> _friends = const [];
   List<UserSearchItem> _searchResults = const [];
   List<ConversationItem> _conversations = const [];
@@ -1796,6 +1797,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _publicPosts = const [];
       _privatePosts = const [];
       _profilePosts = const [];
+      _profileSpaces = const [];
       _friends = const [];
       _searchResults = const [];
       _conversations = const [];
@@ -1858,18 +1860,10 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   void _navigateTo(AppView view) {
-    // Redirect settings views into profile tabs.
-    // 将设置类视图重定向到个人主页标签。
+    // Keep profile navigation on the dedicated summary page.
+    // 个人主页保持在独立的摘要页，不再重定向到页签。
     if (view == AppView.space) {
       _openSpaceWorkspace();
-      return;
-    }
-    if (view == AppView.levels) {
-      _openProfileTab(ProfileTab.levels);
-      return;
-    }
-    if (view == AppView.blockchain) {
-      _openProfileTab(ProfileTab.blockchain);
       return;
     }
     if (view == AppView.profile && _user != null) {
@@ -1879,19 +1873,6 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (mounted) {
       setState(() {
         _view = view;
-        _error = null;
-        _flash = null;
-      });
-    }
-  }
-
-  void _openProfileTab(ProfileTab tab) {
-    // Open profile view with a selected tab.
-    // 打开个人主页并定位到指定选项卡。
-    if (mounted) {
-      setState(() {
-        _view = AppView.profile;
-        _profileTab = tab;
         _error = null;
         _flash = null;
       });
@@ -2004,6 +1985,11 @@ class _IniyouHomeState extends State<IniyouHome> {
           subdomain: normalizedSubdomain.isEmpty ? null : normalizedSubdomain,
         );
         _spaces = result.spaces;
+        if (_user != null && _profileUser?.id == _user!.id) {
+          _profileSpaces = publicSpaces(
+            _spaces.where((space) => space.userId == _user!.id).toList(),
+          );
+        }
         await _setActiveSpace(result.space);
         if (!mounted) {
           return;
@@ -2028,6 +2014,11 @@ class _IniyouHomeState extends State<IniyouHome> {
       _spaces = _spaces
           .map((item) => item.id == updated.id ? updated : item)
           .toList();
+      if (_user != null && _profileUser?.id == _user!.id) {
+        _profileSpaces = publicSpaces(
+          _spaces.where((space) => space.userId == _user!.id).toList(),
+        );
+      }
       await _setActiveSpace(updated);
       await _refreshAll();
       if (!mounted) {
@@ -2080,6 +2071,11 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _spaces = _spaces.where((item) => item.id != space.id).toList();
+        if (_user != null && _profileUser?.id == _user!.id) {
+          _profileSpaces = _profileSpaces
+              .where((item) => item.id != space.id)
+              .toList();
+        }
         _publicPosts = _publicPosts
             .where((post) => post.spaceId != space.id)
             .toList();
@@ -2310,8 +2306,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _openProfile(String userId) async {
-    // Reset profile tab when opening profile.
-    // 打开个人主页时重置选项卡。
+    // Reset profile entry state when opening a profile.
+    // 打开个人主页时重置展示状态。
     _profileTab = ProfileTab.levels;
     await _runBusy(() => _loadProfile(userId));
   }
@@ -2329,6 +2325,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _profileUser = profile.profileUser;
         _profilePosts = profile.posts;
+        _profileSpaces = profile.spaces;
         _view = AppView.profile;
       });
     }
@@ -2349,17 +2346,21 @@ class _IniyouHomeState extends State<IniyouHome> {
     Future<void> action() async {
       final profile = await _api.fetchUserProfileByUsername(username);
       final ownProfile = _user?.id == profile.id;
-      final posts = await _api.listUserPosts(
-        profile.id,
-        visibility: ownProfile ? 'all' : 'public',
-        limit: 50,
-      );
+      final results = await Future.wait([
+        _api.listUserSpaces(profile.id, visibility: 'public'),
+        _api.listUserPosts(
+          profile.id,
+          visibility: ownProfile ? 'all' : 'public',
+          limit: 50,
+        ),
+      ]);
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
-        _profilePosts = posts;
+        _profileSpaces = results[0] as List<SpaceItem>;
+        _profilePosts = results[1] as List<PostItem>;
         _view = AppView.profile;
       });
     }
@@ -2377,17 +2378,21 @@ class _IniyouHomeState extends State<IniyouHome> {
     Future<void> action() async {
       final profile = await _api.fetchUserProfileByDomain(domain);
       final ownProfile = _user?.id == profile.id;
-      final posts = await _api.listUserPosts(
-        profile.id,
-        visibility: ownProfile ? 'all' : 'public',
-        limit: 50,
-      );
+      final results = await Future.wait([
+        _api.listUserSpaces(profile.id, visibility: 'public'),
+        _api.listUserPosts(
+          profile.id,
+          visibility: ownProfile ? 'all' : 'public',
+          limit: 50,
+        ),
+      ]);
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
-        _profilePosts = posts;
+        _profileSpaces = results[0] as List<SpaceItem>;
+        _profilePosts = results[1] as List<PostItem>;
         _view = AppView.profile;
       });
     }
@@ -2610,27 +2615,28 @@ class _IniyouHomeState extends State<IniyouHome> {
     });
   }
 
-  Future<void> _saveProfile() async {
+  Future<bool> _saveProfile() async {
     final displayName = _displayNameController.text.trim();
     final username = _usernameController.text.trim().toLowerCase();
     final domain = _domainController.text.trim().toLowerCase();
     final signature = _signatureController.text.trim();
     if (displayName.isEmpty) {
       setState(() => _error = '昵称不能为空');
-      return;
+      return false;
     }
     if (domain.isEmpty) {
       setState(() => _error = '域名不能为空');
-      return;
+      return false;
     }
     if (username.isNotEmpty && !_isValidSpaceSubdomain(username)) {
       setState(() => _error = '用户名只能包含英文字母和数字，且最长 63 个字符');
-      return;
+      return false;
     }
     if (!_isValidSpaceSubdomain(domain)) {
       setState(() => _error = '域名只能包含英文字母和数字，且最长 63 个字符');
-      return;
+      return false;
     }
+    var success = false;
     await _runBusy(() async {
       _user = await _api.updateProfile(
         displayName: displayName,
@@ -2657,10 +2663,13 @@ class _IniyouHomeState extends State<IniyouHome> {
         return;
       }
       setState(() => _flash = '身份卡已更新');
+      success = true;
     });
+    return success;
   }
 
-  Future<void> _activatePlan(String planId) async {
+  Future<bool> _activatePlan(String planId) async {
+    var success = false;
     await _runBusy(() async {
       final updatedUser = await AppActions.activatePlan(_api, planId);
       if (!mounted) {
@@ -2673,7 +2682,9 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
         _flash = '会员等级已更新';
       });
+      success = true;
     });
+    return success;
   }
 
   Future<void> _bindExternalAccount() async {
@@ -3187,6 +3198,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         user: _user,
         profileUser: _profileUser,
         profilePosts: _profilePosts,
+        profileSpaces: _profileSpaces,
         externalAccounts: _externalAccounts,
         friends: _friends,
         currentLevel: _user?.level ?? 'basic',

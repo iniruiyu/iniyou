@@ -451,6 +451,107 @@ body {
   gap: 20px;
 }
 
+/* Profile summary layout / 个人主页摘要布局 */
+.profile-page {
+  padding: 24px;
+}
+
+.profile-home-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.profile-hero-card .post-header {
+  align-items: flex-start;
+}
+
+.profile-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.identity-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.identity-summary-list {
+  display: grid;
+  gap: 12px;
+}
+
+.identity-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.identity-summary-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.identity-summary-item strong {
+  word-break: break-word;
+}
+
+.membership-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.membership-summary-line span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.membership-summary-line strong {
+  font-size: 18px;
+}
+
+.profile-blockchain-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-blockchain-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.profile-space-cards {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* Identity editor grid / 身份编辑网格 */
+.identity-editor-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.identity-editor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface-soft);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 18px;
+}
+
 /* Profile tabs / 个人主页选项卡 */
 .profile-tabs {
   display: flex;
@@ -1182,6 +1283,35 @@ body {
   gap: 12px;
   flex-wrap: wrap;
   margin-top: 4px;
+}
+
+/* Sheet modal / 底部弹层：用于身份编辑与会员切换。 */
+.modal-backdrop--sheet {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 18px 18px;
+}
+
+.modal--sheet {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 36px);
+  border-radius: 28px 28px 0 0;
+}
+
+.profile-editor-modal,
+.membership-modal {
+  width: min(980px, 100%);
+}
+
+.membership-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.membership-level-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 .space-nav-grid {
@@ -2772,6 +2902,11 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .profile-summary-grid,
+  .identity-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
   /* Responsive nav stacking / 响应式导航堆叠 */
   .nav {
     display: grid;
@@ -2853,6 +2988,16 @@ button:disabled {
 
   .space-page-hero {
     flex-direction: column;
+  }
+
+  .modal-backdrop--sheet {
+    padding: 0;
+  }
+
+  .modal--sheet {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 24px 24px 0 0;
   }
 
   .space-toolbar-actions {

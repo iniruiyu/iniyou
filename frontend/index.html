@@ -59,7 +59,8 @@
           </span>
           <span class="nav-label">{{ t('nav.chat') }}</span>
         </button>
-        <button class="nav-item" data-icon="ME" :class="{active: view === 'profile'}" :disabled="!isLoggedIn || !profileUser.id" @click="view = 'profile'">
+        <!-- Main-nav profile always opens the current user's own homepage / 主导航主页始终进入当前用户自己的主页。 -->
+        <button class="nav-item" data-icon="ME" :class="{active: view === 'profile' && profileUser.id === user.id}" :disabled="!isLoggedIn || !user.id" @click="openMyProfile()">
           <span class="nav-icon">ME</span>
           <span class="nav-label">{{ t('nav.profile') }}</span>
         </button>
@@ -272,132 +273,6 @@
               :secondary-label="peerLocaleText('blockchain.openManager')"
               @click="openProfileTab('blockchain')"
             ></bilingual-action-button>
-          </div>
-        </div>
-        <div class="post-feed profile-home-feed">
-          <div class="post-composer">
-            <div class="post-header">
-              <div>
-                <h3>{{ profileUser.name || t('posts.profileFeedTitle') }}</h3>
-                <p>{{ t('posts.profileFeedSub') }}</p>
-                <div v-if="profileUser.secondary" class="post-meta">{{ profileUser.secondary }}</div>
-                <div v-if="profileUser.relationStatus" class="post-meta">{{ statusLabel(profileUser.relationStatus) }}</div>
-              </div>
-              <div class="profile-actions">
-                <bilingual-action-button
-                  variant="ghost"
-                  compact
-                  type="button"
-                  :primary-label="t('posts.backToFeed')"
-                  :secondary-label="peerLocaleText('posts.backToFeed')"
-                  @click="backToPublicFeed"
-                ></bilingual-action-button>
-                <bilingual-action-button
-                  v-if="activeProfileFriend()"
-                  variant="ghost"
-                  compact
-                  type="button"
-                  :primary-label="t('posts.openChat')"
-                  :secondary-label="peerLocaleText('posts.openChat')"
-                  @click="startChat(activeProfileFriend())"
-                ></bilingual-action-button>
-                <bilingual-action-button
-                  v-else-if="profileUser.relationStatus === 'pending' && profileUser.direction === 'incoming'"
-                  variant="ghost"
-                  compact
-                  type="button"
-                  :primary-label="t('posts.acceptFriend')"
-                  :secondary-label="peerLocaleText('posts.acceptFriend')"
-                  @click="acceptProfileFriend"
-                ></bilingual-action-button>
-                <bilingual-action-button
-                  v-else-if="profileUser.id && profileUser.id !== user.id && !profileUser.relationStatus"
-                  variant="ghost"
-                  compact
-                  type="button"
-                  :primary-label="t('posts.addFriend')"
-                  :secondary-label="peerLocaleText('posts.addFriend')"
-                  @click="addProfileFriend"
-                ></bilingual-action-button>
-              </div>
-            </div>
-          </div>
-          <div v-if="profileUser.id === user.id" class="panel profile-membership-card">
-            <div class="topbar">
-              <div>
-                <h3>{{ t('profile.membership.title') }}</h3>
-                <p>{{ t('profile.membership.sub') }}</p>
-              </div>
-              <bilingual-action-button
-                variant="primary"
-                type="button"
-                :primary-label="t('profile.membership.subscribe')"
-                :secondary-label="peerLocaleText('profile.membership.subscribe')"
-                @click="openMembershipModal"
-              ></bilingual-action-button>
-            </div>
-            <div class="membership-summary-line">
-              <span>{{ t('profile.membership.current') }}</span>
-              <strong>{{ localizedLevelName }}</strong>
-            </div>
-          </div>
-          <div v-if="profileUser.id === user.id && hasBlockchainAccounts" class="panel profile-blockchain-card">
-            <div class="topbar">
-              <div>
-                <h3>{{ t('profile.blockchain.title') }}</h3>
-                <p>{{ t('profile.blockchain.sub') }}</p>
-              </div>
-              <bilingual-action-button
-                variant="ghost"
-                type="button"
-                :primary-label="t('blockchain.openManager')"
-                :secondary-label="peerLocaleText('blockchain.openManager')"
-                @click="profileTab = profileTab === 'blockchain' ? 'levels' : 'blockchain'"
-              ></bilingual-action-button>
-            </div>
-            <div class="membership-summary-line">
-              <span>{{ t('blockchain.connectedChains') }}</span>
-              <strong>{{ connectedChainText }}</strong>
-            </div>
-            <div v-if="profileTab === 'blockchain'" class="friends-grid profile-blockchain-grid">
-              <div class="friend-card" v-for="account in externalAccounts" :key="account.id">
-                <div class="avatar small"></div>
-                <div>
-                  <div class="friend-name">{{ account.provider.toUpperCase() }} <span v-if="account.chain">· {{ account.chain }}</span></div>
-                  <div class="friend-secondary">{{ account.accountAddress }}</div>
-                  <div class="friend-status">{{ statusLabel(account.bindingStatus) }}</div>
-                </div>
-              </div>
-              <div v-if="externalAccounts.length === 0" class="empty-state">{{ t('profile.blockchain.empty') }}</div>
-            </div>
-          </div>
-          <div class="panel profile-spaces-card">
-            <div class="topbar">
-              <div>
-                <h3>{{ t('profile.spaces.title') }}</h3>
-                <p>{{ t('profile.spaces.sub') }}</p>
-              </div>
-              <div class="space-toolbar-kicker">{{ visibleProfileSpaces.length }} {{ t('profile.spaces.publicList') }}</div>
-            </div>
-            <div v-if="visibleProfileSpaces.length === 0" class="empty-state">{{ t('profile.spaces.empty') }}</div>
-            <div v-else class="space-cards profile-space-cards">
-              <div class="space-card" v-for="space in visibleProfileSpaces" :key="space.id">
-                <div class="space-tag public">{{ spaceVisibilityLabel(space.visibility) }}</div>
-                <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
-                <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
-                <div class="space-meta">@{{ space.subdomain }}</div>
-                <div class="space-card-actions">
-                  <bilingual-action-button
-                    variant="ghost"
-                    compact
-                    type="button"
-                    :primary-label="t('spaces.enterAction')"
-                    :secondary-label="peerLocaleText('spaces.enterAction')"
-                    @click="enterSpace(space)"
-                  ></bilingual-action-button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -710,7 +585,7 @@
                     type="button"
                     :primary-label="t('spaces.enterAction')"
                     :secondary-label="peerLocaleText('spaces.enterAction')"
-                    @click="enterSpace(space)"
+                    @click="enterFriendSpace(space)"
                   ></bilingual-action-button>
                   <bilingual-action-button
                     variant="ghost"
@@ -1016,30 +891,28 @@
         </div>
       </section>
 
-      <section v-if="view === 'profile'" class="panel">
-        <div class="post-feed">
-          <div class="post-composer">
+      <section v-if="view === 'profile'" class="panel profile-page">
+        <div v-if="profileUser" class="profile-home-feed">
+          <div class="post-composer profile-hero-card">
             <div class="post-header">
               <div>
+                <div class="space-toolbar-kicker">{{ t('pageTitle.profile') }}</div>
                 <h3>{{ profileUser.name || t('posts.profileFeedTitle') }}</h3>
-                <p>{{ t('posts.profileFeedSub') }}</p>
+                <p>{{ t('pageSub.profile') }}</p>
                 <div v-if="profileUser.secondary" class="post-meta">{{ profileUser.secondary }}</div>
-                <div class="post-meta">{{ t('posts.articleCount') }} · {{ profilePosts.length }}</div>
                 <div v-if="profileUser.relationStatus" class="post-meta">{{ statusLabel(profileUser.relationStatus) }}</div>
-                <div v-if="profileUser.id === user.id && hasBlockchainAccounts" class="post-meta">{{ t('dashboard.blockchainStat') }} · {{ activeExternalAccounts.length }}</div>
-                <div v-if="profileUser.id === user.id && hasBlockchainAccounts" class="post-meta">{{ t('blockchain.connectedChains') }} · {{ connectedChainText }}</div>
               </div>
               <div class="profile-actions">
                 <bilingual-action-button
-                  variant="ghost"
-                  compact
+                  v-if="profileUser.id === user.id"
+                  variant="primary"
                   type="button"
-                  :primary-label="t('posts.backToFeed')"
-                  :secondary-label="peerLocaleText('posts.backToFeed')"
-                  @click="backToPublicFeed"
+                  :primary-label="t('profile.identity.editAction')"
+                  :secondary-label="peerLocaleText('profile.identity.editAction')"
+                  @click="openIdentityEditor"
                 ></bilingual-action-button>
                 <bilingual-action-button
-                  v-if="activeProfileFriend()"
+                  v-else-if="activeProfileFriend()"
                   variant="ghost"
                   compact
                   type="button"
@@ -1065,35 +938,103 @@
                   :secondary-label="peerLocaleText('posts.addFriend')"
                   @click="addProfileFriend"
                 ></bilingual-action-button>
+                <bilingual-action-button
+                  v-else
+                  variant="ghost"
+                  compact
+                  type="button"
+                  :primary-label="t('posts.backToFeed')"
+                  :secondary-label="peerLocaleText('posts.backToFeed')"
+                  @click="backToPublicFeed"
+                ></bilingual-action-button>
               </div>
             </div>
           </div>
-          <div v-if="false" class="profile-tabs">
-            <button class="profile-tab" :class="{active: profileTab === 'levels'}" @click="profileTab = 'levels'">{{ t('profile.tabs.levels') }}</button>
-            <button v-if="hasBlockchainAccounts" class="profile-tab" :class="{active: profileTab === 'blockchain'}" @click="profileTab = 'blockchain'">{{ t('profile.tabs.blockchain') }}</button>
-          </div>
-          <div v-if="false" class="profile-tab-panel">
-            <div class="panel">
-              <h3>{{ t('profile.levels.title') }}</h3>
-              <p>{{ t('profile.levels.sub') }}</p>
-              <div class="level-grid">
-                <div class="level-card" v-for="level in levels" :key="level.name">
-                  <div class="level-title">{{ localizedLevelText('name', level) }}</div>
-                  <div class="level-price">{{ level.price }}</div>
-                  <ul class="level-features">
-                    <li v-for="feature in localizedLevelText('features', level)" :key="feature">{{ feature }}</li>
-                  </ul>
-                  <button v-if="isCurrentLevel(level)" class="ghost" disabled>{{ t('levels.current') }}</button>
-                  <button v-else class="ghost" @click="activateMembershipLevel(level.planID)">{{ t('levels.upgrade') }}</button>
+          <template v-if="profileUser.id === user.id">
+            <div class="profile-summary-grid">
+              <div class="panel identity-summary-card">
+                <h3>{{ t('profile.identity.personalTitle') }}</h3>
+                <p>{{ t('profile.identity.personalSub') }}</p>
+                <div class="identity-summary-list">
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.nickname') }}</span>
+                    <strong>{{ profileDraft.displayName || t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.username') }}</span>
+                    <strong>{{ profileDraft.username ? `@${profileDraft.username}` : t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.domain') }}</span>
+                    <strong>{{ profileDraft.domain ? `@${profileDraft.domain}` : t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.signature') }}</span>
+                    <strong>{{ profileDraft.signature || t('common.notAvailable') }}</strong>
+                  </div>
+                </div>
+              </div>
+              <div class="panel identity-summary-card">
+                <h3>{{ t('profile.identity.privacyTitle') }}</h3>
+                <p>{{ t('profile.identity.privacySub') }}</p>
+                <div class="identity-summary-list">
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.phoneVisibility') }}</span>
+                    <strong>{{ identityVisibilityLabel(profileDraft.phoneVisibility) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.emailVisibility') }}</span>
+                    <strong>{{ identityVisibilityLabel(profileDraft.emailVisibility) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.ageVisibility') }}</span>
+                    <strong>{{ identityVisibilityLabel(profileDraft.ageVisibility) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.genderVisibility') }}</span>
+                    <strong>{{ identityVisibilityLabel(profileDraft.genderVisibility) }}</strong>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div v-if="false" class="profile-tab-panel">
-            <div class="panel">
-              <h3>{{ t('profile.blockchain.title') }}</h3>
-              <p>{{ t('profile.blockchain.sub') }}</p>
-              <div class="friends-grid">
+            <div class="panel profile-membership-card">
+              <div class="topbar">
+                <div>
+                  <h3>{{ t('profile.membership.title') }}</h3>
+                  <p>{{ t('profile.membership.sub') }}</p>
+                </div>
+                <bilingual-action-button
+                  variant="primary"
+                  type="button"
+                  :primary-label="t('profile.membership.subscribe')"
+                  :secondary-label="peerLocaleText('profile.membership.subscribe')"
+                  @click="openMembershipModal"
+                ></bilingual-action-button>
+              </div>
+              <div class="membership-summary-line">
+                <span>{{ t('profile.membership.current') }}</span>
+                <strong>{{ localizedLevelName }}</strong>
+              </div>
+            </div>
+            <div v-if="hasBlockchainAccounts" class="panel profile-blockchain-card">
+              <div class="topbar">
+                <div>
+                  <h3>{{ t('profile.blockchain.title') }}</h3>
+                  <p>{{ t('profile.blockchain.sub') }}</p>
+                </div>
+                <bilingual-action-button
+                  variant="ghost"
+                  type="button"
+                  :primary-label="t('blockchain.openManager')"
+                  :secondary-label="peerLocaleText('blockchain.openManager')"
+                  @click="profileTab = profileTab === 'blockchain' ? 'summary' : 'blockchain'"
+                ></bilingual-action-button>
+              </div>
+              <div class="membership-summary-line">
+                <span>{{ t('blockchain.connectedChains') }}</span>
+                <strong>{{ connectedChainText }}</strong>
+              </div>
+              <div v-if="profileTab === 'blockchain'" class="friends-grid profile-blockchain-grid">
                 <div class="friend-card" v-for="account in externalAccounts" :key="account.id">
                   <div class="avatar small"></div>
                   <div>
@@ -1102,69 +1043,40 @@
                     <div class="friend-status">{{ statusLabel(account.bindingStatus) }}</div>
                   </div>
                 </div>
+                <div v-if="externalAccounts.length === 0" class="empty-state">{{ t('profile.blockchain.empty') }}</div>
               </div>
-              <div v-if="externalAccounts.length === 0" class="empty-state">{{ t('profile.blockchain.empty') }}</div>
+            </div>
+          </template>
+          <div class="panel profile-spaces-card">
+            <div class="topbar">
+              <div>
+                <h3>{{ t('profile.spaces.title') }}</h3>
+                <p>{{ t('profile.spaces.sub') }}</p>
+              </div>
+              <div class="space-toolbar-kicker">{{ visibleProfileSpaces.length }} {{ t('profile.spaces.publicList') }}</div>
+            </div>
+            <div v-if="visibleProfileSpaces.length === 0" class="empty-state">{{ t('profile.spaces.empty') }}</div>
+            <div v-else class="space-cards profile-space-cards">
+              <div class="space-card" v-for="space in visibleProfileSpaces" :key="space.id">
+                <div class="space-tag public">{{ spaceVisibilityLabel(space.visibility) }}</div>
+                <div class="space-title">{{ localizedSpaceText('name', space) }}</div>
+                <div class="space-desc">{{ localizedSpaceText('desc', space) }}</div>
+                <div class="space-meta">@{{ space.subdomain }}</div>
+                <div class="space-card-actions">
+                  <bilingual-action-button
+                    variant="ghost"
+                    compact
+                    type="button"
+                    :primary-label="t('spaces.enterAction')"
+                    :secondary-label="peerLocaleText('spaces.enterAction')"
+                    @click="enterFriendSpace(space)"
+                  ></bilingual-action-button>
+                </div>
+              </div>
             </div>
           </div>
-          <div v-if="false" class="empty-state">{{ t('posts.profileEmpty') }}</div>
-          <article v-if="false" class="post-card" v-for="post in profilePosts" :key="post.id">
-            <div class="post-header">
-              <div>
-                <div class="post-author">{{ post.authorName }}</div>
-                <div class="post-meta">{{ t('posts.spaceLabel') }} · {{ post.spaceLabel }}</div>
-                <div class="post-meta">{{ visibilityLabel(post.visibility) }} · {{ formatDateTime(post.createdAt) }}</div>
-              </div>
-            </div>
-            <div class="post-title">{{ post.title }}</div>
-            <bilingual-action-button
-              variant="ghost"
-              compact
-              type="button"
-              :primary-label="t('posts.openDetail')"
-              :secondary-label="peerLocaleText('posts.openDetail')"
-              @click="openPostDetail(post.id)"
-            ></bilingual-action-button>
-            <div class="post-content post-content--markdown" v-html="renderPostContent(post.content)"></div>
-            <div class="post-actions">
-              <bilingual-action-button
-                v-if="canEditPost(post)"
-                variant="ghost"
-                compact
-                type="button"
-                :primary-label="t('posts.edit')"
-                :secondary-label="peerLocaleText('posts.edit')"
-                @click="startEditPost(post)"
-              ></bilingual-action-button>
-              <bilingual-action-button
-                v-if="canEditPost(post)"
-                variant="ghost"
-                compact
-                danger
-                type="button"
-                :primary-label="t('posts.deleteAction')"
-                :secondary-label="peerLocaleText('posts.deleteAction')"
-                @click="deletePost(post)"
-              ></bilingual-action-button>
-              <bilingual-action-button
-                variant="ghost"
-                compact
-                type="button"
-                :primary-label="`${post.likedByMe ? t('posts.unlike') : t('posts.like')} · ${post.likesCount}`"
-                :secondary-label="`${post.likedByMe ? peerLocaleText('posts.unlike') : peerLocaleText('posts.like')} · ${post.likesCount}`"
-                @click="togglePostLike(post)"
-              ></bilingual-action-button>
-              <bilingual-action-button
-                variant="ghost"
-                compact
-                type="button"
-                :primary-label="`${t('posts.share')} · ${post.sharesCount}`"
-                :secondary-label="`${peerLocaleText('posts.share')} · ${post.sharesCount}`"
-                @click="sharePost(post)"
-              ></bilingual-action-button>
-              <div class="post-comment-count">{{ t('posts.comment') }} · {{ post.commentsCount }}</div>
-            </div>
-          </article>
         </div>
+        <div v-else class="empty-state">{{ t('posts.profileEmpty') }}</div>
       </section>
 
       <div v-if="membershipModalOpen" class="modal-backdrop modal-backdrop--sheet" @click.self="closeMembershipModal">

@@ -346,7 +346,7 @@ const app = createApp({
       locale: 'zh-CN',
       // Current profile tab.
       // 当前个人主页选项卡。
-      profileTab: 'levels',
+      profileTab: 'summary',
       // Identity editor dialog visibility.
       // 身份编辑弹窗可见状态。
       identityEditorOpen: false,
@@ -409,7 +409,13 @@ const app = createApp({
           profile: {
             identity: {
               title: '身份卡',
-              sub: '昵称和域名分开维护，域名用于登录和子域名入口。',
+              sub: '个人资料与隐私设置分开维护，域名用于登录和子域名入口。',
+              personalTitle: '个人资料',
+              personalSub: '展示昵称、用户名、域名和签名等公开资料。',
+              privacyTitle: '隐私设置',
+              privacySub: '管理手机号、邮箱、年龄和性别的可见范围。',
+              editAction: '修改资料',
+              editHint: '点击后弹出编辑弹窗，平时只展示摘要。',
               nickname: '用户昵称',
               username: '用户名',
               domain: '域名',
@@ -440,6 +446,14 @@ const app = createApp({
               upgradeSuccess: '会员等级已更新。',
               upgradeError: '会员等级升级失败，请稍后重试。',
             },
+            membership: {
+              title: '会员等级',
+              sub: '当前等级只做展示，订阅时会打开等级切换弹窗。',
+              current: '当前等级',
+              subscribe: '订阅',
+              sheetTitle: '切换会员等级',
+              sheetSub: '下方卡片会列出可切换的等级方案。',
+            },
             blockchain: {
               title: '链上账号概览',
               sub: '查看已绑定的链上账号。',
@@ -447,7 +461,7 @@ const app = createApp({
             },
             spaces: {
               title: '公开空间',
-              sub: '查看当前用户公开展示的空间。',
+              sub: '只显示当前用户公开展示的空间入口。',
               empty: '当前没有公开空间。',
             },
           },
@@ -815,7 +829,13 @@ const app = createApp({
           profile: {
             identity: {
               title: 'Identity Card',
-              sub: 'Keep nickname and domain separate. The domain is your login handle and subdomain entry.',
+              sub: 'Profile details and privacy settings are maintained separately. The domain is used for login and subdomain entry.',
+              personalTitle: 'Personal Info',
+              personalSub: 'Show nickname, username, domain, and signature.',
+              privacyTitle: 'Privacy Settings',
+              privacySub: 'Manage visibility for phone, email, age, and gender.',
+              editAction: 'Edit Profile',
+              editHint: 'Open the editor in a dialog; only the summary stays visible by default.',
               nickname: 'Nickname',
               username: 'Username',
               domain: 'Domain',
@@ -846,10 +866,23 @@ const app = createApp({
               upgradeSuccess: 'Membership level updated.',
               upgradeError: 'Membership level upgrade failed. Try again later.',
             },
+            membership: {
+              title: 'Membership Level',
+              sub: 'The current level is shown here; subscribing opens the switcher sheet.',
+              current: 'Current Level',
+              subscribe: 'Subscribe',
+              sheetTitle: 'Switch Membership Level',
+              sheetSub: 'The cards below list the available level plans.',
+            },
             blockchain: {
               title: 'Blockchain Overview',
               sub: 'Review bound on-chain accounts.',
               empty: 'No on-chain accounts bound.',
+            },
+            spaces: {
+              title: 'Public Spaces',
+              sub: 'Only public space entries for the current user are shown.',
+              empty: 'No public spaces yet.',
             },
           },
           profileMenu: {
@@ -1975,6 +2008,12 @@ const app = createApp({
       await this.loadSpacePosts(space.id);
       this.enterSpaceShell(space);
     },
+    async enterFriendSpace(space) {
+      // Close the friend profile overlay before entering the target space.
+      // 进入好友空间前先关闭好友资料层，避免弹窗遮挡空间页。
+      this.closeChatFriendProfile();
+      await this.enterSpace(space);
+    },
     openSpaceComposer(type) {
       // Open the space composer dialog in create mode.
       // 以创建模式打开空间弹窗。
@@ -2008,12 +2047,6 @@ const app = createApp({
     },
     closeSpaceComposer() {
       // Close the space modal and reset its draft state.
-    async enterFriendSpace(space) {
-      // Close the friend profile overlay before entering the target space.
-      // ??????????????????????????
-      this.closeChatFriendProfile();
-      await this.enterSpace(space);
-    },
       // 关闭空间弹窗并重置草稿状态。
       this.spaceModalOpen = false;
       this.spaceDraft.id = '';
@@ -2331,7 +2364,13 @@ const app = createApp({
           profile: {
             identity: {
               title: '身分卡',
-              sub: '暱稱和域名分開維護，域名用於登入和子網域入口。',
+              sub: '個人資料與隱私設定分開維護，網域用於登入和子網域入口。',
+              personalTitle: '個人資料',
+              personalSub: '展示暱稱、使用者名稱、網域與簽名等公開資料。',
+              privacyTitle: '隱私設定',
+              privacySub: '管理手機號、信箱、年齡與性別的可見範圍。',
+              editAction: '修改資料',
+              editHint: '點擊後彈出編輯視窗，平時只顯示摘要。',
               nickname: '使用者暱稱',
               username: '使用者名稱',
               domain: '域名',
@@ -2361,6 +2400,24 @@ const app = createApp({
               sub: '選擇適合你的會員等級方案。',
               upgradeSuccess: '會員等級已更新。',
               upgradeError: '會員等級升級失敗，請稍後重試。',
+            },
+            membership: {
+              title: '會員等級',
+              sub: '目前只顯示當前等級，訂閱時會開啟切換彈層。',
+              current: '目前等級',
+              subscribe: '訂閱',
+              sheetTitle: '切換會員等級',
+              sheetSub: '下方卡片會列出可切換的等級方案。',
+            },
+            blockchain: {
+              title: '鏈上帳號概覽',
+              sub: '查看已綁定的鏈上帳號。',
+              empty: '尚未綁定鏈上帳號。',
+            },
+            spaces: {
+              title: '公開空間',
+              sub: '只顯示目前使用者公開展示的空間入口。',
+              empty: '目前沒有公開空間。',
             },
           },
             ws: {
@@ -2696,6 +2753,7 @@ const app = createApp({
       };
       this.profilePosts = [];
       this.profileSpaces = [];
+      this.profileTab = 'summary';
       this.currentSpace = null;
       this.currentPost = null;
       this.spaceModalOpen = false;
@@ -3554,14 +3612,16 @@ const app = createApp({
       // Open profile view with a specific tab.
       // 打开个人主页并定位到指定选项卡。
       if (!tabKey) {
+        this.profileTab = 'summary';
+        this.view = 'profile';
         return;
       }
       if (tabKey === 'blockchain' && !this.hasBlockchainAccounts) {
         // Skip blockchain tab when no accounts.
         // 没有链上账号时跳过该选项卡。
-        // Default to membership tab for profile view.
-        // 默认回到个人主页的会员等级标签。
-        this.profileTab = 'levels';
+        // Default back to the profile summary when no blockchain accounts exist.
+        // 没有链上账号时返回个人主页摘要页。
+        this.profileTab = 'summary';
         this.view = 'profile';
         return;
       }
@@ -3839,9 +3899,17 @@ const app = createApp({
         this.privatePosts = data.items.map((item) => this.mapPostItem(item));
       }
     },
+    async openMyProfile() {
+      // Open the current user's own profile from the main navigation.
+      // 从主导航打开当前用户自己的主页。
+      if (!this.token || !this.user.id) {
+        return;
+      }
+      await this.openProfile(this.user.id, this.user.name);
+    },
     async openProfile(userID, fallbackName = '') {
-      // Open another user's public profile feed.
-      // 打开其他用户的公开内容主页。
+      // Open a profile summary and load public spaces only.
+      // 打开个人主页摘要并仅加载公开空间入口。
       if (!this.token || !userID) {
         return;
       }
@@ -3894,9 +3962,9 @@ const app = createApp({
       await this.loadProfileSpaces(userID);
       // Reset profile tab when opening profile.
       // 打开个人主页时重置选项卡。
-      // Reset to membership tab in profile.
-      // 重置为个人主页的会员等级标签。
-      this.profileTab = 'levels';
+      // Reset to the profile summary when opening profile.
+      // 打开个人主页时重置为摘要页。
+      this.profileTab = 'summary';
       this.view = 'profile';
     },
     async loadProfileSpaces(userID) {
@@ -4499,7 +4567,7 @@ const app = createApp({
         ...this.posts.filter((post) => post.spaceId === space.id).map((post) => post.id),
         ...this.privatePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
         ...this.spacePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
-        ...this.profilePosts.filter((post) => post.spaceId === space.id).map((post) => post.id),
+        ...this.profileSpaces.filter((entry) => entry.id === space.id).map((entry) => entry.id),
         ...(this.currentPost && this.currentPost.spaceId === space.id ? [this.currentPost.id] : []),
       ]);
       relatedPostIds.forEach((postId) => {

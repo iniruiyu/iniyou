@@ -54,7 +54,11 @@
 - 钱包、会员、权益需要与账号体系关联，但保留独立扩展空间
 - 每个用户都可以设置唯一用户名，用户名由英文字母和数字组成，可作为个人主页和登录别名入口 / Each user can set a unique alphanumeric username used for profile and login alias routing.
 - 每个用户都可以设置唯一域名，域名由英文字母和数字组成，作为身份卡与登录入口；昵称与域名需要分开维护，手机号、年龄、性别、邮箱等个人信息字段需要支持可见范围控制 / Each user can set a unique alphanumeric domain handle used as the identity card and login entry; nickname must stay separate from the domain, and personal fields such as phone, age, gender, and email need visibility scopes.
+- 个人主页中的身份卡需要拆分为个人资料与隐私设置两块，默认仅展示摘要，编辑应通过按钮弹窗完成 / The profile identity card should be split into personal info and privacy settings, show summaries by default, and use a button-driven modal for editing.
+- 个人主页中的会员等级只展示当前等级与订阅按钮，切换等级通过底部抽屉完成 / Profile membership should show only the current level and a subscribe button, with level switching done in a bottom sheet.
 - 登录时支持邮箱、手机号、用户名或域名 / Login supports email, phone, username, or domain.
+- 主导航中的“主页”入口必须始终进入当前登录用户自己的主页，查看他人主页需要走独立入口或弹层 / The main-nav "Profile" entry must always open the current logged-in user's own profile; other users' profiles must use a separate entry or modal.
+- 好友主页入口应优先使用弹层预览，完整个人主页仅在弹层内进一步打开 / Friend profile entry points should prefer a modal preview, and the full profile page should only open from inside that modal.
 
 细化功能：
 
@@ -93,7 +97,7 @@
 - 创建空间并设置可见范围
 - 通过二级域名进入空间
 - 通过域名进入个人主页 / Enter the author page through the domain handle
-- 个人主页仅展示公开空间 / Profile pages only show public spaces
+- 个人主页仅展示公开空间入口，不展示空间内容流 / Profile pages only show public space entrances and do not display a space content feed.
 - 修改空间名称
 - 修改空间二级域名
 - 修改空间可见范围
@@ -128,6 +132,7 @@
 - 从主页导航进入“空间”时，侧边导航应保持可见，空间首页直接展开空间列表，不显示“空间里还没有文章，先发布第一篇吧。”空状态卡；只有进入具体空间后才沿用顶部按钮折叠方案 / When entering “Space” from the home navigation, the sidebar should remain visible, the space home should show the space list directly, and the “There is no content in this space yet. Publish the first post.” empty-state card should not be shown; only a specific space should use the top-button collapsed mode.
 - 主页“空间”按钮必须显式打开空间首页而不是把鼠标事件误当作空间对象；具体空间入口仍沿用当前折叠方案 / The home “Space” button must explicitly open the space home instead of treating the mouse event as a space object; specific space entry should keep the current collapsed mode.
 - 进入具体空间后，主内容区必须铺满可用视口，不能保留左侧空白占位；如果浏览器缓存了旧样式，前端应通过样式版本号强制刷新 / After entering a specific space, the main content area must fill the available viewport without leaving a blank left-side gutter; if the browser caches old styles, the frontend should force-refresh the stylesheet with a versioned asset URL.
+- 从好友资料弹窗进入对方空间时，必须先关闭好友资料层，再进入空间页，避免弹窗与空间页同时显示 / When entering a friend's space from the friend profile modal, the friend profile layer must be closed before switching to the space page to avoid overlapping the modal and the space page.
 - 空间内容页需要展示当前空间和帖子列表，并支持图文与小视频附件发布 / The space content page should show the current space and the post list, and support image plus short-video attachments.
   - 空间内容页不再重复展示个人空间列表，空间列表入口保留在首页与个人主页 / The space content page should not repeat the owned-space list; the space list entry stays on the home and profile pages.
   - 前端空间页进入后应默认展开工作台与“我的空间”内容，避免先显示空壳层 / Space pages should default to an expanded workspace and “My spaces” content instead of showing an empty shell first.

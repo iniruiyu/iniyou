@@ -196,7 +196,7 @@ class _ChatViewState extends State<ChatView> {
       context: context,
       builder: (dialogContext) {
         // Close the friend-profile dialog before switching spaces.
-        // ?????????????????????????
+        // 进入好友空间前先关闭好友资料弹窗，避免遮挡空间页。
         void closeDialog() {
           Navigator.of(dialogContext, rootNavigator: true).pop();
         }

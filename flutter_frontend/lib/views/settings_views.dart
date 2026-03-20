@@ -13,7 +13,7 @@ class LevelsView extends StatelessWidget {
   });
 
   final String currentLevel;
-  final ValueChanged<String> onActivateLevel;
+  final Future<bool> Function(String) onActivateLevel;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,11 @@ class LevelsView extends StatelessWidget {
                   // Level switch action uses the shared bilingual button.
                   // 等级切换动作统一使用双语按钮组件。
                   BilingualActionButton(
-                    onPressed: active ? null : () => onActivateLevel(item.level),
+                    onPressed: active
+                        ? null
+                        : () async {
+                            await onActivateLevel(item.level);
+                          },
                     primaryLabel: active ? '当前等级' : '切换到 ${item.level}',
                     secondaryLabel: active ? 'Current level' : 'Switch to ${item.level}',
                   ),

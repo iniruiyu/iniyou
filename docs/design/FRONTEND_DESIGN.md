@@ -245,18 +245,24 @@
 ### 8.7 个人主页页面约束
 
 - 个人主页需要展示：
-  - 作者名称
-  - 域名身份卡
-  - 可公开的联系信息
-  - 公开文章数量
-  - 作者公开文章列表
+  - 作者名称 / Author name
+  - 域名身份摘要 / Domain identity summary
+  - 个人资料摘要 / Personal info summary
+  - 隐私设置摘要 / Privacy settings summary
+  - 当前会员等级 / Current membership level
+  - 公开空间入口 / Public space entrances
+- 个人主页默认不展示内容流，只展示公开空间入口与必要摘要信息 / Profile pages should not show a content feed by default; they should only show public space entrances and required summary info.
 - 个人主页中的关系动作需要根据当前关系状态切换：
   - 未建立关系：显示“添加好友”
   - 收到待处理请求：显示“接受好友”
   - 已是好友：显示“发起聊天”
 - 用户应可从公共内容流直接进入作者主页
 - 用户应可从作者主页返回公共内容流
-- 个人资料页应允许编辑用户名，用户名同时作为登录别名与个人主页 / 二级域名入口句柄 / The profile page should allow editing the username, which also acts as the login alias and the profile/subdomain handle.
+- 主导航中的“主页”入口必须固定打开自己的主页；查看他人主页应使用独立入口或好友弹层 / The main-nav "Profile" entry must always open the current user's own profile; viewing others' profiles should use a separate entry or friend modal.
+- 好友主页入口应以弹层优先，完整主页入口放在弹层内 / Friend profile entry points should prefer a modal, with the full profile entry placed inside that modal.
+- 个人资料编辑应通过按钮打开弹窗完成，页面常驻只显示摘要，不显示输入表单 / Profile editing should happen in a button-opened modal, with the page itself showing summaries only and no persistent form fields.
+- 会员等级在个人主页只保留当前等级和订阅按钮，点击后在底部抽屉显示等级卡片 / Profile membership should keep only the current level and a subscribe button, with level cards shown in a bottom sheet.
+- 个人资料页应允许编辑用户名、域名和可见范围，用户名同时作为登录别名与个人主页 / 二级域名入口句柄 / The profile page should allow editing the username, domain, and visibility scopes; the username also acts as the login alias and the profile/subdomain handle.
 
 ### 8.8 空间相关页面约束
 
@@ -320,6 +326,7 @@
 - 2026-03-20：调整 Vue 空间首页从导航进入时的展示逻辑，并去掉空状态卡 / Adjusted the Vue space-home navigation entry behavior and removed the empty-state card.
 - 2026-03-20：修复 Vue 主页“空间”入口的事件误传，并保持首页空间列表可见 / Fixed the Vue home “Space” entry event-passing issue and kept the space list visible on the home page.
 - 2026-03-20：统一 Flutter/Web 后端接口口径，并补齐文章编辑弹窗与图片等比缩放设计约束 / Aligned Flutter/Web backend API contracts and added modal post editing plus proportional image scaling constraints.
+- 2026-03-20：完成双前端个人主页摘要页改造，切分个人资料/隐私设置、会员等级底部抽屉与公开空间入口 / Completed the dual-frontend profile summary-page redesign, splitting personal info/privacy settings, adding the membership bottom sheet, and showing public space entrances only.
 - 2026-03-17：完成双前端导航结构与个人主页标签调整 / Completed dual-frontend navigation structure and profile tab alignment.
 - 2026-03-17：收敛首批内建语言为中英双语与繁体中文 / Reduced built-in languages to English, Simplified Chinese, and Traditional Chinese.
 - 2026-03-18：收口 Vue 顶部切换并改为整栏折叠 / Removed Vue top switch and switched to full sidebar collapse.

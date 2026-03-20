@@ -418,7 +418,10 @@ class ProfileView extends StatelessWidget {
             children: [
               LevelsView(
                 currentLevel: currentLevel,
-                onActivateLevel: onActivateLevel,
+                onActivateLevel: (level) async {
+                  onActivateLevel(level);
+                  return true;
+                },
               ),
             ],
           )
@@ -476,6 +479,738 @@ class ProfileView extends StatelessWidget {
           canEditPost: (post) => user != null && post.userId == user!.id,
           onDeletePost: onDeletePost,
           languageCode: languageCode,
+        ),
+      ],
+    );
+  }
+}
+
+class ProfileSummaryView extends StatelessWidget {
+  const ProfileSummaryView({
+    super.key,
+    required this.user,
+    required this.profileUser,
+    required this.profileSpaces,
+    required this.connectedChains,
+    required this.displayNameController,
+    required this.usernameController,
+    required this.domainController,
+    required this.signatureController,
+    required this.phoneVisibility,
+    required this.emailVisibility,
+    required this.ageVisibility,
+    required this.genderVisibility,
+    required this.loading,
+    required this.currentLevel,
+    required this.onActivateLevel,
+    required this.onSaveProfile,
+    required this.onPhoneVisibilityChanged,
+    required this.onEmailVisibilityChanged,
+    required this.onAgeVisibilityChanged,
+    required this.onGenderVisibilityChanged,
+    required this.onAddFriend,
+    required this.onAcceptFriend,
+    required this.onStartChat,
+    required this.onEnterSpace,
+    required this.languageCode,
+    required this.t,
+    required this.peerT,
+  });
+
+  final CurrentUser? user;
+  final UserProfileItem? profileUser;
+  final List<SpaceItem> profileSpaces;
+  final List<String> connectedChains;
+  final TextEditingController displayNameController;
+  final TextEditingController usernameController;
+  final TextEditingController domainController;
+  final TextEditingController signatureController;
+  final String phoneVisibility;
+  final String emailVisibility;
+  final String ageVisibility;
+  final String genderVisibility;
+  final bool loading;
+  final String currentLevel;
+  final Future<bool> Function(String) onActivateLevel;
+  final Future<bool> Function() onSaveProfile;
+  final ValueChanged<String> onPhoneVisibilityChanged;
+  final ValueChanged<String> onEmailVisibilityChanged;
+  final ValueChanged<String> onAgeVisibilityChanged;
+  final ValueChanged<String> onGenderVisibilityChanged;
+  final ValueChanged<String> onAddFriend;
+  final ValueChanged<String> onAcceptFriend;
+  final VoidCallback onStartChat;
+  final ValueChanged<SpaceItem> onEnterSpace;
+  final String languageCode;
+  final String Function(String key) t;
+  final String Function(String key) peerT;
+
+  String _visibilityLabel(String value) {
+    switch (value) {
+      case 'public':
+        return localizedText(languageCode, '公开', 'Public', '公開');
+      case 'friends':
+        return localizedText(languageCode, '好友可见', 'Friends only', '好友可見');
+      case 'private':
+      default:
+        return localizedText(languageCode, '仅自己', 'Only me', '僅自己');
+    }
+  }
+
+  String? _profileDraftError() {
+    final displayName = displayNameController.text.trim();
+    final username = usernameController.text.trim().toLowerCase();
+    final domain = domainController.text.trim().toLowerCase();
+    final handlePattern = RegExp(r'^[a-zA-Z0-9]{1,63}$');
+    if (displayName.isEmpty) {
+      return localizedText(
+        languageCode,
+        '昵称不能为空',
+        'Nickname cannot be empty.',
+        '暱稱不能為空。',
+      );
+    }
+    if (domain.isEmpty) {
+      return localizedText(
+        languageCode,
+        '域名不能为空',
+        'Domain cannot be empty.',
+        '網域不能為空。',
+      );
+    }
+    if (username.isNotEmpty && !handlePattern.hasMatch(username)) {
+      return localizedText(
+        languageCode,
+        '用户名只能包含英文字母和数字，且最长 63 个字符',
+        'Username can contain letters and numbers only, up to 63 characters.',
+        '使用者名稱只能包含英文字母和數字，且最長 63 個字元。',
+      );
+    }
+    if (!handlePattern.hasMatch(domain)) {
+      return localizedText(
+        languageCode,
+        '域名只能包含英文字母和数字，且最长 63 个字符',
+        'Domain can contain letters and numbers only, up to 63 characters.',
+        '網域只能包含英文字母和數字，且最長 63 個字元。',
+      );
+    }
+    return null;
+  }
+
+  Future<void> _openProfileEditor(BuildContext context) async {
+    String? dialogError;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: !loading,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              title: Text(
+                localizedText(
+                  languageCode,
+                  '修改个人资料',
+                  'Edit profile',
+                  '修改個人資料',
+                ),
+              ),
+              content: SizedBox(
+                width: 720,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (dialogError != null) ...[
+                        Text(
+                          dialogError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      _ProfileIdentityEditorBody(
+                        displayNameController: displayNameController,
+                        usernameController: usernameController,
+                        domainController: domainController,
+                        signatureController: signatureController,
+                        phoneVisibility: phoneVisibility,
+                        emailVisibility: emailVisibility,
+                        ageVisibility: ageVisibility,
+                        genderVisibility: genderVisibility,
+                        onPhoneVisibilityChanged: onPhoneVisibilityChanged,
+                        onEmailVisibilityChanged: onEmailVisibilityChanged,
+                        onAgeVisibilityChanged: onAgeVisibilityChanged,
+                        onGenderVisibilityChanged: onGenderVisibilityChanged,
+                        languageCode: languageCode,
+                        t: t,
+                        peerT: peerT,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.text,
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '取消',
+                    'Cancel',
+                    '取消',
+                  ),
+                  secondaryLabel: 'Cancel',
+                ),
+                BilingualActionButton(
+                  onPressed: loading
+                      ? null
+                      : () async {
+                          final validationError = _profileDraftError();
+                          if (validationError != null) {
+                            setDialogState(() {
+                              dialogError = validationError;
+                            });
+                            return;
+                          }
+                          setDialogState(() {
+                            dialogError = null;
+                          });
+                          final saved = await onSaveProfile();
+                          if (!saved) {
+                            if (!dialogContext.mounted) {
+                              return;
+                            }
+                            setDialogState(() {
+                              dialogError = localizedText(
+                                languageCode,
+                                '保存失败，请重试。',
+                                'Save failed, please try again.',
+                                '儲存失敗，請再試一次。',
+                              );
+                            });
+                            return;
+                          }
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                        },
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '保存修改',
+                    'Save changes',
+                    '儲存修改',
+                  ),
+                  secondaryLabel: 'Save changes',
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _openMembershipSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    localizedText(
+                      languageCode,
+                      '切换会员等级',
+                      'Switch membership level',
+                      '切換會員等級',
+                    ),
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    localizedText(
+                      languageCode,
+                      '选择一个等级卡片即可切换。',
+                      'Pick a level card to switch.',
+                      '選擇一張等級卡片即可切換。',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  LevelsView(
+                    currentLevel: currentLevel,
+                    onActivateLevel: (level) async {
+                      final saved = await onActivateLevel(level);
+                      if (saved && sheetContext.mounted) {
+                        Navigator.of(sheetContext).pop();
+                      }
+                      return saved;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = profileUser;
+    if (profile == null) {
+      return InfoCard(
+        title: localizedText(languageCode, '个人主页', 'Profile', '個人主頁'),
+        lines: [
+          localizedText(
+            languageCode,
+            '尚未加载资料，点击左侧个人主页重新进入。',
+            'Profile data is not loaded yet. Tap the profile entry on the left to reopen it.',
+            '尚未載入資料，點擊左側個人主頁重新進入。',
+          ),
+        ],
+      );
+    }
+
+    final isOwnProfile = user != null && profile.id == user!.id;
+    final hasBlockchain = connectedChains.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InfoCard(
+          title: profile.displayName,
+          lines: [
+            '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
+            if (profile.domain.isNotEmpty)
+              '${localizedText(languageCode, '域名身份', 'Domain identity', '網域身份')}: @${profile.domain}',
+            if (profile.username.isNotEmpty)
+              '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
+            if (profile.signature.isNotEmpty)
+              '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
+            if (profile.status.isNotEmpty)
+              '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
+            if (!isOwnProfile && profile.relationStatus.isNotEmpty)
+              '${localizedText(languageCode, '关系', 'Relation', '關係')}: ${profile.relationStatus} · ${profile.direction}',
+            if (isOwnProfile && connectedChains.isNotEmpty)
+              '${localizedText(languageCode, '已连接链', 'Connected chains', '已連接鏈')}: ${connectedChains.join(', ')}',
+          ],
+          trailing: isOwnProfile
+              ? BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
+                  compact: true,
+                  onPressed: () => _openProfileEditor(context),
+                  primaryLabel: t('profile.identity.editAction'),
+                  secondaryLabel: peerT('profile.identity.editAction'),
+                )
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (profile.relationStatus.isEmpty)
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: () => onAddFriend(profile.id),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '添加好友',
+                          'Add friend',
+                          '新增好友',
+                        ),
+                        secondaryLabel: 'Add friend',
+                      ),
+                    if (profile.relationStatus == 'pending' &&
+                        profile.direction == 'incoming')
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: () => onAcceptFriend(profile.id),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '接受好友',
+                          'Accept friend',
+                          '接受好友',
+                        ),
+                        secondaryLabel: 'Accept friend',
+                      ),
+                    if (profile.relationStatus == 'accepted')
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: onStartChat,
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '发起聊天',
+                          'Start chat',
+                          '發起聊天',
+                        ),
+                        secondaryLabel: 'Start chat',
+                      ),
+                  ],
+                ),
+        ),
+        const SizedBox(height: 16),
+        if (isOwnProfile)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = constraints.maxWidth >= 980
+                  ? (constraints.maxWidth - 16) / 2
+                  : constraints.maxWidth;
+              return Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  SizedBox(
+                    width: cardWidth,
+                    child: InfoCard(
+                      title: t('profile.identity.personalTitle'),
+                      lines: [
+                        t('profile.identity.personalSub'),
+                        '${localizedText(languageCode, '昵称', 'Nickname', '暱稱')}: ${profile.displayName}',
+                        if (profile.username.isNotEmpty)
+                          '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
+                        if (profile.domain.isNotEmpty)
+                          '${localizedText(languageCode, '域名', 'Domain', '網域')}: @${profile.domain}',
+                        if (profile.signature.isNotEmpty)
+                          '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    child: InfoCard(
+                      title: t('profile.identity.privacyTitle'),
+                      lines: [
+                        t('profile.identity.privacySub'),
+                        '${localizedText(languageCode, '手机号可见范围', 'Phone visibility', '手機號可見範圍')}: ${_visibilityLabel(phoneVisibility)}',
+                        '${localizedText(languageCode, '邮箱可见范围', 'Email visibility', '信箱可見範圍')}: ${_visibilityLabel(emailVisibility)}',
+                        '${localizedText(languageCode, '年龄可见范围', 'Age visibility', '年齡可見範圍')}: ${_visibilityLabel(ageVisibility)}',
+                        '${localizedText(languageCode, '性别可见范围', 'Gender visibility', '性別可見範圍')}: ${_visibilityLabel(genderVisibility)}',
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t('profile.membership.title'),
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(t('profile.membership.sub')),
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    t('profile.membership.current'),
+                                    style:
+                                        Theme.of(context).textTheme.labelLarge,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    currentLevel.toUpperCase(),
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            BilingualActionButton(
+                              variant: BilingualButtonVariant.tonal,
+                              onPressed: () => _openMembershipSheet(context),
+                              primaryLabel: t('profile.membership.subscribe'),
+                              secondaryLabel:
+                                  peerT('profile.membership.subscribe'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    child: hasBlockchain
+                        ? Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.all(20),
+                              childrenPadding: const EdgeInsets.fromLTRB(
+                                20,
+                                0,
+                                20,
+                                20,
+                              ),
+                              title: Text(
+                                t('profile.blockchain.title'),
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              subtitle: Text(
+                                '${t('profile.blockchain.total')}: ${connectedChains.length}',
+                              ),
+                              children: [
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: connectedChains
+                                      .map((chain) => Chip(label: Text(chain)))
+                                      .toList(),
+                                ),
+                              ],
+                            ),
+                          )
+                        : InfoCard(
+                            title: t('profile.blockchain.title'),
+                            lines: [t('profile.blockchain.empty')],
+                          ),
+                  ),
+                ],
+              );
+            },
+          ),
+        if (isOwnProfile) const SizedBox(height: 16),
+        Text(
+          t('profile.spaces.title'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        Text(t('profile.spaces.sub')),
+        const SizedBox(height: 16),
+        SpaceListSection(
+          title: t('profile.spaces.publicList'),
+          spaces: profileSpaces,
+          activeSpaceId: null,
+          currentUserId: user?.id,
+          onEnterSpace: onEnterSpace,
+          languageCode: languageCode,
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileIdentityEditorBody extends StatelessWidget {
+  const _ProfileIdentityEditorBody({
+    required this.displayNameController,
+    required this.usernameController,
+    required this.domainController,
+    required this.signatureController,
+    required this.phoneVisibility,
+    required this.emailVisibility,
+    required this.ageVisibility,
+    required this.genderVisibility,
+    required this.onPhoneVisibilityChanged,
+    required this.onEmailVisibilityChanged,
+    required this.onAgeVisibilityChanged,
+    required this.onGenderVisibilityChanged,
+    required this.languageCode,
+    required this.t,
+    required this.peerT,
+  });
+
+  final TextEditingController displayNameController;
+  final TextEditingController usernameController;
+  final TextEditingController domainController;
+  final TextEditingController signatureController;
+  final String phoneVisibility;
+  final String emailVisibility;
+  final String ageVisibility;
+  final String genderVisibility;
+  final ValueChanged<String> onPhoneVisibilityChanged;
+  final ValueChanged<String> onEmailVisibilityChanged;
+  final ValueChanged<String> onAgeVisibilityChanged;
+  final ValueChanged<String> onGenderVisibilityChanged;
+  final String languageCode;
+  final String Function(String key) t;
+  final String Function(String key) peerT;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          localizedText(
+            languageCode,
+            '个人资料',
+            'Personal info',
+            '個人資料',
+          ),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        BilingualField(
+          primaryLabel: t('profile.identity.nickname'),
+          secondaryLabel: peerT('profile.identity.nickname'),
+          child: TextField(
+            controller: displayNameController,
+            decoration: InputDecoration(
+              hintText: t('dashboard.displayNamePlaceholder'),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        BilingualField(
+          primaryLabel: t('profile.identity.username'),
+          secondaryLabel: peerT('profile.identity.username'),
+          child: TextField(
+            controller: usernameController,
+            maxLength: 63,
+            buildCounter:
+                (
+                  BuildContext context, {
+                  required int currentLength,
+                  required bool isFocused,
+                  required int? maxLength,
+                }) => null,
+            decoration: InputDecoration(
+              hintText: t('dashboard.usernamePlaceholder'),
+            ),
+          ),
+          helperText: t('dashboard.usernameHint'),
+        ),
+        const SizedBox(height: 12),
+        BilingualField(
+          primaryLabel: t('profile.identity.domain'),
+          secondaryLabel: peerT('profile.identity.domain'),
+          child: TextField(
+            controller: domainController,
+            maxLength: 63,
+            buildCounter:
+                (
+                  BuildContext context, {
+                  required int currentLength,
+                  required bool isFocused,
+                  required int? maxLength,
+                }) => null,
+            decoration: InputDecoration(
+              hintText: t('profile.identity.domainPlaceholder'),
+            ),
+          ),
+          helperText: t('profile.identity.domainHint'),
+        ),
+        const SizedBox(height: 12),
+        BilingualField(
+          primaryLabel: t('profile.identity.signature'),
+          secondaryLabel: peerT('profile.identity.signature'),
+          child: TextField(
+            controller: signatureController,
+            decoration: InputDecoration(
+              hintText: t('profile.identity.signaturePlaceholder'),
+            ),
+            maxLines: 3,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          localizedText(languageCode, '隐私设置', 'Privacy settings', '隱私設定'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final fieldWidth = constraints.maxWidth >= 720
+                ? (constraints.maxWidth - 12) / 2
+                : constraints.maxWidth;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: fieldWidth,
+                  child: BilingualDropdownField<String>(
+                    primaryLabel: t('profile.identity.phoneVisibility'),
+                    secondaryLabel: peerT('profile.identity.phoneVisibility'),
+                    value: phoneVisibility,
+                    items: buildIdentityVisibilityItems(languageCode),
+                    onChanged: (value) =>
+                        onPhoneVisibilityChanged(value ?? phoneVisibility),
+                  ),
+                ),
+                SizedBox(
+                  width: fieldWidth,
+                  child: BilingualDropdownField<String>(
+                    primaryLabel: t('profile.identity.emailVisibility'),
+                    secondaryLabel: peerT('profile.identity.emailVisibility'),
+                    value: emailVisibility,
+                    items: buildIdentityVisibilityItems(languageCode),
+                    onChanged: (value) =>
+                        onEmailVisibilityChanged(value ?? emailVisibility),
+                  ),
+                ),
+                SizedBox(
+                  width: fieldWidth,
+                  child: BilingualDropdownField<String>(
+                    primaryLabel: t('profile.identity.ageVisibility'),
+                    secondaryLabel: peerT('profile.identity.ageVisibility'),
+                    value: ageVisibility,
+                    items: buildIdentityVisibilityItems(languageCode),
+                    onChanged: (value) =>
+                        onAgeVisibilityChanged(value ?? ageVisibility),
+                  ),
+                ),
+                SizedBox(
+                  width: fieldWidth,
+                  child: BilingualDropdownField<String>(
+                    primaryLabel: t('profile.identity.genderVisibility'),
+                    secondaryLabel: peerT('profile.identity.genderVisibility'),
+                    value: genderVisibility,
+                    items: buildIdentityVisibilityItems(languageCode),
+                    onChanged: (value) =>
+                        onGenderVisibilityChanged(value ?? genderVisibility),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        Text(
+          localizedText(
+            languageCode,
+            '编辑后会保存到个人资料与隐私设置中。',
+            'Changes are saved into both profile info and privacy settings.',
+            '編輯後會保存到個人資料與隱私設定中。',
+          ),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );
@@ -591,6 +1326,81 @@ class FriendsView extends StatelessWidget {
   final ValueChanged<String> onOpenProfile;
   final ValueChanged<FriendItem> onStartChat;
   final String languageCode;
+
+  Future<void> _openFriendProfileDialog(
+    BuildContext context,
+    FriendItem friend,
+  ) async {
+    // Open a modal preview for a friend's profile instead of navigating away.
+    // 打开好友主页弹层预览，而不是直接跳转页面。
+    final theme = Theme.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            localizedText(languageCode, '好友主页', 'Friend profile', '好友主頁'),
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  friend.displayName,
+                  style: theme.textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${localizedText(languageCode, '联系方式', 'Contact', '聯絡方式')}: ${friend.secondary}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${friend.status}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${localizedText(languageCode, '方向', 'Direction', '方向')}: ${friend.direction}',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            BilingualActionButton(
+              variant: BilingualButtonVariant.text,
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              primaryLabel: localizedText(
+                languageCode,
+                '关闭',
+                'Close',
+                '關閉',
+              ),
+              secondaryLabel: 'Close',
+            ),
+            BilingualActionButton(
+              variant: BilingualButtonVariant.tonal,
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                onOpenProfile(friend.id);
+              },
+              primaryLabel: localizedText(
+                languageCode,
+                '打开完整主页',
+                'Open full profile',
+                '開啟完整主頁',
+              ),
+              secondaryLabel: 'Open full profile',
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -710,7 +1520,7 @@ class FriendsView extends StatelessWidget {
                       children: [
                         BilingualActionButton(
                           variant: BilingualButtonVariant.tonal,
-                          onPressed: () => onOpenProfile(friend.id),
+                          onPressed: () => _openFriendProfileDialog(context, friend),
                           primaryLabel: localizedText(
                             languageCode,
                             '主页',
