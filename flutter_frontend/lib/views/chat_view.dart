@@ -189,9 +189,11 @@ class _ChatViewState extends State<ChatView> {
     if (!mounted) {
       return;
     }
-    // Show a compact profile dialog for the current chat friend.
-    // 为当前聊天好友弹出紧凑资料弹窗。
-    final friendSpaces = await widget.loadFriendSpaces(friend.id);
+    // Start loading spaces immediately so the dialog can open without waiting on the network.
+    // 立即开始加载空间，让弹层无需等待网络返回即可打开。
+    Future<List<SpaceItem>> friendSpacesFuture = widget.loadFriendSpaces(
+      friend.id,
+    );
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -201,108 +203,277 @@ class _ChatViewState extends State<ChatView> {
           Navigator.of(dialogContext, rootNavigator: true).pop();
         }
 
+        void reloadFriendSpaces(StateSetter setDialogState) {
+          // Retry without dismissing the dialog if the first fetch fails.
+          // 如果首次加载失败，在不关闭弹层的情况下重试。
+          setDialogState(() {
+            friendSpacesFuture = widget.loadFriendSpaces(friend.id);
+          });
+        }
+
         final theme = Theme.of(dialogContext);
         // Keep the profile modal scrollable on compact screens so long space lists never clip the CTA.
         // 让资料弹层在紧凑屏幕下可滚动，避免长空间列表把进入按钮挤出可视区。
-        return AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 24,
-          ),
-          scrollable: true,
-          title: Text(_l('好友资料', 'Friend profile', '好友資料')),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  friend.displayName,
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text('${_l('用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : _l('暂无', 'N/A', '暫無')}'),
-                const SizedBox(height: 4),
-                Text('${_l('联系方式', 'Contact', '聯絡方式')}: ${friend.secondary}'),
-                const SizedBox(height: 4),
-                Text('${_l('状态', 'Status', '狀態')}: ${friend.status}'),
-                const SizedBox(height: 4),
-                Text('${_l('方向', 'Direction', '方向')}: ${friend.direction}'),
-                const SizedBox(height: 16),
-                Text(
-                  _l('对方空间', 'Friend spaces', '對方空間'),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _l('这里只显示对方公开的空间和进入入口。', 'Only public spaces and entry points are shown here.', '這裡只顯示對方公開的空間與進入入口。'),
-                  style: theme.textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                if (friendSpaces.isEmpty)
-                  Text(_l('对方还没有公开空间。', 'This friend has no public spaces yet.', '對方還沒有公開空間。'))
-                else
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: friendSpaces
-                        .map(
-                          (space) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(14),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      space.name,
-                                      style: theme.textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(space.description),
-                                    const SizedBox(height: 6),
-                                    Text('@${space.subdomain}'),
-                                    const SizedBox(height: 10),
-                                    BilingualActionButton(
-                                      variant: BilingualButtonVariant.tonal,
-                                      compact: true,
-                                      onPressed: () {
-                                        closeDialog();
-                                        widget.onEnterSpace(space);
-                                      },
-                                      primaryLabel: _l('进入空间', 'Enter space', '進入空間'),
-                                      secondaryLabel: 'Enter space',
-                                    ),
-                                  ],
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              scrollable: true,
+              title: Text(_l('好友资料', 'Friend profile', '好友資料')),
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: FutureBuilder<List<SpaceItem>>(
+                  future: friendSpacesFuture,
+                  builder: (context, snapshot) {
+                    final friendSpaces =
+                        snapshot.data ?? const <SpaceItem>[];
+                    final loadingSpaces =
+                        snapshot.connectionState == ConnectionState.waiting;
+                    final loadingError = snapshot.hasError;
+
+                    Widget buildSummaryCard() {
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                friend.displayName,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  Chip(
+                                    label: Text(
+                                      '${_l('状态', 'Status', '狀態')}: ${friend.status}',
+                                    ),
+                                  ),
+                                  Chip(
+                                    label: Text(
+                                      '${_l('方向', 'Direction', '方向')}: ${friend.direction}',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '${_l('用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : _l('暂无', 'N/A', '暫無')}',
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${_l('联系方式', 'Contact', '聯絡方式')}: ${friend.secondary}',
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _l(
+                                  '这里集中展示好友资料和公开空间入口。',
+                                  'This panel combines the friend summary with public-space entry points.',
+                                  '這裡集中展示好友資料和公開空間入口。',
+                                ),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    Widget buildSpacesCard() {
+                      Widget body;
+                      if (loadingSpaces) {
+                        body = Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  _l(
+                                    '正在加载公开空间...',
+                                    'Loading public spaces...',
+                                    '正在載入公開空間...',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        )
-                        .toList(),
-                  ),
+                        );
+                      } else if (loadingError) {
+                        body = Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _l(
+                                  '加载空间失败，请稍后重试。',
+                                  'Failed to load spaces. Please try again later.',
+                                  '載入空間失敗，請稍後重試。',
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              BilingualActionButton(
+                                variant: BilingualButtonVariant.tonal,
+                                compact: true,
+                                onPressed: () => reloadFriendSpaces(setDialogState),
+                                primaryLabel: _l('重试', 'Retry', '重試'),
+                                secondaryLabel: 'Retry',
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (friendSpaces.isEmpty) {
+                        body = Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Text(
+                            _l(
+                              '对方还没有公开空间。',
+                              'This friend has no public spaces yet.',
+                              '對方還沒有公開空間。',
+                            ),
+                          ),
+                        );
+                      } else {
+                        body = Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: friendSpaces
+                              .map(
+                                (space) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Card(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            space.name,
+                                            style: theme.textTheme.titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(space.description),
+                                          const SizedBox(height: 6),
+                                          Text('@${space.subdomain}'),
+                                          const SizedBox(height: 10),
+                                          BilingualActionButton(
+                                            variant: BilingualButtonVariant.tonal,
+                                            compact: true,
+                                            onPressed: () {
+                                              closeDialog();
+                                              widget.onEnterSpace(space);
+                                            },
+                                            primaryLabel: _l(
+                                              '进入空间',
+                                              'Enter space',
+                                              '進入空間',
+                                            ),
+                                            secondaryLabel: 'Enter space',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        );
+                      }
+
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _l('对方空间', 'Friend spaces', '對方空間'),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _l(
+                                  '这里只显示对方公开的空间和进入入口。',
+                                  'Only public spaces and entry points are shown here.',
+                                  '這裡只顯示對方公開的空間與進入入口。',
+                                ),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 12),
+                              body,
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final useTwoColumns = constraints.maxWidth >= 640;
+                        final summaryCard = buildSummaryCard();
+                        final spacesCard = buildSpacesCard();
+                        if (useTwoColumns) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: summaryCard),
+                              const SizedBox(width: 16),
+                              Expanded(flex: 2, child: spacesCard),
+                            ],
+                          );
+                        }
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            summaryCard,
+                            const SizedBox(height: 16),
+                            spacesCard,
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: closeDialog,
+                  child: Text(_l('关闭', 'Close', '關閉')),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    closeDialog();
+                    widget.onOpenProfile(friend.id);
+                  },
+                  child: Text(_l('查看主页', 'Open profile', '查看主頁')),
+                ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: closeDialog,
-              child: Text(_l('关闭', 'Close', '關閉')),
-            ),
-            FilledButton(
-              onPressed: () {
-                closeDialog();
-                widget.onOpenProfile(friend.id);
-              },
-              child: Text(_l('查看主页', 'Open profile', '查看主頁')),
-            ),
-          ],
+            );
+          },
         );
       },
     );

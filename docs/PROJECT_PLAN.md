@@ -248,6 +248,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-20：继续升级 Flutter 聊天好友资料弹层，改为打开即加载、宽屏双栏、失败可重试的公开空间入口面板 / Continued upgrading the Flutter chat friend-profile dialog into an open-immediately, dual-column, retryable public-space entry panel.
 - 2026-03-20：把 Flutter 聊天好友资料弹层改成可滚动的响应式布局，避免小屏下空间卡片和进入按钮被裁切 / Made the Flutter chat friend-profile dialog scrollable and responsive so small screens no longer clip space cards or the enter button.
 - 2026-03-20：修复 Flutter 从好友资料进入公开空间后被自有空间列表覆盖的问题，保留外部进入的当前空间上下文 / Fixed the Flutter friend-profile public-space entry path so external spaces are no longer overwritten by the owned-space list and the current space context is preserved.
 - 2026-03-20：在账号服务登录与鉴权链路里接入 active 状态校验，停用账号会在登录和 JWT 中间件阶段被拒绝 / Integrated active-status checks into the account-service login and auth flow so inactive accounts are rejected both at sign-in and in the JWT middleware.
