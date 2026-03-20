@@ -135,6 +135,7 @@
 - 主页“空间”按钮必须显式打开空间首页而不是把鼠标事件误当作空间对象；具体空间入口仍沿用当前折叠方案 / The home “Space” button must explicitly open the space home instead of treating the mouse event as a space object; specific space entry should keep the current collapsed mode.
 - 进入具体空间后，主内容区必须铺满可用视口，不能保留左侧空白占位；如果浏览器缓存了旧样式，前端应通过样式版本号强制刷新 / After entering a specific space, the main content area must fill the available viewport without leaving a blank left-side gutter; if the browser caches old styles, the frontend should force-refresh the stylesheet with a versioned asset URL.
 - 从好友资料弹窗进入对方空间时，必须先关闭好友资料层，再进入空间页，避免弹窗与空间页同时显示 / When entering a friend's space from the friend profile modal, the friend profile layer must be closed before switching to the space page to avoid overlapping the modal and the space page.
+- 进入具体空间后，帖子列表区域必须承担独立纵向滚动，固定壳层只负责视口铺满和顶部操作区，避免好友空间无法向下浏览 / After entering a specific space, the post-list area must provide its own vertical scrolling; the fixed shell only fills the viewport and hosts the top action area, so friend spaces remain scrollable.
 - 空间内容页需要展示当前空间和帖子列表，并支持图文与小视频附件发布 / The space content page should show the current space and the post list, and support image plus short-video attachments.
   - 空间内容页不再重复展示个人空间列表，空间列表入口保留在首页与个人主页 / The space content page should not repeat the owned-space list; the space list entry stays on the home and profile pages.
   - 前端空间页进入后应默认展开工作台与“我的空间”内容，避免先显示空壳层 / Space pages should default to an expanded workspace and “My spaces” content instead of showing an empty shell first.

@@ -274,6 +274,7 @@
 - 内容发布入口必须依附当前空间上下文，页面内应可见文章所属空间信息
 - 双前端在进入具体空间后，应将“我的空间 / 创建空间”工作台折叠为顶部按钮弹层；Flutter 入口命名为“空间工作台”，Vue 空间内容流仅保留帖子内容 / After entering a specific space, both frontends should collapse the “My spaces / Create space” workspace into a top-button popover; the Flutter entry is named “Space workspace”, and the Vue space feed should keep only post content.
 - 空间页应只保留帖子列表、发布按钮和工作台入口，不再展示内容流 / 当前空间设置说明卡；图片上传与编辑提示应明确最长边 1600px 的缩放上限 / The space page should keep only the post list, publish button, and workspace entry, without content-feed/current-space-settings info cards; image upload and editing guidance should state the 1600px long-edge cap.
+- 空间内容页应把帖子列表放进独立滚动容器，空间壳层只负责视口铺满和顶部按钮区，避免好友空间进入后出现无法向下滚动的问题 / The space content page should place the post list inside an independent scroll container, while the shell only fills the viewport and hosts the top action area, preventing friend spaces from losing downward scrolling.
 - 从主页导航进入“空间”时，侧边导航应保持可见，空间首页直接展示空间列表；只有进入具体空间时才切换到折叠弹层 / When entering “Space” from the home navigation, the sidebar should remain visible and the space home should show the list directly; only a specific space should switch to the collapsed popover.
 - 主页“空间”入口必须显式调用空参方法，避免 Vue 事件对象被误判为具体空间 / The home “Space” entry must explicitly call the no-arg handler to avoid Vue event objects being mistaken for a specific space.
 - 空间子域名输入应显式提示仅支持英文字母和数字，且最长 63 个字符 / The space subdomain input should explicitly indicate that only letters and digits are allowed, up to 63 characters.

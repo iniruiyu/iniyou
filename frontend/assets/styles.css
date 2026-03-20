@@ -70,7 +70,7 @@ body {
   grid-template-columns: 280px 1fr;
 }
 
-/* Space shell full-width layout / 空间模式全宽布局：进入具体空间时收拢为单列壳层，并让主内容直接铺满视口，避免左侧空列。 */
+/* Space shell full-width layout / 空间模式全宽布局：进入具体空间时收拢为单列壳层，并让空间内容区承担独立滚动，避免好友空间被固定壳层截断。 */
 .app.space-shell-mode {
   display: grid !important;
   grid-template-columns: 1fr !important;
@@ -91,7 +91,7 @@ body {
   margin: 0;
   min-width: 0;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   box-sizing: border-box;
 }
 
@@ -1029,12 +1029,19 @@ body {
   margin-top: 4px;
 }
 
-/* Space content page / 空间内容页：宽度跟随主容器铺满可用视口。 */
+/* Space content page / 空间内容页：作为空间壳层内的独立滚动区，确保好友空间进入后可以继续向下浏览帖子。 */
 .space-page {
   width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 231, 255, 0.58) rgba(255, 255, 255, 0.04);
   background:
     radial-gradient(circle at top right, rgba(110, 231, 255, 0.08), transparent 30%),
     radial-gradient(circle at bottom left, rgba(255, 184, 107, 0.08), transparent 26%),
