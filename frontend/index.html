@@ -1017,9 +1017,9 @@
             <strong>{{ localizedLevelName }}</strong>
           </div>
           <div class="level-grid membership-level-grid">
-            <div class="level-card" v-for="level in levels" :key="level.name">
+            <div class="level-card" v-for="level in levels" :key="level.planID">
               <div class="level-title">{{ localizedLevelText('name', level) }}</div>
-              <div class="level-price">{{ level.price }}</div>
+              <div class="level-price">{{ localizedLevelText('price', level) }}</div>
               <ul class="level-features">
                 <li v-for="feature in localizedLevelText('features', level)" :key="feature">{{ feature }}</li>
               </ul>

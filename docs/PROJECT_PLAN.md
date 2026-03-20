@@ -249,6 +249,7 @@ new-project/
 进度记录 / Progress log:
 
 - 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
+- 2026-03-20：补齐 Vue 会员弹层的本地化解析 helper，修正订阅卡片渲染 key 和价格/权益展示，避免点击订阅后因 localizedLevelText 缺失报错 / Added the Vue membership sheet localization helper, fixed the subscription card render key plus price/feature display, and prevented the subscribe action from failing because localizedLevelText was missing.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮的方案收口，并把 Vue 空间内容流说明文案精简为纯帖子内容 / Completed the dual-frontend plan to collapse the workspace into a top button and simplified the Vue space feed copy to post content only.
 - 2026-03-20：继续收紧空间页，移除内容流 / 当前空间设置说明卡，并把文章图片缩放上限明确为 1600px / Further tightened the space page by removing the feed/current-space-settings info cards and making the article image scaling cap explicit at 1600px.
 - 2026-03-20：调整 Vue 空间首页进入逻辑，确保从主页导航进入“空间”时侧边导航保持可见，并移除空状态卡 / Adjusted the Vue space-home entry flow so the sidebar stays visible when entering “Space” from the home navigation and removed the empty-state card.

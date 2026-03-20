@@ -3014,6 +3014,67 @@ const app = createApp({
         ''
       );
     },
+    localizedLevelText(field, level) {
+      // Resolve localized membership fields for the current locale.
+      // 为当前语言解析会员等级字段，避免弹层直接读取对象时报错。
+      if (!level || !field) {
+        return field === 'features' ? [] : '';
+      }
+      const value = level[field];
+      if (field === 'features') {
+        if (Array.isArray(value)) {
+          return value.filter((item) => item != null && item !== '').map((item) => String(item));
+        }
+        if (value && typeof value === 'object') {
+          const localized =
+            value[this.locale] ||
+            value['zh-CN'] ||
+            value['en-US'] ||
+            value['zh-TW'];
+          if (Array.isArray(localized)) {
+            return localized.filter((item) => item != null && item !== '').map((item) => String(item));
+          }
+          if (typeof localized === 'string' || typeof localized === 'number') {
+            return [String(localized)];
+          }
+          const fallbackArray = Object.values(value).find((entry) => Array.isArray(entry) && entry.length > 0);
+          if (Array.isArray(fallbackArray)) {
+            return fallbackArray.filter((item) => item != null && item !== '').map((item) => String(item));
+          }
+          const fallbackText = Object.values(value).find((entry) => typeof entry === 'string' || typeof entry === 'number');
+          return fallbackText != null ? [String(fallbackText)] : [];
+        }
+        if (typeof value === 'string' || typeof value === 'number') {
+          return [String(value)];
+        }
+        return [];
+      }
+      if (value == null) {
+        return '';
+      }
+      if (typeof value === 'string' || typeof value === 'number') {
+        return String(value);
+      }
+      if (typeof value !== 'object') {
+        return '';
+      }
+      const localized =
+        value[this.locale] ||
+        value['zh-CN'] ||
+        value['en-US'] ||
+        value['zh-TW'];
+      if (Array.isArray(localized)) {
+        return localized
+          .filter((item) => item != null && item !== '')
+          .map((item) => String(item))
+          .join(', ');
+      }
+      if (typeof localized === 'string' || typeof localized === 'number') {
+        return String(localized);
+      }
+      const fallbackValue = Object.values(value).find((entry) => typeof entry === 'string' || typeof entry === 'number');
+      return fallbackValue != null ? String(fallbackValue) : '';
+    },
     identityVisibilityOptions() {
       // Shared identity visibility choices / 共用身份资料可见范围选项。
       return [
@@ -3147,10 +3208,11 @@ const app = createApp({
       }));
     },
     localizedLevelPrice(level) {
-      return level.price[this.locale] || level.price['zh-CN'];
+      return this.localizedLevelText('price', level);
     },
     localizedLevelFeatures(level) {
-      return level.features[this.locale] || level.features['zh-CN'] || [];
+      const features = this.localizedLevelText('features', level);
+      return Array.isArray(features) ? features : [];
     },
     visibilityLabel(visibility) {
       return visibility === 'private' ? this.t('posts.privateLabel') : this.t('posts.publicLabel');
