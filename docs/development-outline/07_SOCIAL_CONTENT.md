@@ -31,6 +31,9 @@
 - Vue 主页“空间”按钮改为显式空参调用，避免事件对象误判为具体空间 / Vue home “Space” button now uses an explicit no-arg call to avoid misreading the click event as a space object
 - Vue 进入具体空间后改为全宽主容器铺满窗口，避免左侧保留空白列 / Vue specific-space pages now use a full-width main container to avoid leaving a blank left column.
 - Vue 具体空间页进一步改为视口级固定主容器，并通过样式版本号避免浏览器继续命中旧布局缓存 / Vue specific-space pages now use a viewport-fixed main container, and the stylesheet version is bumped to avoid stale layout caching.
+- Vue 从好友资料弹窗进入好友空间时会先关闭资料层，弹窗内“进入空间”按钮也统一走好友空间专用入口，再切换到空间页 / Vue now closes the friend profile layer before entering a friend's space, and the modal's "enter space" button also uses the dedicated friend-space entry path.
+- Flutter 聊天好友资料弹窗进入好友空间时也会先关闭弹窗，并通过根导航器确保空间页切换后不残留资料层 / Flutter now also closes the chat friend-profile dialog before entering a friend space, using the root navigator so no profile layer remains after switching pages.
+- 双前端个人主页已收敛为摘要页，只展示个人资料、隐私设置、会员等级与公开空间入口，不再展示内容流 / Both frontends' profile pages are now summary pages that only show personal info, privacy settings, membership level, and public space entrances, without a content feed.
 - 进行中：
   - 内容状态与审核预留
 - 待完成：

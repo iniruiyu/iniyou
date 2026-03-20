@@ -2008,6 +2008,12 @@ const app = createApp({
     },
     closeSpaceComposer() {
       // Close the space modal and reset its draft state.
+    async enterFriendSpace(space) {
+      // Close the friend profile overlay before entering the target space.
+      // ??????????????????????????
+      this.closeChatFriendProfile();
+      await this.enterSpace(space);
+    },
       // 关闭空间弹窗并重置草稿状态。
       this.spaceModalOpen = false;
       this.spaceDraft.id = '';

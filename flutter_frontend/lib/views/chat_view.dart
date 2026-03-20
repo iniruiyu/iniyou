@@ -195,6 +195,12 @@ class _ChatViewState extends State<ChatView> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
+        // Close the friend-profile dialog before switching spaces.
+        // ?????????????????????????
+        void closeDialog() {
+          Navigator.of(dialogContext, rootNavigator: true).pop();
+        }
+
         final theme = Theme.of(dialogContext);
         return AlertDialog(
           title: Text(_l('好友资料', 'Friend profile', '好友資料')),
@@ -261,7 +267,7 @@ class _ChatViewState extends State<ChatView> {
                                         variant: BilingualButtonVariant.tonal,
                                         compact: true,
                                         onPressed: () {
-                                          Navigator.of(dialogContext).pop();
+                                          closeDialog();
                                           widget.onEnterSpace(space);
                                         },
                                         primaryLabel: _l('进入空间', 'Enter space', '進入空間'),
@@ -281,12 +287,12 @@ class _ChatViewState extends State<ChatView> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
+              onPressed: closeDialog,
               child: Text(_l('关闭', 'Close', '關閉')),
             ),
             FilledButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop();
+                closeDialog();
                 widget.onOpenProfile(friend.id);
               },
               child: Text(_l('查看主页', 'Open profile', '查看主頁')),

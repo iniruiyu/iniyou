@@ -254,6 +254,8 @@ new-project/
 - 2026-03-20：修复 Vue 进入具体空间后未铺满窗口的问题，改为空间模式全宽主容器 / Fixed the Vue specific-space page not filling the viewport by switching the space shell to a full-width main container.
 - 2026-03-20：继续修正 Vue 具体空间页的全屏铺满问题，改为视口级固定主容器并追加样式缓存版本号 / Further corrected the Vue specific-space full-screen layout by using a viewport-fixed main container and adding a stylesheet cache-busting version.
 - 2026-03-20：完成 Flutter 文章编辑弹窗化，补齐 `clear_media` 接口与图片等比缩放，并明确 Flutter/Web 共用同一套后端接口 / Completed Flutter post editing modal flow, added `clear_media` support and proportional image scaling, and confirmed Flutter/Web share the same backend API.
+- 2026-03-20??? Flutter ??????????????????????????????????????? / Completed the same close-before-enter flow for the Flutter chat friend-profile dialog by dismissing it with the root navigator before switching to the space page.
+- 2026-03-20??????????????????????/???????????????????? / Completed the dual-frontend profile-page summary redesign, splitting personal info/privacy settings, adding the membership subscribe bottom sheet, and showing public space entrances only.
 - 2026-03-20：补齐 Vue 文章多图片上传、随机文件名、可删除画廊与等比缩放，并让前后端继续共用同一套文章接口 / Added Vue multi-image uploads, randomized file names, removable galleries, and proportional scaling while keeping the shared post API across frontends.
 - 2026-03-20：补齐文章媒体真实落盘、按文章目录存储与删除时物理清理，避免空留服务器文件 / Added physical on-disk storage for article media, per-post directories, and deletion cleanup to avoid orphaned server files.
 - 2026-03-20：补齐 Flutter/Vue 文章正文 Markdown 渲染与 Flutter 多图编辑/发布画廊，继续统一双前端文章展示与提交口径 / Added Markdown rendering for article bodies in Flutter and Vue plus Flutter multi-image compose/edit galleries, keeping article display and submission consistent across both frontends.
