@@ -66,6 +66,8 @@ class AppI18n {
       'profile.identity.domainPlaceholder': '输入域名',
       'profile.identity.signaturePlaceholder': '输入签名',
       'profile.identity.domainHint': '域名会作为身份卡和登录入口。',
+      'profile.identity.saveProfile': '保存资料',
+      'profile.identity.savePrivacy': '保存隐私设置',
       'profile.identity.save': '保存身份卡',
       'profile.membership.title': '会员等级',
       'profile.membership.sub': '只保留当前等级，订阅后可切换方案。',
@@ -184,6 +186,8 @@ class AppI18n {
       'profile.identity.signaturePlaceholder': 'Enter signature',
       'profile.identity.domainHint':
           'Your domain is used as an identity card and login handle.',
+      'profile.identity.saveProfile': 'Save profile',
+      'profile.identity.savePrivacy': 'Save privacy settings',
       'profile.identity.save': 'Save identity card',
       'profile.membership.title': 'Membership level',
       'profile.membership.sub':
@@ -308,6 +312,8 @@ class AppI18n {
       'profile.identity.domainPlaceholder': '輸入網域',
       'profile.identity.signaturePlaceholder': '輸入簽名',
       'profile.identity.domainHint': '網域會作為身份卡與登入入口。',
+      'profile.identity.saveProfile': '儲存資料',
+      'profile.identity.savePrivacy': '儲存隱私設定',
       'profile.identity.save': '儲存身份卡',
       'profile.membership.title': '會員等級',
       'profile.membership.sub': '只保留目前等級，訂閱後可切換方案。',

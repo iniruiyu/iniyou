@@ -16,6 +16,10 @@ import '../widgets/bilingual_dropdown_options.dart';
 import '../main.dart' show ProfileTab;
 import 'settings_views.dart';
 
+// Split the profile editor by section so each entry opens a focused dialog.
+// 将个人主页编辑器按区块拆分，让每个入口只打开对应的专用弹窗。
+enum _ProfileEditorSection { personal, privacy }
+
 class ProfileView extends StatelessWidget {
   const ProfileView({
     super.key,
@@ -662,7 +666,33 @@ class ProfileSummaryView extends StatelessWidget {
     }
   }
 
-  String? _profileDraftError() {
+  String _profileEditorTitle(_ProfileEditorSection section) {
+    switch (section) {
+      case _ProfileEditorSection.personal:
+        return localizedText(languageCode, '修改个人资料', 'Edit profile', '修改個人資料');
+      case _ProfileEditorSection.privacy:
+        return localizedText(
+          languageCode,
+          '修改隐私设置',
+          'Edit privacy settings',
+          '修改隱私設定',
+        );
+    }
+  }
+
+  String _profileEditorSaveKey(_ProfileEditorSection section) {
+    switch (section) {
+      case _ProfileEditorSection.personal:
+        return 'profile.identity.saveProfile';
+      case _ProfileEditorSection.privacy:
+        return 'profile.identity.savePrivacy';
+    }
+  }
+
+  String? _profileDraftError(_ProfileEditorSection section) {
+    if (section == _ProfileEditorSection.privacy) {
+      return null;
+    }
     final displayName = displayNameController.text.trim();
     final username = usernameController.text.trim().toLowerCase();
     final domain = domainController.text.trim().toLowerCase();
@@ -702,7 +732,12 @@ class ProfileSummaryView extends StatelessWidget {
     return null;
   }
 
-  Future<void> _openProfileEditor(BuildContext context) async {
+  Future<void> _openProfileEditor(
+    BuildContext context, {
+    required _ProfileEditorSection section,
+  }) async {
+    // Keep the dialog tied to the tapped action so the two buttons no longer share one merged form.
+    // 让弹窗内容跟随点击入口，避免两个按钮继续复用同一份合并表单。
     String? dialogError;
     await showDialog<void>(
       context: context,
@@ -715,9 +750,7 @@ class ProfileSummaryView extends StatelessWidget {
                 horizontal: 16,
                 vertical: 24,
               ),
-              title: Text(
-                localizedText(languageCode, '修改个人资料', 'Edit profile', '修改個人資料'),
-              ),
+              title: Text(_profileEditorTitle(section)),
               content: SizedBox(
                 width: 720,
                 child: SingleChildScrollView(
@@ -735,6 +768,7 @@ class ProfileSummaryView extends StatelessWidget {
                         const SizedBox(height: 12),
                       ],
                       _ProfileIdentityEditorBody(
+                        section: section,
                         displayNameController: displayNameController,
                         usernameController: usernameController,
                         domainController: domainController,
@@ -771,7 +805,7 @@ class ProfileSummaryView extends StatelessWidget {
                   onPressed: loading
                       ? null
                       : () async {
-                          final validationError = _profileDraftError();
+                          final validationError = _profileDraftError(section);
                           if (validationError != null) {
                             setDialogState(() {
                               dialogError = validationError;
@@ -800,13 +834,8 @@ class ProfileSummaryView extends StatelessWidget {
                             Navigator.of(dialogContext).pop();
                           }
                         },
-                  primaryLabel: localizedText(
-                    languageCode,
-                    '保存修改',
-                    'Save changes',
-                    '儲存修改',
-                  ),
-                  secondaryLabel: 'Save changes',
+                  primaryLabel: t(_profileEditorSaveKey(section)),
+                  secondaryLabel: peerT(_profileEditorSaveKey(section)),
                 ),
               ],
             );
@@ -1008,7 +1037,10 @@ class ProfileSummaryView extends StatelessWidget {
                       trailing: BilingualActionButton(
                         variant: BilingualButtonVariant.tonal,
                         compact: true,
-                        onPressed: () => _openProfileEditor(context),
+                        onPressed: () => _openProfileEditor(
+                          context,
+                          section: _ProfileEditorSection.personal,
+                        ),
                         primaryLabel: t('profile.identity.editAction'),
                         secondaryLabel: peerT('profile.identity.editAction'),
                       ),
@@ -1030,7 +1062,10 @@ class ProfileSummaryView extends StatelessWidget {
                       trailing: BilingualActionButton(
                         variant: BilingualButtonVariant.text,
                         compact: true,
-                        onPressed: () => _openProfileEditor(context),
+                        onPressed: () => _openProfileEditor(
+                          context,
+                          section: _ProfileEditorSection.privacy,
+                        ),
                         primaryLabel: t('profile.identity.privacyAction'),
                         secondaryLabel: peerT('profile.identity.privacyAction'),
                       ),
@@ -1161,6 +1196,7 @@ class ProfileSummaryView extends StatelessWidget {
 
 class _ProfileIdentityEditorBody extends StatelessWidget {
   const _ProfileIdentityEditorBody({
+    required this.section,
     required this.displayNameController,
     required this.usernameController,
     required this.domainController,
@@ -1178,6 +1214,7 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
     required this.peerT,
   });
 
+  final _ProfileEditorSection section;
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
   final TextEditingController domainController;
@@ -1196,86 +1233,80 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          localizedText(languageCode, '个人资料', 'Personal info', '個人資料'),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        BilingualField(
-          primaryLabel: t('profile.identity.nickname'),
-          secondaryLabel: peerT('profile.identity.nickname'),
-          child: TextField(
-            controller: displayNameController,
-            decoration: InputDecoration(
-              hintText: t('dashboard.displayNamePlaceholder'),
+    // Render only the selected section so the dialog stays focused on one task.
+    // 只渲染弹窗入口对应的区块，让表单始终聚焦单一编辑任务。
+    switch (section) {
+      case _ProfileEditorSection.personal:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BilingualField(
+              primaryLabel: t('profile.identity.nickname'),
+              secondaryLabel: peerT('profile.identity.nickname'),
+              child: TextField(
+                controller: displayNameController,
+                decoration: InputDecoration(
+                  hintText: t('dashboard.displayNamePlaceholder'),
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        BilingualField(
-          primaryLabel: t('profile.identity.username'),
-          secondaryLabel: peerT('profile.identity.username'),
-          child: TextField(
-            controller: usernameController,
-            maxLength: 63,
-            buildCounter:
-                (
-                  BuildContext context, {
-                  required int currentLength,
-                  required bool isFocused,
-                  required int? maxLength,
-                }) => null,
-            decoration: InputDecoration(
-              hintText: t('dashboard.usernamePlaceholder'),
+            const SizedBox(height: 12),
+            BilingualField(
+              primaryLabel: t('profile.identity.username'),
+              secondaryLabel: peerT('profile.identity.username'),
+              child: TextField(
+                controller: usernameController,
+                maxLength: 63,
+                buildCounter:
+                    (
+                      BuildContext context, {
+                      required int currentLength,
+                      required bool isFocused,
+                      required int? maxLength,
+                    }) => null,
+                decoration: InputDecoration(
+                  hintText: t('dashboard.usernamePlaceholder'),
+                ),
+              ),
+              helperText: t('dashboard.usernameHint'),
             ),
-          ),
-          helperText: t('dashboard.usernameHint'),
-        ),
-        const SizedBox(height: 12),
-        BilingualField(
-          primaryLabel: t('profile.identity.domain'),
-          secondaryLabel: peerT('profile.identity.domain'),
-          child: TextField(
-            controller: domainController,
-            maxLength: 63,
-            buildCounter:
-                (
-                  BuildContext context, {
-                  required int currentLength,
-                  required bool isFocused,
-                  required int? maxLength,
-                }) => null,
-            decoration: InputDecoration(
-              hintText: t('profile.identity.domainPlaceholder'),
+            const SizedBox(height: 12),
+            BilingualField(
+              primaryLabel: t('profile.identity.domain'),
+              secondaryLabel: peerT('profile.identity.domain'),
+              child: TextField(
+                controller: domainController,
+                maxLength: 63,
+                buildCounter:
+                    (
+                      BuildContext context, {
+                      required int currentLength,
+                      required bool isFocused,
+                      required int? maxLength,
+                    }) => null,
+                decoration: InputDecoration(
+                  hintText: t('profile.identity.domainPlaceholder'),
+                ),
+              ),
+              helperText: t('profile.identity.domainHint'),
             ),
-          ),
-          helperText: t('profile.identity.domainHint'),
-        ),
-        const SizedBox(height: 12),
-        BilingualField(
-          primaryLabel: t('profile.identity.signature'),
-          secondaryLabel: peerT('profile.identity.signature'),
-          child: TextField(
-            controller: signatureController,
-            decoration: InputDecoration(
-              hintText: t('profile.identity.signaturePlaceholder'),
+            const SizedBox(height: 12),
+            BilingualField(
+              primaryLabel: t('profile.identity.signature'),
+              secondaryLabel: peerT('profile.identity.signature'),
+              child: TextField(
+                controller: signatureController,
+                decoration: InputDecoration(
+                  hintText: t('profile.identity.signaturePlaceholder'),
+                ),
+                maxLines: 3,
+              ),
             ),
-            maxLines: 3,
-          ),
-        ),
-        const SizedBox(height: 20),
-        // Privacy settings are edited directly in this dialog, and saving is handled by the footer action.
-        // 隐私设置在此弹窗内直接编辑，保存动作由底部按钮统一处理。
-        Text(
-          localizedText(languageCode, '隐私设置', 'Privacy settings', '隱私設定'),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        LayoutBuilder(
+          ],
+        );
+      case _ProfileEditorSection.privacy:
+        return LayoutBuilder(
           builder: (context, constraints) {
             final fieldWidth = constraints.maxWidth >= 720
                 ? (constraints.maxWidth - 12) / 2
@@ -1331,19 +1362,8 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
               ],
             );
           },
-        ),
-        const SizedBox(height: 8),
-        Text(
-          localizedText(
-            languageCode,
-            '编辑后会保存到个人资料与隐私设置中。',
-            'Changes are saved into both profile info and privacy settings.',
-            '編輯後會保存到個人資料與隱私設定中。',
-          ),
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    );
+        );
+    }
   }
 }
 
