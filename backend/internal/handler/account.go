@@ -72,6 +72,13 @@ type updateProfileRequest struct {
 	GenderVisibility string `json:"gender_visibility"`
 }
 
+type changePasswordRequest struct {
+	// Password change request payload.
+	// 密码修改请求载荷。
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
 func (h *AccountHandler) Register(c *gin.Context) {
 	// Register endpoint.
 	// 注册接口。
@@ -85,7 +92,7 @@ func (h *AccountHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL))
+	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL), user.PasswordVersion)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
 		return
@@ -103,10 +110,14 @@ func (h *AccountHandler) Login(c *gin.Context) {
 	}
 	user, err := service.Login(h.DB, req.Account, req.Password)
 	if err != nil {
+		if errors.Is(err, service.ErrAccountInactive) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+			return
+		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
-	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL))
+	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL), user.PasswordVersion)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
 		return
@@ -186,6 +197,37 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 		"age_visibility":    user.AgeVisibility,
 		"gender_visibility": user.GenderVisibility,
 	})
+}
+
+func (h *AccountHandler) ChangePassword(c *gin.Context) {
+	// Change the current user's password and return a fresh token.
+	// 修改当前用户密码并返回新的 token。
+	uid := c.GetString("user_id")
+	var req changePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	user, err := service.ChangePassword(h.DB, uid, req.CurrentPassword, req.NewPassword)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidCredentials):
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		case errors.Is(err, service.ErrAccountInactive):
+			c.JSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL), user.PasswordVersion)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"user_id": user.ID, "token": token})
 }
 
 func (h *AccountHandler) ListSpaces(c *gin.Context) {

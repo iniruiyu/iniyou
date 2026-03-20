@@ -16,6 +16,7 @@ import (
 
 	"account-service/internal/auth"
 	"account-service/internal/models"
+	"account-service/internal/service"
 	"account-service/internal/ws"
 )
 
@@ -32,12 +33,12 @@ var upgrader = websocket.Upgrader{
 }
 
 type conversationSummary struct {
-	PeerID            string    `json:"peer_id"`
-	LastMessage       string    `json:"last_message"`
-	LastMessageType   string    `json:"last_message_type"`
+	PeerID             string    `json:"peer_id"`
+	LastMessage        string    `json:"last_message"`
+	LastMessageType    string    `json:"last_message_type"`
 	LastMessagePreview string    `json:"last_message_preview"`
-	LastAt            time.Time `json:"last_at"`
-	UnreadCount       int64     `json:"unread_count"`
+	LastAt             time.Time `json:"last_at"`
+	UnreadCount        int64     `json:"unread_count"`
 }
 
 type createMessageRequest struct {
@@ -47,7 +48,7 @@ type createMessageRequest struct {
 	MediaName        string `json:"media_name"`
 	MediaMime        string `json:"media_mime"`
 	MediaData        string `json:"media_data"`
-	ExpiresInMinutes  int    `json:"expires_in_minutes"`
+	ExpiresInMinutes int    `json:"expires_in_minutes"`
 }
 
 type inboundMessage struct {
@@ -62,17 +63,17 @@ type inboundMessage struct {
 }
 
 type outboundMessage struct {
-	ID            string     `json:"id"`
-	From          string     `json:"from"`
-	To            string     `json:"to"`
-	MessageType   string     `json:"message_type"`
-	Content       string     `json:"content"`
-	MediaName     string     `json:"media_name"`
-	MediaMime     string     `json:"media_mime"`
-	MediaData     string     `json:"media_data"`
-	CreatedAt     time.Time  `json:"created_at"`
-	ReadAt        *time.Time `json:"read_at,omitempty"`
-	ExpiresAt     *time.Time `json:"expires_at,omitempty"`
+	ID          string     `json:"id"`
+	From        string     `json:"from"`
+	To          string     `json:"to"`
+	MessageType string     `json:"message_type"`
+	Content     string     `json:"content"`
+	MediaName   string     `json:"media_name"`
+	MediaMime   string     `json:"media_mime"`
+	MediaData   string     `json:"media_data"`
+	CreatedAt   time.Time  `json:"created_at"`
+	ReadAt      *time.Time `json:"read_at,omitempty"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 }
 
 func (h *MessageHandler) ListConversations(c *gin.Context) {
@@ -105,12 +106,12 @@ func (h *MessageHandler) ListConversations(c *gin.Context) {
 
 		preview := conversationPreview(msg)
 		item := conversationSummary{
-			PeerID:            peerID,
-			LastMessage:       preview,
-			LastMessageType:   messageTypeForResponse(msg.MessageType),
+			PeerID:             peerID,
+			LastMessage:        preview,
+			LastMessageType:    messageTypeForResponse(msg.MessageType),
 			LastMessagePreview: preview,
-			LastAt:            msg.CreatedAt,
-			UnreadCount:       0,
+			LastAt:             msg.CreatedAt,
+			UnreadCount:        0,
 		}
 		if msg.ReceiverID == uid && msg.ReadAt == nil {
 			item.UnreadCount = 1
@@ -220,15 +221,30 @@ func (h *MessageHandler) WS(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
+	user, err := service.GetUser(h.DB, claims.UserID)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		return
+	}
+	if !service.IsAccountActive(user.Status) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+		return
+	}
+	// Reject stale WebSocket tokens after a password update.
+	// 密码更新后拒绝旧版 WebSocket token。
+	if claims.PasswordVersion != user.PasswordVersion {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		return
+	}
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
 	}
-	client := &ws.Client{UserID: claims.UserID, Conn: conn}
+	client := &ws.Client{UserID: user.ID, Conn: conn}
 	h.Hub.Register(client)
 	defer func() {
-		h.Hub.Unregister(claims.UserID)
+		h.Hub.Unregister(user.ID)
 		_ = conn.Close()
 	}()
 

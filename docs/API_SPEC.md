@@ -44,6 +44,8 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 注册、登录接口默认无需登录
 - 大多数用户信息、钱包、社交互动、聊天接口需要登录
 - 后续区块链账号绑定接口需要登录后发起
+- 登录态校验会在中间件层检查账号状态，非 `active` 账号即使持有有效 JWT 也会被拒绝 / The auth middleware also checks account status, so non-`active` accounts are rejected even with a valid JWT.
+- 聊天 WebSocket 入口在握手前也会做同样的 JWT + 账号状态校验 / The chat WebSocket entrypoint performs the same JWT + account-status check before upgrade.
 
 ## 5. 接口分组
 
@@ -58,6 +60,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `POST /api/v1/logout`
 - `GET /api/v1/me`
 - `PUT /api/v1/me`
+- `PUT /api/v1/me/password`
 - `GET /api/v1/users/search`
 - `GET /api/v1/users/username/{username}/profile`
 - `GET /api/v1/users/domain/{domain}/profile`
@@ -134,6 +137,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 用途：用户登录并获取认证态
 - 请求字段建议：`account`, `password`
 - 说明：`account` 可以是邮箱、手机号、用户名或域名
+- 说明补充：停用、冻结或其他非 `active` 账号即使密码正确也会被拒绝，接口返回 `403 Forbidden` / Additional note: suspended, frozen, or otherwise non-`active` accounts are rejected even with the correct password, returning `403 Forbidden`.
 
 ### 6.2.1 个人资料更新
 
@@ -145,6 +149,17 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
   - `username` 同时作为个人主页和二级域名入口句柄
   - `domain` 仅允许英文字母和数字，且需要全局唯一
   - `domain` 同时作为身份卡、登录入口与二级域名句柄
+
+### 6.2.2 密码修改
+
+- `PUT /api/v1/me/password`
+- 用途：修改当前用户密码并刷新登录态
+- 请求字段建议：`current_password`, `new_password`
+- 说明：
+  - 当前密码校验失败时返回 `401 Unauthorized`
+  - 新密码至少应满足最小长度要求，当前实现为 8 个字符
+  - 修改成功后服务端会返回新的 `token`
+  - 新 token 会携带更新后的密码版本，旧 token 会失效
 
 ### 6.3 搜索用户
 
@@ -348,7 +363,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `201 Created`: 创建成功
 - `400 Bad Request`: 参数错误
 - `401 Unauthorized`: 未登录或认证失败
-- `403 Forbidden`: 无权限
+- `403 Forbidden`: 无权限或账号已停用
 - `404 Not Found`: 资源不存在
 - `409 Conflict`: 状态冲突
 - `500 Internal Server Error`: 服务异常

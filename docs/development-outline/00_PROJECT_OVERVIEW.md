@@ -37,5 +37,14 @@
 
 ## 5. 当前状态
 
-- 状态：规划中
-- 更新时间：2026-03-12
+- 状态：进行中
+- 更新时间：2026-03-20
+
+当前仓库已经进入收口与交付准备阶段，当前重点是数据模型、账号安全、内容状态和 `make smoke` 留档 / The project is now in wrap-up and delivery-prep, with data model, account security, content status, and `make smoke` evidence as current priorities.
+
+## 6. 下一步任务
+
+- 优先收口 `04_DATA_MODEL_AND_DATABASE.md`
+- 优先收口 `05_ACCOUNT_AND_IDENTITY.md`
+- 继续补完 `07_SOCIAL_CONTENT.md` 中的 `07C` 内容状态与审核预留
+- 完整实跑 `make smoke` 并回写 `RELEASE_CHECKLIST.md`

@@ -16,6 +16,10 @@ import (
 
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
+// ErrAccountInactive means the account exists but is not allowed to authenticate.
+// ErrAccountInactive 表示账号存在，但不允许继续认证。
+var ErrAccountInactive = errors.New("account inactive")
+
 var (
 	evmAddressPattern     = regexp.MustCompile(`^0x[0-9a-fA-F]{40}$`)
 	solanaAddressPattern  = regexp.MustCompile(`^[1-9A-HJ-NP-Za-km-z]{32,44}$`)
@@ -221,6 +225,22 @@ func GetUserByDomain(db *gorm.DB, domain string) (models.User, error) {
 	return user, nil
 }
 
+func IsAccountActive(status string) bool {
+	// Treat the legacy empty value as active so old data keeps working during rollout.
+	// 将历史空值视为 active，避免旧数据在功能上线时被误拦截。
+	normalized := strings.ToLower(strings.TrimSpace(status))
+	return normalized == "" || normalized == "active"
+}
+
+func validatePasswordLength(password string) error {
+	// Keep password length checks consistent across registration and password updates.
+	// 统一注册与密码修改的长度校验规则。
+	if len(password) < 8 {
+		return errors.New("password too short")
+	}
+	return nil
+}
+
 func Register(db *gorm.DB, email string, phone string, password string) (models.User, error) {
 	// Register a new user with email or phone.
 	// 使用邮箱或手机号注册新用户。
@@ -229,8 +249,8 @@ func Register(db *gorm.DB, email string, phone string, password string) (models.
 	if email == "" && phone == "" {
 		return models.User{}, errors.New("email or phone required")
 	}
-	if len(password) < 8 {
-		return models.User{}, errors.New("password too short")
+	if err := validatePasswordLength(password); err != nil {
+		return models.User{}, err
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -238,7 +258,7 @@ func Register(db *gorm.DB, email string, phone string, password string) (models.
 		return models.User{}, err
 	}
 
-	user := models.User{PasswordHash: string(hash)}
+	user := models.User{PasswordHash: string(hash), PasswordVersion: 1}
 	if email != "" {
 		user.Email = &email
 	}
@@ -272,8 +292,8 @@ func Register(db *gorm.DB, email string, phone string, password string) (models.
 }
 
 func Login(db *gorm.DB, account string, password string) (models.User, error) {
-	// Login using email, phone, username, or domain + password.
-	// 使用邮箱、手机号、用户名或域名 + 密码登录。
+	// Login using email, phone, username, or domain + password; inactive accounts are rejected too.
+	// 使用邮箱、手机号、用户名或域名 + 密码登录；停用账号同样会被拒绝。
 	if account == "" || password == "" {
 		return models.User{}, ErrInvalidCredentials
 	}
@@ -286,10 +306,66 @@ func Login(db *gorm.DB, account string, password string) (models.User, error) {
 		First(&user).Error; err != nil {
 		return models.User{}, ErrInvalidCredentials
 	}
+	if !IsAccountActive(user.Status) {
+		return models.User{}, ErrAccountInactive
+	}
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
 		return models.User{}, ErrInvalidCredentials
 	}
 	return user, nil
+}
+
+func ChangePassword(db *gorm.DB, userID string, currentPassword string, newPassword string) (models.User, error) {
+	// Update the password hash and bump the password version so old JWTs stop working.
+	// 更新密码哈希并提升密码版本，使旧 JWT 失效。
+	if currentPassword == "" || newPassword == "" {
+		return models.User{}, errors.New("password required")
+	}
+	if err := validatePasswordLength(newPassword); err != nil {
+		return models.User{}, err
+	}
+
+	var updatedUser models.User
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		var user models.User
+		if err := tx.First(&user, "id = ?", userID).Error; err != nil {
+			return err
+		}
+		if !IsAccountActive(user.Status) {
+			return ErrAccountInactive
+		}
+		if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)) != nil {
+			return ErrInvalidCredentials
+		}
+
+		hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+
+		nextVersion := user.PasswordVersion + 1
+		if nextVersion <= 0 {
+			nextVersion = 1
+		}
+		if err := tx.Model(&models.User{}).
+			Where("id = ?", userID).
+			Updates(map[string]any{
+				"password_hash":    string(hash),
+				"password_version": nextVersion,
+			}).Error; err != nil {
+			return err
+		}
+
+		user.PasswordHash = string(hash)
+		user.PasswordVersion = nextVersion
+		updatedUser = user
+		return nil
+	}); err != nil {
+		return models.User{}, err
+	}
+
+	updatedUser.PasswordHash = ""
+	return updatedUser, nil
 }
 
 func UpdateProfile(

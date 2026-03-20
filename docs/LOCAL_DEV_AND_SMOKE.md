@@ -77,7 +77,7 @@ make run-message
 
 直接打开：
 
-- [`frontend/index.html`](/root/new-project/frontend/index.html)
+- [`frontend/index.html`](../frontend/index.html)
 
 ## 5. 手工联调步骤
 
@@ -102,7 +102,7 @@ make smoke
 
 脚本位置：
 
-- [`scripts/local-smoke.sh`](/root/new-project/scripts/local-smoke.sh)
+- [`scripts/local-smoke.sh`](../scripts/local-smoke.sh)
 
 当前脚本覆盖：
 
@@ -116,6 +116,7 @@ make smoke
 
 - 冒烟脚本依赖本地服务已启动
 - 冒烟脚本当前未覆盖前端页面行为
+- 完整本地环境下的 `make smoke` 实跑留档仍待完成 / Full-environment `make smoke` evidence capture is still pending.
 - 区块链账号绑定目前只做基础格式与签名载荷校验，不包含真实链上验签
 - 数据库迁移当前仍依赖服务启动自动执行，后续可拆为独立迁移命令
 

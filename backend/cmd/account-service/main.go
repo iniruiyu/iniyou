@@ -64,9 +64,12 @@ func main() {
 	// Authenticated routes.
 	// 需鉴权路由。
 	authGroup := api.Group("")
-	authGroup.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	authGroup.Use(middleware.AuthMiddleware(cfg.JWTSecret, func(userID string) (models.User, error) {
+		return service.GetUser(database, userID)
+	}))
 	authGroup.GET("/me", h.Me)
 	authGroup.PUT("/me", h.UpdateMe)
+	authGroup.PUT("/me/password", h.ChangePassword)
 	authGroup.GET("/users/search", h.SearchUsers)
 	authGroup.GET("/users/:id/profile", h.UserProfile)
 	authGroup.GET("/users/username/:username/profile", h.UserProfileByUsername)

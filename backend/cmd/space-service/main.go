@@ -64,7 +64,9 @@ func main() {
 	})
 
 	api := r.Group("/api/v1")
-	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	api.Use(middleware.AuthMiddleware(cfg.JWTSecret, func(userID string) (models.User, error) {
+		return service.GetUser(database, userID)
+	}))
 	api.GET("/spaces", spaceHandler.ListSpaces)
 	api.GET("/users/:id/spaces", spaceHandler.ListUserSpaces)
 	api.POST("/spaces", spaceHandler.CreateSpace)

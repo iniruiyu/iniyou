@@ -6,7 +6,9 @@
 
 ## 2. 状态
 
-- 状态：未开始
+- 状态：进行中
+- 当前基线：Flutter 与 Vue 3 的职责边界、页面映射和 API 对接关系已定义 / Flutter vs. Vue responsibilities, page mapping, and API linkage are already defined.
+- 进行中：前端工程初始化、公共组件目录和页面骨架补齐 / In progress: frontend bootstrapping, shared component folders, and page scaffolding.
 
 ## 3. 任务清单
 

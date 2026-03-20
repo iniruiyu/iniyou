@@ -6,7 +6,9 @@
 
 ## 2. 状态
 
-- 状态：未开始
+- 状态：进行中
+- 当前基线：前后端分离目录规范、代码规范、文档规范和依赖控制原则已建立 / The directory split, coding, documentation, and dependency-control baseline is in place.
+- 进行中：补齐 `shared/` 目录、依赖登记流程和 Git 提交流程的最终收口 / In progress: finalizing the `shared/` directory, dependency registration flow, and Git workflow.
 
 ## 3. 任务清单
 

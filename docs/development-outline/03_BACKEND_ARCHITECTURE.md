@@ -6,7 +6,9 @@
 
 ## 2. 状态
 
-- 状态：未开始
+- 状态：进行中
+- 当前基线：路由/服务/仓储分层、统一响应、API 版本化和健康检查规范已明确 / Routing, service, repository layering, unified responses, API versioning, and health checks are defined.
+- 进行中：后端工程初始化、配置加载和数据库兼容收口 / In progress: backend bootstrapping, config loading, and database compatibility closure.
 
 ## 3. 任务清单
 

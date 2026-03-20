@@ -6,7 +6,9 @@
 
 ## 2. 状态
 
-- 状态：未开始
+- 状态：进行中
+- 当前基线：API 契约清单、统一响应、鉴权边界和主要接口分组已建立 / API contract, unified responses, auth boundaries, and major endpoint groups are established.
+- 进行中：与最新需求、数据模型和页面映射逐项复核 / In progress: reconciling the latest requirements, data model, and page mapping.
 
 ## 3. 任务清单
 

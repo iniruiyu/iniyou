@@ -19,10 +19,13 @@ type User struct {
 	AgeVisibility    string  `gorm:"type:varchar(20);default:private"`
 	GenderVisibility string  `gorm:"type:varchar(20);default:private"`
 	PasswordHash     string
-	Level            string `gorm:"type:varchar(20);default:basic"`
-	Status           string `gorm:"type:varchar(20);default:active"`
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	// PasswordVersion invalidates older JWTs after a password change.
+	// PasswordVersion 用于在密码变更后使旧 JWT 失效。
+	PasswordVersion int64  `gorm:"default:1"`
+	Level           string `gorm:"type:varchar(20);default:basic"`
+	Status          string `gorm:"type:varchar(20);default:active"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type Space struct {
@@ -44,11 +47,11 @@ type Space struct {
 type Subscription struct {
 	// Subscription plan for a user.
 	// 用户订阅方案。
-	ID        string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserID    string `gorm:"index"`
-	PlanID    string `gorm:"type:varchar(50)"`
-	Status    string `gorm:"type:varchar(20)"`
-	StartedAt time.Time
+	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID    string    `gorm:"index:idx_subscription_user_started_at,priority:1"`
+	PlanID    string    `gorm:"type:varchar(50)"`
+	Status    string    `gorm:"type:varchar(20)"`
+	StartedAt time.Time `gorm:"index:idx_subscription_user_started_at,priority:2"`
 	EndedAt   *time.Time
 }
 

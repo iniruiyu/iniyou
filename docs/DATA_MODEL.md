@@ -37,6 +37,8 @@
 - `phone`
 - `age`
 - `gender`
+- `level`
+- `password_version`
 - `phone_visibility`
 - `email_visibility`
 - `age_visibility`
@@ -48,6 +50,7 @@
 - `display_name` 是用户昵称，`username` 是登录别名，`domain` 是身份卡与二级域名入口句柄 / `display_name` is the nickname, `username` is the login alias, and `domain` is the identity-card subdomain handle.
 - `username` 与 `domain` 都应仅使用英文字母和数字，且与 `spaces.subdomain` 共享同一 host label 命名空间 / `username` and `domain` should both be alphanumeric and share the same host-label namespace as `spaces.subdomain`.
 - `email`、`phone`、`age`、`gender` 等字段可根据可见范围控制对外展示 / `email`, `phone`, `age`, and `gender` are exposed according to the configured visibility scope.
+- `password_version` 用于 JWT 失效控制，密码修改后会递增该值，从而让旧 token 自动失效 / `password_version` is used for JWT invalidation; it increments after a password change so older tokens expire automatically.
 
 #### `auth_credentials`
 
@@ -87,6 +90,15 @@
 - `remark`
 - `status`
 
+#### `subscriptions`
+
+- `id`
+- `user_id`
+- `plan_id`
+- `status`
+- `started_at`
+- `ended_at`
+
 #### `memberships`
 
 - `id`
@@ -95,6 +107,10 @@
 - `started_at`
 - `expired_at`
 - `status`
+
+说明：
+
+- 当前代码里的订阅升级动作使用 `subscriptions` 记录，`memberships` 与 `benefits` 保留为更通用的权益抽象 / The current code uses `subscriptions` for subscription upgrade actions, while `memberships` and `benefits` remain the more general entitlement abstraction.
 
 #### `benefits`
 
@@ -244,6 +260,7 @@
 - `users` 与 `auth_credentials` 为一对多或一对一扩展关系
 - `users` 与 `user_profiles` 为一对一关系
 - `users` 与 `wallets` 为一对一关系
+- `users` 与 `subscriptions` 为一对多关系
 - `wallets` 与 `wallet_transactions` 为一对多关系
 - `users` 与 `memberships` 为一对多或当前有效一对一关系
 - `users` 与 `user_benefits` 为一对多关系
@@ -285,6 +302,7 @@
 
 - `wallets`
 - `wallet_transactions`
+- `subscriptions`
 - `memberships`
 - `benefits`
 - `user_benefits`
@@ -295,14 +313,18 @@
 
 ## 7. 索引建议
 
-- `users.account` 唯一索引
+- `users.email` 唯一索引
+- `users.phone` 唯一索引
 - `users.username` 唯一索引
+- `users.domain` 唯一索引
 - `spaces.subdomain` 唯一索引
 - `spaces(user_id, type)` 普通索引
+- `subscriptions(user_id, started_at)` 普通索引
 - `wallets.user_id` 唯一索引
 - `posts.user_id` 普通索引
 - `posts.space_id` 普通索引
 - `comments.post_id` 普通索引
+- `comments(parent_comment_id)` 普通索引
 - `post_likes(post_id, user_id)` 唯一索引
 - `chat_participants(conversation_id, user_id)` 唯一索引
 - `chat_messages.conversation_id` 普通索引
@@ -314,6 +336,7 @@
 - 时间字段需要统一时区策略
 - 文本长度与索引长度需要兼容两种数据库
 - 自增或主键策略后续统一确定
+- 当前后端服务启动采用 GORM `AutoMigrate`，并在账号/空间服务启动后执行用户名与历史空间回填 / The backend services use GORM `AutoMigrate` at startup and then backfill usernames and legacy spaces in the account/space services.
 
 ## 9. 文档维护规则
 
@@ -347,3 +370,4 @@
 ### 2026-03-20
 
 - 补充文章媒体真实落盘与物理删除的存储语义 / Added storage semantics for physically persisted article media and deletion cleanup.
+- 对齐当前 GORM 模型与数据实体草案，补充 `level`、`subscriptions` 和索引建议 / Aligned the data-model draft with the current GORM models, including `level`, `subscriptions`, and index guidance.

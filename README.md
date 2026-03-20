@@ -64,7 +64,7 @@ make run-message
 Legacy Web：
 
 ```bash
-open frontend/index.html
+Start-Process frontend/index.html
 ```
 
 Flutter Web：
@@ -79,8 +79,8 @@ make run-flutter-web
 - 空间服务默认监听 `http://localhost:8082`
 - 通讯服务默认监听 `http://localhost:8081`
 - 两套前端默认直接请求上述三个本地服务
-- Flutter 前端默认入口为 [`flutter_frontend/lib/main.dart`](/root/new-project/flutter_frontend/lib/main.dart)
-- Flutter 当前主要视图文件位于 [`flutter_frontend/lib/views`](/root/new-project/flutter_frontend/lib/views)
+- Flutter 前端默认入口为 [`flutter_frontend/lib/main.dart`](./flutter_frontend/lib/main.dart)
+- Flutter 当前主要视图文件位于 [`flutter_frontend/lib/views`](./flutter_frontend/lib/views)
 
 ## Flutter 前端结构
 
@@ -128,14 +128,14 @@ make smoke
 
 ## 关键文档
 
-- [`docs/REQUIREMENTS.md`](/root/new-project/docs/REQUIREMENTS.md): 需求范围与变更
-- [`docs/API_SPEC.md`](/root/new-project/docs/API_SPEC.md): RESTful API 清单
-- [`docs/DATA_MODEL.md`](/root/new-project/docs/DATA_MODEL.md): 数据模型基线
-- [`docs/LOCAL_DEV_AND_SMOKE.md`](/root/new-project/docs/LOCAL_DEV_AND_SMOKE.md): 本地联调、数据库初始化与冒烟流程
-- [`docs/RELEASE_CHECKLIST.md`](/root/new-project/docs/RELEASE_CHECKLIST.md): 发布前检查清单
-- [`docs/DELIVERY_BASELINE.md`](/root/new-project/docs/DELIVERY_BASELINE.md): 当前交付范围与限制
-- [`docs/design/FRONTEND_DESIGN.md`](/root/new-project/docs/design/FRONTEND_DESIGN.md): 前端设计说明
-- [`docs/development-outline/`](/root/new-project/docs/development-outline): 开发阶段与任务拆分
+- [`docs/REQUIREMENTS.md`](./docs/REQUIREMENTS.md): 需求范围与变更
+- [`docs/API_SPEC.md`](./docs/API_SPEC.md): RESTful API 清单
+- [`docs/DATA_MODEL.md`](./docs/DATA_MODEL.md): 数据模型基线
+- [`docs/LOCAL_DEV_AND_SMOKE.md`](./docs/LOCAL_DEV_AND_SMOKE.md): 本地联调、数据库初始化与冒烟流程
+- [`docs/RELEASE_CHECKLIST.md`](./docs/RELEASE_CHECKLIST.md): 发布前检查清单
+- [`docs/DELIVERY_BASELINE.md`](./docs/DELIVERY_BASELINE.md): 当前交付范围与限制
+- [`docs/design/FRONTEND_DESIGN.md`](./docs/design/FRONTEND_DESIGN.md): 前端设计说明
+- [`docs/development-outline/`](./docs/development-outline): 开发阶段与任务拆分
 
 ## 开发规则
 

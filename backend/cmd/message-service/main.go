@@ -12,6 +12,7 @@ import (
 	"account-service/internal/handler"
 	"account-service/internal/middleware"
 	"account-service/internal/models"
+	"account-service/internal/service"
 	"account-service/internal/ws"
 )
 
@@ -64,7 +65,9 @@ func main() {
 	})
 	r.GET("/ws", h.WS)
 	api := r.Group("/api/v1")
-	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	api.Use(middleware.AuthMiddleware(cfg.JWTSecret, func(userID string) (models.User, error) {
+		return service.GetUser(database, userID)
+	}))
 	api.GET("/conversations", h.ListConversations)
 	api.GET("/messages", h.ListMessages)
 	api.POST("/messages", h.CreateMessage)

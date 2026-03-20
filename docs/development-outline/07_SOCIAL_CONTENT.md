@@ -81,7 +81,7 @@
 - `07C` 内容状态与审核预留
   - 细化 `draft`、`published`、`hidden` 等状态
   - 为审核字段和后台处理预留结构
-  - 当前状态：基础完成
+  - 当前状态：基础完成，待内容状态与审核预留收口 / Baseline complete, awaiting content-status and moderation reservation closure.
   - 已实现：文章创建与编辑支持 `draft`、`published`、`hidden`
   - 已实现：列表与详情按状态执行基础可见性控制
 
