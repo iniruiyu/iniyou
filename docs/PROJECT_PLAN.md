@@ -248,6 +248,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-20：修复 Flutter 从好友资料进入公开空间后被自有空间列表覆盖的问题，保留外部进入的当前空间上下文 / Fixed the Flutter friend-profile public-space entry path so external spaces are no longer overwritten by the owned-space list and the current space context is preserved.
 - 2026-03-20：在账号服务登录与鉴权链路里接入 active 状态校验，停用账号会在登录和 JWT 中间件阶段被拒绝 / Integrated active-status checks into the account-service login and auth flow so inactive accounts are rejected both at sign-in and in the JWT middleware.
 - 2026-03-20：补齐账号密码修改接口，并通过 `password_version` 让旧 token 在改密后自动失效 / Added the account password-change endpoint and used `password_version` to automatically invalidate older tokens after a password change.
 - 2026-03-20：对齐数据实体草案与后端当前 GORM 模型，补充 `level`、`subscriptions` 和索引建议 / Aligned the data-model draft with the current GORM models, including `level`, `subscriptions`, and index guidance.

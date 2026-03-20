@@ -582,13 +582,20 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   SpaceItem? _resolvedCurrentSpace() {
-    // Keep the selected space only when it still exists in the loaded list.
-    // 仅当当前空间仍存在于已加载列表时保留该选择。
+    // Keep owned spaces in sync with the loaded list, but preserve externally entered public spaces.
+    // 自有空间继续以已加载列表为准，但从好友资料进入的公开空间要保留当前选择。
     final currentSpace = _currentSpace;
     if (currentSpace == null) {
       return null;
     }
-    return findSpaceById(_spaces, currentSpace.id);
+    final ownedSpace = findSpaceById(_spaces, currentSpace.id);
+    if (ownedSpace != null) {
+      return ownedSpace;
+    }
+    if (_user != null && currentSpace.userId != _user!.id) {
+      return currentSpace;
+    }
+    return null;
   }
 
   String? _currentHostLabel() {
@@ -2251,7 +2258,12 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _spacePosts = posts;
-        _currentSpace = findSpaceById(_spaces, spaceId);
+        // Keep the current space when the selected entry does not belong to the owned-space list.
+        // 当选中的空间不属于自有空间列表时，保留当前空间选择。
+        final ownedSpace = findSpaceById(_spaces, spaceId);
+        if (ownedSpace != null) {
+          _currentSpace = ownedSpace;
+        }
       });
     }
 
@@ -2432,7 +2444,12 @@ class _IniyouHomeState extends State<IniyouHome> {
       _preparePostEditDraft(post);
       setState(() {
         _currentPost = post;
-        _currentSpace = findSpaceById(_spaces, post.spaceId);
+        // Keep an externally entered space selected when opening a friend-space post detail.
+        // 打开好友空间帖子详情时，保留外部进入的当前空间选择。
+        final ownedSpace = findSpaceById(_spaces, post.spaceId);
+        if (ownedSpace != null) {
+          _currentSpace = ownedSpace;
+        }
         _view = AppView.postDetail;
       });
       if (post.spaceId.isNotEmpty) {
