@@ -244,15 +244,6 @@ class ProfileView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: loading
-                            ? null
-                            : () => _openProfileEditor(context),
-                        primaryLabel: t('profile.identity.editAction'),
-                        secondaryLabel: peerT('profile.identity.editAction'),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -1265,23 +1256,11 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                localizedText(languageCode, '隐私设置', 'Privacy settings', '隱私設定'),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            BilingualActionButton(
-              variant: BilingualButtonVariant.tonal,
-              compact: true,
-              onPressed: loading ? null : () => _openProfileEditor(context),
-              primaryLabel: t('profile.identity.privacyAction'),
-              secondaryLabel: peerT('profile.identity.privacyAction'),
-            ),
-          ],
+        // Privacy settings are edited directly in this dialog, and saving is handled by the footer action.
+        // 隐私设置在此弹窗内直接编辑，保存动作由底部按钮统一处理。
+        Text(
+          localizedText(languageCode, '隐私设置', 'Privacy settings', '隱私設定'),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 12),
         LayoutBuilder(

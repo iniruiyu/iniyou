@@ -37,6 +37,7 @@
 - 双前端个人主页已收敛为摘要页，只展示个人资料、隐私设置、会员等级与公开空间入口，不再展示内容流 / Both frontends' profile pages are now summary pages that only show personal info, privacy settings, membership level, and public space entrances, without a content feed.
 - Vue 进入好友空间或自己创建的空间后，空间壳层会收为单列并固定铺满整个视口，样式地址也会通过版本号刷新以避免浏览器命中旧布局缓存 / After entering a friend's space or one of your own spaces, Vue now collapses the shell into a single column and pins the main content to the full viewport, with a versioned stylesheet URL to avoid stale layout caching.
 - Vue 好友空间的帖子列表已改为独立滚动容器，修复进入后无法向下滚动的问题 / Vue friend-space post lists now use an independent scroll container, fixing the issue where the page could not be scrolled downward after entry.
+- Flutter 个人主页编辑器已清理旧版顶部按钮残留，`flutter analyze flutter_frontend` 重新通过 / Flutter profile editor legacy top-button remnants were removed, and `flutter analyze flutter_frontend` passes again.
 - 主导航“主页”入口已固定进入当前登录用户自己的主页，他人主页保留独立打开路径 / The main-nav "Profile" entry now always opens the current user's own profile, while other profiles keep a separate open path.
 - Vue 会员等级切换按钮已加固为成功后再关闭切换弹层，避免网络异常时直接中断交互 / The Vue membership switch button is now hardened to close the sheet only after a successful update, avoiding abrupt failures on network errors.
 - 进行中：
