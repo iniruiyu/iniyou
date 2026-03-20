@@ -109,12 +109,11 @@ List<String> connectedChains(List<ExternalAccountItem> externalAccounts) {
 List<SummaryCardData> buildHomeSummaryCards({
   required List<SpaceItem> spaces,
   required List<FriendItem> friends,
-  required String membershipLevel,
-  required List<ExternalAccountItem> externalAccounts,
   required String Function(String key) t,
   required String languageCode,
 }) {
-  final chains = connectedChains(externalAccounts);
+  // Keep only the quick-glance indicators here; membership and chain details live in dedicated cards below.
+  // 这里只保留快速概览指标，会员等级和链上账号明细放到下方独立卡片展示。
   // Count only public-type spaces in the dashboard summary.
   // 仪表盘摘要只统计公共类型空间，避免把旧私人空间算进去。
   final visibleSpaces = publicSpaces(spaces);
@@ -128,21 +127,6 @@ List<SummaryCardData> buildHomeSummaryCards({
       t('summary.friends'),
       '${acceptedFriends(friends).length}',
       '${t('summary.totalRelations')} ${friends.length}',
-    ),
-    SummaryCardData(
-      localizedText(languageCode, '会员等级', 'Membership level', '會員等級'),
-      membershipLevel.isNotEmpty ? membershipLevel : 'basic',
-      localizedText(
-        languageCode,
-        '只保留会员等级，不再展示订阅状态。',
-        'Keep only the membership level and drop the legacy billing snapshot.',
-        '只保留會員等級，不再顯示訂閱狀態。',
-      ),
-    ),
-    SummaryCardData(
-      t('summary.chains'),
-      '${externalAccounts.length}',
-      chains.isEmpty ? t('summary.noChains') : chains.join(', '),
     ),
   ];
 }

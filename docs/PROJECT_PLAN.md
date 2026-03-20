@@ -327,3 +327,4 @@ new-project/
 - 2026-03-19：统一空间内容媒体为 16:9 等比预览框，并将图片上传尽量转成 WebP；同时把 Vue 文章编辑改为弹窗式编辑 / Unified space content media into 16:9 proportional previews, converted image uploads to WebP where possible, and switched Vue post editing to a modal dialog.
 - 2026-03-19：修复 Vue 点击空间时标题解析崩溃，原因是空间文案解析未兼容普通字符串与未映射对象 / Fixed the Vue crash when entering Space because space-label parsing did not handle plain strings or partially mapped objects.
 - 2026-03-20：继续拆分 Flutter 个人主页修改资料/隐私设置弹窗，个人资料与隐私设置分别只显示自己的字段，并切换为区块化保存文案 / Continued splitting the Flutter personal-home edit/privacy dialogs so personal info and privacy settings each show only their own fields and use section-specific save labels.
+- 2026-03-20：继续收紧 Flutter 个人主页顶部总览，移除会员等级与链上账号重复摘要，仅保留空间与好友快速统计 / Continued tightening the Flutter personal-home top summary by removing duplicated membership and chain snapshots and keeping only the space and friend quick stats.

@@ -990,8 +990,8 @@ class ProfileSummaryView extends StatelessWidget {
           ),
         if (isOwnProfile) ...[
           const SizedBox(height: 16),
-          // Merge the old dashboard snapshot into the personal home.
-          // 将原工作台概览并入个人主页。
+          // Keep only quick-glance stats on the personal home.
+          // 个人主页这里只保留快速概览统计。
           LayoutBuilder(
             builder: (context, constraints) {
               return TopSummaryRow(
@@ -999,8 +999,6 @@ class ProfileSummaryView extends StatelessWidget {
                 cards: buildHomeSummaryCards(
                   spaces: profileSpaces,
                   friends: friends,
-                  membershipLevel: currentLevel,
-                  externalAccounts: externalAccounts,
                   t: t,
                   languageCode: languageCode,
                 ),
