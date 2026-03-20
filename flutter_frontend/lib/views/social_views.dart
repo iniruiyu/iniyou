@@ -598,7 +598,6 @@ class ProfileSummaryView extends StatelessWidget {
     required this.profileSpaces,
     required this.friends,
     required this.connectedChains,
-    required this.externalAccounts,
     required this.displayNameController,
     required this.usernameController,
     required this.domainController,
@@ -629,7 +628,6 @@ class ProfileSummaryView extends StatelessWidget {
   final List<SpaceItem> profileSpaces;
   final List<FriendItem> friends;
   final List<String> connectedChains;
-  final List<ExternalAccountItem> externalAccounts;
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
   final TextEditingController domainController;

@@ -731,7 +731,6 @@ Widget buildProfileView({
     profileSpaces: profileSpaces,
     friends: friends,
     connectedChains: connectedChains(externalAccounts),
-    externalAccounts: externalAccounts,
     displayNameController: displayNameController,
     usernameController: usernameController,
     domainController: domainController,

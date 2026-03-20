@@ -68,6 +68,7 @@
 - 2026-03-20：继续升级 Flutter 聊天好友资料弹层，改为打开即加载、宽屏双栏、失败可重试的公开空间入口面板 / Continued upgrading the Flutter chat friend-profile dialog into an open-immediately, dual-column, retryable public-space entry panel.
 - 2026-03-20：将 Flutter 聊天好友资料弹层改成可滚动的响应式布局，避免小屏下空间卡片和进入按钮被裁切 / Made the Flutter chat friend-profile dialog scrollable and responsive so small screens no longer clip space cards or the enter button.
 - 2026-03-20：继续收紧 Flutter 聊天好友资料弹层，改为轻量预览并移除自动拉取公开空间，避免点击资料时触发 Web 端卡死 / Continued tightening the Flutter chat friend-profile dialog into a lightweight preview and removed the automatic public-space fetch to avoid Web freezes when opening the profile.
+- 2026-03-20：进一步简化 Flutter 聊天好友资料弹层，去掉公开空间列表和重绘链路，只保留好友资料轻量预览与“查看主页”入口 / Further simplified the Flutter chat friend-profile dialog by removing the public-space list and rebuild chain, leaving only a lightweight profile preview and an "open profile" entry.
 - 2026-03-18：拆分聊天媒体附件、过期删除、新好友提醒与双端布局优化任务 / Split chat media attachments, expiry cleanup, new-friend reminders, and dual-end layout optimization tasks.
 - 2026-03-18：完成聊天页全屏布局、消息滚动与表情/贴纸快捷插入 / Completed full-screen chat layout, message scrolling, and emoji/sticker quick inserts.
 - 2026-03-18：补充 Vue 聊天页全高壳层，确保长消息列表下发送按钮始终可见 / Added a full-height Vue chat shell so the send box stays visible with long histories.
