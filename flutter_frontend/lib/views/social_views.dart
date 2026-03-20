@@ -554,9 +554,9 @@ class PostDetailView extends StatelessWidget {
               ),
               localizedText(
                 languageCode,
-                '图片会保持等比例缩放，并限制最大显示尺寸。',
-                'Images keep their aspect ratio and are capped at a maximum display size.',
-                '圖片會保持等比例縮放，並限制最大顯示尺寸。',
+                '上传的图片会保持等比例缩放，最长边限制为 1600px。',
+                'Uploaded images keep their aspect ratio, and the long edge is capped at 1600px.',
+                '上傳的圖片會保持等比例縮放，最長邊限制為 1600px。',
               ),
             ],
           ),

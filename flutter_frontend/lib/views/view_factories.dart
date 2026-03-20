@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
@@ -68,8 +70,8 @@ Widget buildSpaceView({
   required ValueChanged<PostItem> onEditPost,
   required String languageCode,
 }) {
-  // Keep the page focused on creator-owned spaces and the active feed.
-  // 页面聚焦于“自己创建的空间列表 + 当前空间内容流”。
+  // Keep the page focused on creator-owned spaces and the active posts area.
+  // 页面聚焦于“自己创建的空间列表 + 当前空间帖子区”。
   final ownedSpaces = user == null
       ? <SpaceItem>[]
       : uniqueSpacesById(
@@ -81,6 +83,105 @@ Widget buildSpaceView({
       user != null && selectedSpace != null && selectedSpace.userId == user.id;
   final canManageSelectedSpace =
       managedSpace != null && user != null && managedSpace.userId == user.id;
+
+  void openSpaceWorkspaceMenu() {
+    // Open the workspace as a modal popover when a space is already entered.
+    // 进入具体空间后，以模态弹层方式打开空间工作台。
+    if (selectedSpace == null) {
+      return;
+    }
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.55),
+        barrierLabel: localizedText(
+          languageCode,
+          '关闭空间工作台',
+          'Close workspace',
+          '關閉空間工作台',
+        ),
+        builder: (dialogContext) {
+          void closeDialog() {
+            Navigator.of(dialogContext, rootNavigator: true).pop();
+          }
+
+          return DefaultTabController(
+            length: 2,
+            child: SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 560,
+                      maxHeight: MediaQuery.sizeOf(dialogContext).height - 32,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 18),
+                            child: _SpaceWorkspaceCard(
+                              languageCode: languageCode,
+                              loading: loading,
+                              ownedSpaces: ownedSpaces,
+                              selectedSpace: selectedSpace,
+                              user: user,
+                              onEnterSpace: (space) {
+                                closeDialog();
+                                onEnterSpace(space);
+                              },
+                              onEditSpace: (space) {
+                                closeDialog();
+                                onEditSpace(space);
+                              },
+                              onDeleteSpace: (space) {
+                                closeDialog();
+                                onDeleteSpace(space);
+                              },
+                              onOpenSpaceComposer: () {
+                                closeDialog();
+                                onOpenSpaceComposer();
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Material(
+                              color: Theme.of(dialogContext)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              shape: const CircleBorder(),
+                              elevation: 6,
+                              child: IconButton(
+                                tooltip: localizedText(
+                                  languageCode,
+                                  '关闭',
+                                  'Close',
+                                  '關閉',
+                                ),
+                                onPressed: closeDialog,
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   return DefaultTabController(
     length: 2,
     child: Column(
@@ -153,14 +254,27 @@ Widget buildSpaceView({
                         Text(
                           localizedText(
                             languageCode,
-                            '先进入空间，再浏览内容、设置空间和发布文章。',
-                            'Enter a space first, then browse content, manage settings, and publish posts.',
-                            '先進入空間，再瀏覽內容、設定空間和發佈文章。',
+                            '先进入空间，再浏览帖子、发布文章。',
+                            'Enter a space first, then browse posts and publish.',
+                            '先進入空間，再瀏覽貼文、發佈文章。',
                           ),
                         ),
                       ],
                     ),
                   ),
+                  if (selectedSpace != null)
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.tonal,
+                      compact: true,
+                      onPressed: openSpaceWorkspaceMenu,
+                      primaryLabel: localizedText(
+                        languageCode,
+                        '空间工作台',
+                        'Space workspace',
+                        '空間工作台',
+                      ),
+                      secondaryLabel: 'Space workspace',
+                    ),
                   if (canManageSelectedSpace)
                     Wrap(
                       spacing: 8,
@@ -180,18 +294,6 @@ Widget buildSpaceView({
                             '返回首頁',
                           ),
                           secondaryLabel: 'Back to home',
-                        ),
-                        BilingualActionButton(
-                          variant: BilingualButtonVariant.tonal,
-                          compact: true,
-                          onPressed: () => onEditSpace(managedSpace),
-                          primaryLabel: localizedText(
-                            languageCode,
-                            '设置空间资料',
-                            'Space settings',
-                            '設定空間資料',
-                          ),
-                          secondaryLabel: 'Space settings',
                         ),
                         BilingualActionButton(
                           variant: BilingualButtonVariant.filled,
@@ -291,12 +393,10 @@ Widget buildSpaceView({
         const SizedBox(height: 18),
         LayoutBuilder(
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 1120;
             final feed = selectedSpace == null
                 ? null
                 : _SpaceFeedCard(
                     languageCode: languageCode,
-                    selectedSpace: selectedSpace,
                     spacePosts: spacePosts,
                     canPublish: canPublish,
                     user: user,
@@ -310,33 +410,20 @@ Widget buildSpaceView({
                     onEditPost: onEditPost,
                     onDeletePost: onDeletePost,
                   );
-            final workspace = _SpaceWorkspaceCard(
-              languageCode: languageCode,
-              loading: loading,
-              ownedSpaces: ownedSpaces,
-              selectedSpace: selectedSpace,
-              user: user,
-              onEnterSpace: onEnterSpace,
-              onEditSpace: onEditSpace,
-              onDeleteSpace: onDeleteSpace,
-              onOpenSpaceComposer: onOpenSpaceComposer,
-            );
             if (feed == null) {
-              return workspace;
-            }
-            if (isWide) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 3, child: feed),
-                  const SizedBox(width: 16),
-                  SizedBox(width: 380, child: workspace),
-                ],
+              return _SpaceWorkspaceCard(
+                languageCode: languageCode,
+                loading: loading,
+                ownedSpaces: ownedSpaces,
+                selectedSpace: selectedSpace,
+                user: user,
+                onEnterSpace: onEnterSpace,
+                onEditSpace: onEditSpace,
+                onDeleteSpace: onDeleteSpace,
+                onOpenSpaceComposer: onOpenSpaceComposer,
               );
             }
-            return Column(
-              children: [workspace, const SizedBox(height: 16), feed],
-            );
+            return feed;
           },
         ),
       ],
@@ -539,7 +626,7 @@ Widget buildPublicView({
         subtitle: localizedText(
           languageCode,
           '空间文章会出现在空间和作者主页。',
-          'Space posts appear in the space feed and on the author profile.',
+          'Space posts appear in the space and on the author profile.',
           '空間文章會出現在空間和作者主頁。',
         ),
         detailLines: [
@@ -886,7 +973,6 @@ class _SpaceMetaChip extends StatelessWidget {
 class _SpaceFeedCard extends StatelessWidget {
   const _SpaceFeedCard({
     required this.languageCode,
-    required this.selectedSpace,
     required this.spacePosts,
     required this.canPublish,
     required this.user,
@@ -902,7 +988,6 @@ class _SpaceFeedCard extends StatelessWidget {
   });
 
   final String languageCode;
-  final SpaceItem? selectedSpace;
   final List<PostItem> spacePosts;
   final bool canPublish;
   final CurrentUser? user;
@@ -926,105 +1011,52 @@ class _SpaceFeedCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        localizedText(languageCode, '内容流', 'Feed', '內容流'),
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          letterSpacing: 0.08,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        selectedSpace == null
-                            ? localizedText(
-                                languageCode,
-                                '请先进入空间。',
-                                'Enter a space first.',
-                                '請先進入空間。',
-                              )
-                            : localizedText(
-                                languageCode,
-                                '进入空间后即可浏览内容、点赞和评论。',
-                                'After entering, you can browse content, like, and comment.',
-                                '進入空間後即可瀏覽內容、按讚和評論。',
-                              ),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ],
+            if (canPublish)
+              Align(
+                alignment: Alignment.centerRight,
+                child: BilingualActionButton(
+                  variant: BilingualButtonVariant.filled,
+                  compact: true,
+                  onPressed: onOpenPostComposer,
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '发布文章',
+                    'Publish post',
+                    '發布文章',
                   ),
+                  secondaryLabel: 'Publish post',
                 ),
-                if (canPublish)
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.filled,
-                    compact: true,
-                    onPressed: onOpenPostComposer,
-                    primaryLabel: localizedText(
-                      languageCode,
-                      '发布文章',
-                      'Publish post',
-                      '發布文章',
-                    ),
-                    secondaryLabel: 'Publish post',
-                  ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            if (selectedSpace != null)
-              PostStreamSection(
-                posts: spacePosts,
-                emptyText: canPublish
-                    ? localizedText(
-                        languageCode,
-                        '这个空间里还没有内容，点击发布开始创作。',
-                        'There is no content in this space yet. Publish the first post.',
-                        '這個空間裡還沒有內容，點擊發布開始創作。',
-                      )
-                    : localizedText(
-                        languageCode,
-                        '这个空间里还没有内容。',
-                        'There is no content in this space yet.',
-                        '這個空間裡還沒有內容。',
-                      ),
-                commentControllerFor: commentControllerFor,
-                onLike: onToggleLike,
-                onShare: onSharePost,
-                onComment: onCommentPost,
-                onOpenAuthor: onOpenProfile,
-                onOpenDetail: onOpenPostDetail,
-                onEditPost: onEditPost,
-                canEditPost: (post) =>
-                    currentUserId != null &&
-                    (post.userId == currentUserId ||
-                        post.spaceUserId == currentUserId),
-                onDeletePost: onDeletePost,
-                languageCode: languageCode,
-              )
-            else
-              InfoCard(
-                title: localizedText(languageCode, '内容流', 'Feed', '內容流'),
-                lines: [
-                  localizedText(
-                    languageCode,
-                    '先从上面的空间入口选择一个空间。',
-                    'Select a space from the entry panel above first.',
-                    '先從上面的空間入口選擇一個空間。',
-                  ),
-                  localizedText(
-                    languageCode,
-                    '进入后即可浏览内容、点赞和评论。',
-                    'After entering, you can browse content, like, and comment.',
-                    '進入後即可瀏覽內容、按讚和評論。',
-                  ),
-                ],
               ),
+            const SizedBox(height: 14),
+            PostStreamSection(
+              posts: spacePosts,
+              emptyText: canPublish
+                  ? localizedText(
+                      languageCode,
+                      '这个空间里还没有内容，点击发布开始创作。',
+                      'There is no content in this space yet. Publish the first post.',
+                      '這個空間裡還沒有內容，點擊發布開始創作。',
+                    )
+                  : localizedText(
+                      languageCode,
+                      '这个空间里还没有内容。',
+                      'There is no content in this space yet.',
+                      '這個空間裡還沒有內容。',
+                    ),
+              commentControllerFor: commentControllerFor,
+              onLike: onToggleLike,
+              onShare: onSharePost,
+              onComment: onCommentPost,
+              onOpenAuthor: onOpenProfile,
+              onOpenDetail: onOpenPostDetail,
+              onEditPost: onEditPost,
+              canEditPost: (post) =>
+                  currentUserId != null &&
+                  (post.userId == currentUserId ||
+                      post.spaceUserId == currentUserId),
+              onDeletePost: onDeletePost,
+              languageCode: languageCode,
+            ),
           ],
         ),
       ),
@@ -1074,9 +1106,9 @@ class _SpaceWorkspaceCard extends StatelessWidget {
             Text(
               localizedText(
                 languageCode,
-                '“我的空间”与“创建空间”放在同一个工作台，进入空间后再展示内容。',
-                '"My spaces" and "Create space" share one workspace, and content appears after entering a space.',
-                '「我的空間」與「建立空間」放在同一個工作台，進入空間後再展示內容。',
+                '“我的空间”与“创建空间”放在同一个工作台。',
+                '"My spaces" and "Create space" share one workspace.',
+                '「我的空間」與「建立空間」放在同一個工作台。',
               ),
             ),
             const SizedBox(height: 14),
@@ -1163,17 +1195,11 @@ class _SpaceWorkspaceCard extends StatelessWidget {
                           ),
                           subtitle: localizedText(
                             languageCode,
-                            '名称、二级域名、可见范围和外观会在这里逐步完善。',
-                            'Name, subdomain, visibility, and appearance will be refined here.',
-                            '名稱、二級網域、可見範圍和外觀會在這裡逐步完善。',
+                            '名称、二级域名和可见范围会在这里逐步完善。',
+                            'Name, subdomain, and visibility will be refined here.',
+                            '名稱、二級網域和可見範圍會在這裡逐步完善。',
                           ),
                           detailLines: [
-                            localizedText(
-                              languageCode,
-                              '空间主题和背景位已预留在布局中。',
-                              'Theme and background slots are reserved in the layout.',
-                              '空間主題和背景位已預留在佈局中。',
-                            ),
                             localizedText(
                               languageCode,
                               '创建完成后会自动进入新空间。',
@@ -1190,29 +1216,6 @@ class _SpaceWorkspaceCard extends StatelessWidget {
                           buttonSecondaryLabel: 'Open create dialog',
                           buttonVariant: BilingualButtonVariant.filled,
                           onSubmit: onOpenSpaceComposer,
-                        ),
-                        const SizedBox(height: 12),
-                        InfoCard(
-                          title: localizedText(
-                            languageCode,
-                            '空间设置',
-                            'Space settings',
-                            '空間設定',
-                          ),
-                          lines: [
-                            localizedText(
-                              languageCode,
-                              '后续这里会接入空间级主题和背景图配置。',
-                              'Space-level theme and background configuration will be added here.',
-                              '後續這裡會接入空間級主題和背景圖設定。',
-                            ),
-                            localizedText(
-                              languageCode,
-                              '当前版本先保留入口和布局。',
-                              'For now, the entry points and layout are reserved.',
-                              '目前版本先保留入口與佈局。',
-                            ),
-                          ],
                         ),
                       ],
                     ),

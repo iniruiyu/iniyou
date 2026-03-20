@@ -27,6 +27,8 @@ const CHAT_STICKER_TOKENS = new Set(
   ),
 );
 
+// Limit article image uploads to a bounded long edge so previews stay lightweight.
+// 将文章图片上传的最长边限制在可控范围内，避免预览和传输过大。
 const POST_MEDIA_MAX_DIMENSION = 1600;
 
 function createEmptyPostDraft(overrides = {}) {
@@ -333,6 +335,9 @@ const app = createApp({
       // 空间独立壳层状态。
       spacePanelTab: 'owned',
       spaceOwnedExpanded: true,
+      // Space workspace popover state.
+      // 空间工作台弹出层状态。
+      spaceWorkspaceMenuOpen: false,
       // JWT token.
       // JWT 令牌。
       token: '',
@@ -342,6 +347,12 @@ const app = createApp({
       // Current profile tab.
       // 当前个人主页选项卡。
       profileTab: 'levels',
+      // Identity editor dialog visibility.
+      // 身份编辑弹窗可见状态。
+      identityEditorOpen: false,
+      // Membership dialog visibility.
+      // 会员弹窗可见状态。
+      membershipModalOpen: false,
       // Active private space ID.
       // 当前私人空间 ID。
       activePrivateSpaceId: '',
@@ -557,12 +568,8 @@ const app = createApp({
             mySpacesToggle: '点击查看我的空间',
             workspaceTitle: '空间工作台',
             workspaceSub: '进入空间后才显示内容、设置与发布入口。',
-            spaceSettingsTitle: '当前空间设置',
-            spaceSettingsSub: '可在这里继续设置名称、域名、主题和背景。',
             createTab: '创建空间',
             ownedTab: '我的空间',
-            appearanceTitle: '主题与背景',
-            appearanceSub: '后续会接入空间级主题和背景图。',
             privateTitle: '空间',
             privateSub: '查看可见空间并管理内容。',
             publicTitle: '空间',
@@ -605,16 +612,12 @@ const app = createApp({
             },
           },
           posts: {
-            feedTitle: '空间内容流',
+            feedTitle: '空间帖子',
             feedSub: '创建者可以在进入空间后发帖，其他人可查看并互动。',
-            spaceFeedTitle: '空间内容流',
-            spaceFeedSub: '进入当前空间后，帖子会按该空间独立展示。',
             privateFeedTitle: '空间内容',
             privateFeedSub: '查看你发布的文章。',
             profileFeedTitle: '作者内容',
             profileFeedSub: '浏览该作者公开发布的文章。',
-            creatorHint: '只有空间创建者可以在这里发帖、设置空间资料并管理帖子，其他人可查看并点赞、评论、回复。',
-            viewerHint: '你当前以访客身份浏览该空间，只能点赞、评论和回复。',
             titlePlaceholder: '文章标题',
             contentPlaceholder: '写点什么，分享给大家...',
             publishAction: '发布文章',
@@ -626,7 +629,6 @@ const app = createApp({
             privateEmpty: '当前空间里还没有文章。',
             publicEmpty: '空间里还没有文章，先发布第一篇吧。',
             profileEmpty: '该作者还没有公开文章。',
-            empty: '空间里还没有文章，先发布第一篇吧。',
             like: '点赞',
             unlike: '取消点赞',
             comment: '评论',
@@ -669,7 +671,7 @@ const app = createApp({
             videoSelected: '个视频',
             imagesSelected: '张图片',
             addMoreImages: '继续添加图片',
-            mediaHint: '图片会自动等比缩放并转为 WebP，也支持继续添加多张图片。',
+            mediaHint: '图片会自动等比缩放，最长边不超过 1600px，并转为 WebP，也支持继续添加多张图片。',
           },
           levels: {
             title: '会员等级',
@@ -969,8 +971,6 @@ const app = createApp({
             mySpacesToggle: 'Show my spaces',
             workspaceTitle: 'Space workspace',
             workspaceSub: 'Content, settings, and publishing only appear after entry.',
-            spaceSettingsTitle: 'Current space settings',
-            spaceSettingsSub: 'Adjust the name, domain, theme, and background here.',
             createTab: 'Create space',
             ownedTab: 'My spaces',
             privateTitle: 'Space',
@@ -1015,16 +1015,12 @@ const app = createApp({
             },
           },
           posts: {
-            feedTitle: 'Space Feed',
+            feedTitle: 'Space posts',
             feedSub: 'Share updates, ideas, and project progress.',
-            spaceFeedTitle: 'Space Feed',
-            spaceFeedSub: 'After entering the current space, posts are shown for that space only.',
             privateFeedTitle: 'Space Content',
             privateFeedSub: 'Review your posts.',
-            profileFeedTitle: 'Author Feed',
+            profileFeedTitle: 'Author posts',
             profileFeedSub: 'Browse posts published by this author.',
-            creatorHint: 'Only the space creator can post here, update space settings, and manage posts; other users can view, like, comment, and reply.',
-            viewerHint: 'You are viewing this space as a guest, so you can only like, comment, and reply.',
             titlePlaceholder: 'Post title',
             contentPlaceholder: 'Write something to share...',
             publishAction: 'Publish Post',
@@ -1034,9 +1030,8 @@ const app = createApp({
             publishSuccess: 'Post published.',
             publishError: 'Publishing failed. Try again later.',
             privateEmpty: 'No posts in this space yet.',
-            publicEmpty: 'The space feed is empty. Publish the first post.',
+            publicEmpty: 'The space has no posts yet. Publish the first post.',
             profileEmpty: 'This author has no public posts yet.',
-            empty: 'The space feed is empty. Publish the first post.',
             like: 'Like',
             unlike: 'Unlike',
             comment: 'Comment',
@@ -1079,7 +1074,7 @@ const app = createApp({
             videoSelected: 'video selected',
             imagesSelected: 'images selected',
             addMoreImages: 'Add More Images',
-            mediaHint: 'Images are resized proportionally and converted to WebP. You can keep adding more.',
+            mediaHint: 'Images are resized proportionally, capped at a 1600px long edge, and converted to WebP. You can keep adding more.',
           },
           levels: {
             title: 'Membership Levels',
@@ -2440,19 +2435,15 @@ const app = createApp({
               pageNavSub: '查看目前空間、自己的空間與常用入口。',
               currentTitle: '目前空間',
               myTitle: '我的空間',
-              mySub: '只顯示你建立的空間。',
-              mySpacesToggle: '查看我的空間',
-              workspaceTitle: '空間工作台',
-              workspaceSub: '進入空間後才顯示內容、設定與發布入口。',
-              spaceSettingsTitle: '目前空間設定',
-              spaceSettingsSub: '可在這裡繼續設定名稱、網域、主題和背景。',
-              createTab: '建立空間',
-              ownedTab: '我的空間',
-              appearanceTitle: '主題與背景',
-              appearanceSub: '後續會接入空間級主題和背景圖。',
-              privateTitle: '空間',
-              privateSub: '查看可見空間並管理內容。',
-              publicTitle: '空間',
+            mySub: '只顯示你建立的空間。',
+            mySpacesToggle: '查看我的空間',
+            workspaceTitle: '空間工作台',
+            workspaceSub: '進入空間後才顯示內容、設定與發布入口。',
+            createTab: '建立空間',
+            ownedTab: '我的空間',
+            privateTitle: '空間',
+            privateSub: '查看可見空間並管理內容。',
+            publicTitle: '空間',
               publicSub: '分享內容、展示專案、連結更多人。',
               createTitle: '建立空間',
               createSub: '名稱、二級網域和可見範圍可以獨立設定，留空時會自動生成。',
@@ -2487,15 +2478,15 @@ const app = createApp({
               },
             },
           posts: {
-            feedTitle: '空間內容流',
+            feedTitle: '空間貼文',
             feedSub: '發布你的近況、想法與專案更新。',
-            spaceFeedTitle: '空間內容流',
-            spaceFeedSub: '進入目前空間後，貼文會依該空間獨立展示。',
-            creatorHint: '只有空間建立者可以在這裡發帖、設定空間資料並管理文章，其他人可查看並按讚、評論、回覆。',
-              viewerHint: '你目前以訪客身份瀏覽這個空間，只能按讚、評論和回覆。',
-              titlePlaceholder: '文章標題',
-              contentPlaceholder: '寫點什麼，分享給大家...',
-              publishAction: '發布文章',
+            privateFeedTitle: '空間內容',
+            privateFeedSub: '查看你發佈的文章。',
+            profileFeedTitle: '作者內容',
+            profileFeedSub: '瀏覽該作者公開發佈的文章。',
+            titlePlaceholder: '文章標題',
+            contentPlaceholder: '寫點什麼，分享給大家...',
+            publishAction: '發布文章',
               visibilityLabel: '可見性',
               spaceLabel: '所屬空間',
               spaceRequired: '請先進入或建立對應空間。',
@@ -2504,7 +2495,6 @@ const app = createApp({
               privateEmpty: '目前空間裡還沒有文章。',
               publicEmpty: '空間裡還沒有文章，先發布第一篇吧。',
               profileEmpty: '該作者還沒有公開文章。',
-              empty: '空間裡還沒有文章，先發布第一篇吧。',
               unlike: '取消按讚',
               commentPlaceholder: '寫下你的評論...',
               commentAction: '送出評論',
@@ -2525,7 +2515,7 @@ const app = createApp({
               videoSelected: '個影片',
               imagesSelected: '張圖片',
               addMoreImages: '繼續新增圖片',
-              mediaHint: '圖片會自動等比縮放並轉成 WebP，也可以繼續追加多張圖片。',
+              mediaHint: '圖片會自動等比縮放，最長邊不超過 1600px，並轉成 WebP，也可以繼續追加多張圖片。',
               backToFeed: '返回空間',
             },
             blockchain: {
@@ -2705,6 +2695,8 @@ const app = createApp({
       this.spaceModalOpen = false;
       this.postModalOpen = false;
       this.postEditModalOpen = false;
+      this.identityEditorOpen = false;
+      this.membershipModalOpen = false;
       this.spaceDraft.id = '';
       this.spaceDraft.type = 'private';
       this.spaceDraft.name = '';
@@ -2974,6 +2966,12 @@ const app = createApp({
           secondaryLabel: this.peerLocaleText('profile.identity.visibility.private'),
         },
       ];
+    },
+    identityVisibilityLabel(value) {
+      // Resolve an identity visibility value into the current language label.
+      // 将身份可见范围值解析为当前语言标签。
+      const option = this.identityVisibilityOptions().find((item) => item.value === value);
+      return option ? option.primaryLabel : this.t('common.notAvailable');
     },
     postVisibilityOptions() {
       // Shared post visibility choices / 共用内容可见范围选项。
@@ -3457,18 +3455,23 @@ const app = createApp({
       this.sidebarCollapsed = !this.sidebarCollapsed;
     },
     enterSpaceShell(space = null) {
-      // Switch into the dedicated space shell and optionally bind a selected space.
-      // 切换进入独立空间壳层，并可选绑定一个具体空间。
+      // Keep the sidebar visible on the space home page, and only collapse into the top-button mode after entering a specific space.
+      // 空间首页保持侧边导航可见，只有进入具体空间后才收进顶部按钮模式。
+      const targetSpace = space && typeof space === 'object' && space.id ? space : null;
       this.view = 'space';
-      this.spaceOwnedExpanded = true;
+      this.spaceOwnedExpanded = !targetSpace;
       this.spacePanelTab = 'owned';
-      if (space) {
-        this.currentSpace = space;
+      this.spaceWorkspaceMenuOpen = false;
+      if (!targetSpace) {
+        this.sidebarCollapsed = false;
+      }
+      if (targetSpace) {
+        this.currentSpace = targetSpace;
         this.currentPost = null;
-        this.activePrivateSpaceId = space.id;
-        this.activePublicSpaceId = space.id;
-        this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, space.id);
-        this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, space.id);
+        this.activePrivateSpaceId = targetSpace.id;
+        this.activePublicSpaceId = targetSpace.id;
+        this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, targetSpace.id);
+        this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, targetSpace.id);
         return;
       }
       this.currentSpace = null;
@@ -3495,8 +3498,41 @@ const app = createApp({
     openSpaceWorkspaceTab(tab) {
       // Open a workspace tab and ensure the panel is expanded.
       // 打开工作台选项卡并确保面板已展开。
-      this.spaceOwnedExpanded = true;
       this.spacePanelTab = tab;
+      if (!this.currentSpace) {
+        this.spaceOwnedExpanded = true;
+      }
+    },
+    toggleSpaceWorkspaceMenu() {
+      // Toggle the collapsed workspace menu shown from the space top bar.
+      // 切换空间顶部按钮展开的工作台菜单。
+      if (!this.currentSpace) {
+        return;
+      }
+      this.spaceWorkspaceMenuOpen = !this.spaceWorkspaceMenuOpen;
+    },
+    closeSpaceWorkspaceMenu() {
+      // Close the workspace popover when clicking away or after a selection.
+      // 点击外部或完成选择后收起工作台弹层。
+      this.spaceWorkspaceMenuOpen = false;
+    },
+    handleSpaceWorkspaceMenuFocusOut(event) {
+      // Close the workspace popover when focus leaves the floating menu.
+      // 当焦点离开浮动菜单时自动收起工作台弹层。
+      if (!this.spaceWorkspaceMenuOpen) {
+        return;
+      }
+      const nextTarget = event.relatedTarget;
+      const currentTarget = event.currentTarget;
+      if (
+        nextTarget &&
+        currentTarget &&
+        typeof currentTarget.contains === 'function' &&
+        currentTarget.contains(nextTarget)
+      ) {
+        return;
+      }
+      this.closeSpaceWorkspaceMenu();
     },
     toggleChatQuickPanel() {
       // Toggle the chat quick panel instead of keeping it always visible.
@@ -3540,6 +3576,26 @@ const app = createApp({
         return;
       }
       this.closeSettingsMenu();
+    },
+    openIdentityEditor() {
+      // Open the profile identity editor as a dialog.
+      // 以弹窗方式打开身份资料编辑器。
+      this.identityEditorOpen = true;
+    },
+    closeIdentityEditor() {
+      // Close the profile identity editor dialog.
+      // 关闭身份资料编辑弹窗。
+      this.identityEditorOpen = false;
+    },
+    openMembershipModal() {
+      // Open the membership level switch dialog.
+      // 打开会员等级切换弹窗。
+      this.membershipModalOpen = true;
+    },
+    closeMembershipModal() {
+      // Close the membership level switch dialog.
+      // 关闭会员等级切换弹窗。
+      this.membershipModalOpen = false;
     },
     async login() {
       // Login and store token.
@@ -3726,7 +3782,7 @@ const app = createApp({
     },
     async loadPosts() {
       // Load the public content feed.
-      // 加载公共内容流。
+// 加载公共帖子列表。
       if (!this.token) {
         return;
       }
@@ -3828,20 +3884,8 @@ const app = createApp({
           direction: '',
         };
       }
-      const res = await fetch(`${this.apiBase}/users/${userID}/posts?visibility=public&limit=50`, {
-        headers: { Authorization: `Bearer ${this.token}` },
-      });
-      if (!res.ok) {
-        return;
-      }
-      const data = await res.json();
-      this.profilePosts = Array.isArray(data.items)
-        ? data.items.map((item) => this.mapPostItem(item))
-        : [];
-      this.profileSpaces = [];
-      if (this.profilePosts[0]?.authorName) {
-        this.profileUser.name = this.profilePosts[0].authorName;
-      }
+      this.profilePosts = [];
+      await this.loadProfileSpaces(userID);
       // Reset profile tab when opening profile.
       // 打开个人主页时重置选项卡。
       // Reset to membership tab in profile.
@@ -3861,6 +3905,7 @@ const app = createApp({
         headers: { Authorization: `Bearer ${this.token}` },
       });
       if (!res.ok) {
+        this.profileSpaces = [];
         return;
       }
       const data = await res.json();
@@ -3957,13 +4002,13 @@ const app = createApp({
       this.view = 'postDetail';
     },
     backFromPostDetail() {
-      // Return from detail view to the combined space feed.
-      // 从详情页返回合并后的空间内容流。
+// Return from detail view to the combined space posts list.
+// 从详情页返回合并后的空间帖子列表。
       this.enterSpaceShell(this.currentSpace);
     },
     backToPublicFeed() {
-      // Return from profile view to the combined space feed.
-      // 从用户主页返回合并后的空间内容流。
+// Return from profile view to the combined space posts list.
+// 从用户主页返回合并后的空间帖子列表。
       this.enterSpaceShell(this.currentSpace);
     },
     async refreshActiveProfile() {
@@ -4192,7 +4237,7 @@ const app = createApp({
     },
     async sharePost(post) {
       // Share a post in the social feed.
-      // 在内容流中转发文章。
+// 在帖子列表中转发文章。
       this.clearFeedback();
       if (!this.token || !post) {
         return;
@@ -4261,7 +4306,14 @@ const app = createApp({
         return;
       }
       await this.loadMe();
+      this.closeIdentityEditor();
       this.setFlash(this.t('dashboard.saveSuccess'));
+    },
+    async selectMembershipLevel(planID = 'premium') {
+      // Close the level picker first, then apply the selected plan.
+      // 先关闭等级选择弹窗，再应用所选方案。
+      this.closeMembershipModal();
+      await this.activateMembershipLevel(planID);
     },
     async activateMembershipLevel(planID = 'premium') {
       // Upgrade the membership level through the billing endpoint.

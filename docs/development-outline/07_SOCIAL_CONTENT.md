@@ -25,6 +25,11 @@
   - Vue 文章发布与编辑支持多图片上传、可删除画廊和随机文件名
   - 文章媒体真实落盘到可配置目录，并在删除文章、删除空间或替换媒体时物理清理服务器文件
   - Flutter 文章发布与编辑支持多图画廊，双前端文章正文统一按 Markdown 渲染
+- 双前端空间工作台折叠为顶部按钮，进入具体空间后自动收起，Vue 空间内容流移除冗余说明 / Collapsed the dual-frontend space workspace into a top button that auto-collapses after entering a specific space, and removed redundant Vue feed copy
+- 双前端空间页移除内容流 / 当前空间设置说明卡，并把文章图片缩放上限明确为 1600px / Removed the space feed/current-space-settings info cards in both frontends and made the 1600px article image scaling cap explicit
+- Vue 从主页导航进入“空间”时保持侧边导航可见，空间首页不再展示空状态卡 / Vue now keeps the sidebar visible when entering “Space” from home navigation, and the space home no longer shows the empty-state card
+- Vue 主页“空间”按钮改为显式空参调用，避免事件对象误判为具体空间 / Vue home “Space” button now uses an explicit no-arg call to avoid misreading the click event as a space object
+- Vue 进入具体空间后改为全宽主容器铺满窗口，避免左侧保留空白列 / Vue specific-space pages now use a full-width main container to avoid leaving a blank left column.
 - 进行中：
   - 内容状态与审核预留
 - 待完成：

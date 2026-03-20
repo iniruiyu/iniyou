@@ -264,6 +264,10 @@
 - 空间必须以单一“空间”入口进入，进入后在页面内再区分私人/公共分区
 - 公共空间和私人空间的创建入口必须以单一按钮触发，再在弹窗或底部抽屉内完成表单填写
 - 内容发布入口必须依附当前空间上下文，页面内应可见文章所属空间信息
+- 双前端在进入具体空间后，应将“我的空间 / 创建空间”工作台折叠为顶部按钮弹层；Flutter 入口命名为“空间工作台”，Vue 空间内容流仅保留帖子内容 / After entering a specific space, both frontends should collapse the “My spaces / Create space” workspace into a top-button popover; the Flutter entry is named “Space workspace”, and the Vue space feed should keep only post content.
+- 空间页应只保留帖子列表、发布按钮和工作台入口，不再展示内容流 / 当前空间设置说明卡；图片上传与编辑提示应明确最长边 1600px 的缩放上限 / The space page should keep only the post list, publish button, and workspace entry, without content-feed/current-space-settings info cards; image upload and editing guidance should state the 1600px long-edge cap.
+- 从主页导航进入“空间”时，侧边导航应保持可见，空间首页直接展示空间列表；只有进入具体空间时才切换到折叠弹层 / When entering “Space” from the home navigation, the sidebar should remain visible and the space home should show the list directly; only a specific space should switch to the collapsed popover.
+- 主页“空间”入口必须显式调用空参方法，避免 Vue 事件对象被误判为具体空间 / The home “Space” entry must explicitly call the no-arg handler to avoid Vue event objects being mistaken for a specific space.
 - 空间子域名输入应显式提示仅支持英文字母和数字，且最长 63 个字符 / The space subdomain input should explicitly indicate that only letters and digits are allowed, up to 63 characters.
 - 桌面端优先使用居中的弹窗，移动端优先使用底部抽屉，以保证空间和内容创建路径短而清晰
 
@@ -311,6 +315,10 @@
 
 ## 13. 进度记录
 
+- 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
+- 2026-03-20：继续收紧空间页文案，移除内容流与当前空间设置说明，并在文章图片缩放提示中明确 1600px 上限 / Further tightened the space-page copy, removing feed/current-space-settings text and making the 1600px image cap explicit in article scaling hints.
+- 2026-03-20：调整 Vue 空间首页从导航进入时的展示逻辑，并去掉空状态卡 / Adjusted the Vue space-home navigation entry behavior and removed the empty-state card.
+- 2026-03-20：修复 Vue 主页“空间”入口的事件误传，并保持首页空间列表可见 / Fixed the Vue home “Space” entry event-passing issue and kept the space list visible on the home page.
 - 2026-03-20：统一 Flutter/Web 后端接口口径，并补齐文章编辑弹窗与图片等比缩放设计约束 / Aligned Flutter/Web backend API contracts and added modal post editing plus proportional image scaling constraints.
 - 2026-03-17：完成双前端导航结构与个人主页标签调整 / Completed dual-frontend navigation structure and profile tab alignment.
 - 2026-03-17：收敛首批内建语言为中英双语与繁体中文 / Reduced built-in languages to English, Simplified Chinese, and Traditional Chinese.

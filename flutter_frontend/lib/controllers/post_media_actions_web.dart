@@ -8,6 +8,8 @@ import 'dart:typed_data';
 
 import '../models/app_models.dart';
 
+// Cap article image uploads on the longest edge so previews stay manageable.
+// 将文章图片上传的最长边限制住，避免预览和传输体积过大。
 const int _maxImageDimension = 1600;
 
 Future<PostAttachmentDraft?> pickPostAttachment(String mediaType) async {

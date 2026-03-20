@@ -124,11 +124,14 @@
 - 点击“空间”只应进入工作台页，只有点击空间卡片里的“进入空间”才应进入具体空间内容页 / Clicking "Space" should open the workspace page only, and entering a specific space content page must happen from the card's "Enter space" action.
 - 进入空间后，发布和查看内容都应记录在该空间上下文中 / After entering a space, both publishing and browsing content should be recorded in that space context.
 - 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
-- 空间内容页需要展示当前空间和空间内容流，并支持图文与小视频附件发布 / The space content page should show the current space and the feed, and support image plus short-video attachments.
+- 双前端在进入具体空间后，应将“我的空间 / 创建空间”工作台折叠为顶部按钮弹层，失焦或点击关闭后收起；空间页只保留帖子列表和必要操作，不再展示“内容流 / 当前空间设置”说明卡，文章图片上传最长边统一限制为 1600px / In both frontends, after entering a specific space, collapse the “My spaces / Create space” workspace into a top-button popover that closes on blur or close; the space page should keep only the post list and essential actions, without “feed/current space settings” info cards, and article image uploads should be capped at a 1600px long edge.
+- 从主页导航进入“空间”时，侧边导航应保持可见，空间首页直接展开空间列表，不显示“空间里还没有文章，先发布第一篇吧。”空状态卡；只有进入具体空间后才沿用顶部按钮折叠方案 / When entering “Space” from the home navigation, the sidebar should remain visible, the space home should show the space list directly, and the “There is no content in this space yet. Publish the first post.” empty-state card should not be shown; only a specific space should use the top-button collapsed mode.
+- 主页“空间”按钮必须显式打开空间首页而不是把鼠标事件误当作空间对象；具体空间入口仍沿用当前折叠方案 / The home “Space” button must explicitly open the space home instead of treating the mouse event as a space object; specific space entry should keep the current collapsed mode.
+- 空间内容页需要展示当前空间和帖子列表，并支持图文与小视频附件发布 / The space content page should show the current space and the post list, and support image plus short-video attachments.
   - 空间内容页不再重复展示个人空间列表，空间列表入口保留在首页与个人主页 / The space content page should not repeat the owned-space list; the space list entry stays on the home and profile pages.
   - 前端空间页进入后应默认展开工作台与“我的空间”内容，避免先显示空壳层 / Space pages should default to an expanded workspace and “My spaces” content instead of showing an empty shell first.
   - 删除空间后必须立即清理当前空间、空间帖子缓存和发帖下拉选项，空间页在没有有效当前空间时只显示工作台，不再回填已删除空间 / After deleting a space, the current space, space post cache, and composer picker must be cleared immediately, and the space page should show only the workspace when no valid current space remains instead of backfilling the deleted space.
-  - 空间内容中的图片和视频需要保持原始比例显示，图片上传应尽量先转换为 WebP 格式再提交 / Space content images and videos should keep their original aspect ratio, and image uploads should be converted to WebP when possible before submission.
+- 空间内容中的图片和视频需要保持原始比例显示，图片上传应尽量先转换为 WebP 格式再提交，且图片最长边统一限制为 1600px / Space content images and videos should keep their original aspect ratio, and image uploads should be converted to WebP when possible before submission, with a 1600px long-edge cap.
   - 空间与文章附件需要支持多图片上传，编辑弹窗内应显示可删除的媒体画廊，提交时只保留当前选中的媒体项，图片文件名应使用随机值避免重名，正文内容优先按 Markdown 语法渲染且双前端保持一致 / Space and post attachments should support multi-image uploads, the edit modal should show a removable media gallery, only currently retained media items should be submitted, image file names should use randomized values to avoid collisions, and article bodies should prefer Markdown rendering with consistent behavior across both frontends.
   - 前端文章编辑应使用独立弹窗完成，避免在正文下方内联展开编辑区 / Post editing should use a dedicated modal instead of expanding an inline editor below the article.
   - 文章卡片需要支持删除当前用户自己的内容，以及空间创建者删除其空间内内容 / Post cards should support deleting the current user's content, and space creators should be able to delete posts inside their spaces.
@@ -283,6 +286,7 @@
 - 统一 Flutter 与 Legacy Web 的后端接口口径，并补齐文章编辑弹窗、媒体清除和图片等比缩放要求 / Aligned Flutter and Legacy Web on a shared backend API, and added post-edit modal behavior, media clearing, and proportional image scaling requirements.
 - 补齐 Vue 端文章多图上传、随机文件名、可删除画廊与等比缩放要求，并确保未选中的媒体不会再次提交 / Added Vue multi-image upload, randomized file names, removable galleries, and proportional scaling requirements, and ensured deselected media is not submitted again.
 - 补充文章媒体真实落盘、更新替换清理与删除时物理删除要求 / Added physical media persistence and cleanup requirements for article media during updates and deletions.
+- 完成双前端空间工作台折叠为顶部按钮的交互收口，并移除 Vue 空间内容流中的冗余说明文案 / Finalized the dual-frontend workspace collapse into a top button and removed redundant explanatory copy from the Vue space feed.
 
 ### 2026-03-19
 

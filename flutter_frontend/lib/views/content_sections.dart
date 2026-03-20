@@ -465,9 +465,12 @@ class PostStreamSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (posts.isEmpty) {
-      return InfoCard(
-        title: localizedText(languageCode, '内容流', 'Feed', '內容流'),
-        lines: [emptyText],
+      return Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Text(emptyText),
+        ),
       );
     }
     return Column(
