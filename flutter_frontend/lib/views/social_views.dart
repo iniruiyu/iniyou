@@ -894,76 +894,71 @@ class ProfileSummaryView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InfoCard(
-          title: profile.displayName,
-          lines: [
-            '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
-            if (profile.domain.isNotEmpty)
-              '${localizedText(languageCode, '域名身份', 'Domain identity', '網域身份')}: @${profile.domain}',
-            if (profile.username.isNotEmpty)
-              '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
-            if (profile.signature.isNotEmpty)
-              '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
-            if (profile.status.isNotEmpty)
-              '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
-            if (!isOwnProfile && profile.relationStatus.isNotEmpty)
-              '${localizedText(languageCode, '关系', 'Relation', '關係')}: ${profile.relationStatus} · ${profile.direction}',
-          ],
-          trailing: isOwnProfile
-              ? BilingualActionButton(
-                  variant: BilingualButtonVariant.tonal,
-                  compact: true,
-                  onPressed: () => _openProfileEditor(context),
-                  primaryLabel: t('profile.identity.editAction'),
-                  secondaryLabel: peerT('profile.identity.editAction'),
-                )
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (profile.relationStatus.isEmpty)
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: () => onAddFriend(profile.id),
-                        primaryLabel: localizedText(
-                          languageCode,
-                          '添加好友',
-                          'Add friend',
-                          '新增好友',
-                        ),
-                        secondaryLabel: 'Add friend',
-                      ),
-                    if (profile.relationStatus == 'pending' &&
-                        profile.direction == 'incoming')
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: () => onAcceptFriend(profile.id),
-                        primaryLabel: localizedText(
-                          languageCode,
-                          '接受好友',
-                          'Accept friend',
-                          '接受好友',
-                        ),
-                        secondaryLabel: 'Accept friend',
-                      ),
-                    if (profile.relationStatus == 'accepted')
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: onStartChat,
-                        primaryLabel: localizedText(
-                          languageCode,
-                          '发起聊天',
-                          'Start chat',
-                          '發起聊天',
-                        ),
-                        secondaryLabel: 'Start chat',
-                      ),
-                  ],
-                ),
-        ),
+        // Own profile uses the lower identity cards instead of repeating the top hero block.
+        // 自己主页改用下方身份卡，避免顶部英雄卡与下方信息重复。
+        if (!isOwnProfile)
+          InfoCard(
+            title: profile.displayName,
+            lines: [
+              '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
+              if (profile.domain.isNotEmpty)
+                '${localizedText(languageCode, '域名身份', 'Domain identity', '網域身份')}: @${profile.domain}',
+              if (profile.username.isNotEmpty)
+                '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
+              if (profile.signature.isNotEmpty)
+                '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
+              if (profile.status.isNotEmpty)
+                '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
+              if (profile.relationStatus.isNotEmpty)
+                '${localizedText(languageCode, '关系', 'Relation', '關係')}: ${profile.relationStatus} · ${profile.direction}',
+            ],
+            trailing: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (profile.relationStatus.isEmpty)
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => onAddFriend(profile.id),
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '添加好友',
+                      'Add friend',
+                      '新增好友',
+                    ),
+                    secondaryLabel: 'Add friend',
+                  ),
+                if (profile.relationStatus == 'pending' &&
+                    profile.direction == 'incoming')
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => onAcceptFriend(profile.id),
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '接受好友',
+                      'Accept friend',
+                      '接受好友',
+                    ),
+                    secondaryLabel: 'Accept friend',
+                  ),
+                if (profile.relationStatus == 'accepted')
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: onStartChat,
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '发起聊天',
+                      'Start chat',
+                      '發起聊天',
+                    ),
+                    secondaryLabel: 'Start chat',
+                  ),
+              ],
+            ),
+          ),
         if (isOwnProfile) ...[
           const SizedBox(height: 16),
           // Merge the old dashboard snapshot into the personal home.
@@ -999,8 +994,9 @@ class ProfileSummaryView extends StatelessWidget {
                     width: cardWidth,
                     child: InfoCard(
                       title: t('profile.identity.personalTitle'),
+                      subtitle: t('profile.identity.personalSub'),
                       lines: [
-                        t('profile.identity.personalSub'),
+                        '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
                         '${localizedText(languageCode, '昵称', 'Nickname', '暱稱')}: ${profile.displayName}',
                         if (profile.username.isNotEmpty)
                           '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
@@ -1009,19 +1005,35 @@ class ProfileSummaryView extends StatelessWidget {
                         if (profile.signature.isNotEmpty)
                           '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
                       ],
+                      trailing: BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: () => _openProfileEditor(context),
+                        primaryLabel: t('profile.identity.editAction'),
+                        secondaryLabel: peerT('profile.identity.editAction'),
+                      ),
                     ),
                   ),
+                  // Split the edit entry by section so personal info and privacy settings stay visually separated.
+                  // 将编辑入口按区块拆分，让个人资料与隐私设置保持清晰分区。
                   SizedBox(
                     width: cardWidth,
                     child: InfoCard(
                       title: t('profile.identity.privacyTitle'),
+                      subtitle: t('profile.identity.privacySub'),
                       lines: [
-                        t('profile.identity.privacySub'),
                         '${localizedText(languageCode, '手机号可见范围', 'Phone visibility', '手機號可見範圍')}: ${_visibilityLabel(phoneVisibility)}',
                         '${localizedText(languageCode, '邮箱可见范围', 'Email visibility', '信箱可見範圍')}: ${_visibilityLabel(emailVisibility)}',
                         '${localizedText(languageCode, '年龄可见范围', 'Age visibility', '年齡可見範圍')}: ${_visibilityLabel(ageVisibility)}',
                         '${localizedText(languageCode, '性别可见范围', 'Gender visibility', '性別可見範圍')}: ${_visibilityLabel(genderVisibility)}',
                       ],
+                      trailing: BilingualActionButton(
+                        variant: BilingualButtonVariant.text,
+                        compact: true,
+                        onPressed: () => _openProfileEditor(context),
+                        primaryLabel: t('profile.identity.privacyAction'),
+                        secondaryLabel: peerT('profile.identity.privacyAction'),
+                      ),
                     ),
                   ),
                   SizedBox(

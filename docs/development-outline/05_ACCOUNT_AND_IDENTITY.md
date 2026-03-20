@@ -7,7 +7,7 @@
 ## 2. 状态
 
 - 状态：进行中
-- 已完成：注册、登录、基础资料、用户名设置、用户名登录别名、域名身份卡与资料可见范围已接通，认证态管理已接入 JWT + active 状态校验，密码修改已接通并会刷新 token 版本，个人主页中的个人资料/隐私设置摘要与弹窗编辑已接通，账号主页与用户主页已合并为单一个人主页入口，顶部用户 ID 信息框已下移到个人资料摘要并拆分为资料/隐私按钮
+- 已完成：注册、登录、基础资料、用户名设置、用户名登录别名、域名身份卡与资料可见范围已接通，认证态管理已接入 JWT + active 状态校验，密码修改已接通并会刷新 token 版本，个人主页中的个人资料/隐私设置摘要与弹窗编辑已接通，账号主页与用户主页已合并为单一个人主页入口，顶部重复英雄卡已收敛为 Vue 风格概览，用户 ID 已下移到个人资料摘要并拆分为资料/隐私按钮
 - 进行中：权限基础结构、密码找回/重置、账号停用/恢复管理、区块链账号绑定预留接口
 
 ## 3. 任务清单
@@ -35,3 +35,7 @@
 - 用户可以配置手机号、邮箱、年龄、性别等个人信息的可见范围
 - 身份认证流程稳定可用
 - 为后续钱包、会员、社交功能提供统一账号基础
+
+## 5. 进度记录
+
+- 2026-03-20：继续对齐 Flutter 个人主页为 Vue 风格布局，收紧顶部重复英雄卡，并把用户 ID 留在个人资料摘要、将修改入口拆成资料/隐私两处 / Continued aligning the Flutter profile page with the Vue layout by tightening the duplicated top hero card, keeping the user ID in the personal info summary, and splitting the edit entry into personal-info and privacy actions.

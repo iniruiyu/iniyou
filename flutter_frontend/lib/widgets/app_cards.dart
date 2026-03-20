@@ -183,11 +183,13 @@ class InfoCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.lines,
+    this.subtitle,
     this.trailing,
   });
 
   final String title;
   final List<String> lines;
+  final String? subtitle;
   final Widget? trailing;
 
   @override
@@ -211,6 +213,15 @@ class InfoCard extends StatelessWidget {
                 if (trailing != null) trailing!,
               ],
             ),
+            if ((subtitle ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              // Use an optional subtitle when a card needs the same topbar pattern as the web profile page.
+              // 在需要对齐 Web 个人主页头部样式时，使用可选副标题。
+              Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             const SizedBox(height: 10),
             ...lines.map(
               (line) => Padding(
