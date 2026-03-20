@@ -70,15 +70,25 @@ body {
   grid-template-columns: 280px 1fr;
 }
 
-/* Space shell full-width layout / 空间模式全宽布局：进入具体空间时取消侧栏占位，避免左侧空列。 */
+/* Space shell full-width layout / 空间模式全宽布局：进入具体空间时直接覆盖整屏壳层，避免左侧空列。 */
 .app.space-shell-mode {
-  display: block;
+  display: block !important;
+  width: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 .app.space-shell-mode .main {
-  grid-column: auto;
-  width: 100%;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .app.sidebar-collapsed .sidebar {
@@ -89,7 +99,7 @@ body {
 }
 
 .app.space-shell-mode .sidebar {
-  display: none;
+  display: none !important;
 }
 
 .sidebar-fab {

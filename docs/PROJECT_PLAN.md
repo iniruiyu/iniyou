@@ -252,6 +252,7 @@ new-project/
 - 2026-03-20：调整 Vue 空间首页进入逻辑，确保从主页导航进入“空间”时侧边导航保持可见，并移除空状态卡 / Adjusted the Vue space-home entry flow so the sidebar stays visible when entering “Space” from the home navigation and removed the empty-state card.
 - 2026-03-20：修复 Vue 主页“空间”按钮的事件误传问题，改为显式打开空间首页 / Fixed the Vue home “Space” button event-passing bug by explicitly opening the space home page.
 - 2026-03-20：修复 Vue 进入具体空间后未铺满窗口的问题，改为空间模式全宽主容器 / Fixed the Vue specific-space page not filling the viewport by switching the space shell to a full-width main container.
+- 2026-03-20：继续修正 Vue 具体空间页的全屏铺满问题，改为视口级固定主容器并追加样式缓存版本号 / Further corrected the Vue specific-space full-screen layout by using a viewport-fixed main container and adding a stylesheet cache-busting version.
 - 2026-03-20：完成 Flutter 文章编辑弹窗化，补齐 `clear_media` 接口与图片等比缩放，并明确 Flutter/Web 共用同一套后端接口 / Completed Flutter post editing modal flow, added `clear_media` support and proportional image scaling, and confirmed Flutter/Web share the same backend API.
 - 2026-03-20：补齐 Vue 文章多图片上传、随机文件名、可删除画廊与等比缩放，并让前后端继续共用同一套文章接口 / Added Vue multi-image uploads, randomized file names, removable galleries, and proportional scaling while keeping the shared post API across frontends.
 - 2026-03-20：补齐文章媒体真实落盘、按文章目录存储与删除时物理清理，避免空留服务器文件 / Added physical on-disk storage for article media, per-post directories, and deletion cleanup to avoid orphaned server files.

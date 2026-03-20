@@ -30,6 +30,7 @@
 - Vue 从主页导航进入“空间”时保持侧边导航可见，空间首页不再展示空状态卡 / Vue now keeps the sidebar visible when entering “Space” from home navigation, and the space home no longer shows the empty-state card
 - Vue 主页“空间”按钮改为显式空参调用，避免事件对象误判为具体空间 / Vue home “Space” button now uses an explicit no-arg call to avoid misreading the click event as a space object
 - Vue 进入具体空间后改为全宽主容器铺满窗口，避免左侧保留空白列 / Vue specific-space pages now use a full-width main container to avoid leaving a blank left column.
+- Vue 具体空间页进一步改为视口级固定主容器，并通过样式版本号避免浏览器继续命中旧布局缓存 / Vue specific-space pages now use a viewport-fixed main container, and the stylesheet version is bumped to avoid stale layout caching.
 - 进行中：
   - 内容状态与审核预留
 - 待完成：
