@@ -3327,8 +3327,6 @@ class _IniyouHomeState extends State<IniyouHome> {
         loading: _loading,
         onStartChat: _startChat,
         onOpenProfile: _openProfile,
-        onEnterSpace: _enterSpace,
-        loadFriendSpaces: _api.listUserSpaces,
         onSendMessage: _sendMessage,
         onPickAttachment: _pickChatAttachment,
         onClearAttachment: _clearChatAttachment,

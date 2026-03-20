@@ -152,9 +152,9 @@ Widget buildSpaceView({
                             top: 0,
                             right: 0,
                             child: Material(
-                              color: Theme.of(dialogContext)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
+                              color: Theme.of(
+                                dialogContext,
+                              ).colorScheme.surfaceContainerHighest,
                               shape: const CircleBorder(),
                               elevation: 6,
                               child: IconButton(
@@ -889,8 +889,6 @@ Widget buildChatView({
   required bool loading,
   required ValueChanged<FriendItem> onStartChat,
   required ValueChanged<String> onOpenProfile,
-  required ValueChanged<SpaceItem> onEnterSpace,
-  required Future<List<SpaceItem>> Function(String userId) loadFriendSpaces,
   required VoidCallback onSendMessage,
   required Future<void> Function(String messageType) onPickAttachment,
   required VoidCallback onClearAttachment,
@@ -910,8 +908,6 @@ Widget buildChatView({
     findFriend: (id) => findFriendById(id, friends),
     onStartChat: onStartChat,
     onOpenProfile: onOpenProfile,
-    onEnterSpace: onEnterSpace,
-    loadFriendSpaces: loadFriendSpaces,
     onSendMessage: onSendMessage,
     onPickAttachment: onPickAttachment,
     onClearAttachment: onClearAttachment,

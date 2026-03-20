@@ -55,8 +55,6 @@ class ChatView extends StatefulWidget {
     required this.findFriend,
     required this.onStartChat,
     required this.onOpenProfile,
-    required this.onEnterSpace,
-    required this.loadFriendSpaces,
     required this.onSendMessage,
     required this.onPickAttachment,
     required this.onClearAttachment,
@@ -76,8 +74,6 @@ class ChatView extends StatefulWidget {
   final FriendItem? Function(String id) findFriend;
   final ValueChanged<FriendItem> onStartChat;
   final ValueChanged<String> onOpenProfile;
-  final ValueChanged<SpaceItem> onEnterSpace;
-  final Future<List<SpaceItem>> Function(String userId) loadFriendSpaces;
   final VoidCallback onSendMessage;
   final Future<void> Function(String messageType) onPickAttachment;
   final VoidCallback onClearAttachment;
@@ -101,7 +97,8 @@ class _ChatViewState extends State<ChatView> {
   void didUpdateWidget(covariant ChatView oldWidget) {
     super.didUpdateWidget(oldWidget);
     final activeChatChanged = oldWidget.activeChat?.id != widget.activeChat?.id;
-    final messageChanged = oldWidget.messages.length != widget.messages.length ||
+    final messageChanged =
+        oldWidget.messages.length != widget.messages.length ||
         (oldWidget.messages.isNotEmpty &&
             widget.messages.isNotEmpty &&
             oldWidget.messages.last.id != widget.messages.last.id);
@@ -171,7 +168,8 @@ class _ChatViewState extends State<ChatView> {
     final value = controller.value;
     final text = value.text;
     final selection = value.selection;
-    final hasSelection = selection.isValid &&
+    final hasSelection =
+        selection.isValid &&
         selection.start >= 0 &&
         selection.end >= 0 &&
         selection.start <= text.length &&
@@ -185,295 +183,85 @@ class _ChatViewState extends State<ChatView> {
     );
   }
 
-  Future<void> _openFriendProfile(BuildContext context, FriendItem friend) async {
+  Future<void> _openFriendProfile(
+    BuildContext context,
+    FriendItem friend,
+  ) async {
     if (!mounted) {
       return;
     }
-    // Start loading spaces immediately so the dialog can open without waiting on the network.
-    // 立即开始加载空间，让弹层无需等待网络返回即可打开。
-    Future<List<SpaceItem>> friendSpacesFuture = widget.loadFriendSpaces(
-      friend.id,
-    );
+    // Keep the chat preview lightweight so opening it on web does not trigger a heavy space-list rebuild.
+    // 将聊天里的好友预览保持为轻量级，避免在 Web 端打开时触发沉重的空间列表重绘。
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        // Close the friend-profile dialog before switching spaces.
-        // 进入好友空间前先关闭好友资料弹窗，避免遮挡空间页。
-        void closeDialog() {
-          Navigator.of(dialogContext, rootNavigator: true).pop();
-        }
-
-        void reloadFriendSpaces(StateSetter setDialogState) {
-          // Retry without dismissing the dialog if the first fetch fails.
-          // 如果首次加载失败，在不关闭弹层的情况下重试。
-          setDialogState(() {
-            friendSpacesFuture = widget.loadFriendSpaces(friend.id);
-          });
-        }
-
         final theme = Theme.of(dialogContext);
-        // Keep the profile modal scrollable on compact screens so long space lists never clip the CTA.
-        // 让资料弹层在紧凑屏幕下可滚动，避免长空间列表把进入按钮挤出可视区。
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 24,
-              ),
-              scrollable: true,
-              title: Text(_l('好友资料', 'Friend profile', '好友資料')),
-              content: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: FutureBuilder<List<SpaceItem>>(
-                  future: friendSpacesFuture,
-                  builder: (context, snapshot) {
-                    final friendSpaces =
-                        snapshot.data ?? const <SpaceItem>[];
-                    final loadingSpaces =
-                        snapshot.connectionState == ConnectionState.waiting;
-                    final loadingError = snapshot.hasError;
-
-                    Widget buildSummaryCard() {
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                friend.displayName,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  Chip(
-                                    label: Text(
-                                      '${_l('状态', 'Status', '狀態')}: ${friend.status}',
-                                    ),
-                                  ),
-                                  Chip(
-                                    label: Text(
-                                      '${_l('方向', 'Direction', '方向')}: ${friend.direction}',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                '${_l('用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : _l('暂无', 'N/A', '暫無')}',
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '${_l('联系方式', 'Contact', '聯絡方式')}: ${friend.secondary}',
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                _l(
-                                  '这里集中展示好友资料和公开空间入口。',
-                                  'This panel combines the friend summary with public-space entry points.',
-                                  '這裡集中展示好友資料和公開空間入口。',
-                                ),
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    Widget buildSpacesCard() {
-                      Widget body;
-                      if (loadingSpaces) {
-                        body = Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2.2),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  _l(
-                                    '正在加载公开空间...',
-                                    'Loading public spaces...',
-                                    '正在載入公開空間...',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else if (loadingError) {
-                        body = Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _l(
-                                  '加载空间失败，请稍后重试。',
-                                  'Failed to load spaces. Please try again later.',
-                                  '載入空間失敗，請稍後重試。',
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              BilingualActionButton(
-                                variant: BilingualButtonVariant.tonal,
-                                compact: true,
-                                onPressed: () => reloadFriendSpaces(setDialogState),
-                                primaryLabel: _l('重试', 'Retry', '重試'),
-                                secondaryLabel: 'Retry',
-                              ),
-                            ],
-                          ),
-                        );
-                      } else if (friendSpaces.isEmpty) {
-                        body = Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: Text(
-                            _l(
-                              '对方还没有公开空间。',
-                              'This friend has no public spaces yet.',
-                              '對方還沒有公開空間。',
-                            ),
-                          ),
-                        );
-                      } else {
-                        body = Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: friendSpaces
-                              .map(
-                                (space) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(14),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            space.name,
-                                            style: theme.textTheme.titleSmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(space.description),
-                                          const SizedBox(height: 6),
-                                          Text('@${space.subdomain}'),
-                                          const SizedBox(height: 10),
-                                          BilingualActionButton(
-                                            variant: BilingualButtonVariant.tonal,
-                                            compact: true,
-                                            onPressed: () {
-                                              closeDialog();
-                                              widget.onEnterSpace(space);
-                                            },
-                                            primaryLabel: _l(
-                                              '进入空间',
-                                              'Enter space',
-                                              '進入空間',
-                                            ),
-                                            secondaryLabel: 'Enter space',
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        );
-                      }
-
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _l('对方空间', 'Friend spaces', '對方空間'),
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _l(
-                                  '这里只显示对方公开的空间和进入入口。',
-                                  'Only public spaces and entry points are shown here.',
-                                  '這裡只顯示對方公開的空間與進入入口。',
-                                ),
-                                style: theme.textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: 12),
-                              body,
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        final useTwoColumns = constraints.maxWidth >= 640;
-                        final summaryCard = buildSummaryCard();
-                        final spacesCard = buildSpacesCard();
-                        if (useTwoColumns) {
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: summaryCard),
-                              const SizedBox(width: 16),
-                              Expanded(flex: 2, child: spacesCard),
-                            ],
-                          );
-                        }
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            summaryCard,
-                            const SizedBox(height: 16),
-                            spacesCard,
-                          ],
-                        );
-                      },
-                    );
-                  },
+        return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          title: Text(_l('好友资料', 'Friend profile', '好友資料')),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  friend.displayName,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: closeDialog,
-                  child: Text(_l('关闭', 'Close', '關閉')),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Chip(
+                      label: Text(
+                        '${_l('状态', 'Status', '狀態')}: ${friend.status}',
+                      ),
+                    ),
+                    Chip(
+                      label: Text(
+                        '${_l('方向', 'Direction', '方向')}: ${friend.direction}',
+                      ),
+                    ),
+                  ],
                 ),
-                FilledButton(
-                  onPressed: () {
-                    closeDialog();
-                    widget.onOpenProfile(friend.id);
-                  },
-                  child: Text(_l('查看主页', 'Open profile', '查看主頁')),
+                const SizedBox(height: 16),
+                Text(
+                  '${_l('用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : _l('暂无', 'N/A', '暫無')}',
+                ),
+                const SizedBox(height: 6),
+                Text('${_l('联系方式', 'Contact', '聯絡方式')}: ${friend.secondary}'),
+                const SizedBox(height: 12),
+                Text(
+                  _l(
+                    '这里保留轻量预览，公开空间请打开完整主页查看。',
+                    'This preview stays lightweight; open the full profile to view public spaces.',
+                    '這裡保留輕量預覽，公開空間請打開完整主頁查看。',
+                  ),
+                  style: theme.textTheme.bodySmall,
                 ),
               ],
-            );
-          },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(_l('关闭', 'Close', '關閉')),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                widget.onOpenProfile(friend.id);
+              },
+              child: Text(_l('查看主页', 'Open profile', '查看主頁')),
+            ),
+          ],
         );
       },
     );
@@ -569,7 +357,13 @@ class _ChatViewState extends State<ChatView> {
                   if (widget.conversations.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(_l('还没有会话记录。', 'No conversation history yet.', '還沒有會話記錄。')),
+                      child: Text(
+                        _l(
+                          '还没有会话记录。',
+                          'No conversation history yet.',
+                          '還沒有會話記錄。',
+                        ),
+                      ),
                     ),
                   ...widget.conversations.map((item) {
                     final friend = widget.findFriend(item.peerId);
@@ -612,12 +406,21 @@ class _ChatViewState extends State<ChatView> {
                     );
                   }),
                   const Divider(height: 24),
-                  Text(_l('好友', 'Friends', '好友'), style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    _l('好友', 'Friends', '好友'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   if (widget.acceptedFriends.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(_l('还没有可聊天的好友。', 'No friends available for chat yet.', '還沒有可聊天的好友。')),
+                      child: Text(
+                        _l(
+                          '还没有可聊天的好友。',
+                          'No friends available for chat yet.',
+                          '還沒有可聊天的好友。',
+                        ),
+                      ),
                     ),
                   ...widget.acceptedFriends.map(
                     (friend) => ListTile(
@@ -655,16 +458,26 @@ class _ChatViewState extends State<ChatView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        widget.activeChat?.displayName ?? _l('选择一个好友开始聊天', 'Select a friend to start chatting', '選擇一個好友開始聊天'),
+                        widget.activeChat?.displayName ??
+                            _l(
+                              '选择一个好友开始聊天',
+                              'Select a friend to start chatting',
+                              '選擇一個好友開始聊天',
+                            ),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.activeChat?.secondary ?? _l('选择左侧好友后会加载历史消息。', 'Pick a friend on the left to load conversation history.', '選擇左側好友後會載入歷史訊息。'),
+                        widget.activeChat?.secondary ??
+                            _l(
+                              '选择左侧好友后会加载历史消息。',
+                              'Pick a friend on the left to load conversation history.',
+                              '選擇左側好友後會載入歷史訊息。',
+                            ),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -683,7 +496,8 @@ class _ChatViewState extends State<ChatView> {
                       ),
                       BilingualActionButton(
                         variant: BilingualButtonVariant.outlined,
-                        onPressed: () => _openFriendProfile(context, widget.activeChat!),
+                        onPressed: () =>
+                            _openFriendProfile(context, widget.activeChat!),
                         primaryLabel: _l('查看资料', 'View profile', '查看資料'),
                         secondaryLabel: 'View profile',
                       ),
@@ -719,7 +533,15 @@ class _ChatViewState extends State<ChatView> {
       );
     }
     if (widget.messages.isEmpty) {
-      return Center(child: Text(_l('当前会话还没有消息。', 'No messages in this conversation yet.', '目前會話還沒有訊息。')));
+      return Center(
+        child: Text(
+          _l(
+            '当前会话还没有消息。',
+            'No messages in this conversation yet.',
+            '目前會話還沒有訊息。',
+          ),
+        ),
+      );
     }
 
     return Scrollbar(
@@ -785,10 +607,7 @@ class _ChatViewState extends State<ChatView> {
                 children: [
                   Text(
                     item.createdAtLabel,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                   if (item.expiresAt != null)
                     Text(
@@ -816,9 +635,9 @@ class _ChatViewState extends State<ChatView> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             // Sticker card label / 文字表情卡片标题：仅显示当前语言。
             _l('表情包', 'Sticker', '貼圖'),
@@ -827,9 +646,9 @@ class _ChatViewState extends State<ChatView> {
           const SizedBox(height: 8),
           Text(
             sticker,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -855,13 +674,19 @@ class _ChatViewState extends State<ChatView> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.96),
-                    theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.94),
+                    theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.96,
+                    ),
+                    theme.colorScheme.surfaceContainerLow.withValues(
+                      alpha: 0.94,
+                    ),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.7,
+                  ),
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -895,8 +720,9 @@ class _ChatViewState extends State<ChatView> {
                         tooltip: _l('关闭表情包面板', 'Close sticker panel', '關閉貼圖面板'),
                         onPressed: _closeQuickInsertPanel,
                         style: IconButton.styleFrom(
-                          backgroundColor:
-                              Colors.redAccent.withValues(alpha: 0.12),
+                          backgroundColor: Colors.redAccent.withValues(
+                            alpha: 0.12,
+                          ),
                           foregroundColor: Colors.redAccent,
                         ),
                         icon: const Icon(Icons.close_rounded),
@@ -917,7 +743,10 @@ class _ChatViewState extends State<ChatView> {
                     children: [
                       for (final emoji in _emojiQuickItems)
                         ActionChip(
-                          label: Text(emoji, style: const TextStyle(fontSize: 18)),
+                          label: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 18),
+                          ),
                           onPressed: _canCompose
                               ? () => _insertComposerText(emoji)
                               : null,
@@ -968,10 +797,7 @@ class _ChatViewState extends State<ChatView> {
     );
   }
 
-  Widget _buildComposer(
-    BuildContext context,
-    ChatAttachmentDraft? attachment,
-  ) {
+  Widget _buildComposer(BuildContext context, ChatAttachmentDraft? attachment) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -989,17 +815,23 @@ class _ChatViewState extends State<ChatView> {
               label: Text(_l('表情', 'Emoji', '表情')),
             ),
             FilledButton.tonalIcon(
-              onPressed: _canCompose ? () => widget.onPickAttachment('image') : null,
+              onPressed: _canCompose
+                  ? () => widget.onPickAttachment('image')
+                  : null,
               icon: const Icon(Icons.image_outlined),
               label: Text(_l('图片', 'Image', '圖片')),
             ),
             FilledButton.tonalIcon(
-              onPressed: _canCompose ? () => widget.onPickAttachment('video') : null,
+              onPressed: _canCompose
+                  ? () => widget.onPickAttachment('video')
+                  : null,
               icon: const Icon(Icons.video_library_outlined),
               label: Text(_l('视频', 'Video', '影片')),
             ),
             FilledButton.tonalIcon(
-              onPressed: _canCompose ? () => widget.onPickAttachment('audio') : null,
+              onPressed: _canCompose
+                  ? () => widget.onPickAttachment('audio')
+                  : null,
               icon: const Icon(Icons.mic_none_outlined),
               label: Text(_l('语音', 'Voice', '語音')),
             ),
@@ -1022,8 +854,16 @@ class _ChatViewState extends State<ChatView> {
                 maxLines: 5,
                 decoration: InputDecoration(
                   labelText: _canCompose
-                      ? _l('输入消息或附件说明', 'Type a message or attachment note', '輸入訊息或附件說明')
-                      : _l('先选择好友后再输入消息', 'Select a friend before typing', '先選擇好友後再輸入訊息'),
+                      ? _l(
+                          '输入消息或附件说明',
+                          'Type a message or attachment note',
+                          '輸入訊息或附件說明',
+                        )
+                      : _l(
+                          '先选择好友后再输入消息',
+                          'Select a friend before typing',
+                          '先選擇好友後再輸入訊息',
+                        ),
                 ),
                 onSubmitted: _canCompose ? (_) => widget.onSendMessage() : null,
               ),
