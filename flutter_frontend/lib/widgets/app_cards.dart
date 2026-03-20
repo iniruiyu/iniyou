@@ -1,11 +1,10 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 
 import '../controllers/post_media_actions.dart';
 import '../models/app_models.dart';
 import 'bilingual_action_button.dart';
+import 'post_markdown.dart';
+import 'post_media_gallery.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({
@@ -108,13 +107,19 @@ class PostCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(post.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            if (post.hasMedia) ...[
-              _buildMediaPreview(context),
+            if (post.mediaItems.isNotEmpty) ...[
+              PostMediaGallery(
+                items: post.mediaItems,
+                onOpenAttachment: (attachment) => openPostAttachment(
+                  mediaMime: attachment.mediaMime,
+                  mediaData: attachment.mediaData,
+                ),
+              ),
               const SizedBox(height: 12),
             ],
-            if (post.content.isNotEmpty) Text(post.content),
-            if (post.content.isEmpty && !post.hasMedia)
-              const SizedBox.shrink(),
+            if (post.content.isNotEmpty)
+              PostMarkdownBody(content: post.content),
+            if (post.content.isEmpty && !post.hasMedia) const SizedBox.shrink(),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
@@ -124,8 +129,10 @@ class PostCard extends StatelessWidget {
                   variant: BilingualButtonVariant.tonal,
                   compact: true,
                   onPressed: onLike,
-                  primaryLabel: '${post.likedByMe ? '取消点赞' : '点赞'} · ${post.likesCount}',
-                  secondaryLabel: '${post.likedByMe ? 'Unlike' : 'Like'} · ${post.likesCount}',
+                  primaryLabel:
+                      '${post.likedByMe ? '取消点赞' : '点赞'} · ${post.likesCount}',
+                  secondaryLabel:
+                      '${post.likedByMe ? 'Unlike' : 'Like'} · ${post.likesCount}',
                 ),
                 BilingualActionButton(
                   variant: BilingualButtonVariant.tonal,
@@ -168,92 +175,6 @@ class PostCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildMediaPreview(BuildContext context) {
-    // Render image and short-video attachments with a clear bilingual action.
-    // 将图文和小视频附件分别渲染，并提供清晰的双语操作入口。
-    if (post.isImage) {
-      final bytes = _decodeMediaBytes(post.mediaData);
-      if (bytes != null) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: InkWell(
-            onTap: () => openPostAttachment(
-              mediaMime: post.mediaMime,
-              mediaData: post.mediaData,
-            ),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.memory(
-                bytes,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        );
-      }
-    }
-
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              post.isVideo ? Icons.video_library_outlined : Icons.image_outlined,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    post.mediaName.isNotEmpty ? post.mediaName : '媒体附件',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    post.mediaMime.isNotEmpty
-                        ? '${post.mediaMime} · ${post.mediaType}'
-                        : post.mediaType,
-                  ),
-                  const SizedBox(height: 8),
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    compact: true,
-                    onPressed: () => openPostAttachment(
-                      mediaMime: post.mediaMime,
-                      mediaData: post.mediaData,
-                    ),
-                    primaryLabel: '打开附件',
-                    secondaryLabel: 'Open attachment',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Uint8List? _decodeMediaBytes(String data) {
-    try {
-      return Uint8List.fromList(base64Decode(data));
-    } catch (_) {
-      return null;
-    }
   }
 }
 

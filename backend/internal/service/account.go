@@ -765,7 +765,8 @@ func normalizeAndValidateSpaceSubdomain(db *gorm.DB, requested string, excludeSp
 func DeleteSpace(db *gorm.DB, userID string, spaceID string) error {
 	// Delete one owned space and all its posts.
 	// 删除一个空间及其下属全部文章。
-	return db.Transaction(func(tx *gorm.DB) error {
+	var mediaRefs []postMediaFileRef
+	err := db.Transaction(func(tx *gorm.DB) error {
 		var space models.Space
 		if err := tx.First(&space, "id = ? AND user_id = ?", spaceID, userID).Error; err != nil {
 			return err
@@ -779,14 +780,21 @@ func DeleteSpace(db *gorm.DB, userID string, spaceID string) error {
 		for _, post := range posts {
 			postIDs = append(postIDs, post.ID)
 		}
-		if err := deletePostCascade(tx, postIDs); err != nil {
+		refs, err := deletePostCascade(tx, postIDs)
+		if err != nil {
 			return err
 		}
+		mediaRefs = refs
 		if err := tx.Delete(&space).Error; err != nil {
 			return err
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	cleanupPostMediaFiles(mediaRefs, true)
+	return nil
 }
 
 func MarkLegacySystemSpaces(db *gorm.DB) error {

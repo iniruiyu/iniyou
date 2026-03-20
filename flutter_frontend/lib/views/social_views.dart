@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:archive/archive.dart';
 
 import '../controllers/chat_media_actions.dart';
-import '../controllers/post_media_actions.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import 'view_state_helpers.dart';
@@ -52,6 +51,7 @@ class ProfileView extends StatelessWidget {
     required this.onDeletePost,
     required this.onOpenProfile,
     required this.onOpenPostDetail,
+    required this.onEditPost,
     required this.onEnterSpace,
     required this.languageCode,
     required this.t,
@@ -98,6 +98,7 @@ class ProfileView extends StatelessWidget {
   final ValueChanged<PostItem> onDeletePost;
   final ValueChanged<String> onOpenProfile;
   final ValueChanged<String> onOpenPostDetail;
+  final ValueChanged<PostItem> onEditPost;
   final ValueChanged<SpaceItem> onEnterSpace;
   final String languageCode;
   final String Function(String key) t;
@@ -124,10 +125,9 @@ class ProfileView extends StatelessWidget {
     final hasBlockchain = connectedChains.isNotEmpty;
     // Ensure the blockchain tab is hidden when there are no accounts.
     // 链上账号为空时隐藏对应选项卡。
-    final effectiveTab =
-        !hasBlockchain && profileTab == ProfileTab.blockchain
-            ? ProfileTab.levels
-            : profileTab;
+    final effectiveTab = !hasBlockchain && profileTab == ProfileTab.blockchain
+        ? ProfileTab.levels
+        : profileTab;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -472,6 +472,7 @@ class ProfileView extends StatelessWidget {
           onComment: onCommentPost,
           onOpenAuthor: onOpenProfile,
           onOpenDetail: onOpenPostDetail,
+          onEditPost: onEditPost,
           canEditPost: (post) => user != null && post.userId == user!.id,
           onDeletePost: onDeletePost,
           languageCode: languageCode,
@@ -486,44 +487,24 @@ class PostDetailView extends StatelessWidget {
     super.key,
     required this.user,
     required this.currentPost,
-    required this.loading,
     required this.commentController,
-    required this.editTitleController,
-    required this.editContentController,
-    required this.editAttachment,
-    required this.editVisibility,
-    required this.editStatus,
-    required this.onEditVisibilityChanged,
-    required this.onEditStatusChanged,
-    required this.onPickEditAttachment,
-    required this.onClearEditAttachment,
+    required this.onEditPost,
     required this.onLike,
     required this.onShare,
     required this.onComment,
     required this.onOpenAuthor,
-    required this.onSaveEdits,
     required this.languageCode,
     this.onDeletePost,
   });
 
   final CurrentUser? user;
   final PostItem? currentPost;
-  final bool loading;
   final TextEditingController commentController;
-  final TextEditingController editTitleController;
-  final TextEditingController editContentController;
-  final PostAttachmentDraft? editAttachment;
-  final String editVisibility;
-  final String editStatus;
-  final ValueChanged<String> onEditVisibilityChanged;
-  final ValueChanged<String> onEditStatusChanged;
-  final Future<void> Function(String mediaType) onPickEditAttachment;
-  final VoidCallback onClearEditAttachment;
+  final ValueChanged<PostItem> onEditPost;
   final VoidCallback onLike;
   final VoidCallback onShare;
   final VoidCallback onComment;
   final VoidCallback onOpenAuthor;
-  final VoidCallback onSaveEdits;
   final String languageCode;
   final VoidCallback? onDeletePost;
 
@@ -547,7 +528,6 @@ class PostDetailView extends StatelessWidget {
     final canManagePost =
         user != null &&
         (post.userId == user!.id || post.spaceUserId == user!.id);
-    final currentAttachment = editAttachment;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -558,276 +538,31 @@ class PostDetailView extends StatelessWidget {
           onShare: onShare,
           onComment: onComment,
           onOpenAuthor: onOpenAuthor,
+          onEdit: canManagePost ? () => onEditPost(post) : null,
           onDelete: canManagePost ? onDeletePost : null,
         ),
-        const SizedBox(height: 16),
-        if (canManagePost)
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    localizedText(languageCode, '编辑文章', 'Edit post', '編輯文章'),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: editTitleController,
-                    decoration: InputDecoration(
-                      labelText: localizedText(
-                        languageCode,
-                        '标题',
-                        'Title',
-                        '標題',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: editContentController,
-                    minLines: 4,
-                    maxLines: 8,
-                    decoration: InputDecoration(
-                      labelText: localizedText(
-                        languageCode,
-                        '内容',
-                        'Content',
-                        '內容',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: loading
-                            ? null
-                            : () => onPickEditAttachment('image'),
-                        primaryLabel: localizedText(
-                          languageCode,
-                          '添加图片',
-                          'Add image',
-                          '新增圖片',
-                        ),
-                        secondaryLabel: 'Add image',
-                      ),
-                      BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: loading
-                            ? null
-                            : () => onPickEditAttachment('video'),
-                        primaryLabel: localizedText(
-                          languageCode,
-                          '添加小视频',
-                          'Add short video',
-                          '新增小影片',
-                        ),
-                        secondaryLabel: 'Add short video',
-                      ),
-                      if (currentAttachment != null)
-                        BilingualActionButton(
-                          variant: BilingualButtonVariant.text,
-                          compact: true,
-                          onPressed: loading ? null : onClearEditAttachment,
-                          primaryLabel: localizedText(
-                            languageCode,
-                            '清除媒体',
-                            'Clear media',
-                            '清除媒體',
-                          ),
-                          secondaryLabel: 'Clear media',
-                        ),
-                    ],
-                  ),
-                  if (currentAttachment != null) ...[
-                    const SizedBox(height: 12),
-                    _EditAttachmentPreview(
-                      attachment: currentAttachment,
-                      languageCode: languageCode,
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      SizedBox(
-                        width: 180,
-                        child: BilingualDropdownField<String>(
-                          primaryLabel: localizedText(
-                            languageCode,
-                            '可见性',
-                            'Visibility',
-                            '可見性',
-                          ),
-                          secondaryLabel: 'Visibility',
-                          value: editVisibility,
-                          items: buildPostVisibilityItems(languageCode),
-                          onChanged: (value) =>
-                              onEditVisibilityChanged(value ?? editVisibility),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 180,
-                        child: BilingualDropdownField<String>(
-                          primaryLabel: localizedText(
-                            languageCode,
-                            '状态',
-                            'Status',
-                            '狀態',
-                          ),
-                          secondaryLabel: 'Status',
-                          value: editStatus,
-                          items: buildPostStatusItems(languageCode),
-                          onChanged: (value) =>
-                              onEditStatusChanged(value ?? editStatus),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    // Save button is separated from the field grid so the layout stays aligned.
-                    // 保存按钮与字段网格分离，避免横向对齐错位。
-                    child: BilingualActionButton(
-                      onPressed: loading ? null : onSaveEdits,
-                      primaryLabel: localizedText(
-                        languageCode,
-                        '保存修改',
-                        'Save changes',
-                        '儲存修改',
-                      ),
-                      secondaryLabel: 'Save changes',
-                    ),
-                  ),
-                ],
+        if (canManagePost) ...[
+          const SizedBox(height: 16),
+          InfoCard(
+            title: localizedText(languageCode, '编辑提示', 'Editing note', '編輯提示'),
+            lines: [
+              localizedText(
+                languageCode,
+                '点击文章卡片右上角的“编辑”会弹出窗口。保存、添加图片/视频和清除媒体都在弹窗内完成。',
+                'Tap the Edit button in the card header to open a modal dialog. Save, add image or video, and clear media all happen inside the dialog.',
+                '點擊文章卡片右上角的「編輯」會彈出視窗。儲存、添加圖片/影片與清除媒體都在彈窗內完成。',
               ),
-            ),
+              localizedText(
+                languageCode,
+                '图片会保持等比例缩放，并限制最大显示尺寸。',
+                'Images keep their aspect ratio and are capped at a maximum display size.',
+                '圖片會保持等比例縮放，並限制最大顯示尺寸。',
+              ),
+            ],
           ),
+        ],
       ],
     );
-  }
-}
-
-class _EditAttachmentPreview extends StatelessWidget {
-  const _EditAttachmentPreview({
-    required this.attachment,
-    required this.languageCode,
-  });
-
-  final PostAttachmentDraft attachment;
-  final String languageCode;
-
-  @override
-  Widget build(BuildContext context) {
-    if (attachment.isImage) {
-      final bytes = _decodeMediaBytes(attachment.mediaData);
-      if (bytes != null) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: InkWell(
-            onTap: () => openPostAttachment(
-              mediaMime: attachment.mediaMime,
-              mediaData: attachment.mediaData,
-            ),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.memory(
-                bytes,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        );
-      }
-    }
-
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              attachment.isVideo
-                  ? Icons.video_library_outlined
-                  : Icons.image_outlined,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    attachment.mediaName.isNotEmpty
-                        ? attachment.mediaName
-                        : localizedText(
-                            languageCode,
-                            '媒体附件',
-                            'Media attachment',
-                            '媒體附件',
-                          ),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    attachment.mediaMime.isNotEmpty
-                        ? '${attachment.mediaMime} · ${attachment.sizeLabel}'
-                        : attachment.sizeLabel,
-                  ),
-                  const SizedBox(height: 8),
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    compact: true,
-                    onPressed: () => openPostAttachment(
-                      mediaMime: attachment.mediaMime,
-                      mediaData: attachment.mediaData,
-                    ),
-                    primaryLabel: localizedText(
-                      languageCode,
-                      '打开附件',
-                      'Open attachment',
-                      '開啟附件',
-                    ),
-                    secondaryLabel: 'Open attachment',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-Uint8List? _decodeMediaBytes(String data) {
-  try {
-    return Uint8List.fromList(base64Decode(data));
-  } catch (_) {
-    return null;
   }
 }
 

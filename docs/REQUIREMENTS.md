@@ -113,6 +113,7 @@
 - 查看聊天列表
 - 查看聊天消息
 - 发送聊天消息
+- 后端需要将文章媒体真实落盘到可配置目录，并在文章删除、空间删除或媒体替换时物理删除不用的文件 / The backend must persist article media to a configurable on-disk directory and physically delete unused files when posts, spaces, or attachments are removed or replaced.
 
 ### 5.3 空间相关
 
@@ -125,10 +126,11 @@
 - 前端创建空间和发布内容时应使用单一按钮打开弹窗，再在弹窗内完成表单操作
 - 空间内容页需要展示当前空间和空间内容流，并支持图文与小视频附件发布 / The space content page should show the current space and the feed, and support image plus short-video attachments.
   - 空间内容页不再重复展示个人空间列表，空间列表入口保留在首页与个人主页 / The space content page should not repeat the owned-space list; the space list entry stays on the home and profile pages.
-  - Vue 空间页进入后应默认展开工作台与“我的空间”内容，避免先显示空壳层 / Vue space pages should default to an expanded workspace and “My spaces” content instead of showing an empty shell first.
+  - 前端空间页进入后应默认展开工作台与“我的空间”内容，避免先显示空壳层 / Space pages should default to an expanded workspace and “My spaces” content instead of showing an empty shell first.
   - 删除空间后必须立即清理当前空间、空间帖子缓存和发帖下拉选项，空间页在没有有效当前空间时只显示工作台，不再回填已删除空间 / After deleting a space, the current space, space post cache, and composer picker must be cleared immediately, and the space page should show only the workspace when no valid current space remains instead of backfilling the deleted space.
   - 空间内容中的图片和视频需要保持原始比例显示，图片上传应尽量先转换为 WebP 格式再提交 / Space content images and videos should keep their original aspect ratio, and image uploads should be converted to WebP when possible before submission.
-  - Vue 文章编辑应使用独立弹窗完成，避免在正文下方内联展开编辑区 / Vue post editing should use a dedicated modal instead of expanding an inline editor below the article.
+  - 空间与文章附件需要支持多图片上传，编辑弹窗内应显示可删除的媒体画廊，提交时只保留当前选中的媒体项，图片文件名应使用随机值避免重名，正文内容优先按 Markdown 语法渲染且双前端保持一致 / Space and post attachments should support multi-image uploads, the edit modal should show a removable media gallery, only currently retained media items should be submitted, image file names should use randomized values to avoid collisions, and article bodies should prefer Markdown rendering with consistent behavior across both frontends.
+  - 前端文章编辑应使用独立弹窗完成，避免在正文下方内联展开编辑区 / Post editing should use a dedicated modal instead of expanding an inline editor below the article.
   - 文章卡片需要支持删除当前用户自己的内容，以及空间创建者删除其空间内内容 / Post cards should support deleting the current user's content, and space creators should be able to delete posts inside their spaces.
 - 变更型操作需要先更新本地状态再刷新服务端数据，删除空间或文章后必须立即清理当前空间与相关缓存，会员等级升级和外部账号变更也要同步更新界面；前端不再保留独立订阅页面或订阅状态对象 / Mutation actions must update local state before refreshing server data; deleting spaces or posts must immediately clear the current space and related caches, membership-level upgrades and external-account changes must update the UI at once, and the frontend must no longer keep a separate subscription page or subscription state object.
 - 评论需要支持楼中楼回复 / Comments should support threaded replies.
@@ -256,6 +258,7 @@
 - 数据模型要避免把未来扩展能力硬编码进当前单一结构
 - 前后端都应采用可扩展的模块边界
 - 前后端必须分离，保证系统职责清晰
+- Flutter 前端与 Legacy Web 前端共用同一套后端 RESTful API，接口变更必须同步检查双端兼容性
 - 后端实现尽量采用纯 Go 方案，避免因 CGO 影响构建与扩展
 - 代码实现阶段应保持清晰注释，关键部分采用英文中文双语注释
 - 多语言实现应采用可扩展字典结构，避免把文案散落硬编码在页面逻辑中
@@ -275,15 +278,21 @@
 
 ## 12. 变更日志
 
+### 2026-03-20
+
+- 统一 Flutter 与 Legacy Web 的后端接口口径，并补齐文章编辑弹窗、媒体清除和图片等比缩放要求 / Aligned Flutter and Legacy Web on a shared backend API, and added post-edit modal behavior, media clearing, and proportional image scaling requirements.
+- 补齐 Vue 端文章多图上传、随机文件名、可删除画廊与等比缩放要求，并确保未选中的媒体不会再次提交 / Added Vue multi-image upload, randomized file names, removable galleries, and proportional scaling requirements, and ensured deselected media is not submitted again.
+- 补充文章媒体真实落盘、更新替换清理与删除时物理删除要求 / Added physical media persistence and cleanup requirements for article media during updates and deletions.
+
 ### 2026-03-19
 
 - Flutter 发布文章时，非 Web 端必须接入真实附件选择器，不能只保留 stub；文章编辑页也必须共享同一套附件状态、预览与清除能力，避免出现“发布能选、编辑不能改”的断链问题 / Flutter post publishing must use a real attachment picker on non-web platforms instead of a stub only; the post editor must share the same attachment state, preview, and clear actions to avoid split workflows where publish works but edit does not.
-- Vue 进入空间时，空间标题与页面说明必须兼容普通字符串和多语言对象，不能直接假设存在 `zh-CN` 键；类似解析函数要先做空值与类型检查，避免直接点“空间”时因标题计算崩溃 / When Vue enters Space, the space title and subtitle must tolerate both plain strings and multilingual objects and must not assume a `zh-CN` key exists; parsing helpers should guard against nulls and types so clicking Space never crashes on title computation.
+- 前端进入空间时，空间标题与页面说明必须兼容普通字符串和多语言对象，不能直接假设存在 `zh-CN` 键；类似解析函数要先做空值与类型检查，避免直接点“空间”时因标题计算崩溃 / When the frontend enters Space, the space title and subtitle must tolerate both plain strings and multilingual objects and must not assume a `zh-CN` key exists; parsing helpers should guard against nulls and types so clicking Space never crashes on title computation.
 - 收口空间相关界面文案为当前语言单语显示，不再同时展示中文和英文 / Collapsed space-related UI labels to the active language only instead of showing bilingual text side by side.
 - 在聊天界面新增好友资料弹窗，支持查看资料并跳转到完整个人主页 / Added a friend profile modal in chat so users can review details and jump to the full profile page.
 - 空间页改为进入后才显示该空间帖子，并增加当前空间导航与设置区 / The space page now shows posts only after entering a space and includes current-space navigation and settings.
 - 空间页导航按钮改为使用现有导航文案键，避免显示原始 key；Flutter 进入空间后立即拉取帖子，避免依赖手动刷新 / The space-page nav buttons now reuse existing nav translation keys instead of showing raw keys, and Flutter fetches posts immediately after entering a space without requiring a manual refresh.
-- Vue 空间页需要同时展示创建入口与“我的空间”列表，并且帖子流只能跟随已进入的当前空间 / The Vue space page must show both the create entry and “My spaces” list, and the feed must follow only the entered current space.
+- 前端空间页需要同时展示创建入口与“我的空间”列表，并且帖子流只能跟随已进入的当前空间 / The frontend space page must show both the create entry and “My spaces” list, and the feed must follow only the entered current space.
 
 ### 2026-03-18
 

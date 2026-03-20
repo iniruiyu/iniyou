@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,6 +23,7 @@ import 'views/view_state_helpers.dart';
 import 'widgets/bilingual_action_button.dart';
 import 'widgets/bilingual_dropdown_field.dart';
 import 'widgets/bilingual_dropdown_options.dart';
+import 'widgets/post_media_gallery.dart';
 
 void main() {
   runApp(const IniyouApp());
@@ -244,9 +244,12 @@ class _IniyouHomeState extends State<IniyouHome> {
   String _genderVisibility = 'private';
   String _editPostVisibility = 'public';
   String _editPostStatus = 'published';
-  // Attachment draft for the post editor.
-  // 文章编辑器使用的附件草稿。
-  PostAttachmentDraft? _editPostAttachment;
+  // Attachment draft list for the post editor.
+  // 文章编辑器使用的附件草稿列表。
+  List<PostAttachmentDraft> _editPostAttachments = [];
+  // Whether the current edit draft should clear the existing media.
+  // 当前编辑草稿是否需要清除已有媒体。
+  bool _editPostMediaCleared = false;
   AppView _view = AppView.dashboard;
 
   CurrentUser? _user;
@@ -368,11 +371,24 @@ class _IniyouHomeState extends State<IniyouHome> {
     return AppI18n.tr(peerLanguageCode, key);
   }
 
-  PostAttachmentDraft? _draftAttachmentFromPost(PostItem post) {
-    // Rebuild an attachment draft from an existing post so edits can preserve or replace it.
-    // 将已有文章还原为附件草稿，便于编辑时保留或替换媒体。
+  List<PostAttachmentDraft> _draftAttachmentsFromPost(PostItem post) {
+    // Rebuild attachment drafts from an existing post so edits can keep the full gallery.
+    // 将已有文章还原为附件草稿，便于编辑时保留完整画廊。
     if (!post.hasMedia) {
-      return null;
+      return [];
+    }
+    if (post.mediaItems.isNotEmpty) {
+      return post.mediaItems
+          .map(
+            (item) => PostAttachmentDraft(
+              mediaType: item.mediaType,
+              mediaName: item.mediaName,
+              mediaMime: item.mediaMime,
+              mediaData: item.mediaData,
+              originalSizeBytes: item.originalSizeBytes,
+            ),
+          )
+          .toList();
     }
     final inferredMediaType = post.mediaType.isNotEmpty
         ? post.mediaType
@@ -383,13 +399,43 @@ class _IniyouHomeState extends State<IniyouHome> {
     } catch (_) {
       decodedSize = post.mediaData.length;
     }
-    return PostAttachmentDraft(
-      mediaType: inferredMediaType,
-      mediaName: post.mediaName,
-      mediaMime: post.mediaMime,
-      mediaData: post.mediaData,
-      originalSizeBytes: decodedSize,
-    );
+    return [
+      PostAttachmentDraft(
+        mediaType: inferredMediaType,
+        mediaName: post.mediaName,
+        mediaMime: post.mediaMime,
+        mediaData: post.mediaData,
+        originalSizeBytes: decodedSize,
+      ),
+    ];
+  }
+
+  bool _canAppendPostImages(List<PostAttachmentDraft> attachments) {
+    // Only append images when the current draft is already a pure image gallery.
+    // 仅当当前草稿已经是纯图片画廊时才继续追加图片。
+    return attachments.isNotEmpty && attachments.every((item) => item.isImage);
+  }
+
+  void _resetPostEditDraft() {
+    // Reset the post editor state back to an empty draft.
+    // 将文章编辑状态重置为空草稿。
+    _editPostTitleController.clear();
+    _editPostContentController.clear();
+    _editPostVisibility = 'public';
+    _editPostStatus = 'published';
+    _editPostAttachments = [];
+    _editPostMediaCleared = false;
+  }
+
+  void _preparePostEditDraft(PostItem post) {
+    // Load an existing post into the editor draft so the modal can edit it directly.
+    // 将已有文章载入编辑草稿，方便弹窗直接编辑。
+    _editPostTitleController.text = post.title;
+    _editPostContentController.text = post.content;
+    _editPostVisibility = post.visibility;
+    _editPostStatus = post.status;
+    _editPostAttachments = _draftAttachmentsFromPost(post);
+    _editPostMediaCleared = false;
   }
 
   int get _unreadMessageCount =>
@@ -990,74 +1036,12 @@ class _IniyouHomeState extends State<IniyouHome> {
     var selectedSpaceId = effectiveTargetSpace.id;
     var selectedVisibility = 'public';
     var selectedStatus = _publicPostStatus;
-    PostAttachmentDraft? selectedAttachment;
+    final selectedAttachments = <PostAttachmentDraft>[];
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         String? dialogError;
-        Widget buildAttachmentPreview(PostAttachmentDraft attachment) {
-          // Preview the selected post media in the composer dialog.
-          // 在发帖弹窗中预览已选媒体。
-          if (attachment.isImage) {
-            final bytes = Uint8List.fromList(
-              base64Decode(attachment.mediaData),
-            );
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.memory(
-                  bytes,
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            );
-          }
-          return AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.video_library_outlined),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(attachment.mediaName),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${attachment.mediaMime} · ${attachment.sizeLabel}',
-                        ),
-                      ],
-                    ),
-                  ),
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    compact: true,
-                    onPressed: () => openPostAttachment(
-                      mediaMime: attachment.mediaMime,
-                      mediaData: attachment.mediaData,
-                    ),
-                    primaryLabel: _l('打开', 'Open', '開啟'),
-                    secondaryLabel: 'Open',
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
@@ -1169,7 +1153,15 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       return;
                                     }
                                     setDialogState(() {
-                                      selectedAttachment = attachment;
+                                      if (_canAppendPostImages(
+                                        selectedAttachments,
+                                      )) {
+                                        selectedAttachments.add(attachment);
+                                      } else {
+                                        selectedAttachments
+                                          ..clear()
+                                          ..add(attachment);
+                                      }
                                     });
                                   },
                             primaryLabel: _l('添加图片', 'Add image', '新增圖片'),
@@ -1191,7 +1183,9 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       return;
                                     }
                                     setDialogState(() {
-                                      selectedAttachment = attachment;
+                                      selectedAttachments
+                                        ..clear()
+                                        ..add(attachment);
                                     });
                                   },
                             primaryLabel: _l(
@@ -1201,13 +1195,13 @@ class _IniyouHomeState extends State<IniyouHome> {
                             ),
                             secondaryLabel: 'Add short video',
                           ),
-                          if (selectedAttachment != null)
+                          if (selectedAttachments.isNotEmpty)
                             BilingualActionButton(
                               variant: BilingualButtonVariant.text,
                               compact: true,
                               onPressed: () {
                                 setDialogState(() {
-                                  selectedAttachment = null;
+                                  selectedAttachments.clear();
                                 });
                               },
                               primaryLabel: _l('清除媒体', 'Clear media', '清除媒體'),
@@ -1215,9 +1209,22 @@ class _IniyouHomeState extends State<IniyouHome> {
                             ),
                         ],
                       ),
-                      if (selectedAttachment != null) ...[
+                      if (selectedAttachments.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        buildAttachmentPreview(selectedAttachment!),
+                        PostMediaGallery(
+                          items: selectedAttachments,
+                          maxWidth: 560,
+                          singleMaxHeight: 320,
+                          onOpenAttachment: (attachment) => openPostAttachment(
+                            mediaMime: attachment.mediaMime,
+                            mediaData: attachment.mediaData,
+                          ),
+                          onRemoveAttachment: (index) {
+                            setDialogState(() {
+                              selectedAttachments.removeAt(index);
+                            });
+                          },
+                        ),
                       ],
                       const SizedBox(height: 12),
                       BilingualDropdownField<String>(
@@ -1252,7 +1259,7 @@ class _IniyouHomeState extends State<IniyouHome> {
                                         .trim();
                                     if (title.isEmpty ||
                                         (content.isEmpty &&
-                                            selectedAttachment == null)) {
+                                            selectedAttachments.isEmpty)) {
                                       setDialogState(() {
                                         dialogError = _l(
                                           '标题不能为空，内容或媒体至少保留一项',
@@ -1269,11 +1276,331 @@ class _IniyouHomeState extends State<IniyouHome> {
                                       titleController: titleController,
                                       contentController: contentController,
                                       status: selectedStatus,
-                                      attachment: selectedAttachment,
+                                      attachments: selectedAttachments,
                                     );
                                   },
                             primaryLabel: _l('发布内容', 'Publish content', '發布內容'),
                             secondaryLabel: 'Publish content',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openPostEditorDialog(PostItem post) async {
+    // Open the article editor in a dialog so post edits stay in a focused modal flow.
+    // 以弹窗方式打开文章编辑器，让文章修改保持在聚焦的模态流程中。
+    _preparePostEditDraft(post);
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        String? dialogError;
+        final originalAttachments = _editPostAttachments
+            .map(
+              (item) => PostAttachmentDraft(
+                mediaType: item.mediaType,
+                mediaName: item.mediaName,
+                mediaMime: item.mediaMime,
+                mediaData: item.mediaData,
+                originalSizeBytes: item.originalSizeBytes,
+              ),
+            )
+            .toList();
+        var dialogAttachments = List<PostAttachmentDraft>.from(
+          originalAttachments,
+        );
+        var dialogMediaCleared = _editPostMediaCleared;
+
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: StatefulBuilder(
+            builder: (context, setDialogState) {
+              final currentAttachments = List<PostAttachmentDraft>.from(
+                dialogAttachments,
+              );
+              final mediaWasCleared = dialogMediaCleared;
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _l('编辑文章', 'Edit post', '編輯文章'),
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _l(
+                          '在弹窗内修改标题、正文、媒体和状态，保存后会同步到共用后端接口。',
+                          'Edit the title, body, media, and status in this modal, then save to the shared backend API.',
+                          '在彈窗內修改標題、正文、媒體和狀態，儲存後會同步到共用後端介面。',
+                        ),
+                      ),
+                      if (dialogError != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          dialogError!,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _editPostTitleController,
+                        decoration: InputDecoration(
+                          labelText: _l('标题', 'Title', '標題'),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _editPostContentController,
+                        minLines: 4,
+                        maxLines: 8,
+                        decoration: InputDecoration(
+                          labelText: _l('内容', 'Content', '內容'),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            compact: true,
+                            onPressed: _loading
+                                ? null
+                                : () async {
+                                    final attachment = await pickPostAttachment(
+                                      'image',
+                                    );
+                                    if (attachment == null || !mounted) {
+                                      return;
+                                    }
+                                    setDialogState(() {
+                                      if (attachment.isImage &&
+                                          _canAppendPostImages(
+                                            dialogAttachments,
+                                          )) {
+                                        dialogAttachments.add(attachment);
+                                      } else {
+                                        dialogAttachments
+                                          ..clear()
+                                          ..add(attachment);
+                                      }
+                                      dialogMediaCleared = false;
+                                    });
+                                  },
+                            primaryLabel: _l('添加图片', 'Add image', '新增圖片'),
+                            secondaryLabel: 'Add image',
+                          ),
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            compact: true,
+                            onPressed: _loading
+                                ? null
+                                : () async {
+                                    final attachment = await pickPostAttachment(
+                                      'video',
+                                    );
+                                    if (attachment == null || !mounted) {
+                                      return;
+                                    }
+                                    setDialogState(() {
+                                      dialogAttachments
+                                        ..clear()
+                                        ..add(attachment);
+                                      dialogMediaCleared = false;
+                                    });
+                                  },
+                            primaryLabel: _l(
+                              '添加小视频',
+                              'Add short video',
+                              '新增小影片',
+                            ),
+                            secondaryLabel: 'Add short video',
+                          ),
+                          if (currentAttachments.isNotEmpty || mediaWasCleared)
+                            BilingualActionButton(
+                              variant: BilingualButtonVariant.text,
+                              compact: true,
+                              onPressed: _loading
+                                  ? null
+                                  : () {
+                                      setDialogState(() {
+                                        if (mediaWasCleared) {
+                                          dialogAttachments =
+                                              originalAttachments
+                                                  .map(
+                                                    (
+                                                      item,
+                                                    ) => PostAttachmentDraft(
+                                                      mediaType: item.mediaType,
+                                                      mediaName: item.mediaName,
+                                                      mediaMime: item.mediaMime,
+                                                      mediaData: item.mediaData,
+                                                      originalSizeBytes: item
+                                                          .originalSizeBytes,
+                                                    ),
+                                                  )
+                                                  .toList();
+                                          dialogMediaCleared = false;
+                                        } else {
+                                          dialogAttachments.clear();
+                                          dialogMediaCleared = true;
+                                        }
+                                      });
+                                    },
+                              primaryLabel: mediaWasCleared
+                                  ? _l('恢复媒体', 'Restore media', '恢復媒體')
+                                  : _l('清除媒体', 'Clear media', '清除媒體'),
+                              secondaryLabel: mediaWasCleared
+                                  ? 'Restore media'
+                                  : 'Clear media',
+                            ),
+                        ],
+                      ),
+                      if (currentAttachments.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        PostMediaGallery(
+                          items: currentAttachments,
+                          maxWidth: 560,
+                          singleMaxHeight: 320,
+                          onOpenAttachment: (attachment) => openPostAttachment(
+                            mediaMime: attachment.mediaMime,
+                            mediaData: attachment.mediaData,
+                          ),
+                          onRemoveAttachment: (index) {
+                            setDialogState(() {
+                              dialogAttachments.removeAt(index);
+                              dialogMediaCleared = dialogAttachments.isEmpty;
+                            });
+                          },
+                        ),
+                      ] else if (mediaWasCleared) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: Text(
+                            _l(
+                              '当前媒体已清除，保存后会从文章中移除。',
+                              'The current media is cleared and will be removed when you save.',
+                              '目前媒體已清除，儲存後會從文章中移除。',
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          SizedBox(
+                            width: 180,
+                            child: BilingualDropdownField<String>(
+                              primaryLabel: _l('可见性', 'Visibility', '可見性'),
+                              secondaryLabel: 'Visibility',
+                              value: _editPostVisibility,
+                              items: buildPostVisibilityItems(_languageCode),
+                              onChanged: (value) {
+                                setState(() {
+                                  _editPostVisibility =
+                                      value ?? _editPostVisibility;
+                                });
+                                setDialogState(() {});
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 180,
+                            child: BilingualDropdownField<String>(
+                              primaryLabel: _l('状态', 'Status', '狀態'),
+                              secondaryLabel: 'Status',
+                              value: _editPostStatus,
+                              items: buildPostStatusItems(_languageCode),
+                              onChanged: (value) {
+                                setState(() {
+                                  _editPostStatus = value ?? _editPostStatus;
+                                });
+                                setDialogState(() {});
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            primaryLabel: _l('取消', 'Cancel', '取消'),
+                            secondaryLabel: 'Cancel',
+                          ),
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.filled,
+                            onPressed: _loading
+                                ? null
+                                : () async {
+                                    final title = _editPostTitleController.text
+                                        .trim();
+                                    final content = _editPostContentController
+                                        .text
+                                        .trim();
+                                    if (title.isEmpty ||
+                                        (content.isEmpty &&
+                                            currentAttachments.isEmpty)) {
+                                      setDialogState(() {
+                                        dialogError = _l(
+                                          '标题不能为空，内容或媒体至少保留一项',
+                                          'Title cannot be empty; keep at least content or media.',
+                                          '標題不能為空，內容或媒體至少保留一項',
+                                        );
+                                      });
+                                      return;
+                                    }
+                                    setDialogState(() {
+                                      dialogError = null;
+                                    });
+                                    final saved = await _savePostEdits(
+                                      post,
+                                      attachments: dialogAttachments,
+                                      clearMedia: dialogMediaCleared,
+                                    );
+                                    if (!saved || !mounted) {
+                                      return;
+                                    }
+                                    Navigator.of(dialogContext).pop();
+                                  },
+                            primaryLabel: _l('保存修改', 'Save changes', '儲存修改'),
+                            secondaryLabel: 'Save changes',
                           ),
                         ],
                       ),
@@ -1298,10 +1625,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
     setState(() {
       _currentPost = null;
-      _editPostTitleController.clear();
-      _editPostContentController.clear();
-      _editPostVisibility = 'public';
-      _editPostStatus = 'published';
+      _resetPostEditDraft();
       _view = AppView.space;
       _flash = '${_l('已进入空间', 'Entered space', '已進入空間')} · @${space.subdomain}';
       _error = null;
@@ -1318,10 +1642,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _currentSpace = null;
       _spacePosts = const [];
       _currentPost = null;
-      _editPostTitleController.clear();
-      _editPostContentController.clear();
-      _editPostVisibility = 'public';
-      _editPostStatus = 'published';
+      _resetPostEditDraft();
       _activePrivateSpaceId = null;
       _activePublicSpaceId = null;
       _view = AppView.space;
@@ -1689,10 +2010,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
         setState(() {
           _currentPost = null;
-          _editPostTitleController.clear();
-          _editPostContentController.clear();
-          _editPostVisibility = 'public';
-          _editPostStatus = 'published';
+          _resetPostEditDraft();
           _view = AppView.space;
           _flash =
               '${_l('已创建空间', 'Space created', '空間已建立')} · @${result.space.subdomain}';
@@ -1717,10 +2035,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
       setState(() {
         _currentPost = null;
-        _editPostTitleController.clear();
-        _editPostContentController.clear();
-        _editPostVisibility = 'public';
-        _editPostStatus = 'published';
+        _resetPostEditDraft();
         _view = AppView.space;
         _flash =
             '${_l('空间已更新', 'Space updated', '空間已更新')} · @${updated.subdomain}';
@@ -1786,10 +2101,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
         if (currentPostBelongsToSpace) {
           _currentPost = null;
-          _editPostTitleController.clear();
-          _editPostContentController.clear();
-          _editPostVisibility = 'public';
-          _editPostStatus = 'published';
+          _resetPostEditDraft();
           if (_view == AppView.postDetail) {
             _view = AppView.space;
           }
@@ -1852,10 +2164,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         _currentSpace = _resolvedCurrentSpace();
         if (currentPost?.id == post.id) {
           _currentPost = null;
-          _editPostTitleController.clear();
-          _editPostContentController.clear();
-          _editPostVisibility = 'public';
-          _editPostStatus = 'published';
+          _resetPostEditDraft();
           if (_view == AppView.postDetail) {
             _view = AppView.space;
           }
@@ -1875,11 +2184,11 @@ class _IniyouHomeState extends State<IniyouHome> {
     required TextEditingController titleController,
     required TextEditingController contentController,
     required String status,
-    PostAttachmentDraft? attachment,
+    List<PostAttachmentDraft> attachments = const [],
   }) async {
     final title = titleController.text.trim();
     final content = contentController.text.trim();
-    final hasMedia = attachment?.isMedia == true;
+    final hasMedia = attachments.isNotEmpty;
     if (title.isEmpty || (content.isEmpty && !hasMedia)) {
       setState(
         () => _error = _l(
@@ -1898,10 +2207,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         visibility: visibility,
         status: status,
         spaceId: spaceId,
-        mediaType: attachment?.mediaType ?? '',
-        mediaName: attachment?.mediaName ?? '',
-        mediaMime: attachment?.mediaMime ?? '',
-        mediaData: attachment?.mediaData ?? '',
+        mediaItems: attachments,
       );
       titleController.clear();
       contentController.clear();
@@ -2106,15 +2412,10 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (!mounted) {
         return;
       }
-      _editPostTitleController.text = post.title;
-      _editPostContentController.text = post.content;
-      final attachmentDraft = _draftAttachmentFromPost(post);
+      _preparePostEditDraft(post);
       setState(() {
         _currentPost = post;
         _currentSpace = findSpaceById(_spaces, post.spaceId);
-        _editPostVisibility = post.visibility;
-        _editPostStatus = post.status;
-        _editPostAttachment = attachmentDraft;
         _view = AppView.postDetail;
       });
       if (post.spaceId.isNotEmpty) {
@@ -2131,35 +2432,54 @@ class _IniyouHomeState extends State<IniyouHome> {
     await action();
   }
 
-  Future<void> _savePostEdits() async {
-    final post = _currentPost;
-    if (post == null) {
-      return;
+  Future<bool> _savePostEdits(
+    PostItem post, {
+    List<PostAttachmentDraft> attachments = const [],
+    bool? clearMedia,
+  }) async {
+    final title = _editPostTitleController.text.trim();
+    final content = _editPostContentController.text.trim();
+    final draftAttachments = attachments;
+    var shouldClearMedia = clearMedia ?? _editPostMediaCleared;
+    if (draftAttachments.isEmpty && post.hasMedia) {
+      shouldClearMedia = true;
     }
-    final attachment = _editPostAttachment;
+    if (title.isEmpty || (content.isEmpty && draftAttachments.isEmpty)) {
+      if (mounted) {
+        setState(
+          () => _error = _l(
+            '标题不能为空，内容或媒体至少保留一项',
+            'Title cannot be empty; keep at least content or media.',
+            '標題不能為空，內容或媒體至少保留一項',
+          ),
+        );
+      }
+      return false;
+    }
+
+    var success = false;
     await _runBusy(() async {
       final updated = await _api.updatePost(
         id: post.id,
-        title: _editPostTitleController.text.trim(),
-        content: _editPostContentController.text.trim(),
+        title: title,
+        content: content,
         visibility: _editPostVisibility,
         status: _editPostStatus,
         spaceId: post.spaceId,
-        mediaType: attachment?.mediaType ?? '',
-        mediaName: attachment?.mediaName ?? '',
-        mediaMime: attachment?.mediaMime ?? '',
-        mediaData: attachment?.mediaData ?? '',
+        mediaItems: draftAttachments,
+        clearMedia: shouldClearMedia,
       );
       _applyPostUpdate(updated);
+      success = true;
       if (!mounted) {
         return;
       }
       setState(() {
         _currentPost = updated;
-        _editPostAttachment = _draftAttachmentFromPost(updated);
         _flash = '文章已更新';
       });
     });
+    return success;
   }
 
   Future<void> _searchUsers() async {
@@ -2353,26 +2673,6 @@ class _IniyouHomeState extends State<IniyouHome> {
         }
         _flash = '会员等级已更新';
       });
-    });
-  }
-
-  Future<void> _pickEditPostAttachment(String mediaType) async {
-    // Let the editor choose a new attachment using the same picker as publish.
-    // 让编辑器复用与发布一致的附件选择器。
-    final attachment = await pickPostAttachment(mediaType);
-    if (attachment == null || !mounted) {
-      return;
-    }
-    setState(() {
-      _editPostAttachment = attachment;
-    });
-  }
-
-  void _clearEditPostAttachment() {
-    // Remove the current editor attachment so the update can clear media cleanly.
-    // 清除当前编辑附件，以便更新时同步移除媒体。
-    setState(() {
-      _editPostAttachment = null;
     });
   }
 
@@ -2830,6 +3130,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        onEditPost: _openPostEditorDialog,
         languageCode: _languageCode,
       ),
       privateSpace: buildPrivateView(
@@ -2854,6 +3155,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        onEditPost: _openPostEditorDialog,
         languageCode: _languageCode,
       ),
       publicSpace: buildPublicView(
@@ -2878,6 +3180,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        onEditPost: _openPostEditorDialog,
         languageCode: _languageCode,
       ),
       profile: buildProfileView(
@@ -2919,6 +3222,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         onDeletePost: _deletePost,
         onOpenProfile: _openProfile,
         onOpenPostDetail: _openPostDetail,
+        onEditPost: _openPostEditorDialog,
         onEnterSpace: _enterSpace,
         languageCode: _languageCode,
         t: _t,
@@ -2927,24 +3231,13 @@ class _IniyouHomeState extends State<IniyouHome> {
       postDetail: buildPostDetailView(
         user: _user,
         currentPost: _currentPost,
-        loading: _loading,
         commentControllerFor: (postId) =>
             _commentControllers.putIfAbsent(postId, TextEditingController.new),
-        editTitleController: _editPostTitleController,
-        editContentController: _editPostContentController,
-        editAttachment: _editPostAttachment,
-        editVisibility: _editPostVisibility,
-        editStatus: _editPostStatus,
-        onEditVisibilityChanged: (value) =>
-            setState(() => _editPostVisibility = value),
-        onEditStatusChanged: (value) => setState(() => _editPostStatus = value),
-        onPickEditAttachment: _pickEditPostAttachment,
-        onClearEditAttachment: _clearEditPostAttachment,
+        onEditPost: _openPostEditorDialog,
         onToggleLike: _toggleLike,
         onSharePost: _sharePost,
         onCommentPost: _comment,
         onOpenProfile: _openProfile,
-        onSaveEdits: _savePostEdits,
         onDeletePost: _currentPost == null
             ? null
             : () => _deletePost(_currentPost!),

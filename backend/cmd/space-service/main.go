@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,10 @@ func main() {
 	// Space service entrypoint.
 	// 空间服务入口。
 	cfg := config.Load("space")
+	service.SetPostMediaStorageDir(cfg.MediaStorageDir)
+	if err := os.MkdirAll(cfg.MediaStorageDir, 0o755); err != nil {
+		log.Fatalf("media storage dir create error: %v", err)
+	}
 
 	database, err := db.Connect(cfg.DBDsn)
 	if err != nil {

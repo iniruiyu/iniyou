@@ -3,6 +3,7 @@
 ## 1. 文档用途
 
 本文件用于记录当前版本的 RESTful API 草案，作为前后端联调、后端接口实现和前端页面对接的基线文档。
+Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和状态语义都应保持一致。
 
 ## 2. 全局规则
 
@@ -10,6 +11,7 @@
 - 资源命名采用复数名词
 - 请求与响应使用 JSON
 - 接口返回结构保持统一
+- Flutter 前端与 Legacy Web 前端共享同一套后端 RESTful API，接口变更要同时考虑双端兼容
 - 后续新增字段尽量向后兼容
 
 ## 3. 统一响应结构
@@ -181,22 +183,32 @@
 
 - `POST /api/v1/posts`
 - 用途：创建文章
-- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`, `media_type`, `media_name`, `media_mime`, `media_data`
+- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`, `media_type`, `media_name`, `media_mime`, `media_data`, `media_items`
 - 说明：
   - `space_id` 用于记录当前文章所属空间
   - `space_user_id` 应由服务端根据 `space_id` 自动补全
   - 如果前端已进入空间上下文，发布时应优先携带当前空间 ID
   - `visibility` 应与空间可见范围保持一致，避免跨空间发布
   - `media_type` 支持 `image` 和 `video`
-  - `media_data` 为图文或小视频的 base64 载荷
+  - `media_items` 支持按顺序提交多张图片或单个视频，服务端会把第一项同步到旧版单图字段以兼容旧前端
+  - 图片上传前应优先等比缩放并压缩，前端可使用随机文件名避免重名
+  - `media_data` 为图文或小视频的 base64 载荷，仍作为旧版单图字段保留
+  - `MEDIA_STORAGE_DIR` 用于配置文章媒体的真实落盘目录，默认值为 `D:/codeX/iniyou/uploads/space-service`
+  - 服务端会按文章 ID 将媒体写入独立子目录，`media_name` 会被视为服务端存储文件名而不是原始上传名
+  - 文章删除、空间删除以及媒体替换时，服务端会同步物理删除不用的文件
 
 ### 6.7 更新文章
 
 - `PATCH /api/v1/posts/{id}`
 - 用途：更新当前用户自己的文章
-- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`, `media_type`, `media_name`, `media_mime`, `media_data`
+- 请求字段建议：`title`, `content`, `visibility`, `status`, `space_id`, `media_type`, `media_name`, `media_mime`, `media_data`, `media_items`, `clear_media`
 - 状态建议：`draft`, `published`, `hidden`
-- 说明：更新文章时应保持空间归属字段可见，便于前端展示当前内容上下文，媒体字段也应原样回传
+- 说明：更新文章时应保持空间归属字段可见，便于前端展示当前内容上下文，媒体字段也应原样回传；当 `clear_media=true` 时，服务端应显式清除旧媒体，而不是沿用已有媒体
+- 说明补充：
+  - `media_items` 为空且未传 `clear_media=true` 时，服务端会继续沿用现有媒体
+  - `media_items` 非空时，服务端会以数组第一项同步旧版 `media_*` 字段，便于双端兼容
+  - `clear_media=true` 时，服务端会显式清除旧媒体并删除对应磁盘文件
+  - `media_items` 发生替换后，已移除的媒体文件会在保存成功后被物理删除
 
 ### 6.8 删除文章
 
@@ -204,6 +216,7 @@
 - 用途：删除当前用户自己的文章
 - 说明：
   - 删除后应同步清理评论、点赞与转发记录
+  - 删除后应同步清理该文章对应的媒体文件
   - 删除入口应由前端在文章卡片或详情页显式触发
 
 ### 6.9 评论文章
@@ -320,6 +333,7 @@
 - 用途：删除当前用户自己的空间
 - 说明：
   - 删除空间时应级联清理该空间下的文章与互动记录
+  - 删除空间时应同步清理该空间下文章对应的媒体文件
   - 删除后个人空间列表应立即移除该空间
 
 ## 7. 分页与筛选规则
@@ -359,6 +373,11 @@
 - 新增外部账号列表、绑定、解绑接口的当前实现说明
 - 补充外部账号绑定的基础安全校验和解绑状态规则
 - 补充外部账号在主页和资料页的联动展示建议
+
+### 2026-03-20
+
+- 补充文章媒体真实落盘目录配置 `MEDIA_STORAGE_DIR`
+- 明确文章删除、空间删除与媒体替换时会同步物理删除磁盘文件
 
 ### 2026-03-11
 

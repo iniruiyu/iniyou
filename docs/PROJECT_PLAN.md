@@ -50,6 +50,7 @@
 - 承担页面展示与用户交互
 - 承担表单校验和基础状态管理
 - 通过 API 与后端通信
+- Flutter 前端与 Legacy Web 前端共用同一套后端接口，接口变更必须同时兼容双端
 - 不承载后端业务规则
 
 ### 4.3 页面设计要求
@@ -246,6 +247,10 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-20：完成 Flutter 文章编辑弹窗化，补齐 `clear_media` 接口与图片等比缩放，并明确 Flutter/Web 共用同一套后端接口 / Completed Flutter post editing modal flow, added `clear_media` support and proportional image scaling, and confirmed Flutter/Web share the same backend API.
+- 2026-03-20：补齐 Vue 文章多图片上传、随机文件名、可删除画廊与等比缩放，并让前后端继续共用同一套文章接口 / Added Vue multi-image uploads, randomized file names, removable galleries, and proportional scaling while keeping the shared post API across frontends.
+- 2026-03-20：补齐文章媒体真实落盘、按文章目录存储与删除时物理清理，避免空留服务器文件 / Added physical on-disk storage for article media, per-post directories, and deletion cleanup to avoid orphaned server files.
+- 2026-03-20：补齐 Flutter/Vue 文章正文 Markdown 渲染与 Flutter 多图编辑/发布画廊，继续统一双前端文章展示与提交口径 / Added Markdown rendering for article bodies in Flutter and Vue plus Flutter multi-image compose/edit galleries, keeping article display and submission consistent across both frontends.
 - 2026-03-19：修复 Flutter 发布附件在非 Web 端空实现导致的图片/视频失效，并补齐文章编辑的附件按钮、预览与保存对齐 / Fixed Flutter publish attachments failing on non-web builds due to a stub implementation, and added edit attachment buttons, preview, and aligned save actions.
 - 2026-03-17：同步双前端导航与个人主页结构调整 / Synced dual-frontend navigation and profile structure updates.
 - 2026-03-17：收敛首批语言范围并保留 RTL 扩展 / Reduced built-in language scope while reserving RTL extension.

@@ -2,16 +2,18 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
 type Config struct {
-	ServiceName string
-	Port        string
-	DBDsn       string
-	JWTSecret   string
-	TokenTTL    time.Duration
+	ServiceName     string
+	Port            string
+	DBDsn           string
+	JWTSecret       string
+	MediaStorageDir string
+	TokenTTL        time.Duration
 }
 
 func Load(serviceName string) Config {
@@ -33,11 +35,12 @@ func Load(serviceName string) Config {
 	}
 
 	return Config{
-		ServiceName: serviceName,
-		Port:        port,
-		DBDsn:       getenv("DB_DSN", "host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable"),
-		JWTSecret:   getenv("JWT_SECRET", "dev-secret"),
-		TokenTTL:    time.Duration(ttlInt) * time.Minute,
+		ServiceName:     serviceName,
+		Port:            port,
+		DBDsn:           getenv("DB_DSN", "host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable"),
+		JWTSecret:       getenv("JWT_SECRET", "dev-secret"),
+		MediaStorageDir: filepath.Clean(getenv("MEDIA_STORAGE_DIR", filepath.FromSlash("D:/codeX/iniyou/uploads/space-service"))),
+		TokenTTL:        time.Duration(ttlInt) * time.Minute,
 	}
 }
 

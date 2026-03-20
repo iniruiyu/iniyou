@@ -65,6 +65,7 @@ Widget buildSpaceView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required ValueChanged<PostItem> onEditPost,
   required String languageCode,
 }) {
   // Keep the page focused on creator-owned spaces and the active feed.
@@ -306,6 +307,7 @@ Widget buildSpaceView({
                     onCommentPost: onCommentPost,
                     onOpenProfile: onOpenProfile,
                     onOpenPostDetail: onOpenPostDetail,
+                    onEditPost: onEditPost,
                     onDeletePost: onDeletePost,
                   );
             final workspace = _SpaceWorkspaceCard(
@@ -360,6 +362,7 @@ Widget buildPrivateView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required ValueChanged<PostItem> onEditPost,
   required String languageCode,
 }) {
   return Column(
@@ -464,6 +467,7 @@ Widget buildPrivateView({
         onComment: onCommentPost,
         onOpenAuthor: onOpenProfile,
         onOpenDetail: onOpenPostDetail,
+        onEditPost: onEditPost,
         canEditPost: (post) => user != null && post.userId == user.id,
         onDeletePost: onDeletePost,
         languageCode: languageCode,
@@ -490,6 +494,7 @@ Widget buildPublicView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required ValueChanged<PostItem> onEditPost,
   required String languageCode,
 }) {
   return Column(
@@ -583,6 +588,7 @@ Widget buildPublicView({
         onComment: onCommentPost,
         onOpenAuthor: onOpenProfile,
         onOpenDetail: onOpenPostDetail,
+        onEditPost: onEditPost,
         canEditPost: (post) => user != null && post.userId == user.id,
         onDeletePost: onDeletePost,
         languageCode: languageCode,
@@ -625,6 +631,7 @@ Widget buildProfileView({
   required ValueChanged<PostItem> onDeletePost,
   required ValueChanged<String> onOpenProfile,
   required ValueChanged<String> onOpenPostDetail,
+  required ValueChanged<PostItem> onEditPost,
   required ValueChanged<SpaceItem> onEnterSpace,
   required String languageCode,
   required String Function(String key) t,
@@ -672,6 +679,7 @@ Widget buildProfileView({
     onDeletePost: onDeletePost,
     onOpenProfile: onOpenProfile,
     onOpenPostDetail: onOpenPostDetail,
+    onEditPost: onEditPost,
     onEnterSpace: onEnterSpace,
     languageCode: languageCode,
     t: t,
@@ -682,22 +690,12 @@ Widget buildProfileView({
 Widget buildPostDetailView({
   required CurrentUser? user,
   required PostItem? currentPost,
-  required bool loading,
   required TextEditingController Function(String postId) commentControllerFor,
-  required TextEditingController editTitleController,
-  required TextEditingController editContentController,
-  required PostAttachmentDraft? editAttachment,
-  required String editVisibility,
-  required String editStatus,
-  required ValueChanged<String> onEditVisibilityChanged,
-  required ValueChanged<String> onEditStatusChanged,
-  required Future<void> Function(String mediaType) onPickEditAttachment,
-  required VoidCallback onClearEditAttachment,
+  required ValueChanged<PostItem> onEditPost,
   required ValueChanged<PostItem> onToggleLike,
   required ValueChanged<PostItem> onSharePost,
   required ValueChanged<PostItem> onCommentPost,
   required ValueChanged<String> onOpenProfile,
-  required VoidCallback onSaveEdits,
   required VoidCallback? onDeletePost,
   required String languageCode,
 }) {
@@ -705,17 +703,8 @@ Widget buildPostDetailView({
   return PostDetailView(
     user: user,
     currentPost: post,
-    loading: loading,
     commentController: commentControllerFor(post?.id ?? '__missing__'),
-    editTitleController: editTitleController,
-    editContentController: editContentController,
-    editAttachment: editAttachment,
-    editVisibility: editVisibility,
-    editStatus: editStatus,
-    onEditVisibilityChanged: onEditVisibilityChanged,
-    onEditStatusChanged: onEditStatusChanged,
-    onPickEditAttachment: onPickEditAttachment,
-    onClearEditAttachment: onClearEditAttachment,
+    onEditPost: onEditPost,
     onLike: () {
       final current = currentPost;
       if (current != null) {
@@ -740,7 +729,6 @@ Widget buildPostDetailView({
         onOpenProfile(current.userId);
       }
     },
-    onSaveEdits: onSaveEdits,
     onDeletePost: onDeletePost,
     languageCode: languageCode,
   );
@@ -909,6 +897,7 @@ class _SpaceFeedCard extends StatelessWidget {
     required this.onCommentPost,
     required this.onOpenProfile,
     required this.onOpenPostDetail,
+    required this.onEditPost,
     required this.onDeletePost,
   });
 
@@ -924,6 +913,7 @@ class _SpaceFeedCard extends StatelessWidget {
   final ValueChanged<PostItem> onCommentPost;
   final ValueChanged<String> onOpenProfile;
   final ValueChanged<String> onOpenPostDetail;
+  final ValueChanged<PostItem> onEditPost;
   final ValueChanged<PostItem> onDeletePost;
 
   @override
@@ -1009,6 +999,7 @@ class _SpaceFeedCard extends StatelessWidget {
                 onComment: onCommentPost,
                 onOpenAuthor: onOpenProfile,
                 onOpenDetail: onOpenPostDetail,
+                onEditPost: onEditPost,
                 canEditPost: (post) =>
                     currentUserId != null &&
                     (post.userId == currentUserId ||

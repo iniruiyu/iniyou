@@ -147,8 +147,16 @@
 - `media_name`
 - `media_mime`
 - `media_data`
+- `media_items`
 - `status`
 - `visibility`
+
+说明：
+
+- `media_items` 建议以 JSON 字符串保存按顺序排列的媒体数组，支持多图或单视频附件 / `media_items` should be stored as a JSON string containing an ordered media array for multi-image or single-video attachments.
+- `media_name` 保存服务端实际落盘文件名，`media_items` 中的 `media_name` 也应视为用于文件定位与清理的存储名 / `media_name` stores the server-side on-disk filename, and `media_name` inside `media_items` should also be treated as the storage name used for file lookup and cleanup.
+- `media_*` 仍保留为旧版单图兼容字段，并同步第一项媒体信息；服务端会将媒体写入磁盘，同时保留 JSON 载荷以兼容双端 / `media_*` remain as legacy single-media compatibility fields and mirror the first media item; the server writes files to disk while keeping the JSON payload for dual-end compatibility.
+- `content` 建议按 Markdown 语法存储，前端渲染时保持同一套富文本规则 / `content` should preferably be stored as Markdown syntax so both frontends can render it with the same rich-text rules.
 
 ### 4.4 内容与互动域
 
@@ -245,7 +253,7 @@
 - `posts` 与 `comments` 为一对多关系，`comments` 通过 `parent_comment_id` 构成树状回复 / `posts` and `comments` are one-to-many, and `comments` form a threaded reply tree through `parent_comment_id`.
 - `posts` 与 `post_likes` 为一对多关系
 - `posts` 与 `post_shares` 为一对多关系
-- `posts.media_*` 用于承载图文和小视频附件 / `posts.media_*` carries image and short-video attachments.
+- `posts.media_*` 与 `posts.media_items` 一起用于承载图文和小视频附件 / `posts.media_*` and `posts.media_items` together carry image and short-video attachments.
 - `chat_conversations` 与 `chat_participants` 为一对多关系
 - `chat_conversations` 与 `chat_messages` 为一对多关系
 - `chat_messages` 与 `message_reads` 为一对多关系
@@ -335,3 +343,7 @@
 - 为 `posts` 增加 `space_id`，用于记录文章所属空间 / Added `space_id` to `posts` to record content ownership by space.
 - 补充空间与内容之间的一对多关系与索引建议 / Added the one-to-many relation and index guidance between spaces and posts.
 - 补充 `users.username` 作为个人主页与二级域名入口句柄 / Added `users.username` as the profile and subdomain handle.
+
+### 2026-03-20
+
+- 补充文章媒体真实落盘与物理删除的存储语义 / Added storage semantics for physically persisted article media and deletion cleanup.

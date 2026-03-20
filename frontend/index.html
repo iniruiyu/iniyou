@@ -373,7 +373,29 @@
               :secondary-label="peerLocaleText('posts.openDetail')"
               @click="openPostDetail(post.id)"
             ></bilingual-action-button>
-            <div v-if="post.mediaUrl" class="post-media-preview">
+            <div v-if="post.mediaItems && post.mediaItems.length > 1" class="post-media-gallery">
+              <div
+                v-for="(mediaItem, index) in post.mediaItems"
+                :key="`${post.id}-media-${index}`"
+                class="post-media-gallery-item"
+              >
+                <img
+                  v-if="mediaItem.mediaType === 'image'"
+                  :src="mediaItem.mediaUrl"
+                  :alt="mediaItem.mediaName || post.title"
+                />
+                <video
+                  v-else-if="mediaItem.mediaType === 'video'"
+                  :src="mediaItem.mediaUrl"
+                  controls
+                ></video>
+                <div v-else class="post-media-card">
+                  <div class="post-media-title">{{ mediaItem.mediaName || t('posts.mediaPreview') }}</div>
+                  <div class="post-media-sub">{{ mediaItem.mediaMime || mediaItem.mediaType }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="post.mediaUrl" class="post-media-preview">
               <img
                 v-if="post.mediaType === 'image'"
                 :src="post.mediaUrl"
@@ -389,7 +411,7 @@
                 <div class="post-media-sub">{{ post.mediaMime || post.mediaType }}</div>
               </div>
             </div>
-            <div class="post-content">{{ post.content }}</div>
+            <div class="post-content post-content--markdown" v-html="renderPostContent(post.content)"></div>
             <div class="post-actions">
               <bilingual-action-button
                 v-if="canEditPost(post)"
@@ -572,7 +594,29 @@
               :secondary-label="peerLocaleText('posts.openDetail')"
               @click="openPostDetail(post.id)"
             ></bilingual-action-button>
-            <div v-if="post.mediaUrl" class="post-media-preview">
+            <div v-if="post.mediaItems && post.mediaItems.length > 1" class="post-media-gallery">
+              <div
+                v-for="(mediaItem, index) in post.mediaItems"
+                :key="`${post.id}-media-${index}`"
+                class="post-media-gallery-item"
+              >
+                <img
+                  v-if="mediaItem.mediaType === 'image'"
+                  :src="mediaItem.mediaUrl"
+                  :alt="mediaItem.mediaName || post.title"
+                />
+                <video
+                  v-else-if="mediaItem.mediaType === 'video'"
+                  :src="mediaItem.mediaUrl"
+                  controls
+                ></video>
+                <div v-else class="post-media-card">
+                  <div class="post-media-title">{{ mediaItem.mediaName || t('posts.mediaPreview') }}</div>
+                  <div class="post-media-sub">{{ mediaItem.mediaMime || mediaItem.mediaType }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="post.mediaUrl" class="post-media-preview">
               <img
                 v-if="post.mediaType === 'image'"
                 :src="post.mediaUrl"
@@ -588,7 +632,7 @@
                 <div class="post-media-sub">{{ post.mediaMime || post.mediaType }}</div>
               </div>
             </div>
-            <div class="post-content">{{ post.content }}</div>
+            <div class="post-content post-content--markdown" v-html="renderPostContent(post.content)"></div>
             <div class="post-actions">
               <bilingual-action-button
                 v-if="canEditPost(post)"
@@ -800,7 +844,7 @@
               :secondary-label="peerLocaleText('posts.openDetail')"
               @click="openPostDetail(post.id)"
             ></bilingual-action-button>
-            <div class="post-content">{{ post.content }}</div>
+            <div class="post-content post-content--markdown" v-html="renderPostContent(post.content)"></div>
             <div class="post-actions">
               <bilingual-action-button
                 v-if="canEditPost(post)"
@@ -872,7 +916,29 @@
               </div>
             </div>
             <div class="post-title">{{ currentPost.title }}</div>
-            <div v-if="currentPost.mediaUrl" class="post-media-preview">
+            <div v-if="currentPost.mediaItems && currentPost.mediaItems.length > 1" class="post-media-gallery">
+              <div
+                v-for="(mediaItem, index) in currentPost.mediaItems"
+                :key="`${currentPost.id}-media-${index}`"
+                class="post-media-gallery-item"
+              >
+                <img
+                  v-if="mediaItem.mediaType === 'image'"
+                  :src="mediaItem.mediaUrl"
+                  :alt="mediaItem.mediaName || currentPost.title"
+                />
+                <video
+                  v-else-if="mediaItem.mediaType === 'video'"
+                  :src="mediaItem.mediaUrl"
+                  controls
+                ></video>
+                <div v-else class="post-media-card">
+                  <div class="post-media-title">{{ mediaItem.mediaName || t('posts.mediaPreview') }}</div>
+                  <div class="post-media-sub">{{ mediaItem.mediaMime || mediaItem.mediaType }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="currentPost.mediaUrl" class="post-media-preview">
               <img
                 v-if="currentPost.mediaType === 'image'"
                 :src="currentPost.mediaUrl"
@@ -888,7 +954,7 @@
                 <div class="post-media-sub">{{ currentPost.mediaMime || currentPost.mediaType }}</div>
               </div>
             </div>
-            <div class="post-content">{{ currentPost.content }}</div>
+            <div class="post-content post-content--markdown" v-html="renderPostContent(currentPost.content)"></div>
             <div class="post-actions">
               <bilingual-action-button
                 v-if="canEditPost(currentPost)"
@@ -955,7 +1021,7 @@
                       @click="pickPostMedia('edit', 'video')"
                     ></bilingual-action-button>
                     <bilingual-action-button
-                      v-if="editPostDraft.mediaUrl"
+                      v-if="editPostDraft.mediaItems && editPostDraft.mediaItems.length"
                       variant="ghost"
                       compact
                       danger
@@ -965,7 +1031,7 @@
                       @click="clearPostMedia('edit')"
                     ></bilingual-action-button>
                   </div>
-                  <div v-if="editPostDraft.mediaUrl" class="post-media-preview">
+                  <div v-if="editPostDraft.mediaItems && editPostDraft.mediaItems.length === 1" class="post-media-preview">
                     <img
                       v-if="editPostDraft.mediaType === 'image'"
                       :src="editPostDraft.mediaUrl"
@@ -1093,15 +1159,16 @@
             <div class="post-media-tools">
               <div class="post-media-tools-head">
                 <div class="post-media-tools-title">{{ t('posts.mediaPreview') }}</div>
-                <div class="post-media-tools-sub">{{ editPostDraft.mediaName || t('common.notAvailable') }}</div>
+                <div class="post-media-tools-sub">{{ postMediaSummary(editPostDraft) }}</div>
+                <div class="post-media-tools-hint">{{ t('posts.mediaHint') }}</div>
               </div>
               <div class="post-media-actions">
                 <bilingual-action-button
                   variant="ghost"
                   compact
                   type="button"
-                  :primary-label="t('posts.attachImage')"
-                  :secondary-label="peerLocaleText('posts.attachImage')"
+                  :primary-label="canAppendPostImages(editPostDraft) ? t('posts.addMoreImages') : t('posts.attachImage')"
+                  :secondary-label="canAppendPostImages(editPostDraft) ? peerLocaleText('posts.addMoreImages') : peerLocaleText('posts.attachImage')"
                   @click="pickPostMedia('edit', 'image')"
                 ></bilingual-action-button>
                 <bilingual-action-button
@@ -1113,7 +1180,7 @@
                   @click="pickPostMedia('edit', 'video')"
                 ></bilingual-action-button>
                 <bilingual-action-button
-                  v-if="editPostDraft.mediaUrl"
+                  v-if="editPostDraft.mediaItems && editPostDraft.mediaItems.length"
                   variant="ghost"
                   compact
                   danger
@@ -1123,20 +1190,27 @@
                   @click="clearPostMedia('edit')"
                 ></bilingual-action-button>
               </div>
-              <div v-if="editPostDraft.mediaUrl" class="post-media-preview">
-                <img
-                  v-if="editPostDraft.mediaType === 'image'"
-                  :src="editPostDraft.mediaUrl"
-                  :alt="editPostDraft.mediaName || editPostDraft.title"
-                />
-                <video
-                  v-else-if="editPostDraft.mediaType === 'video'"
-                  :src="editPostDraft.mediaUrl"
-                  controls
-                ></video>
-                <div v-else class="post-media-card">
-                  <div class="post-media-title">{{ editPostDraft.mediaName || t('posts.mediaPreview') }}</div>
-                  <div class="post-media-sub">{{ editPostDraft.mediaMime || editPostDraft.mediaType }}</div>
+              <div v-if="editPostDraft.mediaItems && editPostDraft.mediaItems.length > 1" class="post-media-gallery post-media-gallery--editor">
+                <div
+                  v-for="(mediaItem, index) in editPostDraft.mediaItems"
+                  :key="`${editPostDraft.id || 'draft'}-media-${index}`"
+                  class="post-media-gallery-item post-media-gallery-item--editor"
+                >
+                  <button class="post-media-remove" type="button" @click="removePostMediaItem('edit', index)">×</button>
+                  <img
+                    v-if="mediaItem.mediaType === 'image'"
+                    :src="mediaItem.mediaUrl"
+                    :alt="mediaItem.mediaName || editPostDraft.title"
+                  />
+                  <video
+                    v-else-if="mediaItem.mediaType === 'video'"
+                    :src="mediaItem.mediaUrl"
+                    controls
+                  ></video>
+                  <div v-else class="post-media-card">
+                    <div class="post-media-title">{{ mediaItem.mediaName || t('posts.mediaPreview') }}</div>
+                    <div class="post-media-sub">{{ mediaItem.mediaMime || mediaItem.mediaType }}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1521,15 +1595,16 @@
             <div class="post-media-tools">
               <div class="post-media-tools-head">
                 <div class="post-media-tools-title">{{ t('posts.mediaPreview') }}</div>
-                <div class="post-media-tools-sub">{{ postDraft.mediaName || t('common.notAvailable') }}</div>
+                <div class="post-media-tools-sub">{{ postMediaSummary(postDraft) }}</div>
+                <div class="post-media-tools-hint">{{ t('posts.mediaHint') }}</div>
               </div>
               <div class="post-media-actions">
                 <bilingual-action-button
                   variant="ghost"
                   compact
                   type="button"
-                  :primary-label="t('posts.attachImage')"
-                  :secondary-label="peerLocaleText('posts.attachImage')"
+                  :primary-label="canAppendPostImages(postDraft) ? t('posts.addMoreImages') : t('posts.attachImage')"
+                  :secondary-label="canAppendPostImages(postDraft) ? peerLocaleText('posts.addMoreImages') : peerLocaleText('posts.attachImage')"
                   @click="pickPostMedia('create', 'image')"
                 ></bilingual-action-button>
                 <bilingual-action-button
@@ -1541,7 +1616,7 @@
                   @click="pickPostMedia('create', 'video')"
                 ></bilingual-action-button>
                 <bilingual-action-button
-                  v-if="postDraft.mediaUrl"
+                  v-if="postDraft.mediaItems && postDraft.mediaItems.length"
                   variant="ghost"
                   compact
                   danger
@@ -1551,7 +1626,7 @@
                   @click="clearPostMedia('create')"
                 ></bilingual-action-button>
               </div>
-              <div v-if="postDraft.mediaUrl" class="post-media-preview">
+              <div v-if="postDraft.mediaItems && postDraft.mediaItems.length === 1" class="post-media-preview">
                 <img
                   v-if="postDraft.mediaType === 'image'"
                   :src="postDraft.mediaUrl"
@@ -1565,6 +1640,29 @@
                 <div v-else class="post-media-card">
                   <div class="post-media-title">{{ postDraft.mediaName || t('posts.mediaPreview') }}</div>
                   <div class="post-media-sub">{{ postDraft.mediaMime || postDraft.mediaType }}</div>
+                </div>
+              </div>
+              <div v-if="postDraft.mediaItems && postDraft.mediaItems.length > 1" class="post-media-gallery post-media-gallery--editor">
+                <div
+                  v-for="(mediaItem, index) in postDraft.mediaItems"
+                  :key="`draft-media-${index}`"
+                  class="post-media-gallery-item post-media-gallery-item--editor"
+                >
+                  <button class="post-media-remove" type="button" @click="removePostMediaItem('create', index)">×</button>
+                  <img
+                    v-if="mediaItem.mediaType === 'image'"
+                    :src="mediaItem.mediaUrl"
+                    :alt="mediaItem.mediaName || postDraft.title"
+                  />
+                  <video
+                    v-else-if="mediaItem.mediaType === 'video'"
+                    :src="mediaItem.mediaUrl"
+                    controls
+                  ></video>
+                  <div v-else class="post-media-card">
+                    <div class="post-media-title">{{ mediaItem.mediaName || t('posts.mediaPreview') }}</div>
+                    <div class="post-media-sub">{{ mediaItem.mediaMime || mediaItem.mediaType }}</div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -4,6 +4,17 @@ import 'package:http/http.dart' as http;
 
 import '../models/app_models.dart';
 
+List<Map<String, dynamic>> _serializePostMediaItems(
+  List<PostAttachmentDraft> mediaItems,
+) {
+  // Convert post attachments into the shared request payload shape.
+  // 将文章附件转换为共享的请求载荷格式。
+  return mediaItems
+      .where((item) => item.mediaData.isNotEmpty)
+      .map((item) => item.toRequestJson())
+      .toList();
+}
+
 class ApiClient {
   static const String accountBase = String.fromEnvironment(
     'ACCOUNT_API_BASE',
@@ -169,21 +180,47 @@ class ApiClient {
     required String visibility,
     required String status,
     String? spaceId,
+    List<PostAttachmentDraft> mediaItems = const [],
     String mediaType = '',
     String mediaName = '',
     String mediaMime = '',
     String mediaData = '',
   }) async {
+    final payloadItems = _serializePostMediaItems(mediaItems);
+    final hasLegacyMedia =
+        mediaType.trim().isNotEmpty ||
+        mediaName.trim().isNotEmpty ||
+        mediaMime.trim().isNotEmpty ||
+        mediaData.trim().isNotEmpty;
+    final primaryMedia = payloadItems.isNotEmpty
+        ? payloadItems.first
+        : (hasLegacyMedia
+              ? {
+                  'media_type': mediaType.trim(),
+                  'media_name': mediaName.trim(),
+                  'media_mime': mediaMime.trim(),
+                  'media_data': mediaData.trim(),
+                }
+              : null);
     final body = {
       'title': title,
       'content': content,
       'visibility': visibility,
       'status': status,
       if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
-      if (mediaType.trim().isNotEmpty) 'media_type': mediaType.trim(),
-      if (mediaName.trim().isNotEmpty) 'media_name': mediaName.trim(),
-      if (mediaMime.trim().isNotEmpty) 'media_mime': mediaMime.trim(),
-      if (mediaData.trim().isNotEmpty) 'media_data': mediaData.trim(),
+      if (payloadItems.isNotEmpty) 'media_items': payloadItems,
+      if (primaryMedia != null &&
+          (primaryMedia['media_type'] as String).trim().isNotEmpty)
+        'media_type': primaryMedia['media_type'],
+      if (primaryMedia != null &&
+          (primaryMedia['media_name'] as String).trim().isNotEmpty)
+        'media_name': primaryMedia['media_name'],
+      if (primaryMedia != null &&
+          (primaryMedia['media_mime'] as String).trim().isNotEmpty)
+        'media_mime': primaryMedia['media_mime'],
+      if (primaryMedia != null &&
+          (primaryMedia['media_data'] as String).trim().isNotEmpty)
+        'media_data': primaryMedia['media_data'],
     };
     return PostItem.fromJson(await _post(spaceBase, '/posts', body));
   }
@@ -195,21 +232,49 @@ class ApiClient {
     required String visibility,
     required String status,
     String? spaceId,
+    List<PostAttachmentDraft> mediaItems = const [],
     String mediaType = '',
     String mediaName = '',
     String mediaMime = '',
     String mediaData = '',
+    bool clearMedia = false,
   }) async {
+    final payloadItems = _serializePostMediaItems(mediaItems);
+    final hasLegacyMedia =
+        mediaType.trim().isNotEmpty ||
+        mediaName.trim().isNotEmpty ||
+        mediaMime.trim().isNotEmpty ||
+        mediaData.trim().isNotEmpty;
+    final primaryMedia = payloadItems.isNotEmpty
+        ? payloadItems.first
+        : (hasLegacyMedia
+              ? {
+                  'media_type': mediaType.trim(),
+                  'media_name': mediaName.trim(),
+                  'media_mime': mediaMime.trim(),
+                  'media_data': mediaData.trim(),
+                }
+              : null);
     final body = {
       'title': title,
       'content': content,
       'visibility': visibility,
       'status': status,
       if ((spaceId ?? '').trim().isNotEmpty) 'space_id': spaceId!.trim(),
-      if (mediaType.trim().isNotEmpty) 'media_type': mediaType.trim(),
-      if (mediaName.trim().isNotEmpty) 'media_name': mediaName.trim(),
-      if (mediaMime.trim().isNotEmpty) 'media_mime': mediaMime.trim(),
-      if (mediaData.trim().isNotEmpty) 'media_data': mediaData.trim(),
+      if (payloadItems.isNotEmpty) 'media_items': payloadItems,
+      if (primaryMedia != null &&
+          (primaryMedia['media_type'] as String).trim().isNotEmpty)
+        'media_type': primaryMedia['media_type'],
+      if (primaryMedia != null &&
+          (primaryMedia['media_name'] as String).trim().isNotEmpty)
+        'media_name': primaryMedia['media_name'],
+      if (primaryMedia != null &&
+          (primaryMedia['media_mime'] as String).trim().isNotEmpty)
+        'media_mime': primaryMedia['media_mime'],
+      if (primaryMedia != null &&
+          (primaryMedia['media_data'] as String).trim().isNotEmpty)
+        'media_data': primaryMedia['media_data'],
+      if (clearMedia) 'clear_media': true,
     };
     return PostItem.fromJson(await _patch(spaceBase, '/posts/$id', body));
   }

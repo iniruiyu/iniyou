@@ -25,6 +25,12 @@ type createPostRequest struct {
 	MediaName  string `json:"media_name"`
 	MediaMime  string `json:"media_mime"`
 	MediaData  string `json:"media_data"`
+	// MediaItems carries the full gallery payload for multi-image posts.
+	// MediaItems 承载多图文章的完整媒体集合载荷。
+	MediaItems []service.PostMediaItem `json:"media_items"`
+	// ClearMedia explicitly removes the stored media from the post.
+	// ClearMedia 用于显式清除文章已存储的媒体。
+	ClearMedia bool `json:"clear_media"`
 }
 
 type commentRequest struct {
@@ -123,6 +129,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		req.MediaName,
 		req.MediaMime,
 		req.MediaData,
+		req.MediaItems,
 	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -153,6 +160,8 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		req.MediaName,
 		req.MediaMime,
 		req.MediaData,
+		req.MediaItems,
+		req.ClearMedia,
 	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

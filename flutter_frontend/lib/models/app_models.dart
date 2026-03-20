@@ -197,6 +197,7 @@ class PostItem {
     required this.mediaName,
     required this.mediaMime,
     required this.mediaData,
+    required this.mediaItems,
     required this.status,
     required this.visibility,
     required this.likesCount,
@@ -221,6 +222,7 @@ class PostItem {
   final String mediaName;
   final String mediaMime;
   final String mediaData;
+  final List<PostAttachmentDraft> mediaItems;
   final String status;
   final String visibility;
   final int likesCount;
@@ -234,6 +236,9 @@ class PostItem {
   String get mediaUrl {
     // Build a browser-friendly data URL for inline media previews.
     // 构建便于浏览器内联预览的 data URL。
+    if (mediaItems.isNotEmpty) {
+      return mediaItems.first.mediaUrl;
+    }
     if (mediaData.isEmpty) {
       return '';
     }
@@ -241,9 +246,12 @@ class PostItem {
     return 'data:$mime;base64,$mediaData';
   }
 
-  bool get hasMedia => mediaData.isNotEmpty;
-  bool get isImage => mediaType == 'image';
-  bool get isVideo => mediaType == 'video';
+  bool get hasMedia => mediaItems.isNotEmpty || mediaData.isNotEmpty;
+  bool get isImage =>
+      mediaItems.isNotEmpty ? mediaItems.first.isImage : mediaType == 'image';
+  bool get isVideo =>
+      mediaItems.isNotEmpty ? mediaItems.first.isVideo : mediaType == 'video';
+  bool get hasMultipleMedia => mediaItems.length > 1;
 
   String get spaceLabel {
     if (spaceName.isNotEmpty && spaceSubdomain.isNotEmpty) {
@@ -262,6 +270,10 @@ class PostItem {
     final comments = (json['comments'] as List<dynamic>? ?? const [])
         .map((item) => PostComment.fromJson(item as Map<String, dynamic>))
         .toList();
+    final mediaItems = _parsePostAttachmentItems(json);
+    final primaryMedia = mediaItems.isNotEmpty
+        ? mediaItems.first
+        : PostAttachmentDraft.fromJson(json);
     return PostItem(
       id: (json['id'] ?? '').toString(),
       userId: (json['user_id'] ?? '').toString(),
@@ -273,10 +285,13 @@ class PostItem {
       authorName: (json['author_name'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       content: (json['content'] ?? '').toString(),
-      mediaType: (json['media_type'] ?? 'text').toString(),
-      mediaName: (json['media_name'] ?? '').toString(),
-      mediaMime: (json['media_mime'] ?? '').toString(),
-      mediaData: (json['media_data'] ?? '').toString(),
+      mediaType: primaryMedia.mediaType.isNotEmpty
+          ? primaryMedia.mediaType
+          : (json['media_type'] ?? 'text').toString(),
+      mediaName: primaryMedia.mediaName,
+      mediaMime: primaryMedia.mediaMime,
+      mediaData: primaryMedia.mediaData,
+      mediaItems: List.unmodifiable(mediaItems),
       status: (json['status'] ?? 'published').toString(),
       visibility: (json['visibility'] ?? 'public').toString(),
       likesCount: toInt(json['likes_count']),
@@ -289,6 +304,31 @@ class PostItem {
       comments: comments,
     );
   }
+}
+
+List<PostAttachmentDraft> _parsePostAttachmentItems(Map<String, dynamic> json) {
+  // Normalize the shared media_items payload and keep legacy single-media fallback.
+  // 规范化共享的 media_items 载荷，并保留旧版单媒体字段回退。
+  final rawItems = json['media_items'] ?? json['mediaItems'];
+  final parsedItems = <PostAttachmentDraft>[];
+  if (rawItems is List) {
+    for (final rawItem in rawItems) {
+      if (rawItem is! Map) {
+        continue;
+      }
+      final attachment = PostAttachmentDraft.fromJson(
+        rawItem.cast<String, dynamic>(),
+      );
+      if (attachment.mediaData.isNotEmpty) {
+        parsedItems.add(attachment);
+      }
+    }
+  }
+  if (parsedItems.isNotEmpty) {
+    return parsedItems;
+  }
+  final legacyAttachment = PostAttachmentDraft.fromJson(json);
+  return legacyAttachment.mediaData.isNotEmpty ? [legacyAttachment] : [];
 }
 
 class PostComment {
@@ -523,6 +563,31 @@ class PostAttachmentDraft {
   final String mediaData;
   final int originalSizeBytes;
 
+  factory PostAttachmentDraft.fromJson(Map<String, dynamic> json) {
+    // Parse either a backend media item or a legacy single-media payload.
+    // 解析后端媒体项或旧版单媒体载荷。
+    final mediaType = (json['media_type'] ?? json['mediaType'] ?? 'text')
+        .toString();
+    final mediaName = (json['media_name'] ?? json['mediaName'] ?? '')
+        .toString();
+    final mediaMime = (json['media_mime'] ?? json['mediaMime'] ?? '')
+        .toString();
+    final mediaData = (json['media_data'] ?? json['mediaData'] ?? '')
+        .toString();
+    final originalSizeBytes = toInt(
+      json['original_size_bytes'] ?? json['originalSizeBytes'],
+    );
+    return PostAttachmentDraft(
+      mediaType: mediaType,
+      mediaName: mediaName,
+      mediaMime: mediaMime,
+      mediaData: mediaData,
+      originalSizeBytes: originalSizeBytes > 0
+          ? originalSizeBytes
+          : (mediaData.isEmpty ? 0 : _estimateDecodedByteLength(mediaData)),
+    );
+  }
+
   bool get isMedia => mediaType.isNotEmpty;
   bool get isImage => mediaType == 'image';
   bool get isVideo => mediaType == 'video';
@@ -536,6 +601,32 @@ class PostAttachmentDraft {
     final mime = mediaMime.isNotEmpty ? mediaMime : 'application/octet-stream';
     return 'data:$mime;base64,$mediaData';
   }
+
+  Map<String, dynamic> toRequestJson() {
+    // Serialize the attachment back into the shared API payload shape.
+    // 将附件序列化回共享的 API 载荷格式。
+    return {
+      'media_type': mediaType,
+      'media_name': mediaName,
+      'media_mime': mediaMime,
+      'media_data': mediaData,
+    };
+  }
+}
+
+int _estimateDecodedByteLength(String base64Data) {
+  // Estimate decoded byte length from the base64 payload without a second decode.
+  // 不再额外解码时，根据 base64 载荷估算原始字节长度。
+  final normalized = base64Data.trim();
+  if (normalized.isEmpty) {
+    return 0;
+  }
+  final padding = normalized.endsWith('==')
+      ? 2
+      : normalized.endsWith('=')
+      ? 1
+      : 0;
+  return ((normalized.length * 3) ~/ 4) - padding;
 }
 
 // Keep the sticker token set centralized so both chat frontends render it the same way.

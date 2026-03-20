@@ -3,11 +3,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 
 import '../models/app_models.dart';
+
+const int _maxImageDimension = 1600;
 
 Future<PostAttachmentDraft?> pickPostAttachment(String mediaType) async {
   // Use the native file picker so Flutter desktop/mobile can attach media too.
@@ -31,13 +34,54 @@ Future<PostAttachmentDraft?> pickPostAttachment(String mediaType) async {
 
   final mime = _mimeFor(mediaType, file.name);
   final normalizedType = _normalizeMediaType(mediaType, mime, file.name);
+  final preparedImage = normalizedType == 'image'
+      ? await _prepareImageUpload(bytes: bytes, fileName: file.name)
+      : null;
   return PostAttachmentDraft(
     mediaType: normalizedType,
-    mediaName: file.name,
-    mediaMime: mime,
-    mediaData: base64Encode(bytes),
+    mediaName: preparedImage?.fileName ?? file.name,
+    mediaMime: preparedImage?.mime ?? mime,
+    mediaData: base64Encode(preparedImage?.bytes ?? bytes),
     originalSizeBytes: bytes.length,
   );
+}
+
+Future<_PreparedImage?> _prepareImageUpload({
+  required Uint8List bytes,
+  required String fileName,
+}) async {
+  // Resize oversized images before upload so edit and compose flows stay bounded.
+  // 在上传前缩放超大图片，让编辑和发布流程都保持可控。
+  try {
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+    if (image.width <= _maxImageDimension &&
+        image.height <= _maxImageDimension) {
+      return null;
+    }
+
+    final resizedCodec = await ui.instantiateImageCodec(
+      bytes,
+      targetWidth: _maxImageDimension,
+      targetHeight: _maxImageDimension,
+    );
+    final resizedFrame = await resizedCodec.getNextFrame();
+    final byteData = await resizedFrame.image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    if (byteData == null) {
+      return null;
+    }
+
+    return _PreparedImage(
+      fileName: _replaceExtension(fileName, '.png'),
+      mime: 'image/png',
+      bytes: byteData.buffer.asUint8List(),
+    );
+  } catch (_) {
+    return null;
+  }
 }
 
 void openPostAttachment({
@@ -203,4 +247,23 @@ String _normalizeMediaType(String mediaType, String mime, String fileName) {
     return 'video';
   }
   return 'image';
+}
+
+String _replaceExtension(String fileName, String extension) {
+  // Replace the original file extension with a derived one.
+  // 将原始文件扩展名替换为派生扩展名。
+  final baseName = fileName.replaceFirst(RegExp(r'\.[^.]+$'), '');
+  return '${baseName.isEmpty ? 'image' : baseName}$extension';
+}
+
+class _PreparedImage {
+  _PreparedImage({
+    required this.fileName,
+    required this.mime,
+    required this.bytes,
+  });
+
+  final String fileName;
+  final String mime;
+  final Uint8List bytes;
 }

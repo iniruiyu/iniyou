@@ -27,6 +27,284 @@ const CHAT_STICKER_TOKENS = new Set(
   ),
 );
 
+const POST_MEDIA_MAX_DIMENSION = 1600;
+
+function createEmptyPostDraft(overrides = {}) {
+  // Build a blank composer draft with gallery support.
+  // 构建支持媒体集合的空白发布草稿。
+  return {
+    title: '',
+    content: '',
+    visibility: 'public',
+    status: 'published',
+    spaceId: '',
+    mediaType: '',
+    mediaName: '',
+    mediaMime: '',
+    mediaData: '',
+    mediaUrl: '',
+    mediaItems: [],
+    mediaCleared: false,
+    ...overrides,
+  };
+}
+
+function createEmptyEditPostDraft(overrides = {}) {
+  // Build a blank edit draft with gallery support.
+  // 构建支持媒体集合的空白编辑草稿。
+  return {
+    id: '',
+    ...createEmptyPostDraft(),
+    ...overrides,
+  };
+}
+
+function clonePostMediaItems(items) {
+  // Clone a media item array so draft edits never mutate source data.
+  // 克隆媒体项数组，避免编辑草稿直接修改源数据。
+  return Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
+}
+
+function getFileExtension(fileName) {
+  // Extract a file extension from a file name.
+  // 从文件名中提取扩展名。
+  const match = String(fileName || '').trim().match(/(\.[^.]+)$/);
+  return match ? match[1] : '';
+}
+
+function createRandomMediaFileName(extension = '.bin') {
+  // Generate a collision-resistant media file name for uploads.
+  // 生成更不容易重名的媒体文件名。
+  const normalizedExtension = String(extension || '').trim().replace(/^\.+/, '');
+  const safeExtension = normalizedExtension ? `.${normalizedExtension}` : '.bin';
+  const randomPart = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().replace(/-/g, '')
+    : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  return `post-${randomPart}${safeExtension}`;
+}
+
+function escapeHtml(value) {
+  // Escape raw text before it is injected into the markdown renderer.
+  // 在进入 Markdown 渲染器前先转义原始文本，避免注入风险。
+  return String(value ?? '').replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return char;
+    }
+  });
+}
+
+function sanitizeMarkdownUrl(value) {
+  // Keep only safe link targets for markdown-rendered anchors.
+  // 仅保留 Markdown 链接中安全的跳转目标。
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+  try {
+    const parsed = new URL(raw, window.location.href);
+    const protocol = parsed.protocol.toLowerCase();
+    if (
+      protocol === 'http:' ||
+      protocol === 'https:' ||
+      protocol === 'mailto:' ||
+      protocol === 'tel:'
+    ) {
+      return parsed.href;
+    }
+  } catch (_error) {
+    if (raw.startsWith('/') && !raw.startsWith('//')) {
+      return raw;
+    }
+  }
+  return '';
+}
+
+function renderMarkdownInline(value) {
+  // Render lightweight inline markdown with HTML escaping and safe URLs.
+  // 使用轻量级行内 Markdown 渲染，并结合 HTML 转义与安全链接。
+  let text = escapeHtml(value);
+  const codeTokens = [];
+  text = text.replace(/`([^`\n]+)`/g, (_, code) => {
+    codeTokens.push(`<code>${code}</code>`);
+    return `\u0000${codeTokens.length - 1}\u0000`;
+  });
+
+  const linkTokens = [];
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+    const safeUrl = sanitizeMarkdownUrl(url);
+    if (!safeUrl) {
+      return label;
+    }
+    linkTokens.push(
+      `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`,
+    );
+    return `\u0001${linkTokens.length - 1}\u0001`;
+  });
+
+  text = text.replace(/(\*\*|__)(.+?)\1/g, '<strong>$2</strong>');
+  text = text.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+  text = text.replace(/\u0000(\d+)\u0000/g, (_, index) => {
+    return codeTokens[Number(index)] || '';
+  });
+  text = text.replace(/\u0001(\d+)\u0001/g, (_, index) => {
+    return linkTokens[Number(index)] || '';
+  });
+  return text;
+}
+
+function parseMarkdownBlocks(content) {
+  // Split the article body into block-level markdown sections.
+  // 将文章正文拆分成块级 Markdown 结构。
+  const lines = String(content || '').replace(/\r\n?/g, '\n').split('\n');
+  const blocks = [];
+  const paragraphLines = [];
+  let fence = '';
+  let codeLines = [];
+
+  const flushParagraph = () => {
+    if (!paragraphLines.length) {
+      return;
+    }
+    blocks.push({ type: 'paragraph', text: paragraphLines.join('\n') });
+    paragraphLines.length = 0;
+  };
+
+  for (let index = 0; index < lines.length;) {
+    const line = lines[index];
+    const trimmed = line.trim();
+
+    if (fence) {
+      if (trimmed.startsWith(fence)) {
+        blocks.push({ type: 'code', text: codeLines.join('\n') });
+        fence = '';
+        codeLines = [];
+      } else {
+        codeLines.push(line);
+      }
+      index += 1;
+      continue;
+    }
+
+    if (!trimmed) {
+      flushParagraph();
+      index += 1;
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
+    if (headingMatch) {
+      flushParagraph();
+      blocks.push({
+        type: 'heading',
+        level: headingMatch[1].length,
+        text: headingMatch[2] || '',
+      });
+      index += 1;
+      continue;
+    }
+
+    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+      flushParagraph();
+      fence = trimmed.slice(0, 3);
+      codeLines = [];
+      index += 1;
+      continue;
+    }
+
+    if (trimmed.startsWith('>')) {
+      flushParagraph();
+      const quoteLines = [];
+      while (index < lines.length) {
+        const quoteTrimmed = lines[index].trim();
+        if (!quoteTrimmed.startsWith('>')) {
+          break;
+        }
+        quoteLines.push(quoteTrimmed.replace(/^>\s?/, ''));
+        index += 1;
+      }
+      blocks.push({ type: 'quote', text: quoteLines.join('\n') });
+      continue;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*+]\s+(.+)$/);
+    if (unorderedMatch) {
+      flushParagraph();
+      const items = [];
+      while (index < lines.length) {
+        const current = lines[index].trim().match(/^[-*+]\s+(.+)$/);
+        if (!current) {
+          break;
+        }
+        items.push(current[1] || '');
+        index += 1;
+      }
+      blocks.push({ type: 'unorderedList', items });
+      continue;
+    }
+
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+    if (orderedMatch) {
+      flushParagraph();
+      const items = [];
+      while (index < lines.length) {
+        const current = lines[index].trim().match(/^\d+\.\s+(.+)$/);
+        if (!current) {
+          break;
+        }
+        items.push(current[1] || '');
+        index += 1;
+      }
+      blocks.push({ type: 'orderedList', items });
+      continue;
+    }
+
+    paragraphLines.push(line);
+    index += 1;
+  }
+
+  flushParagraph();
+  if (fence) {
+    blocks.push({ type: 'code', text: codeLines.join('\n') });
+  }
+  return blocks;
+}
+
+function renderMarkdownContent(content) {
+  // Convert stored article text into safe HTML for the Vue post body.
+  // 将文章正文转换为安全 HTML，供 Vue 文章内容区显示。
+  const blocks = parseMarkdownBlocks(content);
+  return blocks
+    .map((block) => {
+      switch (block.type) {
+        case 'heading':
+          return `<h${block.level}>${renderMarkdownInline(block.text)}</h${block.level}>`;
+        case 'quote':
+          return `<blockquote><p>${renderMarkdownInline(block.text).replace(/\n/g, '<br>')}</p></blockquote>`;
+        case 'code':
+          return `<pre><code>${escapeHtml(block.text)}</code></pre>`;
+        case 'unorderedList':
+          return `<ul>${(block.items || []).map((item) => `<li>${renderMarkdownInline(item)}</li>`).join('')}</ul>`;
+        case 'orderedList':
+          return `<ol>${(block.items || []).map((item) => `<li>${renderMarkdownInline(item)}</li>`).join('')}</ol>`;
+        case 'paragraph':
+        default:
+          return `<p>${renderMarkdownInline(block.text).replace(/\n/g, '<br>')}</p>`;
+      }
+    })
+    .join('');
+}
+
 const app = createApp({
   data() {
     return {
@@ -387,6 +665,11 @@ const app = createApp({
             attachVideo: '添加小视频',
             clearMedia: '清除媒体',
             mediaPreview: '媒体预览',
+            imageSelected: '张图片',
+            videoSelected: '个视频',
+            imagesSelected: '张图片',
+            addMoreImages: '继续添加图片',
+            mediaHint: '图片会自动等比缩放并转为 WebP，也支持继续添加多张图片。',
           },
           levels: {
             title: '会员等级',
@@ -788,6 +1071,15 @@ const app = createApp({
             statusDraft: 'Draft',
             statusPublished: 'Published',
             statusHidden: 'Hidden',
+            attachImage: 'Add Image',
+            attachVideo: 'Add Video',
+            clearMedia: 'Clear Media',
+            mediaPreview: 'Media Preview',
+            imageSelected: 'image selected',
+            videoSelected: 'video selected',
+            imagesSelected: 'images selected',
+            addMoreImages: 'Add More Images',
+            mediaHint: 'Images are resized proportionally and converted to WebP. You can keep adding more.',
           },
           levels: {
             title: 'Membership Levels',
@@ -1049,33 +1341,10 @@ const app = createApp({
       currentPost: null,
       // Post composer form.
       // 文章发布表单。
-      postDraft: {
-        title: '',
-        content: '',
-        visibility: 'public',
-        status: 'published',
-        spaceId: '',
-        mediaType: '',
-        mediaName: '',
-        mediaMime: '',
-        mediaData: '',
-        mediaUrl: '',
-      },
+      postDraft: createEmptyPostDraft(),
       // Post edit form.
       // 文章编辑表单。
-      editPostDraft: {
-        id: '',
-        title: '',
-        content: '',
-        visibility: 'public',
-        status: 'published',
-        spaceId: '',
-        mediaType: '',
-        mediaName: '',
-        mediaMime: '',
-        mediaData: '',
-        mediaUrl: '',
-      },
+      editPostDraft: createEmptyEditPostDraft(),
       // Posts in the currently open space.
       // 当前打开空间的帖子列表。
       spacePosts: [],
@@ -1424,18 +1693,85 @@ const app = createApp({
       visit('', 0);
       return ordered;
     },
+    mapPostMediaItem(item) {
+      // Normalize one media item from API data into a preview-friendly record.
+      // 将接口中的单个媒体项规范化为便于预览的记录。
+      const mediaName = String(item?.mediaName ?? item?.media_name ?? '').trim();
+      const mediaMime = String(item?.mediaMime ?? item?.media_mime ?? '').trim();
+      const mediaData = String(item?.mediaData ?? item?.media_data ?? '').trim();
+      const rawType = String(item?.mediaType ?? item?.media_type ?? '').trim();
+      let mediaType = this.normalizeAttachmentType(rawType, mediaMime, mediaName);
+      if (mediaType !== 'image' && mediaType !== 'video') {
+        mediaType = mediaData ? 'image' : 'text';
+      }
+      const resolvedMime = this.inferAttachmentMime(mediaType, mediaName, mediaMime);
+      return {
+        mediaType,
+        mediaName,
+        mediaMime: resolvedMime,
+        mediaData,
+        mediaUrl: mediaData ? `data:${resolvedMime};base64,${mediaData}` : '',
+      };
+    },
+    mapPostMediaItems(item) {
+      // Normalize all media items for a post, falling back to legacy single media.
+      // 规范化文章的全部媒体项，并回退到旧版单媒体字段。
+      const rawItems = Array.isArray(item?.media_items) ? item.media_items : [];
+      const normalizedItems = rawItems
+        .map((mediaItem) => this.mapPostMediaItem(mediaItem))
+        .filter((mediaItem) => mediaItem.mediaData);
+      if (normalizedItems.length > 0) {
+        return normalizedItems;
+      }
+      const legacyItem = this.mapPostMediaItem(item);
+      return legacyItem.mediaData ? [legacyItem] : [];
+    },
+    serializePostMediaItemsForRequest(draft) {
+      // Convert the active draft media gallery into the backend payload shape.
+      // 将当前草稿媒体集合转换为后端请求载荷格式。
+      const items = Array.isArray(draft?.mediaItems) ? draft.mediaItems : [];
+      const payloadItems = items
+        .map((item) => this.mapPostMediaItem(item))
+        .filter((mediaItem) => mediaItem.mediaData)
+        .map((mediaItem) => ({
+          media_type: mediaItem.mediaType,
+          media_name: mediaItem.mediaName,
+          media_mime: mediaItem.mediaMime,
+          media_data: mediaItem.mediaData,
+        }));
+      if (payloadItems.length > 0) {
+        return payloadItems;
+      }
+      const mediaData = String(draft?.mediaData || '').trim();
+      if (!mediaData) {
+        return [];
+      }
+      const primary = this.mapPostMediaItem(draft);
+      return [{
+        media_type: primary.mediaType,
+        media_name: primary.mediaName,
+        media_mime: primary.mediaMime,
+        media_data: primary.mediaData,
+      }];
+    },
+    renderPostContent(content) {
+      // Render post body content as safe markdown HTML for feeds and detail pages.
+      // 将文章正文渲染为安全的 Markdown HTML，供信息流与详情页显示。
+      return renderMarkdownContent(content);
+    },
     mapPostItem(item) {
       const spaceName = item.space_name || '';
       const spaceSubdomain = item.space_subdomain || '';
       const spaceType = item.space_type || '';
-      const mediaType = item.media_type || '';
-      const mediaName = item.media_name || '';
-      const mediaMime = item.media_mime || '';
-      const mediaData = item.media_data || '';
+      const mediaItems = this.mapPostMediaItems(item);
+      const primaryMedia = mediaItems[0] || this.mapPostMediaItem(item);
+      const mediaType = primaryMedia.mediaType || '';
+      const mediaName = primaryMedia.mediaName || '';
+      const mediaMime = primaryMedia.mediaMime || '';
+      const mediaData = primaryMedia.mediaData || '';
       const spaceLabel = spaceName && spaceSubdomain
         ? `${spaceName} · @${spaceSubdomain}`
         : spaceName || spaceSubdomain || spaceType || item.visibility || '';
-      const mediaMimeType = mediaMime || this.inferAttachmentMime(mediaType, mediaName, mediaMime);
       return {
         id: item.id,
         userId: item.user_id,
@@ -1452,7 +1788,8 @@ const app = createApp({
         mediaName,
         mediaMime,
         mediaData,
-        mediaUrl: mediaData ? `data:${mediaMimeType};base64,${mediaData}` : '',
+        mediaUrl: primaryMedia.mediaUrl || '',
+        mediaItems,
         status: item.status || 'published',
         visibility: item.visibility || 'public',
         likesCount: Number(item.likes_count || 0),
@@ -1693,66 +2030,98 @@ const app = createApp({
         this.setError(this.t('posts.spaceRequired'));
         return;
       }
-      this.postDraft.title = '';
-      this.postDraft.content = '';
-      this.postDraft.visibility = 'public';
-      this.postDraft.status = 'published';
-      this.postDraft.spaceId = activeSpace.id;
-      this.clearPostMedia('create');
+      this.postDraft = createEmptyPostDraft({ spaceId: activeSpace.id });
       this.postModalOpen = true;
     },
     closePostComposer() {
       // Close the post composer and clear media state.
       // 关闭文章发布弹窗并清理媒体状态。
       this.postModalOpen = false;
-      this.postDraft.title = '';
-      this.postDraft.content = '';
-      this.postDraft.visibility = 'public';
-      this.postDraft.status = 'published';
-      this.postDraft.spaceId = '';
-      this.clearPostMedia('create');
+      this.postDraft = createEmptyPostDraft();
     },
     clearPostMedia(target = 'create') {
       // Clear post media fields for create or edit state.
       // 清空发布态或编辑态的文章媒体字段。
       const draft = target === 'edit' ? this.editPostDraft : this.postDraft;
-      draft.mediaType = '';
-      draft.mediaName = '';
-      draft.mediaMime = '';
-      draft.mediaData = '';
-      draft.mediaUrl = '';
+      if (!draft) {
+        return;
+      }
+      draft.mediaItems = [];
+      this.syncPostMediaDraft(draft, target === 'edit');
     },
     closePostEditor() {
       // Close the post edit dialog and reset the edit draft.
       // 关闭文章编辑弹窗并重置编辑草稿。
       this.postEditModalOpen = false;
-      this.editPostDraft = {
-        id: '',
-        title: '',
-        content: '',
-        visibility: 'public',
-        status: 'published',
-        spaceId: '',
-        mediaType: '',
-        mediaName: '',
-        mediaMime: '',
-        mediaData: '',
-        mediaUrl: '',
-      };
+      this.editPostDraft = createEmptyEditPostDraft();
     },
-    replaceFileExtension(fileName, nextExtension) {
-      // Replace a file extension when deriving a new media asset name.
-      // 在派生媒体文件名时替换扩展名。
-      const baseName = String(fileName || '').replace(/\.[^.]+$/, '');
-      return `${baseName || 'image'}${nextExtension}`;
+    postMediaSummary(draft) {
+      // Summarize the current post media selection for the composer.
+      // 汇总发布草稿中的媒体选择内容。
+      const items = Array.isArray(draft?.mediaItems) ? draft.mediaItems : [];
+      if (!items.length) {
+        return this.t('common.notAvailable');
+      }
+      if (items.length === 1) {
+        const [single] = items;
+        if (String(single?.mediaType || '') === 'image') {
+          return `1 ${this.t('posts.imageSelected')}`;
+        }
+        if (String(single?.mediaType || '') === 'video') {
+          return `1 ${this.t('posts.videoSelected')}`;
+        }
+        return single?.mediaName || this.t('posts.mediaPreview');
+      }
+      return `${items.length} ${this.t('posts.imagesSelected')}`;
+    },
+    canAppendPostImages(draft) {
+      // Allow appending only when the current draft is already an image gallery.
+      // 仅当当前草稿已经是图片画廊时才允许继续追加图片。
+      const items = Array.isArray(draft?.mediaItems) ? draft.mediaItems : [];
+      return items.length > 0 && items.every((item) => String(item.mediaType || '') === 'image');
+    },
+    syncPostMediaDraft(draft, preserveCleared = false) {
+      // Mirror the first media item into the legacy single-media fields.
+      // 将首个媒体项同步到旧版单媒体字段。
+      if (!draft) {
+        return;
+      }
+      const items = Array.isArray(draft.mediaItems) ? draft.mediaItems : [];
+      const primary = items[0] || null;
+      if (primary) {
+        draft.mediaType = primary.mediaType || '';
+        draft.mediaName = primary.mediaName || '';
+        draft.mediaMime = primary.mediaMime || '';
+        draft.mediaData = primary.mediaData || '';
+        draft.mediaUrl = primary.mediaUrl || (
+          draft.mediaData
+            ? `data:${draft.mediaMime || 'application/octet-stream'};base64,${draft.mediaData}`
+            : ''
+        );
+        draft.mediaCleared = false;
+        return;
+      }
+      draft.mediaType = '';
+      draft.mediaName = '';
+      draft.mediaMime = '';
+      draft.mediaData = '';
+      draft.mediaUrl = '';
+      draft.mediaCleared = Boolean(preserveCleared);
+    },
+    removePostMediaItem(target = 'create', index = 0) {
+      // Remove one media item from the active draft.
+      // 从当前草稿中移除一个媒体项。
+      const draft = target === 'edit' ? this.editPostDraft : this.postDraft;
+      if (!draft || !Array.isArray(draft.mediaItems)) {
+        return;
+      }
+      draft.mediaItems = draft.mediaItems.filter((_, itemIndex) => itemIndex !== index);
+      this.syncPostMediaDraft(draft, target === 'edit' && draft.mediaItems.length === 0);
     },
     async compressImageToWebp(file) {
-      // Convert a picked image into WebP before upload when possible.
-      // 尽量在上传前将选中的图片转换为 WebP。
+      // Convert a picked image into a scaled WebP payload before upload.
+      // 尽量在上传前将选中的图片缩放并转换为 WebP。
       if (!file || !String(file.type || '').startsWith('image/')) {
-        return null;
-      }
-      if (file.type === 'image/webp') {
         return null;
       }
       const objectUrl = URL.createObjectURL(file);
@@ -1763,23 +2132,38 @@ const app = createApp({
           img.onerror = () => reject(new Error('image load failed'));
           img.src = objectUrl;
         });
+        const naturalWidth = image.naturalWidth || image.width || 0;
+        const naturalHeight = image.naturalHeight || image.height || 0;
+        if (!naturalWidth || !naturalHeight) {
+          return null;
+        }
+        const longestEdge = Math.max(naturalWidth, naturalHeight);
+        const scale = longestEdge > POST_MEDIA_MAX_DIMENSION
+          ? POST_MEDIA_MAX_DIMENSION / longestEdge
+          : 1;
+        const targetWidth = Math.max(1, Math.round(naturalWidth * scale));
+        const targetHeight = Math.max(1, Math.round(naturalHeight * scale));
         const canvas = document.createElement('canvas');
-        canvas.width = image.naturalWidth || image.width;
-        canvas.height = image.naturalHeight || image.height;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
         const context = canvas.getContext('2d');
         if (!context) {
           return null;
         }
-        context.drawImage(image, 0, 0);
-        const dataUrl = canvas.toDataURL('image/webp', 1);
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'high';
+        context.drawImage(image, 0, 0, targetWidth, targetHeight);
+        const dataUrl = canvas.toDataURL('image/webp', 0.92);
         const commaIndex = dataUrl.indexOf(',');
         if (commaIndex < 0) {
           return null;
         }
         return {
-          mediaName: this.replaceFileExtension(file.name, '.webp'),
+          mediaType: 'image',
+          mediaName: createRandomMediaFileName('.webp'),
           mediaMime: 'image/webp',
           mediaData: dataUrl.slice(commaIndex + 1),
+          mediaUrl: dataUrl,
         };
       } catch (_error) {
         return null;
@@ -1787,53 +2171,72 @@ const app = createApp({
         URL.revokeObjectURL(objectUrl);
       }
     },
+    async buildPostVideoMediaItem(file) {
+      // Convert a picked video into a post media item without re-encoding.
+      // 将选中的视频转换为文章媒体项，不重新编码。
+      if (!file || !String(file.type || '').startsWith('video/')) {
+        return null;
+      }
+      const bytes = await file.arrayBuffer();
+      const inferredMime = this.inferAttachmentMime('video', file.name, file.type || '');
+      const extension = getFileExtension(file.name) || '.mp4';
+      const mediaData = this.bytesToBase64(new Uint8Array(bytes));
+      return {
+        mediaType: 'video',
+        mediaName: createRandomMediaFileName(extension),
+        mediaMime: inferredMime,
+        mediaData,
+        mediaUrl: `data:${inferredMime};base64,${mediaData}`,
+      };
+    },
     pickPostMedia(target = 'create', preferredType = 'image') {
       // Open the browser file chooser for a post media draft.
       // 打开浏览器文件选择器以选择文章媒体。
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = preferredType === 'video' ? 'video/*' : 'image/*';
-      input.multiple = false;
+      input.multiple = preferredType !== 'video';
       input.addEventListener('change', (event) => {
         this.handlePostMediaPick(target, event);
       }, { once: true });
       input.click();
     },
     async handlePostMediaPick(target, event) {
-      // Read an image or video file into the post media draft.
-      // 读取图片或视频文件并写入文章媒体草稿。
+      // Read one or more image/video files into the post media draft.
+      // 读取一张或多张图片/视频文件并写入文章媒体草稿。
       const input = event?.target;
-      const file = input?.files?.[0];
-      if (!file) {
+      const files = Array.from(input?.files || []);
+      if (!files.length) {
         return;
       }
       const draft = target === 'edit' ? this.editPostDraft : this.postDraft;
-      const inferredMime = this.inferAttachmentMime(
-        file.type.startsWith('video/') ? 'video' : 'image',
-        file.name,
-        file.type || '',
-      );
-      const mediaType = inferredMime.startsWith('video/') ? 'video' : 'image';
-      if (mediaType === 'image') {
-        const webp = await this.compressImageToWebp(file);
-        if (webp) {
-          draft.mediaType = 'image';
-          draft.mediaName = webp.mediaName;
-          draft.mediaMime = webp.mediaMime;
-          draft.mediaData = webp.mediaData;
-          draft.mediaUrl = `data:${webp.mediaMime};base64,${webp.mediaData}`;
-          if (input) {
-            input.value = '';
+      if (!draft) {
+        return;
+      }
+      const imageFiles = files.filter((file) => String(file.type || '').startsWith('image/'));
+      const videoFiles = files.filter((file) => String(file.type || '').startsWith('video/'));
+      if (imageFiles.length > 0) {
+        const nextItems = [];
+        for (const file of imageFiles) {
+          const item = await this.compressImageToWebp(file);
+          if (item) {
+            nextItems.push(item);
           }
-          return;
+        }
+        if (nextItems.length > 0) {
+          const existingItems = Array.isArray(draft.mediaItems) ? draft.mediaItems : [];
+          draft.mediaItems = this.canAppendPostImages(draft)
+            ? [...clonePostMediaItems(existingItems), ...nextItems]
+            : nextItems;
+          this.syncPostMediaDraft(draft, false);
+        }
+      } else if (videoFiles.length > 0) {
+        const item = await this.buildPostVideoMediaItem(videoFiles[0]);
+        if (item) {
+          draft.mediaItems = [item];
+          this.syncPostMediaDraft(draft, false);
         }
       }
-      const bytes = await file.arrayBuffer();
-      draft.mediaType = mediaType;
-      draft.mediaName = mediaType === 'image' ? this.replaceFileExtension(file.name, '.webp') : file.name;
-      draft.mediaMime = inferredMime;
-      draft.mediaData = this.bytesToBase64(new Uint8Array(bytes));
-      draft.mediaUrl = `data:${inferredMime};base64,${draft.mediaData}`;
       if (input) {
         input.value = '';
       }
@@ -2114,6 +2517,15 @@ const app = createApp({
               shareError: '轉發失敗，請稍後重試。',
               privateLabel: '僅自己可見',
               publicLabel: '公開',
+              attachImage: '新增圖片',
+              attachVideo: '新增影片',
+              clearMedia: '清除媒體',
+              mediaPreview: '媒體預覽',
+              imageSelected: '張圖片',
+              videoSelected: '個影片',
+              imagesSelected: '張圖片',
+              addMoreImages: '繼續新增圖片',
+              mediaHint: '圖片會自動等比縮放並轉成 WebP，也可以繼續追加多張圖片。',
               backToFeed: '返回空間',
             },
             blockchain: {
@@ -2298,17 +2710,8 @@ const app = createApp({
       this.spaceDraft.name = '';
       this.spaceDraft.description = '';
       this.spaceDraft.subdomain = '';
-      this.postDraft.title = '';
-      this.postDraft.content = '';
-      this.postDraft.visibility = 'public';
-      this.postDraft.status = 'published';
-      this.postDraft.spaceId = '';
-      this.postDraft.mediaType = '';
-      this.postDraft.mediaName = '';
-      this.postDraft.mediaMime = '';
-      this.postDraft.mediaData = '';
-      this.postDraft.mediaUrl = '';
-      this.editPostDraft = { id: '', title: '', content: '', visibility: 'public', status: 'published', spaceId: '', mediaType: '', mediaName: '', mediaMime: '', mediaData: '', mediaUrl: '' };
+      this.postDraft = createEmptyPostDraft();
+      this.editPostDraft = createEmptyEditPostDraft();
       this.commentDrafts = {};
       this.replyDrafts = {};
       this.commentReplyTargets = {};
@@ -3541,19 +3944,16 @@ const app = createApp({
         this.setActiveSpace(selectedSpace);
         await this.loadSpacePosts(selectedSpace.id);
       }
-      this.editPostDraft = {
+      this.editPostDraft = createEmptyEditPostDraft({
         id: item.id,
         title: item.title,
         content: item.content,
         visibility: item.visibility,
         status: item.status || 'published',
         spaceId: item.space_id || '',
-        mediaType: item.mediaType || '',
-        mediaName: item.mediaName || '',
-        mediaMime: item.mediaMime || '',
-        mediaData: item.mediaData || '',
-        mediaUrl: item.mediaUrl || '',
-      };
+        mediaItems: clonePostMediaItems(this.mapPostMediaItems(item)),
+      });
+      this.syncPostMediaDraft(this.editPostDraft);
       this.view = 'postDetail';
     },
     backFromPostDetail() {
@@ -3634,24 +4034,16 @@ const app = createApp({
           media_name: this.postDraft.mediaName,
           media_mime: this.postDraft.mediaMime,
           media_data: this.postDraft.mediaData,
+          media_items: this.serializePostMediaItemsForRequest(this.postDraft),
         }),
       });
       if (!res.ok) {
         this.setError(this.t('posts.publishError'));
         return;
       }
-      this.postDraft.spaceId = spaceId;
       this.enterSpaceShell(this.currentSpace);
       await this.loadSpacePosts(spaceId);
-      this.postDraft.title = '';
-      this.postDraft.content = '';
-      this.postDraft.visibility = 'public';
-      this.postDraft.status = 'published';
-      this.postDraft.mediaType = '';
-      this.postDraft.mediaName = '';
-      this.postDraft.mediaMime = '';
-      this.postDraft.mediaData = '';
-      this.postDraft.mediaUrl = '';
+      this.postDraft = createEmptyPostDraft({ spaceId });
       this.postModalOpen = false;
       await this.loadPosts();
       await this.loadPrivatePosts();
@@ -3668,19 +4060,16 @@ const app = createApp({
       }
       const selectedPost = this.currentPost?.id === post.id ? this.currentPost : post;
       const spaceId = selectedPost.spaceId || '';
-      this.editPostDraft = {
+      this.editPostDraft = createEmptyEditPostDraft({
         id: selectedPost.id,
         title: selectedPost.title,
         content: selectedPost.content,
         visibility: selectedPost.visibility,
         status: selectedPost.status || 'published',
         spaceId,
-        mediaType: selectedPost.mediaType || '',
-        mediaName: selectedPost.mediaName || '',
-        mediaMime: selectedPost.mediaMime || '',
-        mediaData: selectedPost.mediaData || '',
-        mediaUrl: selectedPost.mediaUrl || '',
-      };
+        mediaItems: clonePostMediaItems(selectedPost.mediaItems),
+      });
+      this.syncPostMediaDraft(this.editPostDraft);
       this.postEditModalOpen = true;
       if (this.view === 'postDetail' && (!this.currentPost || this.currentPost.id !== selectedPost.id)) {
         this.currentPost = selectedPost;
@@ -3723,6 +4112,8 @@ const app = createApp({
           media_name: this.editPostDraft.mediaName,
           media_mime: this.editPostDraft.mediaMime,
           media_data: this.editPostDraft.mediaData,
+          media_items: this.serializePostMediaItemsForRequest(this.editPostDraft),
+          clear_media: Boolean(this.editPostDraft.mediaCleared && !this.editPostDraft.mediaItems.length),
         }),
       });
       if (!res.ok) {
@@ -4059,22 +4450,10 @@ const app = createApp({
       this.replyDrafts = {};
       this.commentReplyTargets = {};
       if (this.postDraft.spaceId === space.id) {
-        this.postDraft.spaceId = '';
+        this.postDraft = createEmptyPostDraft();
       }
       if (this.editPostDraft.spaceId === space.id) {
-        this.editPostDraft = {
-          id: '',
-          title: '',
-          content: '',
-          visibility: 'public',
-          status: 'published',
-          spaceId: '',
-          mediaType: '',
-          mediaName: '',
-          mediaMime: '',
-          mediaData: '',
-          mediaUrl: '',
-        };
+        this.editPostDraft = createEmptyEditPostDraft();
         this.postEditModalOpen = false;
       }
       if (this.spaceDraft.id === space.id) {
@@ -4090,19 +4469,7 @@ const app = createApp({
       }
       if (this.currentPost && this.currentPost.spaceId === space.id) {
         this.currentPost = null;
-        this.editPostDraft = {
-          id: '',
-          title: '',
-          content: '',
-          visibility: 'public',
-          status: 'published',
-          spaceId: '',
-          mediaType: '',
-          mediaName: '',
-          mediaMime: '',
-          mediaData: '',
-          mediaUrl: '',
-        };
+        this.editPostDraft = createEmptyEditPostDraft();
         if (this.view === 'postDetail') {
           this.enterSpaceShell();
         }
@@ -4145,36 +4512,12 @@ const app = createApp({
       this.replyDrafts = {};
       this.commentReplyTargets = {};
       if (this.editPostDraft.id === post.id) {
-        this.editPostDraft = {
-          id: '',
-          title: '',
-          content: '',
-          visibility: 'public',
-          status: 'published',
-          spaceId: '',
-          mediaType: '',
-          mediaName: '',
-          mediaMime: '',
-          mediaData: '',
-          mediaUrl: '',
-        };
+        this.editPostDraft = createEmptyEditPostDraft();
         this.postEditModalOpen = false;
       }
       if (this.currentPost && this.currentPost.id === post.id) {
         this.currentPost = null;
-        this.editPostDraft = {
-          id: '',
-          title: '',
-          content: '',
-          visibility: 'public',
-          status: 'published',
-          spaceId: '',
-          mediaType: '',
-          mediaName: '',
-          mediaMime: '',
-          mediaData: '',
-          mediaUrl: '',
-        };
+        this.editPostDraft = createEmptyEditPostDraft();
         if (this.view === 'postDetail') {
           this.enterSpaceShell();
         }

@@ -98,15 +98,18 @@ type Message struct {
 type Post struct {
 	// Social post content.
 	// 社交文章内容。
-	ID         string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserID     string `gorm:"index"`
-	SpaceID    string `gorm:"type:uuid;index"`
-	Title      string `gorm:"type:varchar(160)"`
-	Content    string `gorm:"type:text"`
-	MediaType  string `gorm:"type:varchar(20);default:text"`
-	MediaName  string `gorm:"type:varchar(255);default:''"`
-	MediaMime  string `gorm:"type:varchar(120);default:''"`
-	MediaData  string `gorm:"type:text;default:''"`
+	ID        string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID    string `gorm:"index"`
+	SpaceID   string `gorm:"type:uuid;index"`
+	Title     string `gorm:"type:varchar(160)"`
+	Content   string `gorm:"type:text"`
+	MediaType string `gorm:"type:varchar(20);default:text"`
+	MediaName string `gorm:"type:varchar(255);default:''"`
+	MediaMime string `gorm:"type:varchar(120);default:''"`
+	MediaData string `gorm:"type:text;default:''"`
+	// Serialized media gallery payload stored alongside the legacy single-media fields.
+	// 与旧版单媒体字段并存的序列化媒体集合载荷。
+	MediaItems string `gorm:"type:text;default:''"`
 	Status     string `gorm:"type:varchar(20);default:published"`
 	Visibility string `gorm:"type:varchar(20);default:public"`
 	CreatedAt  time.Time
