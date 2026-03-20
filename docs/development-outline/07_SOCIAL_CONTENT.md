@@ -34,6 +34,7 @@
 - Vue 从好友资料弹窗进入好友空间时会先关闭资料层，弹窗内“进入空间”按钮也统一走好友空间专用入口，再切换到空间页 / Vue now closes the friend profile layer before entering a friend's space, and the modal's "enter space" button also uses the dedicated friend-space entry path.
 - Flutter 聊天好友资料弹窗进入好友空间时也会先关闭弹窗，并通过根导航器确保空间页切换后不残留资料层 / Flutter now also closes the chat friend-profile dialog before entering a friend space, using the root navigator so no profile layer remains after switching pages.
 - 双前端个人主页已收敛为摘要页，只展示个人资料、隐私设置、会员等级与公开空间入口，不再展示内容流 / Both frontends' profile pages are now summary pages that only show personal info, privacy settings, membership level, and public space entrances, without a content feed.
+- Vue 进入好友空间或自己创建的空间后，空间壳层会收为单列并固定铺满整个视口，样式地址也会通过版本号刷新以避免浏览器命中旧布局缓存 / After entering a friend's space or one of your own spaces, Vue now collapses the shell into a single column and pins the main content to the full viewport, with a versioned stylesheet URL to avoid stale layout caching.
 - 主导航“主页”入口已固定进入当前登录用户自己的主页，他人主页保留独立打开路径 / The main-nav "Profile" entry now always opens the current user's own profile, while other profiles keep a separate open path.
 - 进行中：
   - 内容状态与审核预留
