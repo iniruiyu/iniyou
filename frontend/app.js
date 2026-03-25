@@ -3843,12 +3843,14 @@ const app = createApp({
         if (!this.token) {
           return;
         }
-        await this.loadSpaces();
-        await this.loadExternalAccounts();
-        await this.loadPosts();
-        await this.loadPrivatePosts();
-        await this.loadFriends();
-        await this.loadConversationSummaries();
+        await Promise.all([
+          this.loadSpaces(),
+          this.loadExternalAccounts(),
+          this.loadPosts(),
+          this.loadPrivatePosts(),
+          this.loadFriends(),
+          this.loadConversationSummaries(),
+        ]);
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
         } else {
@@ -3889,12 +3891,14 @@ const app = createApp({
         if (!this.token) {
           return;
         }
-        await this.loadSpaces();
-        await this.loadExternalAccounts();
-        await this.loadPosts();
-        await this.loadPrivatePosts();
-        await this.loadFriends();
-        await this.loadConversationSummaries();
+        await Promise.all([
+          this.loadSpaces(),
+          this.loadExternalAccounts(),
+          this.loadPosts(),
+          this.loadPrivatePosts(),
+          this.loadFriends(),
+          this.loadConversationSummaries(),
+        ]);
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
         } else {
@@ -5316,12 +5320,14 @@ const app = createApp({
         if (!this.token) {
           return;
         }
-        await this.loadSpaces();
-        await this.loadExternalAccounts();
-        await this.loadPosts();
-        await this.loadPrivatePosts();
-        await this.loadFriends();
-        await this.loadConversationSummaries();
+        await Promise.all([
+          this.loadSpaces(),
+          this.loadExternalAccounts(),
+          this.loadPosts(),
+          this.loadPrivatePosts(),
+          this.loadFriends(),
+          this.loadConversationSummaries(),
+        ]);
         if (this.activeChat) {
           await this.loadConversation(this.activeChat.id);
         } else {

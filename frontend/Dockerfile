@@ -7,6 +7,7 @@ COPY nginx.conf /etc/nginx/http.d/default.conf
 COPY index.html app.js /var/lib/nginx/html/
 COPY assets /var/lib/nginx/html/assets
 COPY components /var/lib/nginx/html/components
+COPY vendor /var/lib/nginx/html/vendor
 
 EXPOSE 80
 

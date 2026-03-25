@@ -881,14 +881,15 @@
                     <h3>{{ t('profile.identity.personalTitle') }}</h3>
                     <p>{{ t('profile.identity.personalSub') }}</p>
                   </div>
-                  <bilingual-action-button
-                    variant="tonal"
-                    compact
-                    type="button"
-                    :primary-label="t('profile.identity.editAction')"
-                    :secondary-label="peerLocaleText('profile.identity.editAction')"
-                    @click="openIdentityEditor"
-                  ></bilingual-action-button>
+                <bilingual-action-button
+                  variant="tonal"
+                  compact
+                  class="profile-summary-action"
+                  type="button"
+                  :primary-label="t('profile.identity.editAction')"
+                  :secondary-label="peerLocaleText('profile.identity.editAction')"
+                  @click="openIdentityEditor"
+                ></bilingual-action-button>
                 </div>
                 <div class="identity-summary-list identity-summary-list--compact">
                   <div class="identity-summary-item identity-summary-item--wide">
@@ -919,14 +920,15 @@
                     <h3>{{ t('profile.identity.privacyTitle') }}</h3>
                     <p>{{ t('profile.identity.privacySub') }}</p>
                   </div>
-                  <bilingual-action-button
-                    variant="ghost"
-                    compact
-                    type="button"
-                    :primary-label="t('profile.identity.privacyAction')"
-                    :secondary-label="peerLocaleText('profile.identity.privacyAction')"
-                    @click="openIdentityEditor"
-                  ></bilingual-action-button>
+                <bilingual-action-button
+                  variant="tonal"
+                  compact
+                  class="profile-summary-action"
+                  type="button"
+                  :primary-label="t('profile.identity.privacyAction')"
+                  :secondary-label="peerLocaleText('profile.identity.privacyAction')"
+                  @click="openIdentityEditor"
+                ></bilingual-action-button>
                 </div>
                 <div class="identity-summary-list identity-summary-list--compact">
                   <div class="identity-summary-item">
@@ -1854,7 +1856,8 @@
     </template>
   </div>
 
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- Local Vue runtime / 本地 Vue 运行时：避免首屏依赖外网 CDN。 -->
+  <script src="vendor/vue.global.prod.js"></script>
   <script src="components/settings-menu.js"></script>
   <script src="components/auth-panel.js"></script>
   <script src="components/landing-page.js"></script>

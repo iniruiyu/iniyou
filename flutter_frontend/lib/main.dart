@@ -349,6 +349,9 @@ class _IniyouHomeState extends State<IniyouHome> {
       _loginPasswordController.clear();
     }
     final sessionRestored = SessionActions.restoreSession(_api, _prefs!);
+    if (mounted) {
+      setState(() => _booting = false);
+    }
     if (sessionRestored) {
       try {
         await _refreshAll();
@@ -360,9 +363,6 @@ class _IniyouHomeState extends State<IniyouHome> {
       } catch (_) {
         await _logout(clearRemote: false);
       }
-    }
-    if (mounted) {
-      setState(() => _booting = false);
     }
   }
 
