@@ -2,7 +2,7 @@
 
 ## 1. 文档用途
 
-本文件用于记录当前版本的 RESTful API 草案，作为前后端联调、后端接口实现和前端页面对接的基线文档。
+本文件用于记录当前版本已落地的 RESTful API 与少量已确认预留项，作为前后端联调、后端接口实现和前端页面对接的基线文档。
 Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和状态语义都应保持一致。
 
 ## 2. 全局规则
@@ -10,34 +10,41 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - API 统一使用 `/api/v1` 作为版本前缀
 - 资源命名采用复数名词
 - 请求与响应使用 JSON
-- 接口返回结构保持统一
+- 当前实现已开始统一到 `code/message/data` 包装，同时保留旧字段平铺在顶层以兼容现有前端 / The current implementation now uses a `code/message/data` envelope while keeping legacy top-level fields for frontend compatibility.
 - Flutter 前端与 Legacy Web 前端共享同一套后端 RESTful API，接口变更要同时考虑双端兼容
 - 后续新增字段尽量向后兼容
 
 ## 3. 统一响应结构
 
-成功响应：
+当前实现示例：
 
 ```json
 {
-  "code": 0,
+  "code": 200,
   "message": "success",
-  "data": {}
+  "data": {
+    "user_id": "uuid",
+    "token": "jwt"
+  },
+  "user_id": "uuid",
+  "token": "jwt"
 }
 ```
 
-失败响应：
+错误响应示例：
 
 ```json
 {
-  "code": 1000,
-  "message": "error message",
-  "error": {
-    "type": "validation_error",
-    "details": {}
-  }
+  "code": 400,
+  "message": "invalid request",
+  "error": "invalid request"
 }
 ```
+
+说明：
+
+- 新接口语义以 `data` 为准，旧客户端仍可继续读取顶层 `items`、`item`、`user_id`、`token` 等字段
+- 删除接口当前返回 `200 + {code,message,data}` 风格确认对象，不再返回空 `204`
 
 ## 4. 鉴权规则
 
@@ -49,11 +56,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 
 ## 5. 接口分组
 
-### 5.1 健康检查
-
-- `GET /api/v1/health`
-
-### 5.2 认证与账号
+### 5.1 认证与账号
 
 - `POST /api/v1/register`
 - `POST /api/v1/login`
@@ -62,15 +65,22 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `PUT /api/v1/me`
 - `PUT /api/v1/me/password`
 - `GET /api/v1/users/search`
+- `GET /api/v1/users/{id}/profile`
 - `GET /api/v1/users/username/{username}/profile`
 - `GET /api/v1/users/domain/{domain}/profile`
-- `PATCH /api/v1/users/{id}`
-- `GET /api/v1/users/{id}`
-- `GET /api/v1/users/{id}/profile`
+- `GET /api/v1/friends`
+- `POST /api/v1/friends`
+- `POST /api/v1/friends/accept`
+- `GET /api/v1/subscriptions/current`
+- `POST /api/v1/subscriptions`
+- `GET /api/v1/external-accounts`
+- `POST /api/v1/external-accounts`
+- `DELETE /api/v1/external-accounts/{id}`
 
-### 5.3 空间
+### 5.2 空间
 
 - `GET /api/v1/spaces`
+- `GET /api/v1/users/{id}/spaces`
 - `POST /api/v1/spaces`
 - `PATCH /api/v1/spaces/{id}`
 - `DELETE /api/v1/spaces/{id}`
@@ -80,15 +90,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 空间与内容接口由独立的 `space-service` 提供，默认监听 `http://localhost:8082/api/v1`
 - 账号服务仅保留身份、资料与账号管理接口，空间归属与内容上下文由空间服务维护
 
-### 5.4 钱包、会员、权益
-
-- `GET /api/v1/wallets/me`
-- `GET /api/v1/wallet-transactions`
-- `GET /api/v1/memberships/me`
-- `GET /api/v1/benefits`
-- `GET /api/v1/benefits/me`
-
-### 5.5 内容与互动
+### 5.3 内容与互动
 
 - `GET /api/v1/posts`
 - `POST /api/v1/posts`
@@ -96,32 +98,33 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `PATCH /api/v1/posts/{id}`
 - `DELETE /api/v1/posts/{id}`
 - `GET /api/v1/users/{id}/posts`
+- `GET /api/v1/spaces/{id}/posts`
 - `POST /api/v1/posts/{id}/likes`
-- `DELETE /api/v1/posts/{id}/likes`
-- `GET /api/v1/posts/{id}/comments`
 - `POST /api/v1/posts/{id}/comments`
-- `PATCH /api/v1/comments/{id}`
-- `DELETE /api/v1/comments/{id}`
 - `POST /api/v1/posts/{id}/shares`
 
-### 5.6 聊天
+### 5.4 聊天
 
 - `GET /api/v1/conversations`
 - `GET /api/v1/messages`
 - `POST /api/v1/messages`
 - `GET /api/v1/unread`
+- `GET /ws`
 
 说明：
 
+- 当前聊天实现基于 `messages` 单表聚合对话摘要，没有独立 `chat_conversations`、`chat_participants`、`message_reads` 表 / Chat currently derives conversation summaries directly from the `messages` table instead of separate conversation, participant, and read tables.
 - 聊天消息支持 `text`、`image`、`video`、`audio` 四种消息类型
 - 媒体消息在发送前由前端压缩后再提交，服务端保存压缩后的 payload
 - 过期消息会由服务端自动清理，前端无需额外调用删除接口
 
-### 5.7 区块链账号扩展
+### 5.5 预留未实现
 
-- `GET /api/v1/external-accounts`
-- `POST /api/v1/external-accounts`
-- `DELETE /api/v1/external-accounts/{id}`
+- `GET /api/v1/health`
+- 钱包、权益、通用会员资源接口
+- 评论编辑与删除接口
+- 文章取消点赞独立接口（当前为 `POST /posts/{id}/likes` 切换）
+- 用户管理类 `PATCH /users/{id}`、`GET /users/{id}`
 
 ## 6. 关键接口说明
 
@@ -145,6 +148,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 用途：修改当前用户的昵称、用户名、域名、签名和资料可见范围
 - 请求字段建议：`display_name`, `username`, `domain`, `signature`, `phone_visibility`, `email_visibility`, `age_visibility`, `gender_visibility`
 - 说明：
+  - `display_name` 为必填
   - `username` 仅允许英文字母和数字，且需要全局唯一
   - `username` 同时作为个人主页和二级域名入口句柄
   - `domain` 仅允许英文字母和数字，且需要全局唯一
@@ -164,7 +168,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 ### 6.3 搜索用户
 
 - `GET /api/v1/users/search?q=keyword`
-- 用途：按展示名、邮箱、手机号或用户 ID 搜索用户
+- 用途：按展示名、用户名、域名、邮箱、手机号、签名或用户 ID 搜索用户
 - 返回字段建议：`user_id`, `display_name`, `username`, `domain`, `signature`, `email`, `phone`, `age`, `gender`, `relation_status`, `direction`
 - 说明：用户名同样应参与搜索与展示，便于按子域名句柄反查用户
 
@@ -202,8 +206,8 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 说明：
   - `space_id` 用于记录当前文章所属空间
   - `space_user_id` 应由服务端根据 `space_id` 自动补全
-  - 如果前端已进入空间上下文，发布时应优先携带当前空间 ID
-  - `visibility` 应与空间可见范围保持一致，避免跨空间发布
+  - 发布时必须携带当前用户拥有的 `space_id`
+  - 当前实现只接受 `public` 或 `private` 两种文章可见范围
   - `media_type` 支持 `image` 和 `video`
   - `media_items` 支持按顺序提交多张图片或单个视频，服务端会把第一项同步到旧版单图字段以兼容旧前端
   - 图片上传前应优先等比缩放并压缩，前端可使用随机文件名避免重名
@@ -220,6 +224,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 状态建议：`draft`, `published`, `hidden`
 - 说明：更新文章时应保持空间归属字段可见，便于前端展示当前内容上下文，媒体字段也应原样回传；当 `clear_media=true` 时，服务端应显式清除旧媒体，而不是沿用已有媒体
 - 说明补充：
+  - 当前实现只接受 `public` 或 `private` 两种文章可见范围
   - `media_items` 为空且未传 `clear_media=true` 时，服务端会继续沿用现有媒体
   - `media_items` 非空时，服务端会以数组第一项同步旧版 `media_*` 字段，便于双端兼容
   - `clear_media=true` 时，服务端会显式清除旧媒体并删除对应磁盘文件
@@ -320,7 +325,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 ### 6.19 空间创建与进入
 
 - `GET /api/v1/spaces`
-- 用途：获取当前用户可见的空间列表
+- 用途：获取当前用户拥有的空间列表
 - 返回字段建议：`id`, `user_id`, `type`, `visibility`, `subdomain`, `name`, `description`, `status`, `created_at`, `updated_at`
 - 说明：`subdomain` 仅允许英文字母和数字，且最长 63 个字符
 - 说明：前端应统一以“空间”作为入口名称，不再拆分私人/公共页面
@@ -335,7 +340,15 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 说明：
   - `subdomain` 可由前端预填或由后端根据名称自动生成
   - `subdomain` 只能包含英文字母和数字，且最长 63 个字符
+  - `type` 当前必须为 `private` 或 `public`
+  - `visibility` 当前支持 `public`、`friends`、`private`，但 `type=private` 时会被强制收口为 `private`
   - 创建成功后返回空间完整信息，前端应将其作为当前进入空间
+
+- `GET /api/v1/spaces/{id}/posts?visibility=public|private|all&limit=50`
+- 用途：获取指定空间下的文章列表
+- 说明：
+  - 空间创建者可使用 `visibility=all` 查看该空间全部文章，包括 `draft` 与 `hidden`
+  - 非创建者只能读取当前空间下 `public + published` 的文章
 
 - `PATCH /api/v1/spaces/{id}`
 - 用途：更新当前用户自己的空间名称、描述、二级域名和可见范围
@@ -375,6 +388,16 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 数据模型或权限规则变化影响接口时，必须同步更新本文件
 
 ## 10. 变更日志
+
+### 2026-03-24
+
+- 将文档口径从“目标草案”收口为“当前实现 + 预留项” / Refocused the document from aspirational API draft to current implementation plus reserved items.
+- 明确当前响应结构为直接 JSON，而非统一包装 / Clarified that current responses are direct JSON objects rather than a unified envelope.
+- 对齐好友、订阅、空间文章、WebSocket 与未实现接口边界 / Aligned friend, subscription, space-post, WebSocket, and unimplemented interface boundaries.
+
+### 2026-03-25
+
+- 后端开始统一返回 `code/message/data` 包装，并保留旧版顶层字段以兼容双前端 / The backend now emits a `code/message/data` envelope while preserving legacy top-level fields for dual-frontend compatibility.
 
 ### 2026-03-12
 

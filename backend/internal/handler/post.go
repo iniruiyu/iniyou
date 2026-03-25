@@ -50,10 +50,10 @@ func (h *PostHandler) ListPosts(c *gin.Context) {
 	}
 	items, err := service.ListPosts(h.DB, uid, c.Query("visibility"), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	respondOK(c, gin.H{"items": items})
 }
 
 func (h *PostHandler) ListSpacePosts(c *gin.Context) {
@@ -72,10 +72,10 @@ func (h *PostHandler) ListSpacePosts(c *gin.Context) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			status = http.StatusNotFound
 		}
-		c.JSON(status, gin.H{"error": err.Error()})
+		respondError(c, status, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	respondOK(c, gin.H{"items": items})
 }
 
 func (h *PostHandler) GetPost(c *gin.Context) {
@@ -84,10 +84,10 @@ func (h *PostHandler) GetPost(c *gin.Context) {
 	uid := c.GetString("user_id")
 	item, err := service.GetPost(h.DB, uid, c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "post not found"})
+		respondError(c, http.StatusNotFound, "post not found")
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondOK(c, item)
 }
 
 func (h *PostHandler) ListUserPosts(c *gin.Context) {
@@ -102,10 +102,10 @@ func (h *PostHandler) ListUserPosts(c *gin.Context) {
 	}
 	items, err := service.ListPostsByUser(h.DB, uid, c.Param("id"), c.Query("visibility"), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	respondOK(c, gin.H{"items": items})
 }
 
 func (h *PostHandler) CreatePost(c *gin.Context) {
@@ -114,7 +114,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req createPostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	item, err := service.CreatePostWithStatus(
@@ -132,10 +132,10 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		req.MediaItems,
 	)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondCreated(c, item)
 }
 
 func (h *PostHandler) UpdatePost(c *gin.Context) {
@@ -144,7 +144,7 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req createPostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	item, err := service.UpdatePost(
@@ -164,10 +164,10 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		req.ClearMedia,
 	)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondOK(c, item)
 }
 
 func (h *PostHandler) DeletePost(c *gin.Context) {
@@ -179,10 +179,10 @@ func (h *PostHandler) DeletePost(c *gin.Context) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			status = http.StatusNotFound
 		}
-		c.JSON(status, gin.H{"error": err.Error()})
+		respondError(c, status, err.Error())
 		return
 	}
-	c.Status(http.StatusNoContent)
+	respondDeleted(c)
 }
 
 func (h *PostHandler) ToggleLike(c *gin.Context) {
@@ -191,10 +191,10 @@ func (h *PostHandler) ToggleLike(c *gin.Context) {
 	uid := c.GetString("user_id")
 	item, err := service.ToggleLikePost(h.DB, uid, c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondOK(c, item)
 }
 
 func (h *PostHandler) AddComment(c *gin.Context) {
@@ -203,15 +203,15 @@ func (h *PostHandler) AddComment(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req commentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	item, err := service.AddComment(h.DB, uid, c.Param("id"), req.Content, req.ParentCommentID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondCreated(c, item)
 }
 
 func (h *PostHandler) Share(c *gin.Context) {
@@ -220,8 +220,8 @@ func (h *PostHandler) Share(c *gin.Context) {
 	uid := c.GetString("user_id")
 	item, err := service.SharePost(h.DB, uid, c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondCreated(c, item)
 }

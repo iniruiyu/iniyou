@@ -248,6 +248,9 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-25：为账号、空间、内容和聊天接口补上兼容式统一响应包装，后端返回 `code/message/data` 并保留旧顶层字段，同时让 Flutter API client 兼容新旧两种响应结构 / Added a compatibility response envelope across account, space, content, and chat APIs so the backend now returns `code/message/data` while preserving legacy top-level fields, and updated the Flutter API client to support both response shapes.
+- 2026-03-24：对齐 `docs/API_SPEC.md`、`docs/DATA_MODEL.md` 与后端实际路由/模型，明确当前实现边界并把未落地接口与实体下沉为预留项 / Aligned `docs/API_SPEC.md` and `docs/DATA_MODEL.md` with the actual backend routes and models, clarifying the implemented boundaries and moving not-yet-built APIs/entities into reserved items.
+- 2026-03-24：精简 `README.md` 与 `DESIGN.md`，收口重复说明，保留项目入口、运行方式和账号服务最小设计摘要 / Simplified `README.md` and `DESIGN.md` by removing repeated explanations while keeping the project entry, startup flow, and the minimal account-service design summary.
 - 2026-03-20：继续对齐 Flutter 个人主页为 Vue 风格布局，收紧顶部重复英雄卡，并把用户 ID 留在个人资料摘要、将修改入口拆成资料/隐私两处 / Continued aligning the Flutter profile page with the Vue layout by tightening the duplicated top hero card, keeping the user ID in the personal info summary, and splitting the edit entry into personal-info and privacy actions.
 - 2026-03-20：继续升级 Flutter 聊天好友资料弹层，改为打开即加载、宽屏双栏、失败可重试的公开空间入口面板 / Continued upgrading the Flutter chat friend-profile dialog into an open-immediately, dual-column, retryable public-space entry panel.
 - 2026-03-20：把 Flutter 聊天好友资料弹层改成可滚动的响应式布局，避免小屏下空间卡片和进入按钮被裁切 / Made the Flutter chat friend-profile dialog scrollable and responsive so small screens no longer clip space cards or the enter button.

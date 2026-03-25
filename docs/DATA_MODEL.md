@@ -2,7 +2,7 @@
 
 ## 1. 文档用途
 
-本文件用于记录当前版本的核心数据实体、字段方向和实体关系，作为数据库设计和后端领域建模的基线。
+本文件用于记录当前版本的数据实体基线，并区分“当前已落地模型”和“后续预留模型”，作为数据库设计和后端领域建模的参考。
 
 ## 2. 建模原则
 
@@ -22,7 +22,7 @@
 - `deleted_at` 或软删除标记
 - `status`
 
-## 4. 核心实体
+## 4. 当前已落地实体
 
 ### 4.1 用户与身份域
 
@@ -51,44 +51,21 @@
 - `username` 与 `domain` 都应仅使用英文字母和数字，且与 `spaces.subdomain` 共享同一 host label 命名空间 / `username` and `domain` should both be alphanumeric and share the same host-label namespace as `spaces.subdomain`.
 - `email`、`phone`、`age`、`gender` 等字段可根据可见范围控制对外展示 / `email`, `phone`, `age`, and `gender` are exposed according to the configured visibility scope.
 - `password_version` 用于 JWT 失效控制，密码修改后会递增该值，从而让旧 token 自动失效 / `password_version` is used for JWT invalidation; it increments after a password change so older tokens expire automatically.
+- `password_hash` 当前直接保存在 `users` 表中，尚未拆分为独立凭据表 / `password_hash` currently remains in `users` and has not been split into a separate credentials table yet.
 
-#### `auth_credentials`
-
-- `id`
-- `user_id`
-- `credential_type`
-- `password_hash`
-- `password_salt`
-- `status`
-
-#### `user_profiles`
+#### `friends`
 
 - `id`
 - `user_id`
-- `nickname`
-- `gender`
-- `birthday`
-- `region`
-
-### 4.2 钱包与权益域
-
-#### `wallets`
-
-- `id`
-- `user_id`
-- `balance`
-- `currency`
+- `friend_id`
 - `status`
+- `created_at`
 
-#### `wallet_transactions`
+说明：
 
-- `id`
-- `wallet_id`
-- `transaction_type`
-- `amount`
-- `balance_after`
-- `remark`
-- `status`
+- 好友关系当前用单表表达请求方向与接受状态，`status` 主要使用 `pending`、`accepted`、`blocked` / Friend requests and accepted relations are currently stored in a single table with directional status values.
+
+### 4.2 订阅与外部身份域
 
 #### `subscriptions`
 
@@ -99,36 +76,20 @@
 - `started_at`
 - `ended_at`
 
-#### `memberships`
-
-- `id`
-- `user_id`
-- `level`
-- `started_at`
-- `expired_at`
-- `status`
-
 说明：
 
-- 当前代码里的订阅升级动作使用 `subscriptions` 记录，`memberships` 与 `benefits` 保留为更通用的权益抽象 / The current code uses `subscriptions` for subscription upgrade actions, while `memberships` and `benefits` remain the more general entitlement abstraction.
+- 当前订阅升级会同时更新 `users.level`，未单独落地 `memberships`、`benefits`、`user_benefits` / Subscription upgrades currently also update `users.level`; separate membership and benefit tables are still reserved.
 
-#### `benefits`
-
-- `id`
-- `code`
-- `name`
-- `description`
-- `status`
-
-#### `user_benefits`
+#### `external_accounts`
 
 - `id`
 - `user_id`
-- `benefit_id`
-- `source_type`
-- `started_at`
-- `expired_at`
-- `status`
+- `provider`
+- `chain`
+- `account_identifier`
+- `account_address`
+- `binding_status`
+- `metadata`
 
 ### 4.3 空间与内容域
 
@@ -173,6 +134,7 @@
 - `media_name` 保存服务端实际落盘文件名，`media_items` 中的 `media_name` 也应视为用于文件定位与清理的存储名 / `media_name` stores the server-side on-disk filename, and `media_name` inside `media_items` should also be treated as the storage name used for file lookup and cleanup.
 - `media_*` 仍保留为旧版单图兼容字段，并同步第一项媒体信息；服务端会将媒体写入磁盘，同时保留 JSON 载荷以兼容双端 / `media_*` remain as legacy single-media compatibility fields and mirror the first media item; the server writes files to disk while keeping the JSON payload for dual-end compatibility.
 - `content` 建议按 Markdown 语法存储，前端渲染时保持同一套富文本规则 / `content` should preferably be stored as Markdown syntax so both frontends can render it with the same rich-text rules.
+- 当前写接口只接受 `public` 或 `private` 两种文章可见范围，`friends` 仅在读取逻辑里保留兼容判断 / Current write APIs only accept `public` and `private` post visibility; `friends` remains only in read-side compatibility logic.
 
 ### 4.4 内容与互动域
 
@@ -206,74 +168,36 @@
 
 ### 4.5 聊天域
 
-#### `chat_conversations`
+#### `messages`
 
 - `id`
-- `conversation_type`
-- `created_by`
-- `status`
-
-#### `chat_participants`
-
-- `id`
-- `conversation_id`
-- `user_id`
-- `joined_at`
-- `status`
-
-#### `chat_messages`
-
-- `id`
-- `conversation_id`
-- `sender_user_id`
+- `sender_id`
+- `receiver_id`
 - `message_type`
 - `content`
 - `media_name`
 - `media_mime`
 - `media_data`
-- `sent_at`
-- `expires_at`
-- `status`
-
-#### `message_reads`
-
-- `id`
-- `message_id`
-- `user_id`
+- `created_at`
 - `read_at`
+- `expires_at`
 
-### 4.6 外部身份扩展域
+说明：
 
-#### `external_accounts`
-
-- `id`
-- `user_id`
-- `provider`
-- `chain`
-- `account_identifier`
-- `account_address`
-- `binding_status`
-- `metadata`
+- 当前聊天为点对点消息模型，会话摘要由 `messages` 表按 `sender_id/receiver_id` 聚合得到 / Chat currently uses a direct message model, and conversation summaries are derived from `messages`.
+- 未单独拆分 `chat_conversations`、`chat_participants`、`message_reads` / Separate conversation, participant, and read tables have not been introduced yet.
 
 ## 5. 实体关系
 
-- `users` 与 `auth_credentials` 为一对多或一对一扩展关系
-- `users` 与 `user_profiles` 为一对一关系
-- `users` 与 `wallets` 为一对一关系
+- `users` 与 `friends` 为一对多关系
 - `users` 与 `subscriptions` 为一对多关系
-- `wallets` 与 `wallet_transactions` 为一对多关系
-- `users` 与 `memberships` 为一对多或当前有效一对一关系
-- `users` 与 `user_benefits` 为一对多关系
-- `benefits` 与 `user_benefits` 为一对多关系
 - `users` 与 `posts` 为一对多关系
 - `spaces` 与 `posts` 为一对多关系
 - `posts` 与 `comments` 为一对多关系，`comments` 通过 `parent_comment_id` 构成树状回复 / `posts` and `comments` are one-to-many, and `comments` form a threaded reply tree through `parent_comment_id`.
 - `posts` 与 `post_likes` 为一对多关系
 - `posts` 与 `post_shares` 为一对多关系
 - `posts.media_*` 与 `posts.media_items` 一起用于承载图文和小视频附件 / `posts.media_*` and `posts.media_items` together carry image and short-video attachments.
-- `chat_conversations` 与 `chat_participants` 为一对多关系
-- `chat_conversations` 与 `chat_messages` 为一对多关系
-- `chat_messages` 与 `message_reads` 为一对多关系
+- `users` 与 `messages` 分别通过 `sender_id`、`receiver_id` 形成双向一对多关系
 - `users` 与 `external_accounts` 为一对多关系
 
 说明：
@@ -287,29 +211,31 @@
 ### 6.1 P0
 
 - `users`
-- `auth_credentials`
-- `user_profiles`
+- `friends`
 - `spaces`
 - `posts`
 - `comments`
 - `post_likes`
 - `post_shares`
-- `chat_conversations`
-- `chat_participants`
-- `chat_messages`
+- `messages`
 
 ### 6.2 P1
 
-- `wallets`
-- `wallet_transactions`
 - `subscriptions`
-- `memberships`
-- `benefits`
-- `user_benefits`
+- `external_accounts`
 
 ### 6.3 P2
 
-- `external_accounts`
+- `wallets`
+- `wallet_transactions`
+- `memberships`
+- `benefits`
+- `user_benefits`
+- `auth_credentials`
+- `user_profiles`
+- `chat_conversations`
+- `chat_participants`
+- `message_reads`
 
 ## 7. 索引建议
 
@@ -317,18 +243,22 @@
 - `users.phone` 唯一索引
 - `users.username` 唯一索引
 - `users.domain` 唯一索引
+- `friends.user_id` 普通索引
+- `friends.friend_id` 普通索引
 - `spaces.subdomain` 唯一索引
 - `spaces(user_id, type)` 普通索引
 - `subscriptions(user_id, started_at)` 普通索引
-- `wallets.user_id` 唯一索引
 - `posts.user_id` 普通索引
 - `posts.space_id` 普通索引
 - `comments.post_id` 普通索引
 - `comments(parent_comment_id)` 普通索引
 - `post_likes(post_id, user_id)` 唯一索引
-- `chat_participants(conversation_id, user_id)` 唯一索引
-- `chat_messages.conversation_id` 普通索引
+- `messages.sender_id` 普通索引
+- `messages.receiver_id` 普通索引
+- `messages.read_at` 普通索引
+- `messages.expires_at` 普通索引
 - `external_accounts(provider, account_identifier)` 唯一索引
+- `wallets.user_id` 唯一索引
 
 ## 8. 兼容性注意事项
 
@@ -345,6 +275,12 @@
 - 字段调整影响页面时，必须同步更新设计文档
 
 ## 10. 变更日志
+
+### 2026-03-24
+
+- 将实体清单区分为“当前已落地”与“后续预留” / Split the entity list into implemented and reserved sections.
+- 按实际代码收口聊天模型为 `messages` 单表直连方案 / Aligned the chat model to the actual single-table `messages` implementation.
+- 明确 `friends`、`subscriptions`、`external_accounts` 已落地，钱包和独立凭据表仍为预留 / Clarified that `friends`, `subscriptions`, and `external_accounts` are implemented, while wallets and separate credential tables remain reserved.
 
 ### 2026-03-11
 

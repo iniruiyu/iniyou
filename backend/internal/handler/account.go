@@ -84,20 +84,20 @@ func (h *AccountHandler) Register(c *gin.Context) {
 	// 注册接口。
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	user, err := service.Register(h.DB, req.Email, req.Phone, req.Password)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL), user.PasswordVersion)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		respondError(c, http.StatusInternalServerError, "token error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user_id": user.ID, "token": token})
+	respondOK(c, gin.H{"user_id": user.ID, "token": token})
 }
 
 func (h *AccountHandler) Login(c *gin.Context) {
@@ -105,30 +105,30 @@ func (h *AccountHandler) Login(c *gin.Context) {
 	// 登录接口。
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	user, err := service.Login(h.DB, req.Account, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrAccountInactive) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+			respondError(c, http.StatusForbidden, "account inactive")
 			return
 		}
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		respondError(c, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL), user.PasswordVersion)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		respondError(c, http.StatusInternalServerError, "token error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user_id": user.ID, "token": token})
+	respondOK(c, gin.H{"user_id": user.ID, "token": token})
 }
 
 func (h *AccountHandler) Logout(c *gin.Context) {
 	// Stateless logout endpoint for client-side token cleanup.
 	// 无状态登出接口，用于客户端清理本地 token。
-	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
+	respondOK(c, gin.H{"message": "logged out"})
 }
 
 func (h *AccountHandler) Me(c *gin.Context) {
@@ -137,10 +137,10 @@ func (h *AccountHandler) Me(c *gin.Context) {
 	uid := c.GetString("user_id")
 	user, err := service.GetUser(h.DB, uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	respondOK(c, gin.H{
 		"user_id":           user.ID,
 		"email":             user.Email,
 		"phone":             user.Phone,
@@ -165,7 +165,7 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req updateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	user, err := service.UpdateProfile(
@@ -181,10 +181,10 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 		req.GenderVisibility,
 	)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	respondOK(c, gin.H{
 		"user_id":           user.ID,
 		"display_name":      user.DisplayName,
 		"username":          user.Username,
@@ -205,7 +205,7 @@ func (h *AccountHandler) ChangePassword(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req changePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 
@@ -213,21 +213,21 @@ func (h *AccountHandler) ChangePassword(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidCredentials):
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+			respondError(c, http.StatusUnauthorized, "invalid credentials")
 		case errors.Is(err, service.ErrAccountInactive):
-			c.JSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+			respondError(c, http.StatusForbidden, "account inactive")
 		default:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			respondError(c, http.StatusBadRequest, err.Error())
 		}
 		return
 	}
 
 	token, err := auth.SignToken(user.ID, h.JWTSecret, serviceTokenTTL(h.TokenTTL), user.PasswordVersion)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		respondError(c, http.StatusInternalServerError, "token error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user_id": user.ID, "token": token})
+	respondOK(c, gin.H{"user_id": user.ID, "token": token})
 }
 
 func (h *AccountHandler) ListSpaces(c *gin.Context) {
@@ -236,10 +236,10 @@ func (h *AccountHandler) ListSpaces(c *gin.Context) {
 	uid := c.GetString("user_id")
 	spaces, err := service.ListSpaces(h.DB, uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": spaces})
+	respondOK(c, gin.H{"items": spaces})
 }
 
 func (h *AccountHandler) ListUserSpaces(c *gin.Context) {
@@ -250,10 +250,10 @@ func (h *AccountHandler) ListUserSpaces(c *gin.Context) {
 	visibility := strings.ToLower(strings.TrimSpace(c.DefaultQuery("visibility", "public")))
 	spaces, err := service.ListUserSpaces(h.DB, uid, targetUserID, visibility)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": spaces})
+	respondOK(c, gin.H{"items": spaces})
 }
 
 func (h *AccountHandler) CreateSpace(c *gin.Context) {
@@ -262,15 +262,15 @@ func (h *AccountHandler) CreateSpace(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req spaceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	space, err := service.CreateSpace(h.DB, uid, req.Type, req.Visibility, req.Name, req.Description, req.Subdomain)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, space)
+	respondCreated(c, space)
 }
 
 func (h *AccountHandler) UpdateSpace(c *gin.Context) {
@@ -279,7 +279,7 @@ func (h *AccountHandler) UpdateSpace(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req updateSpaceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	space, err := service.UpdateSpace(h.DB, uid, c.Param("id"), req.Name, req.Description, req.Subdomain, req.Visibility)
@@ -288,10 +288,10 @@ func (h *AccountHandler) UpdateSpace(c *gin.Context) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			status = http.StatusNotFound
 		}
-		c.JSON(status, gin.H{"error": err.Error()})
+		respondError(c, status, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, space)
+	respondOK(c, space)
 }
 
 func (h *AccountHandler) DeleteSpace(c *gin.Context) {
@@ -303,10 +303,10 @@ func (h *AccountHandler) DeleteSpace(c *gin.Context) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			status = http.StatusNotFound
 		}
-		c.JSON(status, gin.H{"error": err.Error()})
+		respondError(c, status, err.Error())
 		return
 	}
-	c.Status(http.StatusNoContent)
+	respondDeleted(c)
 }
 
 func (h *AccountHandler) ListFriends(c *gin.Context) {
@@ -315,10 +315,10 @@ func (h *AccountHandler) ListFriends(c *gin.Context) {
 	uid := c.GetString("user_id")
 	friends, err := service.ListFriends(h.DB, uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": friends})
+	respondOK(c, gin.H{"items": friends})
 }
 
 func (h *AccountHandler) AddFriend(c *gin.Context) {
@@ -327,15 +327,15 @@ func (h *AccountHandler) AddFriend(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req friendRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	friend, err := service.AddFriend(h.DB, uid, req.FriendID, req.Account)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, friend)
+	respondCreated(c, friend)
 }
 
 func (h *AccountHandler) SearchUsers(c *gin.Context) {
@@ -345,10 +345,10 @@ func (h *AccountHandler) SearchUsers(c *gin.Context) {
 	query := c.Query("q")
 	items, err := service.SearchUsers(h.DB, uid, query, 10)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	respondOK(c, gin.H{"items": items})
 }
 
 func (h *AccountHandler) UserProfile(c *gin.Context) {
@@ -357,10 +357,10 @@ func (h *AccountHandler) UserProfile(c *gin.Context) {
 	uid := c.GetString("user_id")
 	item, err := service.GetPublicUserProfile(h.DB, uid, c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		respondError(c, http.StatusNotFound, "user not found")
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondOK(c, item)
 }
 
 func (h *AccountHandler) UserProfileByUsername(c *gin.Context) {
@@ -369,10 +369,10 @@ func (h *AccountHandler) UserProfileByUsername(c *gin.Context) {
 	uid := c.GetString("user_id")
 	item, err := service.GetPublicUserProfileByUsername(h.DB, uid, c.Param("username"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		respondError(c, http.StatusNotFound, "user not found")
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondOK(c, item)
 }
 
 func (h *AccountHandler) UserProfileByDomain(c *gin.Context) {
@@ -381,10 +381,10 @@ func (h *AccountHandler) UserProfileByDomain(c *gin.Context) {
 	uid := c.GetString("user_id")
 	item, err := service.GetPublicUserProfileByDomain(h.DB, uid, c.Param("domain"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		respondError(c, http.StatusNotFound, "user not found")
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	respondOK(c, item)
 }
 
 func (h *AccountHandler) AcceptFriend(c *gin.Context) {
@@ -393,15 +393,15 @@ func (h *AccountHandler) AcceptFriend(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req friendRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	friend, err := service.AcceptFriend(h.DB, uid, req.FriendID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, friend)
+	respondOK(c, friend)
 }
 
 func (h *AccountHandler) CreateSubscription(c *gin.Context) {
@@ -410,15 +410,15 @@ func (h *AccountHandler) CreateSubscription(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req subscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	sub, err := service.CreateSubscription(h.DB, uid, req.PlanID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, sub)
+	respondCreated(c, sub)
 }
 
 func (h *AccountHandler) CurrentSubscription(c *gin.Context) {
@@ -427,10 +427,10 @@ func (h *AccountHandler) CurrentSubscription(c *gin.Context) {
 	uid := c.GetString("user_id")
 	sub, err := service.GetCurrentSubscription(h.DB, uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, sub)
+	respondOK(c, sub)
 }
 
 func (h *AccountHandler) ListExternalAccounts(c *gin.Context) {
@@ -439,10 +439,10 @@ func (h *AccountHandler) ListExternalAccounts(c *gin.Context) {
 	uid := c.GetString("user_id")
 	items, err := service.ListExternalAccounts(h.DB, uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	respondOK(c, gin.H{"items": items})
 }
 
 func (h *AccountHandler) BindExternalAccount(c *gin.Context) {
@@ -451,15 +451,15 @@ func (h *AccountHandler) BindExternalAccount(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req externalAccountRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 	account, err := service.BindExternalAccount(h.DB, uid, req.Provider, req.Chain, req.AccountAddress, req.SignaturePayload)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, account)
+	respondCreated(c, account)
 }
 
 func (h *AccountHandler) DeleteExternalAccount(c *gin.Context) {
@@ -467,10 +467,10 @@ func (h *AccountHandler) DeleteExternalAccount(c *gin.Context) {
 	// 删除已有的外部账号绑定。
 	uid := c.GetString("user_id")
 	if err := service.RemoveExternalAccount(h.DB, uid, c.Param("id")); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
+	respondDeleted(c)
 }
 
 func serviceTokenTTL(ttl int64) time.Duration {

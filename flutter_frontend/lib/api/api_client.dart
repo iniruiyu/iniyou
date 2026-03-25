@@ -483,11 +483,13 @@ class ApiClient {
         ? <String, dynamic>{}
         : jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode >= 400) {
+      final payload = _payload(body);
       throw ApiException(
-        (body['error'] ?? body['message'] ?? 'request failed').toString(),
+        (payload['error'] ?? body['error'] ?? body['message'] ?? 'request failed')
+            .toString(),
       );
     }
-    return body;
+    return _payload(body);
   }
 
   List<T> _list<T>(
@@ -496,6 +498,20 @@ class ApiClient {
   ) {
     final items = (json['items'] as List<dynamic>? ?? const []);
     return items.map((item) => convert(item as Map<String, dynamic>)).toList();
+  }
+
+  Map<String, dynamic> _payload(Map<String, dynamic> body) {
+    // Support both legacy flat payloads and wrapped `data` envelopes.
+    // 同时兼容旧版平铺载荷与 `data` 包装结构。
+    final data = body['data'];
+    if (data is Map<String, dynamic>) {
+      final merged = Map<String, dynamic>.from(data);
+      for (final entry in body.entries) {
+        merged.putIfAbsent(entry.key, () => entry.value);
+      }
+      return merged;
+    }
+    return body;
   }
 }
 

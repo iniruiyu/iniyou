@@ -86,7 +86,7 @@ func (h *MessageHandler) ListConversations(c *gin.Context) {
 		Where("(sender_id = ? OR receiver_id = ?) AND (expires_at IS NULL OR expires_at > ?)", uid, uid, time.Now()).
 		Order("created_at desc").
 		Find(&messages).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
 
@@ -119,7 +119,7 @@ func (h *MessageHandler) ListConversations(c *gin.Context) {
 		seen[peerID] = len(summaries)
 		summaries = append(summaries, item)
 	}
-	c.JSON(http.StatusOK, gin.H{"items": summaries})
+	respondOK(c, gin.H{"items": summaries})
 }
 
 func (h *MessageHandler) ListMessages(c *gin.Context) {
@@ -161,10 +161,10 @@ func (h *MessageHandler) ListMessages(c *gin.Context) {
 		)
 	}
 	if err := query.Order("created_at asc").Limit(limit).Offset(offset).Find(&messages).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": messages})
+	respondOK(c, gin.H{"items": messages})
 }
 
 func (h *MessageHandler) UnreadCount(c *gin.Context) {
@@ -174,10 +174,10 @@ func (h *MessageHandler) UnreadCount(c *gin.Context) {
 	_ = h.cleanupExpiredMessages()
 	var count int64
 	if err := h.DB.Model(&models.Message{}).Where("receiver_id = ? AND read_at IS NULL AND (expires_at IS NULL OR expires_at > ?)", uid, time.Now()).Count(&count).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"unread": count})
+	respondOK(c, gin.H{"unread": count})
 }
 
 func (h *MessageHandler) CreateMessage(c *gin.Context) {
@@ -186,7 +186,7 @@ func (h *MessageHandler) CreateMessage(c *gin.Context) {
 	uid := c.GetString("user_id")
 	var req createMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
 
@@ -200,12 +200,12 @@ func (h *MessageHandler) CreateMessage(c *gin.Context) {
 			err.Error() != "cannot send to yourself" {
 			status = http.StatusInternalServerError
 		}
-		c.JSON(status, gin.H{"error": err.Error()})
+		respondError(c, status, err.Error())
 		return
 	}
 
 	h.pushMessage(msg, false)
-	c.JSON(http.StatusCreated, gin.H{"item": msg})
+	respondCreated(c, gin.H{"item": msg})
 }
 
 func (h *MessageHandler) WS(c *gin.Context) {
@@ -218,22 +218,22 @@ func (h *MessageHandler) WS(c *gin.Context) {
 
 	claims, err := auth.ParseToken(extractBearer(tokenStr), h.JWTSecret)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		respondError(c, http.StatusUnauthorized, "invalid token")
 		return
 	}
 	user, err := service.GetUser(h.DB, claims.UserID)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		respondError(c, http.StatusUnauthorized, "invalid token")
 		return
 	}
 	if !service.IsAccountActive(user.Status) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+		respondError(c, http.StatusForbidden, "account inactive")
 		return
 	}
 	// Reject stale WebSocket tokens after a password update.
 	// 密码更新后拒绝旧版 WebSocket token。
 	if claims.PasswordVersion != user.PasswordVersion {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		respondError(c, http.StatusUnauthorized, "invalid token")
 		return
 	}
 
