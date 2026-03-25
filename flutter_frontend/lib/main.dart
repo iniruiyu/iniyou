@@ -211,6 +211,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _booting = true;
   bool _loading = false;
   bool _loginMode = true;
+  bool _rememberLoginCredentials = false;
   String _languageCode = AppI18n.defaultLanguageCode;
   // Current theme key for skin switching.
   // 皮肤切换的当前主题键。
@@ -335,6 +336,18 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
     _activePrivateSpaceId = _prefs?.getString(_activePrivateSpaceKey);
     _activePublicSpaceId = _prefs?.getString(_activePublicSpaceKey);
+    _rememberLoginCredentials = SessionActions.readRememberCredentials(_prefs!);
+    final rememberedCredentials = SessionActions.readRememberedCredentials(
+      _prefs!,
+    );
+    if (rememberedCredentials != null) {
+      _loginAccountController.text = rememberedCredentials.account;
+      _loginPasswordController.text = rememberedCredentials.password;
+    } else {
+      await SessionActions.clearRememberedCredentials(_prefs!);
+      _loginAccountController.clear();
+      _loginPasswordController.clear();
+    }
     final sessionRestored = SessionActions.restoreSession(_api, _prefs!);
     if (sessionRestored) {
       try {
@@ -500,6 +513,19 @@ class _IniyouHomeState extends State<IniyouHome> {
       return;
     }
     setState(() => _themeKeyValue = themeKey);
+  }
+
+  Future<void> _setRememberLoginCredentials(bool value) async {
+    // Persist the remember-me switch and clear cached credentials when disabled.
+    // 持久化“记住登录”开关，并在关闭时清理缓存凭据。
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await SessionActions.setRememberCredentialsEnabled(prefs, value);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _rememberLoginCredentials = value;
+    });
   }
 
   ThemeData _themeDataFor(String themeKey) {
@@ -1752,6 +1778,12 @@ class _IniyouHomeState extends State<IniyouHome> {
         account: _loginAccountController.text.trim(),
         password: _loginPasswordController.text,
       );
+      await SessionActions.persistRememberedCredentials(
+        prefs,
+        remember: _rememberLoginCredentials,
+        account: _loginAccountController.text.trim(),
+        password: _loginPasswordController.text,
+      );
       await _refreshAll();
       final routedToProfile = await _applyHostRouteFromCurrentHost();
       _connectSocket();
@@ -1826,6 +1858,10 @@ class _IniyouHomeState extends State<IniyouHome> {
       _view = AppView.profile;
       _flash = null;
       _error = null;
+      if (!_rememberLoginCredentials) {
+        _loginAccountController.clear();
+        _loginPasswordController.clear();
+      }
       _displayNameController.clear();
       _usernameController.clear();
       _domainController.clear();
@@ -2770,10 +2806,12 @@ class _IniyouHomeState extends State<IniyouHome> {
         error: _error,
         loginAccountController: _loginAccountController,
         loginPasswordController: _loginPasswordController,
+        rememberLoginCredentials: _rememberLoginCredentials,
         registerEmailController: _registerEmailController,
         registerPhoneController: _registerPhoneController,
         registerPasswordController: _registerPasswordController,
         onToggleMode: (value) => setState(() => _loginMode = value),
+        onRememberLoginCredentialsChanged: _setRememberLoginCredentials,
         onLogin: _login,
         onRegister: _register,
         currentLanguageCode: _languageCode,

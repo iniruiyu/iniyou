@@ -5,10 +5,23 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../api/api_client.dart';
 
+class RememberedCredentials {
+  const RememberedCredentials({
+    required this.account,
+    required this.password,
+  });
+
+  final String account;
+  final String password;
+}
+
 class SessionActions {
   const SessionActions._();
 
   static const _tokenKey = 'iniyou_token';
+  static const _rememberCredentialsKey = 'iniyou_auth_remember';
+  static const _rememberAccountKey = 'iniyou_auth_account';
+  static const _rememberPasswordKey = 'iniyou_auth_password';
 
   static String? readToken(SharedPreferences prefs) =>
       prefs.getString(_tokenKey);
@@ -22,6 +35,57 @@ class SessionActions {
 
   static Future<void> removeToken(SharedPreferences prefs) async {
     await prefs.remove(_tokenKey);
+  }
+
+  static bool readRememberCredentials(SharedPreferences prefs) =>
+      prefs.getBool(_rememberCredentialsKey) ?? false;
+
+  static RememberedCredentials? readRememberedCredentials(
+    SharedPreferences prefs,
+  ) {
+    if (!readRememberCredentials(prefs)) {
+      return null;
+    }
+    final account = prefs.getString(_rememberAccountKey) ?? '';
+    final password = prefs.getString(_rememberPasswordKey) ?? '';
+    if (account.isEmpty && password.isEmpty) {
+      return null;
+    }
+    return RememberedCredentials(account: account, password: password);
+  }
+
+  static Future<void> persistRememberedCredentials(
+    SharedPreferences prefs, {
+    required bool remember,
+    String account = '',
+    String password = '',
+  }) async {
+    await prefs.setBool(_rememberCredentialsKey, remember);
+    if (remember) {
+      await prefs.setString(_rememberAccountKey, account);
+      await prefs.setString(_rememberPasswordKey, password);
+      return;
+    }
+    await prefs.remove(_rememberAccountKey);
+    await prefs.remove(_rememberPasswordKey);
+  }
+
+  static Future<void> setRememberCredentialsEnabled(
+    SharedPreferences prefs,
+    bool remember,
+  ) async {
+    await prefs.setBool(_rememberCredentialsKey, remember);
+    if (remember) {
+      return;
+    }
+    await prefs.remove(_rememberAccountKey);
+    await prefs.remove(_rememberPasswordKey);
+  }
+
+  static Future<void> clearRememberedCredentials(
+    SharedPreferences prefs,
+  ) async {
+    await persistRememberedCredentials(prefs, remember: false);
   }
 
   static Future<String> login(

@@ -54,6 +54,7 @@
 - 钱包、会员、权益需要与账号体系关联，但保留独立扩展空间
 - 每个用户都可以设置唯一用户名，用户名由英文字母和数字组成，可作为个人主页和登录别名入口 / Each user can set a unique alphanumeric username used for profile and login alias routing.
 - 每个用户都可以设置唯一域名，域名由英文字母和数字组成，作为身份卡与登录入口；昵称与域名需要分开维护，手机号、年龄、性别、邮箱等个人信息字段需要支持可见范围控制 / Each user can set a unique alphanumeric domain handle used as the identity card and login entry; nickname must stay separate from the domain, and personal fields such as phone, age, gender, and email need visibility scopes.
+- 登录页需要提供“记住账号和密码”选项，允许本地保存登录表单内容，并可随时取消 / The login page needs a "remember account and password" option that stores the login form locally and can be turned off at any time.
 - 个人主页中的身份卡需要拆分为个人资料与隐私设置两块，默认仅展示摘要，编辑应通过按钮弹窗完成 / The profile identity card should be split into personal info and privacy settings, show summaries by default, and use a button-driven modal for editing.
 - 个人主页中的会员等级只展示当前等级与订阅按钮，切换等级通过底部抽屉完成 / Profile membership should show only the current level and a subscribe button, with level switching done in a bottom sheet.
 - 个人主页顶部不再保留单独的用户 ID 信息框，用户 ID 下移到个人资料摘要中，修改资料与隐私设置分别通过各自按钮进入 / The personal home should no longer keep a separate user-ID box at the top; the user ID belongs in the personal info summary, and edit/privacy actions should be split into their own buttons.
@@ -292,6 +293,7 @@
 
 ### 2026-03-20
 
+- 补充登录页“记住账号和密码”需求，并同步收口双前端登录表单的本地持久化交互 / Added the login-page "remember account and password" requirement and aligned the dual-frontend login forms with local persistence behavior.
 - 统一 Flutter 与 Legacy Web 的后端接口口径，并补齐文章编辑弹窗、媒体清除和图片等比缩放要求 / Aligned Flutter and Legacy Web on a shared backend API, and added post-edit modal behavior, media clearing, and proportional image scaling requirements.
 - 补齐 Vue 端文章多图上传、随机文件名、可删除画廊与等比缩放要求，并确保未选中的媒体不会再次提交 / Added Vue multi-image upload, randomized file names, removable galleries, and proportional scaling requirements, and ensured deselected media is not submitted again.
 - 补充文章媒体真实落盘、更新替换清理与删除时物理删除要求 / Added physical media persistence and cleanup requirements for article media during updates and deletions.

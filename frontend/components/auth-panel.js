@@ -35,6 +35,14 @@ window.AuthPanel = {
       <form v-if="app.authMode === 'login'" class="form auth-form">
         <input type="text" :placeholder="app.t('auth.accountPlaceholder')" v-model="app.auth.account" />
         <input type="password" :placeholder="app.t('auth.passwordPlaceholder')" v-model="app.auth.password" />
+        <label class="auth-remember">
+          <input
+            type="checkbox"
+            v-model="app.auth.rememberCredentials"
+            @change="app.syncRememberedAuthDraft()"
+          />
+          <span>{{ app.t('auth.rememberCredentials') }}</span>
+        </label>
         <bilingual-action-button
           variant="primary"
           type="button"

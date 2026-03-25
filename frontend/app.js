@@ -5,6 +5,12 @@ const { createApp } = Vue;
 const ACTIVE_PRIVATE_SPACE_KEY = 'iniyou_active_private_space';
 const ACTIVE_PUBLIC_SPACE_KEY = 'iniyou_active_public_space';
 
+// Persisted auth draft keys.
+// 持久化的认证表单键。
+const AUTH_REMEMBER_KEY = 'iniyou_auth_remember';
+const AUTH_ACCOUNT_KEY = 'iniyou_auth_account';
+const AUTH_PASSWORD_KEY = 'iniyou_auth_password';
+
 // Quick chat presets for emoji/sticker insertion.
 // 聊天快捷预设，便于插入表情与贴纸。
 const CHAT_QUICK_SNIPPETS = [
@@ -542,6 +548,7 @@ const app = createApp({
             createSub: '加入会员体系，解锁更大空间与更多互动。',
             accountPlaceholder: '邮箱、手机、用户名、域名',
             passwordPlaceholder: '密码',
+            rememberCredentials: '记住账号和密码',
             emailPlaceholder: '邮箱',
             phonePlaceholder: '手机号',
             login: '登录',
@@ -966,6 +973,7 @@ const app = createApp({
             createSub: 'Join membership plans and unlock larger spaces.',
             accountPlaceholder: 'Email, Phone, Username, Domain',
             passwordPlaceholder: 'Password',
+            rememberCredentials: 'Remember account and password',
             emailPlaceholder: 'Email',
             phonePlaceholder: 'Phone',
             login: 'Sign In',
@@ -1273,6 +1281,7 @@ const app = createApp({
         password: '',
         email: '',
         phone: '',
+        rememberCredentials: false,
       },
       // Profile editing form.
       // 资料编辑表单。
@@ -2491,12 +2500,13 @@ const app = createApp({
             auth: {
               welcomeTitle: '歡迎回來',
               welcomeSub: '登入後進入你的空間。',
-              createTitle: '建立新帳號',
-              createSub: '加入會員體系，解鎖更大空間與更多互動。',
+            createTitle: '建立新帳號',
+            createSub: '加入會員體系，解鎖更大空間與更多互動。',
             accountPlaceholder: '信箱、手機、使用者名稱、域名',
-              passwordPlaceholder: '密碼',
-              emailPlaceholder: '信箱',
-              phonePlaceholder: '手機號碼',
+            passwordPlaceholder: '密碼',
+            rememberCredentials: '記住帳號和密碼',
+            emailPlaceholder: '信箱',
+            phonePlaceholder: '手機號碼',
               login: '登入',
               register: '註冊',
               logout: '登出',
@@ -3610,6 +3620,45 @@ const app = createApp({
       this.authMode = mode === 'register' ? 'register' : 'login';
       this.clearFeedback();
     },
+    loadRememberedAuthDraft() {
+      // Restore the remembered login draft from local storage.
+      // 从本地存储恢复已记住的登录草稿。
+      const rememberCredentials = localStorage.getItem(AUTH_REMEMBER_KEY) === 'true';
+      this.auth.rememberCredentials = rememberCredentials;
+      if (!rememberCredentials) {
+        localStorage.removeItem(AUTH_ACCOUNT_KEY);
+        localStorage.removeItem(AUTH_PASSWORD_KEY);
+        this.auth.account = '';
+        this.auth.password = '';
+        return;
+      }
+      this.auth.account = localStorage.getItem(AUTH_ACCOUNT_KEY) || '';
+      this.auth.password = localStorage.getItem(AUTH_PASSWORD_KEY) || '';
+    },
+    syncRememberedAuthDraft() {
+      // Persist or clear the remember-me flag when the checkbox changes.
+      // 当勾选状态变化时，同步记住登录的标记与本地凭据。
+      localStorage.setItem(
+        AUTH_REMEMBER_KEY,
+        this.auth.rememberCredentials ? 'true' : 'false',
+      );
+      if (this.auth.rememberCredentials) {
+        return;
+      }
+      localStorage.removeItem(AUTH_ACCOUNT_KEY);
+      localStorage.removeItem(AUTH_PASSWORD_KEY);
+    },
+    persistRememberedAuthDraft() {
+      // Store the successful login draft only when remember-me is enabled.
+      // 仅在勾选记住登录时保存成功登录草稿。
+      if (!this.auth.rememberCredentials) {
+        this.syncRememberedAuthDraft();
+        return;
+      }
+      localStorage.setItem(AUTH_REMEMBER_KEY, 'true');
+      localStorage.setItem(AUTH_ACCOUNT_KEY, this.auth.account.trim());
+      localStorage.setItem(AUTH_PASSWORD_KEY, this.auth.password);
+    },
     toggleSettingsMenu() {
       this.settingsOpen = !this.settingsOpen;
     },
@@ -3789,6 +3838,7 @@ const app = createApp({
       this.token = data.token || '';
       if (this.token) {
         localStorage.setItem('token', this.token);
+        this.persistRememberedAuthDraft();
         await this.loadMe();
         if (!this.token) {
           return;
@@ -5182,6 +5232,11 @@ const app = createApp({
         }).catch(() => null);
       }
       this.resetSession();
+      if (!this.auth.rememberCredentials) {
+        this.auth.account = '';
+        this.auth.password = '';
+        this.syncRememberedAuthDraft();
+      }
       this.view = 'auth';
       this.authMode = 'login';
       this.setFlash(this.t('auth.logoutSuccess'));
@@ -5250,6 +5305,7 @@ const app = createApp({
     this.applyTheme();
     this.activePrivateSpaceId = localStorage.getItem(ACTIVE_PRIVATE_SPACE_KEY) || '';
     this.activePublicSpaceId = localStorage.getItem(ACTIVE_PUBLIC_SPACE_KEY) || '';
+    this.loadRememberedAuthDraft();
 
     // Load token from storage.
     // 从本地存储读取 token。

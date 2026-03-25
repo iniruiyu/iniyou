@@ -11,10 +11,12 @@ class GuestLandingView extends StatelessWidget {
     required this.error,
     required this.loginAccountController,
     required this.loginPasswordController,
+    required this.rememberLoginCredentials,
     required this.registerEmailController,
     required this.registerPhoneController,
     required this.registerPasswordController,
     required this.onToggleMode,
+    required this.onRememberLoginCredentialsChanged,
     required this.onLogin,
     required this.onRegister,
     required this.currentLanguageCode,
@@ -31,10 +33,12 @@ class GuestLandingView extends StatelessWidget {
   final String? error;
   final TextEditingController loginAccountController;
   final TextEditingController loginPasswordController;
+  final bool rememberLoginCredentials;
   final TextEditingController registerEmailController;
   final TextEditingController registerPhoneController;
   final TextEditingController registerPasswordController;
   final ValueChanged<bool> onToggleMode;
+  final ValueChanged<bool> onRememberLoginCredentialsChanged;
   final VoidCallback onLogin;
   final VoidCallback onRegister;
   final String currentLanguageCode;
@@ -66,18 +70,21 @@ class GuestLandingView extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final auth = _AuthCard(
-                loginMode: loginMode,
-                loading: loading,
-                error: error,
-                loginAccountController: loginAccountController,
-                loginPasswordController: loginPasswordController,
-                registerEmailController: registerEmailController,
-                registerPhoneController: registerPhoneController,
-                registerPasswordController: registerPasswordController,
-                onToggleMode: onToggleMode,
-                onLogin: onLogin,
-                onRegister: onRegister,
-                t: t,
+              loginMode: loginMode,
+              loading: loading,
+              error: error,
+              loginAccountController: loginAccountController,
+              loginPasswordController: loginPasswordController,
+              rememberLoginCredentials: rememberLoginCredentials,
+              registerEmailController: registerEmailController,
+              registerPhoneController: registerPhoneController,
+              registerPasswordController: registerPasswordController,
+              onToggleMode: onToggleMode,
+              onRememberLoginCredentialsChanged:
+                  onRememberLoginCredentialsChanged,
+              onLogin: onLogin,
+              onRegister: onRegister,
+              t: t,
                 peerT: peerT,
               );
               return Center(
@@ -130,10 +137,12 @@ class _AuthCard extends StatelessWidget {
     required this.error,
     required this.loginAccountController,
     required this.loginPasswordController,
+    required this.rememberLoginCredentials,
     required this.registerEmailController,
     required this.registerPhoneController,
     required this.registerPasswordController,
     required this.onToggleMode,
+    required this.onRememberLoginCredentialsChanged,
     required this.onLogin,
     required this.onRegister,
     required this.t,
@@ -145,10 +154,12 @@ class _AuthCard extends StatelessWidget {
   final String? error;
   final TextEditingController loginAccountController;
   final TextEditingController loginPasswordController;
+  final bool rememberLoginCredentials;
   final TextEditingController registerEmailController;
   final TextEditingController registerPhoneController;
   final TextEditingController registerPasswordController;
   final ValueChanged<bool> onToggleMode;
+  final ValueChanged<bool> onRememberLoginCredentialsChanged;
   final VoidCallback onLogin;
   final VoidCallback onRegister;
   final String Function(String key) t;
@@ -207,6 +218,17 @@ class _AuthCard extends StatelessWidget {
                 decoration: InputDecoration(labelText: t('auth.password')),
               ),
               const SizedBox(height: 16),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: rememberLoginCredentials,
+                onChanged: loading
+                    ? null
+                    : (value) =>
+                          onRememberLoginCredentialsChanged(value ?? false),
+                title: Text(t('auth.rememberCredentials')),
+              ),
+              const SizedBox(height: 4),
               // Primary action buttons use the shared bilingual style.
               // 主操作按钮统一使用双语样式组件。
               BilingualActionButton(

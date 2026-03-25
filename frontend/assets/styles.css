@@ -2851,6 +2851,28 @@ body {
   margin-top: 8px;
 }
 
+/* Remember-me row / 记住登录行：让登录页可以稳定保留账号和密码输入。 */
+.auth-remember {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.auth-remember input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+  flex: 0 0 auto;
+}
+
 .auth-footnote {
   margin-top: 16px;
   color: var(--muted);

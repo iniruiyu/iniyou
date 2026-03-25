@@ -7,7 +7,7 @@
 ## 2. 状态
 
 - 状态：进行中
-- 已完成：注册、登录、基础资料、用户名设置、用户名登录别名、域名身份卡与资料可见范围已接通，认证态管理已接入 JWT + active 状态校验，密码修改已接通并会刷新 token 版本，好友关系、当前订阅和外部账号绑定接口已接通，个人主页中的个人资料/隐私设置摘要与弹窗编辑已接通，账号主页与用户主页已合并为单一个人主页入口，顶部重复英雄卡已收敛为 Vue 风格概览，用户 ID 已下移到个人资料摘要并拆分为资料/隐私按钮，Flutter 端修改资料/隐私设置弹窗已按入口拆分为各自独立内容，顶部总览已继续收紧为仅保留空间/好友快速统计，账号/空间/内容/聊天接口已统一到纯 `code/message/data` 响应包装，`docs/API_SPEC.md` 已按当前实现更新接口边界
+- 已完成：注册、登录、基础资料、用户名设置、用户名登录别名、域名身份卡与资料可见范围已接通，认证态管理已接入 JWT + active 状态校验，密码修改已接通并会刷新 token 版本，好友关系、当前订阅和外部账号绑定接口已接通，个人主页中的个人资料/隐私设置摘要与弹窗编辑已接通，账号主页与用户主页已合并为单一个人主页入口，顶部重复英雄卡已收敛为 Vue 风格概览，用户 ID 已下移到个人资料摘要并拆分为资料/隐私按钮，Flutter 端修改资料/隐私设置弹窗已按入口拆分为各自独立内容，顶部总览已继续收紧为仅保留空间/好友快速统计，登录页“记住账号和密码”开关已在双前端接入本地持久化，账号/空间/内容/聊天接口已统一到纯 `code/message/data` 响应包装，`docs/API_SPEC.md` 已按当前实现更新接口边界
 - 进行中：权限基础结构、密码找回/重置、账号停用/恢复管理、区块链账号绑定安全深化
 
 ## 3. 任务清单
@@ -39,6 +39,7 @@
 ## 5. 进度记录
 
 - 2026-03-25：把 Flutter 与 Legacy Web 的 API helper 调整为 `data` 优先读取，随后后端也收口为纯 `code/message/data` 包装，移除了标准接口的旧顶层字段 / Shifted the Flutter and Legacy Web API helpers to prefer `data`, then closed the backend to a pure `code/message/data` envelope and removed legacy top-level fields from standard APIs.
+- 2026-03-25：补充登录页“记住账号和密码”能力，要求双前端登录成功后可回填账号与密码，并在未勾选时清理本地凭据 / Added login-page "remember account and password" support so both frontends can refill credentials after sign-in and clear local credentials when the option is off.
 - 2026-03-24：按当前代码收口账号接口文档，补齐好友、订阅和外部账号接口，并移除尚未落地的用户管理/钱包权益接口口径 / Realigned the account API docs to the current code, adding friend, subscription, and external-account endpoints while removing undocumented user-management and wallet-entitlement APIs.
 - 2026-03-20：继续对齐 Flutter 个人主页为 Vue 风格布局，收紧顶部重复英雄卡，并把用户 ID 留在个人资料摘要、将修改入口拆成资料/隐私两处 / Continued aligning the Flutter profile page with the Vue layout by tightening the duplicated top hero card, keeping the user ID in the personal info summary, and splitting the edit entry into personal-info and privacy actions.
 - 2026-03-20：继续拆分 Flutter 个人主页修改资料/隐私设置弹窗，个人资料与隐私设置分别只显示自己的字段，并切换为区块化保存文案 / Continued splitting the Flutter personal-home edit/privacy dialogs so personal info and privacy settings each show only their own fields and use section-specific save labels.

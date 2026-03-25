@@ -34,6 +34,7 @@
 - 文章编辑与发布弹窗应支持多图片画廊和单项删除，图片选择后先等比缩放再预览，避免旧版单图逻辑继续覆盖新附件
 - 空间卡片应提供进入、编辑和删除入口，文章卡片应提供编辑和删除入口
 - 空间名称与二级域名需解耦展示，二级域名仅允许英文字母和数字，且最长 63 个字符
+- 登录页应提供“记住账号和密码”开关，登录成功后将账号与密码持久化到本地，下次进入页面时优先回填 / The login page should provide a "remember account and password" switch, persist the account and password locally after a successful sign-in, and prefill them on the next visit.
 - 聊天页应尽量占满主内容区，消息历史区独立滚动，输入区固定在底部
 - 常用表情与贴纸应以快捷插入区呈现，减少输入切换成本
 
@@ -229,6 +230,7 @@
 - 账户中心
 - 钱包页
 - 会员与权益页
+- 登录页需保留账号、密码与记住开关，窗口/页面关闭后仍可回填最近一次记住的凭据 / The login page should keep the account, password, and remember switch, and it should restore the most recently remembered credentials after the window or page is closed.
 
 ### 8.6 社交相关页面
 
@@ -324,6 +326,7 @@
 
 ## 13. 进度记录
 
+- 2026-03-25：补充登录页“记住账号和密码”开关的前端设计约束，并要求双前端在登录成功后本地回填 / Added the frontend design constraint for the login-page "remember account and password" switch and required both frontends to restore credentials locally after a successful sign-in.
 - 2026-03-20：重构个人主页顶部用户 ID 信息框，移除顶部独立卡片并将用户 ID 下移到个人资料摘要，同时拆分修改资料/隐私设置按钮 / Reworked the personal-home top user-ID box, removed the separate header card, moved the user ID into the personal info summary, and split the edit/privacy buttons.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
 - 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.

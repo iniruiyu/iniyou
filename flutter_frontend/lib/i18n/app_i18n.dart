@@ -116,6 +116,7 @@ class AppI18n {
       'auth.email': '邮箱',
       'auth.phone': '手机号',
       'auth.password': '密码',
+      'auth.rememberCredentials': '记住账号和密码',
       'auth.passwordHint': '密码，至少 8 位',
       'auth.note': 'Auth Flow 已保留。未登录首页当前仅提供登录和注册入口，主页展示内容后续补充。',
       'summary.spaces': '空间',
@@ -238,6 +239,7 @@ class AppI18n {
       'auth.email': 'Email',
       'auth.phone': 'Phone',
       'auth.password': 'Password',
+      'auth.rememberCredentials': 'Remember account and password',
       'auth.passwordHint': 'Password, at least 8 characters',
       'auth.note':
           'Auth flow remains. The guest homepage now only keeps sign in and sign up. Other homepage content comes later.',
@@ -362,6 +364,7 @@ class AppI18n {
       'auth.email': '信箱',
       'auth.phone': '手機號',
       'auth.password': '密碼',
+      'auth.rememberCredentials': '記住帳號和密碼',
       'auth.passwordHint': '密碼，至少 8 位',
       'auth.note': 'Auth Flow 已保留。未登入首頁目前僅提供登入與註冊入口，其餘首頁展示內容後續補充。',
       'summary.spaces': '空間',
