@@ -141,6 +141,8 @@ make deploy-status
 make deploy-logs
 ```
 
+CI 自动检查会在 `push` 和 `pull_request` 时运行同样的后端、前端、Flutter 和容器校验 / The CI pipeline runs the same backend, frontend, Flutter, and container checks on `push` and `pull_request`.
+
 构建产物输出到 `build/`：
 
 - `build/account-service`

@@ -1,0 +1,101 @@
+# CI pipeline / 持续集成流水线
+# Runs backend, frontend, Flutter, and container checks on each push and pull request.
+# 在每次 push 和 pull request 时运行后端、前端、Flutter 和容器检查。
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend checks / 后端检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout / 检出代码
+        uses: actions/checkout@v4
+
+      - name: Set up Go / 安装 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.4"
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Test backend / 测试后端
+        working-directory: backend
+        run: go test ./...
+
+  frontend:
+    name: Frontend checks / 前端检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout / 检出代码
+        uses: actions/checkout@v4
+
+      - name: Set up Node / 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check frontend syntax / 检查前端语法
+        run: |
+          node --check frontend/app.js
+          node --check frontend/components/settings-menu.js
+          node --check frontend/components/auth-panel.js
+          node --check frontend/components/landing-page.js
+          node --check frontend/components/bilingual-field.js
+          node --check frontend/components/bilingual-select-field.js
+          node --check frontend/components/bilingual-action-button.js
+
+  flutter:
+    name: Flutter checks / Flutter 检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout / 检出代码
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter / 安装 Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get Flutter packages / 获取 Flutter 依赖
+        working-directory: flutter_frontend
+        run: flutter pub get
+
+      - name: Analyze Flutter frontend / 检查 Flutter 前端
+        working-directory: flutter_frontend
+        run: flutter analyze
+
+      - name: Run Flutter tests / 运行 Flutter 测试
+        working-directory: flutter_frontend
+        run: flutter test
+
+  docker:
+    name: Container checks / 容器检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout / 检出代码
+        uses: actions/checkout@v4
+
+      - name: Validate compose file / 校验 compose 文件
+        run: docker compose -f docker-compose.yml config --quiet
+
+      - name: Build deployment images / 构建部署镜像
+        run: docker compose -f docker-compose.yml build account-service space-service message-service migrate legacy-web

@@ -68,6 +68,8 @@
   - `frontend/Dockerfile`
   - `frontend/nginx.conf`
   - `scripts/deploy-stack.sh`
+- CI 检查流水线：
+  - `.github/workflows/ci.yml`
 - 本地构建产物：
   - `build/account-service`
   - `build/space-service`
@@ -84,4 +86,5 @@
 
 - 当前版本适合作为开发版、联调版和内部演示版交付
 - 容器化部署基线已经具备，可直接用于本地/内网环境拉起服务
+- CI 检查流水线已经具备，可同步验证后端、前端、Flutter 和容器构建
 - 若进入生产交付，建议先补齐远程部署自动化、滚动更新和真实验签流程

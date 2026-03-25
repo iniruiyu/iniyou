@@ -26,6 +26,7 @@
 - [x] `make build` 通过
 - [x] `docker compose -f docker-compose.yml config` 校验通过
 - [x] `make deploy` 在本地 Docker 环境可执行并已实跑
+- [x] GitHub Actions CI 检查流水线已补充
 - [x] `build/account-service` 已生成
 - [x] `build/space-service` 已生成
 - [x] `build/message-service` 已生成
@@ -51,6 +52,7 @@
 
 - 当前仓库已具备开发版交付条件
 - 当前仓库已具备开发版容器化部署条件
+- 当前仓库已具备基础 CI 检查流程
 - 已完成 `make smoke` 完整实跑并留档
 - 已完成 `make deploy` 完整实跑并留档
 - 若作为正式对外交付版本，仍建议先完成：
