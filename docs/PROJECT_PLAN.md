@@ -246,8 +246,11 @@ new-project/
 
 当前仓库已完成初始化，并已确定首版技术栈与首批功能方向。后续如果需求、架构、设计或第三方依赖发生变动，必须同步更新对应文档。
 
+最近一次本地冒烟测试 `make smoke` 已通过，当前环境下账号、好友与消息主链路可用 / The latest local `make smoke` run passed, and the account, friend, and messaging paths are working in the current environment.
+
 进度记录 / Progress log:
 
+- 2026-03-25：完成 `make smoke` 本地冒烟测试并通过，已回写发布检查清单 / Completed the local `make smoke` smoke test and passed it, then wrote the result back into the release checklist.
 - 2026-03-25：Flutter 与 Legacy Web 的 API helper 已切到 `data` 优先读取，后端标准接口也已收口为纯 `code/message/data` 包装，旧顶层字段已移除 / Flutter and Legacy Web API helpers now prefer `data`, and the backend standard APIs have been closed to a pure `code/message/data` envelope with legacy top-level fields removed.
 - 2026-03-24：对齐 `docs/API_SPEC.md`、`docs/DATA_MODEL.md` 与后端实际路由/模型，明确当前实现边界并把未落地接口与实体下沉为预留项 / Aligned `docs/API_SPEC.md` and `docs/DATA_MODEL.md` with the actual backend routes and models, clarifying the implemented boundaries and moving not-yet-built APIs/entities into reserved items.
 - 2026-03-24：精简 `README.md` 与 `DESIGN.md`，收口重复说明，保留项目入口、运行方式和账号服务最小设计摘要 / Simplified `README.md` and `DESIGN.md` by removing repeated explanations while keeping the project entry, startup flow, and the minimal account-service design summary.
