@@ -17,6 +17,8 @@
 - `frontend/Dockerfile`: Legacy Web 容器镜像构建文件
 - `frontend/nginx.conf`: Legacy Web 静态站点配置
 - `scripts/deploy-stack.sh`: 本地部署编排脚本
+- `scripts/remote-deploy.sh`: 远程部署助手脚本
+- `.github/workflows/`: CI 和 Release 流水线
 - `docs/`: 需求、设计、接口和开发大纲
 - `DESIGN.md`: 当前阶段设计说明
 - `Makefile`: 本地测试、构建和启动命令
@@ -136,6 +138,7 @@ make build-flutter-web
 make build
 make smoke
 make deploy
+make deploy-remote
 make deploy-down
 make deploy-status
 make deploy-logs
@@ -161,12 +164,19 @@ make deploy
 常用辅助命令：
 
 ```bash
+make deploy-remote
 make deploy-status
 make deploy-logs
 make deploy-down
 ```
 
 `make deploy` 会先构建后端、前端和迁移镜像，再启动数据库、执行版本化迁移，最后拉起业务服务。 / `make deploy` first builds the backend, frontend, and migration images, then starts the database, runs the versioned migrations, and finally brings up the application services.
+
+`make deploy-remote` 会在远程主机的已检出仓库中先拉取最新 `main` 分支，再执行同一套容器化部署脚本。 / `make deploy-remote` pulls the latest `main` branch in the remote host's checked-out repository and then runs the same containerized deployment script.
+
+GitHub Actions 还提供了 `Release` 工作流，可在 CI 通过后自动 SSH 部署到远程主机。 / GitHub Actions also provides a `Release` workflow that can SSH-deploy to the remote host after CI passes.
+
+该工作流默认读取 `DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_PATH` 和 `DEPLOY_SSH_PRIVATE_KEY`，可选读取 `DEPLOY_KNOWN_HOSTS`。 / The workflow reads `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH`, and `DEPLOY_SSH_PRIVATE_KEY` by default, and can optionally read `DEPLOY_KNOWN_HOSTS`.
 
 ## 关键文档
 

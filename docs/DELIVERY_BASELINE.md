@@ -49,6 +49,7 @@
 - 通讯服务：`make run-message`
 - 版本化迁移：`make migrate`
 - 容器化部署：`make deploy`
+- 远程部署自动化：`make deploy-remote`
 - 容器化状态查看：`make deploy-status`
 - 容器化日志查看：`make deploy-logs`
 - 容器化停机：`make deploy-down`
@@ -68,6 +69,9 @@
   - `frontend/Dockerfile`
   - `frontend/nginx.conf`
   - `scripts/deploy-stack.sh`
+- 远程部署与发布流水线：
+  - `scripts/remote-deploy.sh`
+  - `.github/workflows/release.yml`
 - CI 检查流水线：
   - `.github/workflows/ci.yml`
 - 本地构建产物：
@@ -78,8 +82,8 @@
 
 ## 5. 当前未覆盖项
 
-- 正式生产部署脚本
 - 前端正式打包发布方案
+- 滚动更新与回滚策略
 - 区块链真实签名验签
 
 ## 6. 适用结论
@@ -87,4 +91,6 @@
 - 当前版本适合作为开发版、联调版和内部演示版交付
 - 容器化部署基线已经具备，可直接用于本地/内网环境拉起服务
 - CI 检查流水线已经具备，可同步验证后端、前端、Flutter 和容器构建
-- 若进入生产交付，建议先补齐远程部署自动化、滚动更新和真实验签流程
+- 远程部署自动化已经具备，可通过 SSH 拉起最新 `main` 分支的容器栈
+- 远程部署工作流默认依赖 `DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_PATH` 和 `DEPLOY_SSH_PRIVATE_KEY`，可选 `DEPLOY_KNOWN_HOSTS`
+- 若进入生产交付，建议继续补齐滚动更新、回滚策略和真实验签流程

@@ -250,6 +250,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-25：补齐 GitHub Actions Release 工作流与远程部署脚本，CI 通过后可通过 SSH 自动把最新 `main` 分支部署到目标主机 / Added the GitHub Actions Release workflow and remote deployment script so the latest `main` branch can now be SSH-deployed to the target host after CI passes.
 - 2026-03-25：补齐 GitHub Actions CI 检查流水线，后端、前端、Flutter 和容器构建现在可以在 push / PR 时同步验证 / Added a GitHub Actions CI pipeline so the backend, frontend, Flutter, and container builds can now be validated on push and pull request.
 - 2026-03-25：`make deploy` 本地实跑通过，容器栈已完成镜像构建、版本化迁移、服务启动与停机回收 / `make deploy` passed locally, and the container stack completed image builds, versioned migrations, service startup, and teardown.
 - 2026-03-25：补齐 `docker-compose.yml`、`make deploy` 和部署脚本，账号、空间、通讯与 Legacy Web 现在可以通过容器化栈一键启动 / Added `docker-compose.yml`, `make deploy`, and the deployment script so the account, space, message, and Legacy Web services can now be started in one step through the container stack.

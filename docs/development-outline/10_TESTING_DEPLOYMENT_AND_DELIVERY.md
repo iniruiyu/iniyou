@@ -46,5 +46,6 @@
 
 - `10` 阶段主体已完成，`make smoke` 与 `make deploy` 现在都已提供并在本地实跑验证 / The main `10` phase is complete, and both `make smoke` and `make deploy` are now available and locally verified.
 - 当前仓库已具备开发版交付基线
-- 容器化部署基线已提供，生产级交付仍建议补充远程部署自动化、滚动发布与真实链上验签
+- 容器化部署基线已提供，生产级交付仍建议补充滚动发布、回滚策略与真实链上验签
 - GitHub Actions CI 检查流水线已补齐，后端、前端、Flutter 与容器构建可在 push / PR 中同步验证 / The GitHub Actions CI pipeline is now in place, and backend, frontend, Flutter, and container builds can be validated together on push and pull request.
+- GitHub Actions Release 工作流与远程部署脚本已补齐，主分支在 CI 通过后可自动拉起远程容器栈 / The GitHub Actions Release workflow and remote deployment script are now in place, and the main branch can automatically bring up the remote container stack after CI passes.

@@ -27,6 +27,7 @@
 - [x] `docker compose -f docker-compose.yml config` 校验通过
 - [x] `make deploy` 在本地 Docker 环境可执行并已实跑
 - [x] GitHub Actions CI 检查流水线已补充
+- [x] GitHub Actions Release 远程部署流水线已补充
 - [x] `build/account-service` 已生成
 - [x] `build/space-service` 已生成
 - [x] `build/message-service` 已生成
@@ -40,6 +41,7 @@
 - [x] 最小冒烟流程已有文档与脚本
 - [x] `make migrate` 版本化迁移命令已提供
 - [x] `make deploy` 容器化部署命令已提供
+- [x] `make deploy-remote` 远程部署命令已提供
 - [x] `make smoke` 在完整本地环境下实跑并留档
 
 ### 2.5 已知限制
@@ -53,8 +55,9 @@
 - 当前仓库已具备开发版交付条件
 - 当前仓库已具备开发版容器化部署条件
 - 当前仓库已具备基础 CI 检查流程
+- 当前仓库已具备基础远程发布流程
 - 已完成 `make smoke` 完整实跑并留档
 - 已完成 `make deploy` 完整实跑并留档
 - 若作为正式对外交付版本，仍建议先完成：
-  - 远程部署自动化或 CI/CD 发布流程
   - 前端正式构建发布链路
+  - 滚动更新与回滚策略

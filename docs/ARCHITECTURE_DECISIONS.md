@@ -203,3 +203,4 @@
 - 增加版本化数据库迁移脚本与服务启动回退双路径 / Added versioned database migration scripts alongside the service-startup fallback path.
 - 补齐本地容器化部署基线，使用 `docker-compose.yml`、`backend/Dockerfile`、`frontend/Dockerfile` 和 `scripts/deploy-stack.sh` 统一启动顺序，并在迁移完成后再拉起业务服务 / Added the local containerized deployment baseline using `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, and `scripts/deploy-stack.sh` to standardize startup order and start application services only after migrations complete.
 - 补充 GitHub Actions CI 检查流水线，统一覆盖后端测试、前端语法、Flutter 分析与容器构建 / Added a GitHub Actions CI pipeline to consistently cover backend tests, frontend syntax checks, Flutter analysis, and container builds.
+- 补充 GitHub Actions Release 工作流与 SSH 远程部署脚本，形成主分支通过 CI 后的发布闭环 / Added a GitHub Actions Release workflow and SSH remote deployment script to close the release loop after the main branch passes CI.

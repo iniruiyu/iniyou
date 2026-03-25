@@ -1,0 +1,72 @@
+# Release pipeline / 发布流水线
+# This workflow deploys the checked-out branch to a remote host after CI has passed.
+# 该工作流会在 CI 通过后，将当前分支部署到远程主机。
+name: Release
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Remote deploy / 远程部署
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      DEPLOY_BRANCH: main
+      DEPLOY_COMPOSE_FILE: docker-compose.yml
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout / 检出代码
+        uses: actions/checkout@v4
+
+      - name: Validate deploy env / 校验部署参数
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_PRIVATE_KEY; do
+            if [ -z "${!key:-}" ]; then
+              echo "$key is required / $key 为必填项" >&2
+              exit 1
+            fi
+          done
+
+      - name: Prepare SSH / 准备 SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy remotely / 远程部署
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_cmd=$(printf "DEPLOY_PATH=%q DEPLOY_BRANCH=%q COMPOSE_FILE=%q bash -s" "$DEPLOY_PATH" "$DEPLOY_BRANCH" "$DEPLOY_COMPOSE_FILE")
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "$remote_cmd" < scripts/remote-deploy.sh

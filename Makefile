@@ -7,7 +7,7 @@ FLUTTER_BIN := /root/flutter-sdk/bin/flutter
 MIGRATE_SERVICE ?= all
 COMPOSE_FILE ?= docker-compose.yml
 
-.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke migrate deploy deploy-down deploy-logs deploy-status check
+.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke migrate deploy deploy-remote deploy-down deploy-logs deploy-status check
 
 help:
 	@echo "Available targets / 可用目标:"
@@ -27,6 +27,7 @@ help:
 	@echo "  make migrate-space   - Run space migration / 运行空间迁移"
 	@echo "  make migrate-message - Run message migration / 运行通讯迁移"
 	@echo "  make deploy         - Build and start the container stack / 构建并启动容器栈"
+	@echo "  make deploy-remote  - Run remote deploy helper / 运行远程部署助手"
 	@echo "  make deploy-down    - Stop and remove the container stack / 停止并移除容器栈"
 	@echo "  make deploy-logs    - Stream container logs / 查看容器日志"
 	@echo "  make deploy-status  - Show container status / 查看容器状态"
@@ -90,6 +91,9 @@ migrate-message:
 
 deploy:
 	bash ./scripts/deploy-stack.sh
+
+deploy-remote:
+	bash ./scripts/remote-deploy.sh
 
 deploy-down:
 	docker compose -f $(COMPOSE_FILE) down
