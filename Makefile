@@ -5,7 +5,7 @@ FRONTEND_DIR := frontend
 FLUTTER_FRONTEND_DIR := flutter_frontend
 FLUTTER_BIN := /root/flutter-sdk/bin/flutter
 
-.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke check
+.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke migrate check
 
 help:
 	@echo "Available targets / 可用目标:"
@@ -19,6 +19,7 @@ help:
 	@echo "  make run-space      - Run space service / 启动空间服务"
 	@echo "  make run-message    - Run message service / 启动消息服务"
 	@echo "  make run-flutter-web - Run Flutter web client / 启动 Flutter Web 前端"
+	@echo "  make migrate        - Run explicit schema/backfill migration / 运行显式迁移与回填"
 	@echo "  make smoke          - Run local API smoke script / 运行本地接口冒烟脚本"
 	@echo "  make check          - Alias of test / test 的别名"
 
@@ -63,6 +64,9 @@ run-message:
 
 run-flutter-web:
 	cd $(FLUTTER_FRONTEND_DIR) && CI=true FLUTTER_SUPPRESS_ANALYTICS=true $(FLUTTER_BIN) run -d web-server --web-hostname 0.0.0.0 --web-port 3000
+
+migrate:
+	cd $(BACKEND_DIR) && go run ./cmd/migrate -service all
 
 smoke:
 	chmod +x scripts/local-smoke.sh

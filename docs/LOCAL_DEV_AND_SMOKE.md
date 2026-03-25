@@ -25,7 +25,18 @@ createdb account_service
 
 ### 3.2 迁移执行方式
 
-当前版本没有独立迁移工具，采用服务启动时自动执行 `AutoMigrate`：
+当前版本提供显式迁移命令 `make migrate`，等价于 `cd backend && go run ./cmd/migrate -service all` / The current version provides an explicit migration command `make migrate`, which is equivalent to `cd backend && go run ./cmd/migrate -service all`.
+
+建议在首次初始化数据库、拉取 schema 变更或需要回填历史数据时先执行该命令 / Run it first when initializing a database, pulling schema changes, or backfilling historical data.
+
+命令支持以下目标 / The command supports the following targets:
+
+- `all`
+- `account`
+- `space`
+- `message`
+
+服务启动时仍会执行各自的服务级迁移，便于本地开发时自动恢复 / Each service still runs its own service-scoped migration at startup for local development recovery.
 
 - 账号服务自动迁移：
   - `users`
@@ -118,10 +129,10 @@ make smoke
 - 冒烟脚本当前未覆盖前端页面行为
 - 完整本地环境下的 `make smoke` 实跑留档仍待完成 / Full-environment `make smoke` evidence capture is still pending.
 - 区块链账号绑定目前只做基础格式与签名载荷校验，不包含真实链上验签
-- 数据库迁移当前仍依赖服务启动自动执行，后续可拆为独立迁移命令
+- 数据库迁移已提供显式命令，后续如需版本化迁移脚本可继续扩展 / Database migration now has an explicit command, and versioned migration scripts can be added later if needed.
 
 ## 8. 维护规则
 
 - 若本地启动方式变化，需要同步更新本文件和 `README.md`
 - 若自动冒烟脚本覆盖范围变化，需要同步更新本文件
-- 若迁移策略从 `AutoMigrate` 调整为独立迁移工具，需要先更新本文件再实施
+- 若迁移策略从当前显式命令升级为版本化迁移工具，需要先更新本文件再实施

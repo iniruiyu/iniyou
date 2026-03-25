@@ -11,6 +11,7 @@ import (
 	"account-service/internal/db"
 	"account-service/internal/handler"
 	"account-service/internal/middleware"
+	"account-service/internal/migrate"
 	"account-service/internal/models"
 	"account-service/internal/service"
 	"account-service/internal/ws"
@@ -26,8 +27,10 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	if err := database.AutoMigrate(&models.Message{}); err != nil {
-		log.Fatalf("db migrate error: %v", err)
+	// Apply the message-service schema before serving requests.
+	// 先执行通讯服务的表结构，再对外提供请求。
+	if err := migrate.ApplyMessage(database); err != nil {
+		log.Fatalf("message migration error: %v", err)
 	}
 
 	hub := ws.NewHub()

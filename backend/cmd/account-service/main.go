@@ -11,6 +11,7 @@ import (
 	"account-service/internal/db"
 	"account-service/internal/handler"
 	"account-service/internal/middleware"
+	"account-service/internal/migrate"
 	"account-service/internal/models"
 	"account-service/internal/service"
 )
@@ -25,11 +26,10 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	if err := database.AutoMigrate(&models.User{}, &models.Subscription{}, &models.ExternalAccount{}, &models.Friend{}); err != nil {
-		log.Fatalf("db migrate error: %v", err)
-	}
-	if err := service.EnsureUserUsernames(database); err != nil {
-		log.Fatalf("username backfill error: %v", err)
+	// Apply the account-service schema and backfill before serving requests.
+	// 先执行账号服务的表结构与回填，再对外提供请求。
+	if err := migrate.ApplyAccount(database); err != nil {
+		log.Fatalf("account migration error: %v", err)
 	}
 
 	h := &handler.AccountHandler{

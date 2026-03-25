@@ -267,7 +267,7 @@
 - 时间字段需要统一时区策略
 - 文本长度与索引长度需要兼容两种数据库
 - 自增或主键策略后续统一确定
-- 当前后端服务启动采用 GORM `AutoMigrate`，并在账号/空间服务启动后执行用户名与历史空间回填 / The backend services use GORM `AutoMigrate` at startup and then backfill usernames and legacy spaces in the account/space services.
+- 当前后端提供显式迁移命令 `make migrate`；各服务启动仍会执行对应的 `AutoMigrate` 与回填逻辑，便于本地开发自恢复 / The backend now provides an explicit `make migrate` command, while each service startup still runs its own `AutoMigrate` and backfill logic for local development recovery.
 
 ## 9. 文档维护规则
 

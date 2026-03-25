@@ -40,25 +40,31 @@ cp .env.example .env
 ## 本地启动
 
 1. 启动 PostgreSQL，并确认 `DB_DSN` 可用。
-2. 运行账号服务：
+2. 如数据库结构有变更，先运行显式迁移：
+
+```bash
+make migrate
+```
+
+3. 运行账号服务：
 
 ```bash
 make run-account
 ```
 
-3. 运行空间服务：
+4. 运行空间服务：
 
 ```bash
 make run-space
 ```
 
-4. 运行通讯服务：
+5. 运行通讯服务：
 
 ```bash
 make run-message
 ```
 
-5. 选择前端启动方式：
+6. 选择前端启动方式：
 
 Legacy Web:
 
@@ -114,6 +120,7 @@ make test
 make test-backend
 make test-frontend
 make test-flutter
+make migrate
 make build-flutter-web
 make build
 make smoke

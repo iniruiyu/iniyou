@@ -12,6 +12,7 @@ import (
 	"account-service/internal/db"
 	"account-service/internal/handler"
 	"account-service/internal/middleware"
+	"account-service/internal/migrate"
 	"account-service/internal/models"
 	"account-service/internal/service"
 )
@@ -30,14 +31,10 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	if err := database.AutoMigrate(&models.Space{}, &models.Post{}, &models.Comment{}, &models.PostLike{}, &models.PostShare{}); err != nil {
-		log.Fatalf("db migrate error: %v", err)
-	}
-	if err := service.MarkLegacySystemSpaces(database); err != nil {
-		log.Fatalf("legacy space migration error: %v", err)
-	}
-	if err := service.BackfillLegacySpaceVisibility(database); err != nil {
-		log.Fatalf("legacy visibility backfill error: %v", err)
+	// Apply the space-service schema and legacy backfills before serving requests.
+	// 先执行空间服务的表结构与历史回填，再对外提供请求。
+	if err := migrate.ApplySpace(database); err != nil {
+		log.Fatalf("space migration error: %v", err)
 	}
 
 	spaceHandler := &handler.AccountHandler{
