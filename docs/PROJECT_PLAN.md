@@ -248,6 +248,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-25：继续把 Legacy Web 的接口读取切到兼容解包 helper，前端现在可同时消费 `data` 包装和旧版顶层字段，为后续移除平铺字段做准备 / Continued moving Legacy Web API reads onto a compatibility unwrapping helper, so the frontend can now consume both the `data` envelope and legacy top-level fields in preparation for removing the flattened fields later.
 - 2026-03-25：为账号、空间、内容和聊天接口补上兼容式统一响应包装，后端返回 `code/message/data` 并保留旧顶层字段，同时让 Flutter API client 兼容新旧两种响应结构 / Added a compatibility response envelope across account, space, content, and chat APIs so the backend now returns `code/message/data` while preserving legacy top-level fields, and updated the Flutter API client to support both response shapes.
 - 2026-03-24：对齐 `docs/API_SPEC.md`、`docs/DATA_MODEL.md` 与后端实际路由/模型，明确当前实现边界并把未落地接口与实体下沉为预留项 / Aligned `docs/API_SPEC.md` and `docs/DATA_MODEL.md` with the actual backend routes and models, clarifying the implemented boundaries and moving not-yet-built APIs/entities into reserved items.
 - 2026-03-24：精简 `README.md` 与 `DESIGN.md`，收口重复说明，保留项目入口、运行方式和账号服务最小设计摘要 / Simplified `README.md` and `DESIGN.md` by removing repeated explanations while keeping the project entry, startup flow, and the minimal account-service design summary.

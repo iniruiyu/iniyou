@@ -1687,6 +1687,32 @@ const app = createApp({
     },
   },
   methods: {
+    async readApiPayload(response) {
+      // Read one API response and unwrap the compatibility envelope.
+      // 读取单个 API 响应，并解包兼容式响应结构。
+      if (!response) {
+        return {};
+      }
+      let body = {};
+      try {
+        body = await response.json();
+      } catch (_error) {
+        body = {};
+      }
+      return this.unwrapApiPayload(body);
+    },
+    unwrapApiPayload(body) {
+      // Support both legacy flat payloads and wrapped `data` envelopes.
+      // 同时兼容旧版平铺载荷与 `data` 包装结构。
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return {};
+      }
+      const data = body.data;
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        return { ...body, ...data };
+      }
+      return body;
+    },
     // Space and post payload helpers.
     // 空间与文章载荷辅助方法。
     mapCommentItem(comment) {
@@ -2915,7 +2941,7 @@ const app = createApp({
       if (!res.ok) {
         return [];
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       return Array.isArray(data.items)
         ? data.items.map((item) => this.mapSpaceItem(item))
         : [];
@@ -3759,7 +3785,7 @@ const app = createApp({
         this.setError(this.t('auth.loginError'));
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.token = data.token || '';
       if (this.token) {
         localStorage.setItem('token', this.token);
@@ -3805,7 +3831,7 @@ const app = createApp({
         this.setError(this.t('auth.registerError'));
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.token = data.token || '';
       if (this.token) {
         localStorage.setItem('token', this.token);
@@ -3845,7 +3871,7 @@ const app = createApp({
         this.view = 'auth';
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.user.id = data.user_id || this.user.id;
       this.user.name = data.display_name || this.user.name;
       this.user.username = data.username || this.user.username;
@@ -3881,7 +3907,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       if (Array.isArray(data.items)) {
         this.spaces = data.items.map((item) => this.mapSpaceItem(item));
         if (this.currentSpace?.id) {
@@ -3910,7 +3936,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.externalAccounts = Array.isArray(data.items)
         ? data.items.map((item) => ({
             id: item.id,
@@ -3935,7 +3961,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       if (Array.isArray(data.items)) {
         this.posts = data.items.map((item) => this.mapPostItem(item));
       }
@@ -3954,7 +3980,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.spacePosts = Array.isArray(data.items)
         ? data.items.map((item) => this.mapPostItem(item))
         : [];
@@ -3971,7 +3997,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       if (Array.isArray(data.items)) {
         this.privatePosts = data.items.map((item) => this.mapPostItem(item));
       }
@@ -3994,7 +4020,7 @@ const app = createApp({
         headers: { Authorization: `Bearer ${this.token}` },
       });
       if (profileRes.ok) {
-        const profile = await profileRes.json();
+        const profile = await this.readApiPayload(profileRes);
         const profileSecondary = [
           profile.domain ? `@${profile.domain}` : '',
           profile.username ? `@${profile.username}` : '',
@@ -4058,7 +4084,7 @@ const app = createApp({
         this.profileSpaces = [];
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.profileSpaces = Array.isArray(data.items)
         ? data.items.map((item) => this.mapSpaceItem(item))
         : [];
@@ -4076,7 +4102,7 @@ const app = createApp({
       if (!res.ok) {
         return false;
       }
-      const profile = await res.json();
+      const profile = await this.readApiPayload(res);
       await this.openProfile(profile.user_id || '', profile.display_name || '');
       return true;
     },
@@ -4093,7 +4119,7 @@ const app = createApp({
       if (!res.ok) {
         return false;
       }
-      const profile = await res.json();
+      const profile = await this.readApiPayload(res);
       await this.openProfile(profile.user_id || '', profile.display_name || '');
       return true;
     },
@@ -4130,7 +4156,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const item = await res.json();
+      const item = await this.readApiPayload(res);
       this.currentPost = this.mapPostItem(item);
       const selectedSpace = this.findSpaceById(item.space_id) ||
         this.visibleProfileSpaces.find((space) => space.id === item.space_id) ||
@@ -4585,7 +4611,7 @@ const app = createApp({
           this.setError(this.t('spaces.editError'));
           return;
         }
-        const item = await res.json();
+        const item = await this.readApiPayload(res);
         const updatedSpace = this.mapSpaceItem(item);
         await this.loadSpaces();
         this.setActiveSpace(updatedSpace);
@@ -4614,7 +4640,7 @@ const app = createApp({
         this.setError(this.t('spaces.createError'));
         return;
       }
-      const item = await res.json();
+      const item = await this.readApiPayload(res);
       const createdSpace = this.mapSpaceItem(item);
       await this.loadSpaces();
       this.setActiveSpace(createdSpace);
@@ -4753,7 +4779,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       if (Array.isArray(data.items)) {
         this.friends = data.items.map((item) => ({
           id: item.friend_id,
@@ -4807,7 +4833,7 @@ const app = createApp({
         this.setError(this.t('friends.searchError'));
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.friendSearchResults = Array.isArray(data.items)
         ? data.items.map((item) => ({
             id: item.user_id,
@@ -4856,7 +4882,7 @@ const app = createApp({
         this.chatHistoryAtBottom = true;
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
         if (Array.isArray(data.items)) {
           this.chatMessages = await Promise.all(
             data.items.map(async (item) => {
@@ -4911,7 +4937,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.chatSummaries = Array.isArray(data.items)
         ? data.items.map((item) => ({
             peerId: item.peer_id || item.peerId || '',
@@ -4937,7 +4963,7 @@ const app = createApp({
       if (!res.ok) {
         return;
       }
-      const data = await res.json();
+      const data = await this.readApiPayload(res);
       this.unreadCount = Number(data.unread || 0);
       await this.loadConversationSummaries();
     },

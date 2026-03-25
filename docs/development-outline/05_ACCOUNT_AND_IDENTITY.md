@@ -38,6 +38,7 @@
 
 ## 5. 进度记录
 
+- 2026-03-25：继续把 Legacy Web 的接口消费切到兼容解包层，统一通过前端 helper 读取 `data` 包装或旧版顶层字段，避免后续纯包装收口时再次打断 Web 前端 / Continued moving Legacy Web API reads onto a compatibility unwrapping layer so the frontend can consume either the `data` envelope or legacy top-level fields without breaking during the later pure-envelope cleanup.
 - 2026-03-25：为账号、空间、内容和聊天接口补上兼容式统一响应包装，返回 `code/message/data` 同时保留旧顶层字段，并让 Flutter API client 同时兼容新旧两种结构 / Added a compatibility response envelope across account, space, content, and chat APIs, returning `code/message/data` while preserving legacy top-level fields, and updated the Flutter API client to read both formats.
 - 2026-03-24：按当前代码收口账号接口文档，补齐好友、订阅和外部账号接口，并移除尚未落地的用户管理/钱包权益接口口径 / Realigned the account API docs to the current code, adding friend, subscription, and external-account endpoints while removing undocumented user-management and wallet-entitlement APIs.
 - 2026-03-20：继续对齐 Flutter 个人主页为 Vue 风格布局，收紧顶部重复英雄卡，并把用户 ID 留在个人资料摘要、将修改入口拆成资料/隐私两处 / Continued aligning the Flutter profile page with the Vue layout by tightening the duplicated top hero card, keeping the user ID in the personal info summary, and splitting the edit entry into personal-info and privacy actions.
