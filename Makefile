@@ -4,6 +4,7 @@ BACKEND_DIR := backend
 FRONTEND_DIR := frontend
 FLUTTER_FRONTEND_DIR := flutter_frontend
 FLUTTER_BIN := /root/flutter-sdk/bin/flutter
+MIGRATE_SERVICE ?= all
 
 .PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke migrate check
 
@@ -19,7 +20,11 @@ help:
 	@echo "  make run-space      - Run space service / 启动空间服务"
 	@echo "  make run-message    - Run message service / 启动消息服务"
 	@echo "  make run-flutter-web - Run Flutter web client / 启动 Flutter Web 前端"
-	@echo "  make migrate        - Run explicit schema/backfill migration / 运行显式迁移与回填"
+	@echo "  make migrate        - Run versioned schema/backfill migration / 运行版本化迁移与回填"
+	@echo "  make migrate MIGRATE_SERVICE=account - Run one service migration / 仅运行单服务迁移"
+	@echo "  make migrate-account - Run account migration / 运行账号迁移"
+	@echo "  make migrate-space   - Run space migration / 运行空间迁移"
+	@echo "  make migrate-message - Run message migration / 运行通讯迁移"
 	@echo "  make smoke          - Run local API smoke script / 运行本地接口冒烟脚本"
 	@echo "  make check          - Alias of test / test 的别名"
 
@@ -48,6 +53,7 @@ build-backend:
 	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/account-service ./cmd/account-service
 	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/space-service ./cmd/space-service
 	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/message-service ./cmd/message-service
+	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/migrate ./cmd/migrate
 
 build-flutter-web:
 	cd $(FLUTTER_FRONTEND_DIR) && CI=true FLUTTER_SUPPRESS_ANALYTICS=true $(FLUTTER_BIN) pub get
@@ -66,7 +72,16 @@ run-flutter-web:
 	cd $(FLUTTER_FRONTEND_DIR) && CI=true FLUTTER_SUPPRESS_ANALYTICS=true $(FLUTTER_BIN) run -d web-server --web-hostname 0.0.0.0 --web-port 3000
 
 migrate:
-	cd $(BACKEND_DIR) && go run ./cmd/migrate -service all
+	cd $(BACKEND_DIR) && go run ./cmd/migrate -service $(MIGRATE_SERVICE)
+
+migrate-account:
+	cd $(BACKEND_DIR) && go run ./cmd/migrate -service account
+
+migrate-space:
+	cd $(BACKEND_DIR) && go run ./cmd/migrate -service space
+
+migrate-message:
+	cd $(BACKEND_DIR) && go run ./cmd/migrate -service message
 
 smoke:
 	chmod +x scripts/local-smoke.sh

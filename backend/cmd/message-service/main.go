@@ -27,8 +27,8 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	// Apply the message-service schema before serving requests.
-	// 先执行通讯服务的表结构，再对外提供请求。
+	// Apply the versioned message-service schema before serving requests.
+	// 在对外提供请求前，先执行通讯服务的版本化表结构。
 	if err := migrate.ApplyMessage(database); err != nil {
 		log.Fatalf("message migration error: %v", err)
 	}

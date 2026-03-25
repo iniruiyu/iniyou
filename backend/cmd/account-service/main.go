@@ -26,8 +26,8 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	// Apply the account-service schema and backfill before serving requests.
-	// 先执行账号服务的表结构与回填，再对外提供请求。
+	// Apply the versioned account-service schema and backfill before serving requests.
+	// 在对外提供请求前，先执行账号服务的版本化表结构与回填。
 	if err := migrate.ApplyAccount(database); err != nil {
 		log.Fatalf("account migration error: %v", err)
 	}

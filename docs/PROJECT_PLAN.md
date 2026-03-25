@@ -250,6 +250,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-25：把 `make migrate` 升级为版本表驱动的迁移入口，并补齐账号、空间、通讯的版本化 baseline scripts / Upgraded `make migrate` to a version-table-driven migration entrypoint and added versioned baseline scripts for account, space, and message.
 - 2026-03-25：补齐显式迁移命令 `make migrate` 与统一迁移 helper，账号、空间、通讯服务的 schema 与回填现在可独立执行 / Added the explicit `make migrate` command and a shared migration helper so the account, space, and message schema/backfill steps can now run independently.
 - 2026-03-25：补齐 `spaces(user_id, type)` 复合索引，并收回 `posts.space_user_id` 的持久化误写，数据模型与后端查询再次对齐 / Added the `spaces(user_id, type)` composite index and removed the mistaken persistent `posts.space_user_id` entry so the data model matches backend queries again.
 - 2026-03-25：完成 `make smoke` 本地冒烟测试并通过，已回写发布检查清单 / Completed the local `make smoke` smoke test and passed it, then wrote the result back into the release checklist.

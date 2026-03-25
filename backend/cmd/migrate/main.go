@@ -10,8 +10,8 @@ import (
 )
 
 func main() {
-	// Explicit schema and backfill migration entrypoint.
-	// 显式的表结构与回填迁移入口。
+	// Explicit versioned schema and backfill migration entrypoint.
+	// 显式的版本化表结构与回填迁移入口。
 	target := flag.String("service", migrate.TargetAll, "migration target: all, account, space, or message")
 	flag.Parse()
 

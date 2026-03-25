@@ -130,7 +130,7 @@
 - 用户名与域名共享同一英数字 host label 命名空间，用户名作为登录别名，域名作为身份卡与登录入口句柄 / Username and domain share the same alphanumeric host-label namespace; username is the login alias, and domain is the identity-card and login-entry handle.
 - 个人空间列表只展示 `source=user` 的空间，历史默认空间通过 `source=system` 隐藏
 - 空间编辑、空间删除与文章删除均通过 REST 资源操作完成
-- 数据库迁移采用“双路径”：服务启动继续保留 `AutoMigrate` 作为开发回退，显式 `make migrate` 负责本地初始化与发布前迁移 / Database migration now uses a dual path: service startup keeps `AutoMigrate` as a development fallback, while explicit `make migrate` handles local initialization and pre-release migration.
+- 数据库迁移采用“双路径”：服务启动继续保留 `AutoMigrate` 作为开发回退，显式 `make migrate` 负责版本化脚本执行与发布前迁移 / Database migration now uses a dual path: service startup keeps `AutoMigrate` as a development fallback, while explicit `make migrate` handles versioned script execution and pre-release migration.
 - 数据模型需预留扩展字段
 - 数据库设计需兼容 MySQL 与 PostgreSQL
 - API 变更以 `docs/API_SPEC.md` 为准同步维护
@@ -200,4 +200,4 @@
 
 ### 2026-03-25
 
-- 增加显式数据库迁移命令与服务启动回退双路径 / Added an explicit database migration command alongside the service-startup fallback path.
+- 增加版本化数据库迁移脚本与服务启动回退双路径 / Added versioned database migration scripts alongside the service-startup fallback path.

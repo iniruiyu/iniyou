@@ -31,8 +31,8 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	// Apply the space-service schema and legacy backfills before serving requests.
-	// 先执行空间服务的表结构与历史回填，再对外提供请求。
+	// Apply the versioned space-service schema and legacy backfills before serving requests.
+	// 在对外提供请求前，先执行空间服务的版本化表结构与历史回填。
 	if err := migrate.ApplySpace(database); err != nil {
 		log.Fatalf("space migration error: %v", err)
 	}

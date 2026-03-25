@@ -25,9 +25,11 @@ createdb account_service
 
 ### 3.2 迁移执行方式
 
-当前版本提供显式迁移命令 `make migrate`，等价于 `cd backend && go run ./cmd/migrate -service all` / The current version provides an explicit migration command `make migrate`, which is equivalent to `cd backend && go run ./cmd/migrate -service all`.
+当前版本提供版本化迁移命令 `make migrate`，等价于 `cd backend && go run ./cmd/migrate -service all` / The current version provides a versioned migration command `make migrate`, which is equivalent to `cd backend && go run ./cmd/migrate -service all`.
 
 建议在首次初始化数据库、拉取 schema 变更或需要回填历史数据时先执行该命令 / Run it first when initializing a database, pulling schema changes, or backfilling historical data.
+
+如需只执行某个服务的迁移，可使用 `make migrate MIGRATE_SERVICE=account|space|message` / To run one service only, use `make migrate MIGRATE_SERVICE=account|space|message`.
 
 命令支持以下目标 / The command supports the following targets:
 
@@ -129,10 +131,10 @@ make smoke
 - 冒烟脚本当前未覆盖前端页面行为
 - 完整本地环境下的 `make smoke` 实跑留档仍待完成 / Full-environment `make smoke` evidence capture is still pending.
 - 区块链账号绑定目前只做基础格式与签名载荷校验，不包含真实链上验签
-- 数据库迁移已提供显式命令，后续如需版本化迁移脚本可继续扩展 / Database migration now has an explicit command, and versioned migration scripts can be added later if needed.
+- 数据库迁移已提供版本化脚本，服务启动仍保留回退迁移；后续如需更完整的回滚脚本，可继续扩展 / Database migration now has versioned scripts, and service startup still keeps a fallback migration path; rollback scripts can be added later if needed.
 
 ## 8. 维护规则
 
 - 若本地启动方式变化，需要同步更新本文件和 `README.md`
 - 若自动冒烟脚本覆盖范围变化，需要同步更新本文件
-- 若迁移策略从当前显式命令升级为版本化迁移工具，需要先更新本文件再实施
+- 若迁移策略从当前版本化脚本升级为更完整的回滚工具，需要先更新本文件再实施

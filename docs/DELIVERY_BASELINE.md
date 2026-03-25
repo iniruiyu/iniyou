@@ -47,7 +47,7 @@
 - 账号服务：`make run-account`
 - 空间服务：`make run-space`
 - 通讯服务：`make run-message`
-- 显式迁移：`make migrate`
+- 版本化迁移：`make migrate`
 - 基础检查：`make test`
 - 后端构建：`make build`
 - 本地冒烟：`make smoke`
@@ -62,16 +62,16 @@
   - `build/account-service`
   - `build/space-service`
   - `build/message-service`
+  - `build/migrate`
 
 ## 5. 当前未覆盖项
 
 - 正式生产部署脚本
 - 容器化交付方案
-- 版本化数据库迁移脚本
 - 前端正式打包发布方案
 - 区块链真实签名验签
 
 ## 6. 适用结论
 
 - 当前版本适合作为开发版、联调版和内部演示版交付
-- 若进入生产交付，建议先补齐部署自动化、版本化迁移脚本和真实验签流程
+- 若进入生产交付，建议先补齐部署自动化和真实验签流程

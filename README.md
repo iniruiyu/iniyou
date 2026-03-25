@@ -40,10 +40,16 @@ cp .env.example .env
 ## 本地启动
 
 1. 启动 PostgreSQL，并确认 `DB_DSN` 可用。
-2. 如数据库结构有变更，先运行显式迁移：
+2. 如数据库结构有变更，先运行版本化迁移：
 
 ```bash
 make migrate
+```
+
+如需只迁移单个服务，可用：
+
+```bash
+make migrate MIGRATE_SERVICE=account
 ```
 
 3. 运行账号服务：
@@ -131,6 +137,7 @@ make smoke
 - `build/account-service`
 - `build/space-service`
 - `build/message-service`
+- `build/migrate`
 
 ## 关键文档
 
