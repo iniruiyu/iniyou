@@ -110,6 +110,7 @@
 - `source` 用于区分用户创建空间与系统种子空间，当前约定为 `user` 或 `system`
 - `subdomain` 作为空间入口标识，需要与前端和后端保持一致
 - `visibility` 控制空间对当前用户的可见范围，当前约定为 `public`、`friends` 或 `private` / `visibility` controls whether a space is visible to everyone, friends only, or only the owner.
+- 当前代码已为 `user_id + type` 配置复合索引，支持按用户与空间类型的回退查询 / The code now uses a composite `user_id + type` index to support fallback queries by user and space type.
 - `spaces` 与 `posts` 由独立空间服务管理，账号服务只保留身份域数据
 
 #### `posts`
@@ -117,7 +118,6 @@
 - `id`
 - `user_id`
 - `space_id`
-- `space_user_id`
 - `title`
 - `content`
 - `media_type`
@@ -133,6 +133,7 @@
 - `media_items` 建议以 JSON 字符串保存按顺序排列的媒体数组，支持多图或单视频附件 / `media_items` should be stored as a JSON string containing an ordered media array for multi-image or single-video attachments.
 - `media_name` 保存服务端实际落盘文件名，`media_items` 中的 `media_name` 也应视为用于文件定位与清理的存储名 / `media_name` stores the server-side on-disk filename, and `media_name` inside `media_items` should also be treated as the storage name used for file lookup and cleanup.
 - `media_*` 仍保留为旧版单图兼容字段，并同步第一项媒体信息；服务端会将媒体写入磁盘，同时保留 JSON 载荷以兼容双端 / `media_*` remain as legacy single-media compatibility fields and mirror the first media item; the server writes files to disk while keeping the JSON payload for dual-end compatibility.
+- `space_user_id` 不是持久化字段，而是 `PostView` 响应中根据 `space_id` 关联 `spaces.user_id` 生成的派生字段 / `space_user_id` is not a persisted field; it is a derived `PostView` response field populated from `spaces.user_id` via `space_id`.
 - `content` 建议按 Markdown 语法存储，前端渲染时保持同一套富文本规则 / `content` should preferably be stored as Markdown syntax so both frontends can render it with the same rich-text rules.
 - 当前写接口只接受 `public` 或 `private` 两种文章可见范围，`friends` 仅在读取逻辑里保留兼容判断 / Current write APIs only accept `public` and `private` post visibility; `friends` remains only in read-side compatibility logic.
 
@@ -281,6 +282,11 @@
 - 将实体清单区分为“当前已落地”与“后续预留” / Split the entity list into implemented and reserved sections.
 - 按实际代码收口聊天模型为 `messages` 单表直连方案 / Aligned the chat model to the actual single-table `messages` implementation.
 - 明确 `friends`、`subscriptions`、`external_accounts` 已落地，钱包和独立凭据表仍为预留 / Clarified that `friends`, `subscriptions`, and `external_accounts` are implemented, while wallets and separate credential tables remain reserved.
+
+### 2026-03-25
+
+- 收回 `posts.space_user_id` 的持久化误写，并明确该字段只在 `PostView` 中派生 / Removed the mistaken persistent `posts.space_user_id` entry and clarified that the field is only derived in `PostView`.
+- 对齐 `spaces(user_id, type)` 复合索引说明与后端实现 / Aligned the `spaces(user_id, type)` composite index note with the backend implementation.
 
 ### 2026-03-11
 

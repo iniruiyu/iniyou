@@ -31,9 +31,11 @@ type User struct {
 type Space struct {
 	// Space metadata with subdomain entry support.
 	// 支持二级域名入口的空间元数据。
-	ID          string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	UserID      string    `gorm:"index" json:"user_id"`
-	Type        string    `gorm:"type:varchar(20)" json:"type"`
+	ID string `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	// UserID and Type share a composite lookup index for owned-space queries.
+	// UserID 和 Type 共用复合查询索引，便于按用户与空间类型检索。
+	UserID      string    `gorm:"index:idx_space_user_type,priority:1" json:"user_id"`
+	Type        string    `gorm:"type:varchar(20);index:idx_space_user_type,priority:2" json:"type"`
 	Source      string    `gorm:"type:varchar(20);default:user" json:"source,omitempty"`
 	Visibility  string    `gorm:"type:varchar(20);default:public" json:"visibility"`
 	Subdomain   string    `gorm:"type:varchar(120);uniqueIndex" json:"subdomain"`

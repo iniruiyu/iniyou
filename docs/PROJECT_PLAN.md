@@ -250,6 +250,7 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-25：补齐 `spaces(user_id, type)` 复合索引，并收回 `posts.space_user_id` 的持久化误写，数据模型与后端查询再次对齐 / Added the `spaces(user_id, type)` composite index and removed the mistaken persistent `posts.space_user_id` entry so the data model matches backend queries again.
 - 2026-03-25：完成 `make smoke` 本地冒烟测试并通过，已回写发布检查清单 / Completed the local `make smoke` smoke test and passed it, then wrote the result back into the release checklist.
 - 2026-03-25：Flutter 与 Legacy Web 的 API helper 已切到 `data` 优先读取，后端标准接口也已收口为纯 `code/message/data` 包装，旧顶层字段已移除 / Flutter and Legacy Web API helpers now prefer `data`, and the backend standard APIs have been closed to a pure `code/message/data` envelope with legacy top-level fields removed.
 - 2026-03-24：对齐 `docs/API_SPEC.md`、`docs/DATA_MODEL.md` 与后端实际路由/模型，明确当前实现边界并把未落地接口与实体下沉为预留项 / Aligned `docs/API_SPEC.md` and `docs/DATA_MODEL.md` with the actual backend routes and models, clarifying the implemented boundaries and moving not-yet-built APIs/entities into reserved items.

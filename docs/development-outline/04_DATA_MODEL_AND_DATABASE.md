@@ -7,8 +7,8 @@
 ## 2. 状态
 
 - 状态：进行中
-- 已完成：空间实体与文章所属空间关系已在实现层落地，`spaces.source` 与 `posts.space_id` 已接通；用户用户名与二级域名共享的 host label 约束已接通；账号/空间/消息服务已在启动时使用 GORM `AutoMigrate`；空间删除与文章删除的级联清理已接通；`docs/DATA_MODEL.md` 已按当前代码收口为“已实现实体 + 预留实体”口径
-- 进行中：索引策略收口、迁移策略说明补齐、预留实体的落地优先级排序 / In progress: index strategy closure, migration-strategy notes, and prioritizing which reserved entities should be implemented next
+- 已完成：空间实体与文章所属空间关系已在实现层落地，`spaces.source` 与 `posts.space_id` 已接通；`spaces.user_id + type` 复合索引已接通；用户用户名与二级域名共享的 host label 约束已接通；账号/空间/消息服务已在启动时使用 GORM `AutoMigrate`；空间删除与文章删除的级联清理已接通；`docs/DATA_MODEL.md` 已按当前代码收口为“已实现实体 + 预留实体”口径，并修正 `posts.space_user_id` 的派生字段说明
+- 进行中：迁移策略说明补齐、预留实体的落地优先级排序 / In progress: migration-strategy notes and prioritizing which reserved entities should be implemented next
 
 ## 3. 任务清单
 
@@ -36,5 +36,5 @@
 
 ## 5. 下一步
 
-- 继续收口索引策略，明确哪些索引需要手工迁移而不是仅靠 `AutoMigrate` / Continue closing the index strategy and clarify which indexes need explicit migration instead of relying only on `AutoMigrate`.
+- 继续收口迁移策略说明，明确哪些变更需要手工迁移而不是仅靠 `AutoMigrate` / Continue closing the migration strategy and clarify which changes need explicit migration instead of relying only on `AutoMigrate`.
 - 如后续需要独立迁移工具，再把当前 `AutoMigrate` 收口为显式迁移命令 / If an explicit migration tool is needed later, wrap the current `AutoMigrate` flow into a dedicated migration command.
