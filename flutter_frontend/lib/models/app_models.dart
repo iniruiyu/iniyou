@@ -373,15 +373,11 @@ class FriendItem {
   final DateTime createdAt;
 
   String get secondary {
+    // Keep friend list and search results on the public-summary path only.
+    // 好友列表和搜索结果只保留公开摘要，不再默认拼出联系方式。
     final parts = <String>[];
     if (username.isNotEmpty) {
       parts.add('@$username');
-    }
-    if (email.isNotEmpty) {
-      parts.add(email);
-    }
-    if (phone.isNotEmpty) {
-      parts.add(phone);
     }
     return parts.join(' · ');
   }
@@ -422,15 +418,11 @@ class UserSearchItem {
   final String direction;
 
   String get secondary {
+    // Keep search cards on the public-summary path only.
+    // 搜索卡片只保留公开摘要，不再默认拼出联系方式。
     final parts = <String>[];
     if (username.isNotEmpty) {
       parts.add('@$username');
-    }
-    if (email.isNotEmpty) {
-      parts.add(email);
-    }
-    if (phone.isNotEmpty) {
-      parts.add(phone);
     }
     return parts.join(' · ');
   }

@@ -375,6 +375,8 @@ func UpdateProfile(
 	username string,
 	domain string,
 	signature string,
+	age *int,
+	gender *string,
 	phoneVisibility string,
 	emailVisibility string,
 	ageVisibility string,
@@ -431,6 +433,19 @@ func UpdateProfile(
 	updates := map[string]any{
 		"display_name": displayName,
 		"signature":    signature,
+	}
+	// Keep optional identity fields writable without forcing the viewer-facing visibility rules to change.
+	// 保留可选身份字段的写入能力，同时不影响查看端的可见性规则。
+	if age != nil {
+		updates["age"] = *age
+	}
+	if gender != nil {
+		trimmedGender := strings.TrimSpace(*gender)
+		if trimmedGender == "" {
+			updates["gender"] = nil
+		} else {
+			updates["gender"] = trimmedGender
+		}
 	}
 	if resolvedUsername != "" {
 		updates["username"] = resolvedUsername
@@ -1153,14 +1168,25 @@ func ListFriends(db *gorm.DB, userID string) ([]FriendView, error) {
 			item.Direction = "incoming"
 		}
 
-		var friendUser models.User
-		if err := db.Select("id", "display_name", "username", "domain", "signature", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
-			item.DisplayName = friendUser.DisplayName
-			item.Username = stringValue(friendUser.Username)
-			item.Domain = stringValue(friendUser.Domain)
-			item.Signature = strings.TrimSpace(friendUser.Signature)
-			item.Email = friendUser.Email
-			item.Phone = friendUser.Phone
+		// Reuse the public profile visibility rules so friend previews do not leak private fields.
+		// 复用公开主页的可见性规则，避免好友预览泄露私密字段。
+		if view, err := GetPublicUserProfile(db, userID, friendUserID); err == nil {
+			item.DisplayName = view.DisplayName
+			item.Username = view.Username
+			item.Domain = view.Domain
+			item.Signature = view.Signature
+			item.Email = view.Email
+			item.Phone = view.Phone
+		} else {
+			var friendUser models.User
+			if err := db.Select("id", "display_name", "username", "domain", "signature", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
+				item.DisplayName = friendUser.DisplayName
+				item.Username = stringValue(friendUser.Username)
+				item.Domain = stringValue(friendUser.Domain)
+				item.Signature = strings.TrimSpace(friendUser.Signature)
+				item.Email = friendUser.Email
+				item.Phone = friendUser.Phone
+			}
 		}
 
 		items = append(items, item)

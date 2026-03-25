@@ -31,6 +31,8 @@ class ProfileView extends StatelessWidget {
     required this.usernameController,
     required this.domainController,
     required this.signatureController,
+    required this.ageController,
+    required this.genderController,
     required this.phoneVisibility,
     required this.emailVisibility,
     required this.ageVisibility,
@@ -70,6 +72,8 @@ class ProfileView extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController domainController;
   final TextEditingController signatureController;
+  final TextEditingController ageController;
+  final TextEditingController genderController;
   final String phoneVisibility;
   final String emailVisibility;
   final String ageVisibility;
@@ -127,6 +131,20 @@ class ProfileView extends StatelessWidget {
 
     final isOwnProfile = user != null && profile.id == user!.id;
     final hasBlockchain = connectedChains.isNotEmpty;
+    // Use a shared placeholder when a viewer is not allowed to see a field.
+    // 当查看者无权看到字段时，使用统一的未公开占位。
+    final hiddenText = localizedText(
+      languageCode,
+      '未公开',
+      'Not public',
+      '未公開',
+    );
+    String showHiddenText(String value) {
+      return value.trim().isNotEmpty ? value : hiddenText;
+    }
+    String showHiddenNumber(int? value) {
+      return value != null ? value.toString() : hiddenText;
+    }
     // Ensure the blockchain tab is hidden when there are no accounts.
     // 链上账号为空时隐藏对应选项卡。
     final effectiveTab = !hasBlockchain && profileTab == ProfileTab.blockchain
@@ -144,16 +162,11 @@ class ProfileView extends StatelessWidget {
                 '${localizedText(languageCode, '域名身份', 'Domain identity', '網域身份')}: @${profile.domain}',
               if (profile.username.isNotEmpty)
                 '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
-              if (profile.signature.isNotEmpty)
-                '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
-              if (profile.email.isNotEmpty)
-                '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email}',
-              if (profile.phone.isNotEmpty)
-                '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone}',
-              if (profile.age != null)
-                '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age}',
-              if (profile.gender.isNotEmpty)
-                '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender}',
+              '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${showHiddenText(profile.signature)}',
+              '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${showHiddenText(profile.email)}',
+              '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${showHiddenText(profile.phone)}',
+              '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${showHiddenNumber(profile.age)}',
+              '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${showHiddenText(profile.gender)}',
               '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
               if (profile.relationStatus.isNotEmpty)
                 '${localizedText(languageCode, '关系', 'Relation', '關係')}: ${profile.relationStatus} · ${profile.direction}',
@@ -209,6 +222,35 @@ class ProfileView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
+        if (!isOwnProfile)
+          InfoCard(
+            title: localizedText(
+              languageCode,
+              '资料摘要',
+              'Profile summary',
+              '資料摘要',
+            ),
+            subtitle: localizedText(
+              languageCode,
+              '未公开的字段会显示为“未公开”。',
+              'Hidden fields are shown as "Not public".',
+              '未公開的欄位會顯示為「未公開」。',
+            ),
+            lines: [
+              '${localizedText(languageCode, '昵称', 'Nickname', '暱稱')}: ${showHiddenText(profile.displayName)}',
+              '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${showHiddenText(profile.id)}',
+              if (profile.domain.isNotEmpty)
+                '${localizedText(languageCode, '域名身份', 'Domain identity', '網域身份')}: @${profile.domain}',
+              if (profile.username.isNotEmpty)
+                '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
+              '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${showHiddenText(profile.signature)}',
+              '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${showHiddenText(profile.email)}',
+              '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${showHiddenText(profile.phone)}',
+              '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${showHiddenNumber(profile.age)}',
+              '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${showHiddenText(profile.gender)}',
+            ],
+          ),
+        if (!isOwnProfile) const SizedBox(height: 16),
         if (isOwnProfile)
           Card(
             shape: RoundedRectangleBorder(
@@ -602,6 +644,8 @@ class ProfileSummaryView extends StatelessWidget {
     required this.usernameController,
     required this.domainController,
     required this.signatureController,
+    required this.ageController,
+    required this.genderController,
     required this.phoneVisibility,
     required this.emailVisibility,
     required this.ageVisibility,
@@ -632,6 +676,8 @@ class ProfileSummaryView extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController domainController;
   final TextEditingController signatureController;
+  final TextEditingController ageController;
+  final TextEditingController genderController;
   final String phoneVisibility;
   final String emailVisibility;
   final String ageVisibility;
@@ -771,6 +817,8 @@ class ProfileSummaryView extends StatelessWidget {
                         usernameController: usernameController,
                         domainController: domainController,
                         signatureController: signatureController,
+                        ageController: ageController,
+                        genderController: genderController,
                         phoneVisibility: phoneVisibility,
                         emailVisibility: emailVisibility,
                         ageVisibility: ageVisibility,
@@ -1015,23 +1063,29 @@ class ProfileSummaryView extends StatelessWidget {
                 spacing: 16,
                 runSpacing: 16,
                 children: [
-                  SizedBox(
-                    width: cardWidth,
-                    child: InfoCard(
-                      title: t('profile.identity.personalTitle'),
-                      subtitle: t('profile.identity.personalSub'),
+                    SizedBox(
+                      width: cardWidth,
+                      child: InfoCard(
+                        title: t('profile.identity.personalTitle'),
+                        subtitle: t('profile.identity.personalSub'),
                       lines: [
                         '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
                         '${localizedText(languageCode, '昵称', 'Nickname', '暱稱')}: ${profile.displayName}',
                         if (profile.username.isNotEmpty)
                           '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
-                        if (profile.domain.isNotEmpty)
-                          '${localizedText(languageCode, '域名', 'Domain', '網域')}: @${profile.domain}',
-                        if (profile.signature.isNotEmpty)
-                          '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
-                      ],
-                      trailing: BilingualActionButton(
-                        variant: BilingualButtonVariant.tonal,
+                          if (profile.domain.isNotEmpty)
+                            '${localizedText(languageCode, '域名', 'Domain', '網域')}: @${profile.domain}',
+                          if (profile.signature.isNotEmpty)
+                            '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
+                          // Show the owner’s own contact/profile facts directly in the personal summary.
+                          // 在本人摘要卡中直接展示自己的联系方式和基本信息。
+                          '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email.isNotEmpty ? profile.email : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+                          '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone.isNotEmpty ? profile.phone : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+                          '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age != null ? profile.age.toString() : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+                          '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender.isNotEmpty ? profile.gender : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+                        ],
+                        trailing: BilingualActionButton(
+                          variant: BilingualButtonVariant.tonal,
                         compact: true,
                         onPressed: () => _openProfileEditor(
                           context,
@@ -1197,6 +1251,8 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
     required this.usernameController,
     required this.domainController,
     required this.signatureController,
+    required this.ageController,
+    required this.genderController,
     required this.phoneVisibility,
     required this.emailVisibility,
     required this.ageVisibility,
@@ -1215,6 +1271,8 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController domainController;
   final TextEditingController signatureController;
+  final TextEditingController ageController;
+  final TextEditingController genderController;
   final String phoneVisibility;
   final String emailVisibility;
   final String ageVisibility;
@@ -1297,6 +1355,31 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
                   hintText: t('profile.identity.signaturePlaceholder'),
                 ),
                 maxLines: 3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Age and gender stay in the editable personal block so users can update them together.
+            // 年龄和性别放在可编辑的个人信息区块，方便一起修改。
+            BilingualField(
+              primaryLabel: t('profile.identity.ageLabel'),
+              secondaryLabel: peerT('profile.identity.ageLabel'),
+              child: TextField(
+                controller: ageController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: t('profile.identity.agePlaceholder'),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            BilingualField(
+              primaryLabel: t('profile.identity.genderLabel'),
+              secondaryLabel: peerT('profile.identity.genderLabel'),
+              child: TextField(
+                controller: genderController,
+                decoration: InputDecoration(
+                  hintText: t('profile.identity.genderPlaceholder'),
+                ),
               ),
             ),
           ],
@@ -1477,9 +1560,14 @@ class FriendsView extends StatelessWidget {
     BuildContext context,
     FriendItem friend,
   ) async {
-    // Open a modal preview for a friend's profile instead of navigating away.
-    // 打开好友主页弹层预览，而不是直接跳转页面。
-    final theme = Theme.of(context);
+    // Open a summary-only modal preview so private contact fields stay hidden.
+    // 打开仅含摘要的弹层预览，避免把私密联系方式直接展示出来。
+    final hiddenText = localizedText(
+      languageCode,
+      '未公开',
+      'Not public',
+      '未公開',
+    );
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -1489,27 +1577,22 @@ class FriendsView extends StatelessWidget {
           ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(friend.displayName, style: theme.textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(
-                  '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${localizedText(languageCode, '联系方式', 'Contact', '聯絡方式')}: ${friend.secondary}',
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${friend.status}',
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${localizedText(languageCode, '方向', 'Direction', '方向')}: ${friend.direction}',
-                ),
+            child: InfoCard(
+              title: friend.displayName,
+              subtitle: localizedText(
+                languageCode,
+                '好友主页预览',
+                'Friend profile preview',
+                '好友主頁預覽',
+              ),
+              lines: [
+                '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+                if (friend.secondary.isNotEmpty)
+                  '${localizedText(languageCode, '公开摘要', 'Public summary', '公開摘要')}: ${friend.secondary}',
+                '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${friend.email.isNotEmpty ? friend.email : hiddenText}',
+                '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${friend.phone.isNotEmpty ? friend.phone : hiddenText}',
+                '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${friend.status}',
+                '${localizedText(languageCode, '方向', 'Direction', '方向')}: ${friend.direction}',
               ],
             ),
           ),
@@ -1725,6 +1808,7 @@ class ChatView extends StatelessWidget {
     required this.onSendMessage,
     required this.onPickAttachment,
     required this.onClearAttachment,
+    required this.languageCode,
   });
 
   final double width;
@@ -1742,6 +1826,7 @@ class ChatView extends StatelessWidget {
   final VoidCallback onSendMessage;
   final Future<void> Function(String messageType) onPickAttachment;
   final VoidCallback onClearAttachment;
+  final String languageCode;
 
   @override
   Widget build(BuildContext context) {
@@ -1759,6 +1844,61 @@ class ChatView extends StatelessWidget {
         const SizedBox(width: 16),
         Expanded(child: chatPane),
       ],
+    );
+  }
+
+  Widget _buildSelectableSummaryCard({
+    required BuildContext context,
+    required String title,
+    required List<String> lines,
+    required VoidCallback onTap,
+    Widget? trailing,
+    bool selected = false,
+  }) {
+    // Keep chat-side summary cards visually aligned with the shared card system.
+    // 让聊天侧栏摘要卡与统一卡片系统保持一致。
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: selected ? theme.colorScheme.primary : Colors.transparent,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(title, style: theme.textTheme.titleMedium),
+                  ),
+                  if (trailing != null) trailing,
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...lines.map(
+                (line) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    line,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1815,48 +1955,41 @@ class ChatView extends StatelessWidget {
                 return const SizedBox.shrink();
               }
               final isSelected = activeChat?.id == friend.id;
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  side: BorderSide(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.transparent,
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 4,
-                  ),
-                  title: Text(friend.displayName),
-                  subtitle: Text(
-                    item.lastMessagePreview.isNotEmpty
-                        ? item.lastMessagePreview
-                        : item.lastMessage,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: item.hasUnread
-                      ? CircleAvatar(
-                          radius: 12,
-                          child: Text('${item.unreadCount}'),
-                        )
-                      : null,
-                  selected: isSelected,
-                  onTap: () => onStartChat(friend),
-                ),
+              return _buildSelectableSummaryCard(
+                context: context,
+                title: friend.displayName,
+                lines: [
+                  friend.secondary,
+                  item.lastMessagePreview.isNotEmpty
+                      ? item.lastMessagePreview
+                      : item.lastMessage,
+                ],
+                trailing: item.hasUnread
+                    ? CircleAvatar(
+                        radius: 12,
+                        child: Text('${item.unreadCount}'),
+                      )
+                    : null,
+                selected: isSelected,
+                onTap: () => onStartChat(friend),
               );
             }),
             const Divider(height: 24),
             Text('好友', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...acceptedFriends.map(
-              (friend) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(friend.displayName),
-                subtitle: Text(friend.secondary),
+              (friend) => _buildSelectableSummaryCard(
+                context: context,
+                title: friend.displayName,
+                lines: [
+                  friend.secondary,
+                  '${localizedText(
+                    languageCode,
+                    '状态',
+                    'Status',
+                    '狀態',
+                  )}: ${friend.status}',
+                ],
                 selected: activeChat?.id == friend.id,
                 onTap: () => onStartChat(friend),
               ),

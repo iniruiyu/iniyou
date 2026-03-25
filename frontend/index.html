@@ -216,6 +216,33 @@
                 >
                   <textarea class="post-textarea" :placeholder="t('profile.identity.signaturePlaceholder')" v-model="profileDraft.signature"></textarea>
                 </bilingual-field>
+                <!-- Age and gender belong to the editable identity block. -->
+                <!-- 年龄与性别归入可编辑的身份资料区块。 -->
+                <bilingual-field
+                  :primary-label="t('profile.identity.ageLabel')"
+                  :secondary-label="peerLocaleText('profile.identity.ageLabel')"
+                >
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    :placeholder="t('profile.identity.agePlaceholder')"
+                    v-model="profileDraft.age"
+                    autocomplete="off"
+                  />
+                </bilingual-field>
+                <bilingual-field
+                  :primary-label="t('profile.identity.genderLabel')"
+                  :secondary-label="peerLocaleText('profile.identity.genderLabel')"
+                >
+                  <input
+                    type="text"
+                    :placeholder="t('profile.identity.genderPlaceholder')"
+                    v-model="profileDraft.gender"
+                    autocomplete="off"
+                  />
+                </bilingual-field>
               </div>
               <div class="panel identity-editor-card">
                 <h3>{{ t('profile.identity.privacyTitle') }}</h3>
@@ -847,6 +874,62 @@
               </div>
             </div>
           </div>
+          <!-- Show hidden-field placeholders only for other viewers. -->
+          <!-- 仅在他人查看时显示“未公开”占位。 -->
+          <template v-if="profileUser.id !== user.id">
+            <div class="profile-summary-grid">
+              <div class="panel identity-summary-card">
+                <div class="topbar">
+                  <div>
+                    <h3>{{ t('profile.identity.title') }}</h3>
+                    <p>{{ t('profile.identity.sub') }}</p>
+                  </div>
+                </div>
+                <div class="identity-summary-list identity-summary-list--compact">
+                  <div class="identity-summary-item identity-summary-item--wide">
+                    <span>{{ t('profile.identity.userId') }}</span>
+                    <strong>{{ profileUser.id }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.nickname') }}</span>
+                    <strong>{{ profileDisplayValue(profileUser.name) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.username') }}</span>
+                    <strong>{{ profileUser.username ? `@${profileUser.username}` : t('common.notPublic') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.domain') }}</span>
+                    <strong>{{ profileUser.domain ? `@${profileUser.domain}` : t('common.notPublic') }}</strong>
+                  </div>
+                  <div class="identity-summary-item identity-summary-item--wide">
+                    <span>{{ t('profile.identity.signature') }}</span>
+                    <strong>{{ profileDisplayValue(profileUser.signature) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.emailLabel') }}</span>
+                    <strong>{{ profileDisplayValue(profileUser.email) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.phoneLabel') }}</span>
+                    <strong>{{ profileDisplayValue(profileUser.phone) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.ageLabel') }}</span>
+                    <strong>{{ profileDisplayNumber(profileUser.age) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.genderLabel') }}</span>
+                    <strong>{{ profileDisplayValue(profileUser.gender) }}</strong>
+                  </div>
+                  <div class="identity-summary-item identity-summary-item--wide">
+                    <span>{{ t('profile.spaces.title') }}</span>
+                    <strong>{{ visibleProfileSpaces.length }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
           <template v-if="profileUser.id === user.id">
             <div class="panel-grid">
               <div class="panel">
@@ -874,6 +957,8 @@
             </div>
           </template>
           <template v-if="profileUser.id === user.id">
+            <!-- Split the owner profile into basic info, contact details, and privacy cards for a calmer layout. -->
+            <!-- 将本人资料拆成基础信息、联系方式和隐私三张卡，排版更清晰。 -->
             <div class="profile-summary-grid">
               <div class="panel identity-summary-card">
                 <div class="topbar">
@@ -881,15 +966,15 @@
                     <h3>{{ t('profile.identity.personalTitle') }}</h3>
                     <p>{{ t('profile.identity.personalSub') }}</p>
                   </div>
-                <bilingual-action-button
-                  variant="tonal"
-                  compact
-                  class="profile-summary-action"
-                  type="button"
-                  :primary-label="t('profile.identity.editAction')"
-                  :secondary-label="peerLocaleText('profile.identity.editAction')"
-                  @click="openIdentityEditor"
-                ></bilingual-action-button>
+                  <bilingual-action-button
+                    variant="tonal"
+                    compact
+                    class="profile-summary-action"
+                    type="button"
+                    :primary-label="t('profile.identity.editAction')"
+                    :secondary-label="peerLocaleText('profile.identity.editAction')"
+                    @click="openIdentityEditor"
+                  ></bilingual-action-button>
                 </div>
                 <div class="identity-summary-list identity-summary-list--compact">
                   <div class="identity-summary-item identity-summary-item--wide">
@@ -911,6 +996,41 @@
                   <div class="identity-summary-item identity-summary-item--wide">
                     <span>{{ t('profile.identity.signature') }}</span>
                     <strong>{{ profileDraft.signature || t('common.notAvailable') }}</strong>
+                  </div>
+                </div>
+              </div>
+              <div class="panel identity-summary-card">
+                <div class="topbar">
+                  <div>
+                    <h3>{{ t('profile.identity.contactTitle') }}</h3>
+                    <p>{{ t('profile.identity.contactSub') }}</p>
+                  </div>
+                  <bilingual-action-button
+                    variant="tonal"
+                    compact
+                    class="profile-summary-action"
+                    type="button"
+                    :primary-label="t('profile.identity.editAction')"
+                    :secondary-label="peerLocaleText('profile.identity.editAction')"
+                    @click="openIdentityEditor"
+                  ></bilingual-action-button>
+                </div>
+                <div class="identity-summary-list identity-summary-list--compact">
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.emailLabel') }}</span>
+                    <strong>{{ profileUser.email || t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.phoneLabel') }}</span>
+                    <strong>{{ profileUser.phone || t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.ageLabel') }}</span>
+                    <strong>{{ profileUser.age !== '' && profileUser.age !== null ? profileUser.age : t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.genderLabel') }}</span>
+                    <strong>{{ profileUser.gender || t('common.notAvailable') }}</strong>
                   </div>
                 </div>
               </div>

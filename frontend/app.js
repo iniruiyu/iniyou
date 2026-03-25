@@ -417,7 +417,9 @@ const app = createApp({
               title: '身份卡',
               sub: '个人资料与隐私设置分开维护，域名用于登录和子域名入口。',
               personalTitle: '个人资料',
-              personalSub: '展示用户 ID、昵称、用户名、域名和签名等公开资料。',
+              personalSub: '展示用户 ID、昵称、用户名、域名、签名、年龄和性别等公开资料。',
+              contactTitle: '联系方式',
+              contactSub: '展示邮箱、手机号、年龄和性别等信息。',
               privacyTitle: '隐私设置',
               privacySub: '管理手机号、邮箱、年龄和性别的可见范围。',
               editAction: '修改资料',
@@ -428,6 +430,10 @@ const app = createApp({
               username: '用户名',
               domain: '域名',
               signature: '签名',
+              emailLabel: '邮箱',
+              phoneLabel: '手机号',
+              ageLabel: '年龄',
+              genderLabel: '性别',
               phoneVisibility: '手机号可见范围',
               emailVisibility: '邮箱可见范围',
               ageVisibility: '年龄可见范围',
@@ -439,6 +445,9 @@ const app = createApp({
               },
               domainPlaceholder: '输入域名',
               signaturePlaceholder: '输入签名',
+              agePlaceholder: '输入年龄',
+              genderPlaceholder: '输入性别',
+              ageError: '年龄必须是非负整数。',
               domainHint: '域名只能使用英文字母和数字，长度不超过 63，并作为身份卡和登录入口。',
               domainRequired: '请输入域名。',
               domainError: '域名只能包含英文字母和数字，且最长 63 个字符。',
@@ -489,6 +498,7 @@ const app = createApp({
           common: {
             guest: '访客',
             notAvailable: '--',
+            notPublic: '未公开',
             cancel: '取消',
           },
           nav: {
@@ -769,7 +779,7 @@ const app = createApp({
             mediaAudio: '语音',
             mediaFile: '文件',
             friendProfileTitle: '好友资料',
-            friendProfileSub: '查看好友的公开资料、联系方式和关系状态。',
+            friendProfileSub: '查看好友的公开资料和关系状态。',
             friendSpacesTitle: '对方空间',
             friendSpacesSub: '这里只展示对方公开的空间和进入入口。',
             friendSpacesEmpty: '对方还没有公开空间。',
@@ -840,7 +850,9 @@ const app = createApp({
               title: 'Identity Card',
               sub: 'Profile details and privacy settings are maintained separately. The domain is used for login and subdomain entry.',
               personalTitle: 'Personal Info',
-              personalSub: 'Show your user ID, nickname, username, domain, and signature.',
+            personalSub: 'Show your user ID, nickname, username, domain, signature, age, and gender.',
+              contactTitle: 'Contact Details',
+              contactSub: 'Show your email, phone, age, and gender.',
               privacyTitle: 'Privacy Settings',
               privacySub: 'Manage visibility for phone, email, age, and gender.',
               editAction: 'Edit Profile',
@@ -851,6 +863,10 @@ const app = createApp({
               username: 'Username',
               domain: 'Domain',
               signature: 'Signature',
+              emailLabel: 'Email',
+              phoneLabel: 'Phone',
+              ageLabel: 'Age',
+              genderLabel: 'Gender',
               phoneVisibility: 'Phone visibility',
               emailVisibility: 'Email visibility',
               ageVisibility: 'Age visibility',
@@ -862,6 +878,9 @@ const app = createApp({
               },
               domainPlaceholder: 'Enter domain',
               signaturePlaceholder: 'Enter signature',
+              agePlaceholder: 'Enter age',
+              genderPlaceholder: 'Enter gender',
+              ageError: 'Age must be a non-negative integer.',
               domainHint: 'Use letters and numbers only, up to 63 characters. The domain is your identity card and login handle.',
               domainRequired: 'Domain is required.',
               domainError: 'The domain may contain letters and numbers only, up to 63 characters.',
@@ -912,6 +931,7 @@ const app = createApp({
           common: {
             guest: 'Guest',
             notAvailable: '--',
+            notPublic: 'Not public',
             cancel: 'Cancel',
           },
           nav: {
@@ -1194,7 +1214,7 @@ const app = createApp({
             mediaAudio: 'Voice',
             mediaFile: 'File',
             friendProfileTitle: 'Friend Profile',
-            friendProfileSub: 'View your friend’s public details, contact info, and relationship status.',
+            friendProfileSub: 'View your friend’s public details and relationship status.',
             friendSpacesTitle: 'Friend spaces',
             friendSpacesSub: 'Only public spaces and entry points are shown here.',
             friendSpacesEmpty: 'This friend has no public spaces yet.',
@@ -1430,9 +1450,9 @@ const app = createApp({
       // Friend list.
       // 好友列表数据。
       friends: [
-        { id: 'f1', name: 'Mira', secondary: 'mira@example.com', status: 'accepted', direction: 'outgoing' },
-        { id: 'f2', name: 'Ethan', secondary: '+1 202-555-0189', status: 'accepted', direction: 'outgoing' },
-        { id: 'f3', name: 'Kai', secondary: 'kai@example.com', status: 'pending', direction: 'incoming' },
+        { id: 'f1', name: 'Mira', secondary: '@mira', status: 'accepted', direction: 'outgoing' },
+        { id: 'f2', name: 'Ethan', secondary: '@ethan', status: 'accepted', direction: 'outgoing' },
+        { id: 'f3', name: 'Kai', secondary: '@kai', status: 'pending', direction: 'incoming' },
       ],
       // Friend search input.
       // 好友搜索输入框。
@@ -2386,7 +2406,7 @@ const app = createApp({
           JSON.parse(JSON.stringify(this.translations['zh-CN'])),
           {
             htmlTitle: '帳號服務 · 私人空間與公共空間',
-            common: { guest: '訪客', cancel: '取消' },
+            common: { guest: '訪客', notPublic: '未公開', cancel: '取消' },
             nav: {
             auth: '登入註冊',
               dashboard: '帳號主頁',
@@ -2406,7 +2426,9 @@ const app = createApp({
               title: '身分卡',
               sub: '個人資料與隱私設定分開維護，網域用於登入和子網域入口。',
               personalTitle: '個人資料',
-              personalSub: '展示使用者 ID、暱稱、使用者名稱、網域與簽名等公開資料。',
+              personalSub: '展示使用者 ID、暱稱、使用者名稱、網域、簽名、年齡與性別等公開資料。',
+              contactTitle: '聯絡資訊',
+              contactSub: '展示信箱、手機號、年齡與性別等資訊。',
               privacyTitle: '隱私設定',
               privacySub: '管理手機號、信箱、年齡與性別的可見範圍。',
               editAction: '修改資料',
@@ -2417,6 +2439,10 @@ const app = createApp({
               username: '使用者名稱',
               domain: '域名',
               signature: '簽名',
+              emailLabel: '信箱',
+              phoneLabel: '手機號',
+              ageLabel: '年齡',
+              genderLabel: '性別',
               phoneVisibility: '手機可見範圍',
               emailVisibility: '信箱可見範圍',
               ageVisibility: '年齡可見範圍',
@@ -2428,6 +2454,9 @@ const app = createApp({
               },
               domainPlaceholder: '輸入網域',
               signaturePlaceholder: '輸入簽名',
+              agePlaceholder: '輸入年齡',
+              genderPlaceholder: '輸入性別',
+              ageError: '年齡必須是非負整數。',
               domainHint: '域名只能使用英文字母和數字，長度不超過 63，並作為身分卡和登入入口。',
               domainRequired: '請輸入域名。',
               domainError: '域名只能包含英文字母和數字，且最長 63 個字元。',
@@ -2688,7 +2717,7 @@ const app = createApp({
               mediaAudio: '語音',
               mediaFile: '檔案',
               friendProfileTitle: '好友資料',
-              friendProfileSub: '查看好友的公開資料、聯絡方式與關係狀態。',
+              friendProfileSub: '查看好友的公開資料與關係狀態。',
               friendSpacesTitle: '對方空間',
               friendSpacesSub: '這裡只展示對方公開的空間與進入入口。',
               friendSpacesEmpty: '對方還沒有公開空間。',
@@ -2835,6 +2864,8 @@ const app = createApp({
       this.profileDraft.username = '';
       this.profileDraft.domain = '';
       this.profileDraft.signature = '';
+      this.profileDraft.age = '';
+      this.profileDraft.gender = '';
       this.profileDraft.phoneVisibility = 'private';
       this.profileDraft.emailVisibility = 'private';
       this.profileDraft.ageVisibility = 'private';
@@ -2863,18 +2894,32 @@ const app = createApp({
       return this.t(`friends.direction${direction === 'incoming' ? 'Incoming' : 'Outgoing'}`) || direction;
     },
     friendSecondary(friend) {
-      // Render the best available secondary contact text.
-      // 渲染可用的次级联系信息。
+      // Render the best available public summary text.
+      // 渲染可用的公开摘要信息。
       return friend.secondary || friend.domain || friend.username || friend.id;
     },
+    profileDisplayValue(value) {
+      // Show a visible field value or the shared "not public" placeholder.
+      // 显示字段真实值，或统一的“未公开”占位。
+      const text = String(value ?? '').trim();
+      return text || this.t('common.notPublic');
+    },
+    profileDisplayNumber(value) {
+      // Show a visible numeric field value or the shared "not public" placeholder.
+      // 显示数值字段真实值，或统一的“未公开”占位。
+      return value === null || value === undefined || value === ''
+        ? this.t('common.notPublic')
+        : String(value);
+    },
     friendProfileRows(friend) {
-      // Build the rows shown in the chat friend profile modal.
-      // 构建聊天好友资料弹窗中展示的字段行。
+      // Build the summary rows shown in the chat friend profile modal.
+      // 构建聊天好友资料弹窗中展示的摘要字段行。
       if (!friend) {
         return [];
       }
       const missing = this.t('common.notAvailable') || '-';
-      return [
+      const hidden = this.t('common.notPublic') || missing;
+      const rows = [
         {
           key: 'username',
           label: this.t('profile.identity.username'),
@@ -2890,15 +2935,19 @@ const app = createApp({
           label: this.t('profile.identity.signature'),
           value: friend.signature || missing,
         },
+      ];
+      // Keep each contact field on a single row so hidden values never duplicate.
+      // 保持每个联系方式只占一行，避免隐藏值与可见值重复渲染。
+      rows.push(
         {
           key: 'email',
-          label: this.t('dashboard.emailPlaceholder'),
-          value: friend.email || missing,
+          label: this.t('profile.identity.emailLabel'),
+          value: friend.email || hidden,
         },
         {
           key: 'phone',
-          label: this.t('dashboard.phonePlaceholder'),
-          value: friend.phone || missing,
+          label: this.t('profile.identity.phoneLabel'),
+          value: friend.phone || hidden,
         },
         {
           key: 'status',
@@ -2910,7 +2959,8 @@ const app = createApp({
           label: this.t('chat.friendDirection'),
           value: this.directionLabel(friend.direction),
         },
-      ];
+      );
+      return rows;
     },
     async openChatFriendProfile(friend) {
       // Open the chat friend profile modal with a frozen friend snapshot.
@@ -3798,6 +3848,16 @@ const app = createApp({
     openIdentityEditor() {
       // Open the profile identity editor as a dialog.
       // 以弹窗方式打开身份资料编辑器。
+      if (this.user) {
+        // Pre-fill the editor from the latest owner-side profile values.
+        // 使用当前本人资料的最新值预填编辑器。
+        this.profileDraft.displayName = this.user.name || this.profileDraft.displayName;
+        this.profileDraft.username = this.user.username || this.profileDraft.username;
+        this.profileDraft.domain = this.user.domain || this.profileDraft.domain;
+        this.profileDraft.signature = this.user.signature ?? this.profileDraft.signature ?? '';
+        this.profileDraft.age = this.user.age ?? '';
+        this.profileDraft.gender = this.user.gender ?? '';
+      }
       this.identityEditorOpen = true;
     },
     closeIdentityEditor() {
@@ -3931,8 +3991,8 @@ const app = createApp({
       this.user.username = data.username || this.user.username;
       this.user.domain = data.domain || this.user.domain;
       this.user.signature = data.signature ?? this.user.signature ?? '';
-      this.user.age = data.age ?? this.user.age ?? '';
-      this.user.gender = data.gender ?? this.user.gender ?? '';
+      this.user.age = data.age ?? '';
+      this.user.gender = data.gender ?? '';
       this.user.email = data.email ?? this.user.email ?? '';
       this.user.phone = data.phone ?? this.user.phone ?? '';
       this.user.phoneVisibility = data.phone_visibility || this.user.phoneVisibility || 'private';
@@ -3944,6 +4004,8 @@ const app = createApp({
       this.profileDraft.username = data.username || this.profileDraft.username || '';
       this.profileDraft.domain = data.domain || this.profileDraft.domain || '';
       this.profileDraft.signature = data.signature ?? this.profileDraft.signature ?? '';
+      this.profileDraft.age = data.age ?? '';
+      this.profileDraft.gender = data.gender ?? '';
       this.profileDraft.phoneVisibility = data.phone_visibility || this.profileDraft.phoneVisibility || 'private';
       this.profileDraft.emailVisibility = data.email_visibility || this.profileDraft.emailVisibility || 'private';
       this.profileDraft.ageVisibility = data.age_visibility || this.profileDraft.ageVisibility || 'private';
@@ -4073,16 +4135,12 @@ const app = createApp({
       const profileRes = await fetch(`${this.apiBase}/users/${userID}/profile`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
-      if (profileRes.ok) {
+        if (profileRes.ok) {
         const profile = await this.readApiPayload(profileRes);
         const profileSecondary = [
           profile.domain ? `@${profile.domain}` : '',
           profile.username ? `@${profile.username}` : '',
           profile.signature || '',
-          profile.email || '',
-          profile.phone || '',
-          profile.age ?? '',
-          profile.gender || '',
         ].filter(Boolean).join(' · ');
         this.profileUser = {
           id: profile.user_id || userID,
@@ -4494,6 +4552,9 @@ const app = createApp({
       const displayName = this.profileDraft.displayName.trim();
       const username = this.profileDraft.username.trim().toLowerCase();
       const domain = this.profileDraft.domain.trim().toLowerCase();
+      const ageText = String(this.profileDraft.age ?? '').trim();
+      const genderText = String(this.profileDraft.gender ?? '').trim();
+      let age = null;
       if (!this.token || !displayName) {
         this.setError(this.t('dashboard.saveError'));
         return;
@@ -4514,6 +4575,14 @@ const app = createApp({
         this.setError(this.t('profile.identity.domainError'));
         return;
       }
+      if (ageText) {
+        const parsedAge = Number(ageText);
+        if (!Number.isInteger(parsedAge) || parsedAge < 0) {
+          this.setError(this.t('profile.identity.ageError'));
+          return;
+        }
+        age = parsedAge;
+      }
       const res = await fetch(`${this.apiBase}/me`, {
         method: 'PUT',
         headers: {
@@ -4525,6 +4594,8 @@ const app = createApp({
           username,
           domain,
           signature: this.profileDraft.signature.trim(),
+          age,
+          gender: genderText || null,
           phone_visibility: this.profileDraft.phoneVisibility,
           email_visibility: this.profileDraft.emailVisibility,
           age_visibility: this.profileDraft.ageVisibility,
@@ -4536,6 +4607,27 @@ const app = createApp({
         return;
       }
       await this.loadMe();
+      if (this.profileUser.id && this.profileUser.id === this.user.id) {
+        // Keep the owner profile card synchronized after save.
+        // 保存后同步当前本人资料卡。
+        const profileSecondary = [
+          this.user.domain ? `@${this.user.domain}` : '',
+          this.user.username ? `@${this.user.username}` : '',
+          this.user.signature || '',
+        ].filter(Boolean).join(' · ');
+        this.profileUser = {
+          ...this.profileUser,
+          name: this.user.name || this.profileUser.name,
+          username: this.user.username || '',
+          domain: this.user.domain || '',
+          secondary: profileSecondary,
+          signature: this.user.signature || '',
+          age: this.user.age ?? '',
+          gender: this.user.gender || '',
+          email: this.user.email || '',
+          phone: this.user.phone || '',
+        };
+      }
       this.closeIdentityEditor();
       this.setFlash(this.t('dashboard.saveSuccess'));
     },
@@ -4837,7 +4929,7 @@ const app = createApp({
       if (Array.isArray(data.items)) {
         this.friends = data.items.map((item) => ({
           id: item.friend_id,
-          name: item.display_name || item.domain || item.username || item.email || item.phone || item.friend_id,
+          name: item.display_name || item.domain || item.username || item.friend_id,
           username: item.username || '',
           domain: item.domain || '',
           signature: item.signature || '',
@@ -4845,14 +4937,7 @@ const app = createApp({
             item.domain ? `@${item.domain}` : '',
             item.username ? `@${item.username}` : '',
             item.signature || '',
-            item.age ?? '',
-            item.gender || '',
-            item.email || '',
-            item.phone || '',
-            item.friend_id || '',
           ].filter(Boolean).join(' · '),
-          age: item.age ?? '',
-          gender: item.gender || '',
           email: item.email || '',
           phone: item.phone || '',
           status: item.status || 'offline',
@@ -4891,7 +4976,7 @@ const app = createApp({
       this.friendSearchResults = Array.isArray(data.items)
         ? data.items.map((item) => ({
             id: item.user_id,
-            name: item.display_name || item.domain || item.username || item.email || item.phone || item.user_id,
+            name: item.display_name || item.domain || item.username || item.user_id,
             username: item.username || '',
             domain: item.domain || '',
             signature: item.signature || '',
@@ -4899,14 +4984,7 @@ const app = createApp({
               item.domain ? `@${item.domain}` : '',
               item.username ? `@${item.username}` : '',
               item.signature || '',
-              item.age ?? '',
-              item.gender || '',
-              item.email || '',
-              item.phone || '',
-              item.user_id || '',
             ].filter(Boolean).join(' · '),
-            age: item.age ?? '',
-            gender: item.gender || '',
             email: item.email || '',
             phone: item.phone || '',
             relationStatus: item.relation_status || '',

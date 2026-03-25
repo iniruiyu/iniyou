@@ -820,11 +820,13 @@ func fallbackDisplayName(user models.User) string {
 	if strings.TrimSpace(user.DisplayName) != "" {
 		return user.DisplayName
 	}
-	if user.Email != nil && strings.TrimSpace(*user.Email) != "" {
-		return *user.Email
+	// Public author surfaces must not fall back to private contact data.
+	// 公开作者展示位不能回退到私密联系方式。
+	if username := strings.TrimSpace(stringValue(user.Username)); username != "" {
+		return username
 	}
-	if user.Phone != nil && strings.TrimSpace(*user.Phone) != "" {
-		return *user.Phone
+	if domain := strings.TrimSpace(stringValue(user.Domain)); domain != "" {
+		return domain
 	}
 	return user.ID
 }

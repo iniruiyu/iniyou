@@ -36,6 +36,17 @@
 - Vue 从好友资料弹窗进入好友空间时会先关闭资料层，弹窗内“进入空间”按钮也统一走好友空间专用入口，再切换到空间页 / Vue now closes the friend profile layer before entering a friend's space, and the modal's "enter space" button also uses the dedicated friend-space entry path.
 - Flutter 聊天好友资料弹窗进入好友空间时也会先关闭弹窗，并通过根导航器确保空间页切换后不残留资料层 / Flutter now also closes the chat friend-profile dialog before entering a friend space, using the root navigator so no profile layer remains after switching pages.
 - 双前端个人主页已收敛为摘要页，只展示个人资料、隐私设置、会员等级与公开空间入口，不再展示内容流 / Both frontends' profile pages are now summary pages that only show personal info, privacy settings, membership level, and public space entrances, without a content feed.
+- 双前端好友主页预览已收紧为公开摘要，不再把手机号、邮箱这类私密联系方式直接塞进弹层 / Both frontends' friend profile previews were tightened into public summaries, and private contact details such as phone and email are no longer pushed into the overlay.
+- 双前端好友列表、好友搜索结果与会话侧栏的摘要字段也已统一为公开身份信息，不再把联系方式当作卡片主展示内容 / Both frontends' friend lists, friend search results, and chat-side summaries were also unified around public identity fields instead of showing contact details as the main card content.
+- Flutter 好友预览弹层与聊天侧栏最近会话/好友列表已统一为卡片化摘要布局，减少不同入口之间的视觉断层 / Flutter friend preview modals and chat sidebar recent-conversation/friend lists were unified into card-based summary layouts to reduce visual drift between entry points.
+- 个人主页的非本人查看态已补齐统一“未公开”占位，避免权限隐藏字段在页面上直接消失 / Non-owner profile views now fill hidden fields with a unified "Not public" placeholder instead of silently omitting them.
+- Web 聊天好友资料弹窗的字段行改为单条顺序渲染，隐藏的联系方式只显示一次“未公开”，不再重复插入同一字段 / The Web chat friend profile modal now renders fields once in order, and hidden contact data shows a single "Not public" row instead of duplicate inserts.
+- 帖子作者名的后备展示改为只取公开身份信息，避免帖子卡、作者主页入口和评论作者名因为空昵称而泄露邮箱或手机号 / Post author-name fallback now uses only public identity fields, preventing post cards, author-page entry points, and comment author names from leaking email or phone when a nickname is missing.
+- 本人视角的个人主页摘要重新展示邮箱、手机号、年龄与性别，和“别人看见未公开”的规则保持分离 / The owner-facing profile summary now shows email, phone, age, and gender again, staying separate from the "Not public" behavior used for other viewers.
+- 好友资料弹窗的邮箱与手机号标题改为资料字段标签，修掉了把输入占位键当作展示文案的问题 / The friend profile modal now uses profile field labels for email and phone, fixing the issue where input placeholders were reused as display text.
+- 个人资料摘要卡的说明文案也同步扩展为联系方式与基本信息，避免卡片内容和标题语义不一致 / The profile summary card copy was expanded to include contact details and basic info so the card content and title stay aligned.
+- 本人资料区在 Web 侧拆成基础资料、联系方式和隐私三张卡，信息密度更均衡 / The Web owner profile area was split into basic info, contact details, and privacy cards to balance the information density.
+- 年龄与性别也已经进入个人资料编辑表单，用户可以在自己的主页里直接修改这两项资料 / Age and gender were added to the profile editor form so users can edit those fields directly from their own profile page.
 - Vue 进入好友空间或自己创建的空间后，空间壳层会收为单列并固定铺满整个视口，样式地址也会通过版本号刷新以避免浏览器命中旧布局缓存 / After entering a friend's space or one of your own spaces, Vue now collapses the shell into a single column and pins the main content to the full viewport, with a versioned stylesheet URL to avoid stale layout caching.
 - Vue 好友空间的帖子列表已改为独立滚动容器，修复进入后无法向下滚动的问题 / Vue friend-space post lists now use an independent scroll container, fixing the issue where the page could not be scrolled downward after entry.
 - Flutter 个人主页编辑器已清理旧版顶部按钮残留，`flutter analyze flutter_frontend` 重新通过 / Flutter profile editor legacy top-button remnants were removed, and `flutter analyze flutter_frontend` passes again.

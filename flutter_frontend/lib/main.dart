@@ -189,6 +189,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   final _usernameController = TextEditingController();
   final _domainController = TextEditingController();
   final _signatureController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _genderController = TextEditingController();
   final _publicPostTitleController = TextEditingController();
   final _publicPostContentController = TextEditingController();
   final _privatePostTitleController = TextEditingController();
@@ -298,6 +300,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _usernameController,
       _domainController,
       _signatureController,
+      _ageController,
+      _genderController,
       _publicPostTitleController,
       _publicPostContentController,
       _privatePostTitleController,
@@ -1726,6 +1730,8 @@ class _IniyouHomeState extends State<IniyouHome> {
     _usernameController.text = dashboard.user.username;
     _domainController.text = dashboard.user.domain;
     _signatureController.text = dashboard.user.signature;
+    _ageController.text = dashboard.user.age?.toString() ?? '';
+    _genderController.text = dashboard.user.gender;
     _phoneVisibility = dashboard.user.phoneVisibility;
     _emailVisibility = dashboard.user.emailVisibility;
     _ageVisibility = dashboard.user.ageVisibility;
@@ -1866,6 +1872,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _usernameController.clear();
       _domainController.clear();
       _signatureController.clear();
+      _ageController.clear();
+      _genderController.clear();
       _phoneVisibility = 'private';
       _emailVisibility = 'private';
       _ageVisibility = 'private';
@@ -2685,6 +2693,9 @@ class _IniyouHomeState extends State<IniyouHome> {
     final username = _usernameController.text.trim().toLowerCase();
     final domain = _domainController.text.trim().toLowerCase();
     final signature = _signatureController.text.trim();
+    final ageText = _ageController.text.trim();
+    final gender = _genderController.text.trim();
+    int? age;
     if (displayName.isEmpty) {
       setState(() => _error = '昵称不能为空');
       return false;
@@ -2701,6 +2712,14 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() => _error = '域名只能包含英文字母和数字，且最长 63 个字符');
       return false;
     }
+    if (ageText.isNotEmpty) {
+      final parsedAge = int.tryParse(ageText);
+      if (parsedAge == null || parsedAge < 0) {
+        setState(() => _error = _t('profile.identity.ageError'));
+        return false;
+      }
+      age = parsedAge;
+    }
     var success = false;
     await _runBusy(() async {
       _user = await _api.updateProfile(
@@ -2708,6 +2727,8 @@ class _IniyouHomeState extends State<IniyouHome> {
         username: username,
         domain: domain,
         signature: signature,
+        age: age,
+        gender: gender.isEmpty ? null : gender,
         phoneVisibility: _phoneVisibility,
         emailVisibility: _emailVisibility,
         ageVisibility: _ageVisibility,
@@ -2717,6 +2738,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _usernameController.text = _user?.username ?? username;
       _domainController.text = _user?.domain ?? domain;
       _signatureController.text = _user?.signature ?? signature;
+      _ageController.text = _user?.age?.toString() ?? ageText;
+      _genderController.text = _user?.gender ?? gender;
       _phoneVisibility = _user?.phoneVisibility ?? _phoneVisibility;
       _emailVisibility = _user?.emailVisibility ?? _emailVisibility;
       _ageVisibility = _user?.ageVisibility ?? _ageVisibility;
@@ -3273,6 +3296,8 @@ class _IniyouHomeState extends State<IniyouHome> {
         usernameController: _usernameController,
         domainController: _domainController,
         signatureController: _signatureController,
+        ageController: _ageController,
+        genderController: _genderController,
         phoneVisibility: _phoneVisibility,
         emailVisibility: _emailVisibility,
         ageVisibility: _ageVisibility,

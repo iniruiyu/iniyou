@@ -66,6 +66,8 @@ type updateProfileRequest struct {
 	Username         string `json:"username"`
 	Domain           string `json:"domain"`
 	Signature        string `json:"signature"`
+	Age              *int   `json:"age"`
+	Gender           *string `json:"gender"`
 	PhoneVisibility  string `json:"phone_visibility"`
 	EmailVisibility  string `json:"email_visibility"`
 	AgeVisibility    string `json:"age_visibility"`
@@ -175,6 +177,8 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 		req.Username,
 		req.Domain,
 		req.Signature,
+		req.Age,
+		req.Gender,
 		req.PhoneVisibility,
 		req.EmailVisibility,
 		req.AgeVisibility,
