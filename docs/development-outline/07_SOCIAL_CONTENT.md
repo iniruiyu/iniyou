@@ -25,6 +25,7 @@
   - Vue 文章发布与编辑支持多图片上传、可删除画廊和随机文件名
   - 文章媒体真实落盘到可配置目录，并在删除文章、删除空间或替换媒体时物理清理服务器文件
   - Flutter 文章发布与编辑支持多图画廊，双前端文章正文统一按 Markdown 渲染
+  - 已修复文章创建时主键误用 `post-...` 非 UUID 字符串导致的 PostgreSQL `uuid` 插入失败 / Fixed post creation using a `post-...` non-UUID string for the primary key, which caused PostgreSQL UUID insert failures.
 - 双前端个人主页已合并账号主页与用户主页，Flutter 也已把工作台摘要并入个人主页顶部 / Both frontends now merge the account home and user profile into one personal home, and Flutter folds the workspace summary into the top of the personal home.
 - 双前端空间工作台折叠为顶部按钮，进入具体空间后自动收起，Vue 空间内容流移除冗余说明 / Collapsed the dual-frontend space workspace into a top button that auto-collapses after entering a specific space, and removed redundant Vue feed copy
 - 双前端空间页移除内容流 / 当前空间设置说明卡，并把文章图片缩放上限明确为 1600px / Removed the space feed/current-space-settings info cards in both frontends and made the 1600px article image scaling cap explicit

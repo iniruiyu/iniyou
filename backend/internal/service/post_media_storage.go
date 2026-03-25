@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 const defaultPostMediaStorageDir = "D:/codeX/iniyou/uploads/space-service"
@@ -43,9 +45,9 @@ func currentPostMediaStorageDir() string {
 }
 
 func newPostRecordID() string {
-	// Generate a collision-resistant post identifier for file scoping.
-	// 生成更不易碰撞的文章标识，用于文件目录分层。
-	return "post-" + randomHexToken(16)
+	// Generate a database-safe UUID post identifier for storage and file scoping.
+	// 生成数据库安全的 UUID 文章标识，同时用于文件目录分层。
+	return uuid.NewString()
 }
 
 func randomHexToken(byteLen int) string {

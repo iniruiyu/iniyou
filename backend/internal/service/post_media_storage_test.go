@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestPersistPostMediaItemsWritesAndCleansUp(t *testing.T) {
@@ -94,4 +96,13 @@ func TestPersistPostMediaItemsReusesStableNameWhenFileExists(t *testing.T) {
 	}
 
 	cleanupPostMediaFiles(refs, true)
+}
+
+func TestNewPostRecordIDReturnsUUID(t *testing.T) {
+	// Ensure post IDs remain valid UUIDs for PostgreSQL UUID columns.
+	// 确保文章 ID 始终是合法 UUID，兼容 PostgreSQL 的 UUID 列。
+	id := newPostRecordID()
+	if _, err := uuid.Parse(id); err != nil {
+		t.Fatalf("expected UUID post id, got %q: %v", id, err)
+	}
 }
