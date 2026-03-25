@@ -12,6 +12,11 @@
 - `backend/`: Golang 后端，包含 `account-service`、`space-service` 和 `message-service`
 - `frontend/`: Legacy Web 前端
 - `flutter_frontend/`: Flutter 前端工程，按 `api/`、`controllers/`、`models/`、`widgets/`、`views/` 分层
+- `docker-compose.yml`: 容器化部署栈
+- `backend/Dockerfile`: 后端容器镜像构建文件
+- `frontend/Dockerfile`: Legacy Web 容器镜像构建文件
+- `frontend/nginx.conf`: Legacy Web 静态站点配置
+- `scripts/deploy-stack.sh`: 本地部署编排脚本
 - `docs/`: 需求、设计、接口和开发大纲
 - `DESIGN.md`: 当前阶段设计说明
 - `Makefile`: 本地测试、构建和启动命令
@@ -130,6 +135,10 @@ make migrate
 make build-flutter-web
 make build
 make smoke
+make deploy
+make deploy-down
+make deploy-status
+make deploy-logs
 ```
 
 构建产物输出到 `build/`：
@@ -138,6 +147,24 @@ make smoke
 - `build/space-service`
 - `build/message-service`
 - `build/migrate`
+
+## 容器部署
+
+Docker 环境可直接使用容器化部署栈：
+
+```bash
+make deploy
+```
+
+常用辅助命令：
+
+```bash
+make deploy-status
+make deploy-logs
+make deploy-down
+```
+
+`make deploy` 会先构建后端、前端和迁移镜像，再启动数据库、执行版本化迁移，最后拉起业务服务。 / `make deploy` first builds the backend, frontend, and migration images, then starts the database, runs the versioned migrations, and finally brings up the application services.
 
 ## 关键文档
 

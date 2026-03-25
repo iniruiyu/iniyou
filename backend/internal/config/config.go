@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -39,9 +40,18 @@ func Load(serviceName string) Config {
 		Port:            port,
 		DBDsn:           getenv("DB_DSN", "host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable"),
 		JWTSecret:       getenv("JWT_SECRET", "dev-secret"),
-		MediaStorageDir: filepath.Clean(getenv("MEDIA_STORAGE_DIR", filepath.FromSlash("D:/codeX/iniyou/uploads/space-service"))),
+		MediaStorageDir: filepath.Clean(getenv("MEDIA_STORAGE_DIR", defaultMediaStorageDir())),
 		TokenTTL:        time.Duration(ttlInt) * time.Minute,
 	}
+}
+
+func defaultMediaStorageDir() string {
+	// Use a Windows-friendly path locally and a Linux-friendly path in containers.
+	// 本地 Windows 使用友好路径，容器和 Linux 环境使用 Linux 友好路径。
+	if runtime.GOOS == "windows" {
+		return filepath.FromSlash("D:/codeX/iniyou/uploads/space-service")
+	}
+	return "/data/uploads/space-service"
 }
 
 func getenv(key, fallback string) string {

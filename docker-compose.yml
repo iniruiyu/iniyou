@@ -1,0 +1,99 @@
+# Containerized deployment stack / 容器化部署栈
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: account_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - iniyou_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d account_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: migrate
+    environment: &backend_env
+      DB_DSN: host=db user=postgres password=postgres dbname=account_service port=5432 sslmode=disable
+      JWT_SECRET: dev-secret
+      TOKEN_TTL_MIN: "120"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["-service", "all"]
+    restart: "no"
+
+  account-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: account-service
+    environment:
+      <<: *backend_env
+      SERVICE_PORT: "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  space-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: space-service
+    environment:
+      <<: *backend_env
+      SERVICE_PORT: "8082"
+      MEDIA_STORAGE_DIR: /data/uploads/space-service
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    volumes:
+      - iniyou_uploads:/data/uploads/space-service
+    restart: unless-stopped
+
+  message-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: message-service
+    environment:
+      <<: *backend_env
+      SERVICE_PORT: "8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  legacy-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - account-service
+      - space-service
+      - message-service
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  iniyou_pgdata:
+  iniyou_uploads:

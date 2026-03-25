@@ -44,6 +44,6 @@
 
 ## 5. 当前结论
 
-- `10` 阶段主体已完成，但 `make smoke` 仍需在完整本地环境下实跑并留档 / The main `10` phase is complete, but full-environment `make smoke` still needs to be executed and recorded.
+- `10` 阶段主体已完成，`make smoke` 与 `make deploy` 现在都已提供并在本地实跑验证 / The main `10` phase is complete, and both `make smoke` and `make deploy` are now available and locally verified.
 - 当前仓库已具备开发版交付基线
-- 生产级交付仍建议补充正式部署自动化、独立迁移工具与完整冒烟留档
+- 容器化部署基线已提供，生产级交付仍建议补充远程部署自动化、滚动发布与真实链上验签

@@ -92,6 +92,22 @@ make run-message
 
 - [`frontend/index.html`](../frontend/index.html)
 
+### 4.5 容器化启动
+
+如果本地已经安装 Docker 和 Docker Compose，可以直接使用容器化部署栈 / If Docker and Docker Compose are installed locally, you can use the containerized deployment stack directly.
+
+```bash
+make deploy
+```
+
+常用辅助命令 / Common helper commands:
+
+- `make deploy-status`
+- `make deploy-logs`
+- `make deploy-down`
+
+`make deploy` 会先构建镜像、启动数据库、运行版本化迁移，再启动账号、空间、通讯和 Legacy Web 服务 / `make deploy` builds the images first, starts the database, runs the versioned migration, and then brings up the account, space, message, and Legacy Web services.
+
 ## 5. 手工联调步骤
 
 建议按以下顺序联调：
@@ -129,7 +145,8 @@ make smoke
 
 - 冒烟脚本依赖本地服务已启动
 - 冒烟脚本当前未覆盖前端页面行为
-- 完整本地环境下的 `make smoke` 实跑留档仍待完成 / Full-environment `make smoke` evidence capture is still pending.
+- 完整本地环境下的 `make smoke` 已实跑并留档 / Full-environment `make smoke` evidence has been captured and recorded.
+- 容器化部署基线已提供，但生产级部署自动化、滚动发布和远程环境编排仍待补齐 / The containerized deployment baseline is available, but production-grade deployment automation, rolling release, and remote environment orchestration still need to be added.
 - 区块链账号绑定目前只做基础格式与签名载荷校验，不包含真实链上验签
 - 数据库迁移已提供版本化脚本，服务启动仍保留回退迁移；后续如需更完整的回滚脚本，可继续扩展 / Database migration now has versioned scripts, and service startup still keeps a fallback migration path; rollback scripts can be added later if needed.
 

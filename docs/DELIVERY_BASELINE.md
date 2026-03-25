@@ -48,6 +48,10 @@
 - 空间服务：`make run-space`
 - 通讯服务：`make run-message`
 - 版本化迁移：`make migrate`
+- 容器化部署：`make deploy`
+- 容器化状态查看：`make deploy-status`
+- 容器化日志查看：`make deploy-logs`
+- 容器化停机：`make deploy-down`
 - 基础检查：`make test`
 - 后端构建：`make build`
 - 本地冒烟：`make smoke`
@@ -58,6 +62,12 @@
 - 前端静态页面源码
 - 规划与设计文档
 - API 文档与数据模型文档
+- 容器化部署栈：
+  - `docker-compose.yml`
+  - `backend/Dockerfile`
+  - `frontend/Dockerfile`
+  - `frontend/nginx.conf`
+  - `scripts/deploy-stack.sh`
 - 本地构建产物：
   - `build/account-service`
   - `build/space-service`
@@ -67,11 +77,11 @@
 ## 5. 当前未覆盖项
 
 - 正式生产部署脚本
-- 容器化交付方案
 - 前端正式打包发布方案
 - 区块链真实签名验签
 
 ## 6. 适用结论
 
 - 当前版本适合作为开发版、联调版和内部演示版交付
-- 若进入生产交付，建议先补齐部署自动化和真实验签流程
+- 容器化部署基线已经具备，可直接用于本地/内网环境拉起服务
+- 若进入生产交付，建议先补齐远程部署自动化、滚动更新和真实验签流程

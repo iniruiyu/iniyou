@@ -201,3 +201,4 @@
 ### 2026-03-25
 
 - 增加版本化数据库迁移脚本与服务启动回退双路径 / Added versioned database migration scripts alongside the service-startup fallback path.
+- 补齐本地容器化部署基线，使用 `docker-compose.yml`、`backend/Dockerfile`、`frontend/Dockerfile` 和 `scripts/deploy-stack.sh` 统一启动顺序，并在迁移完成后再拉起业务服务 / Added the local containerized deployment baseline using `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, and `scripts/deploy-stack.sh` to standardize startup order and start application services only after migrations complete.

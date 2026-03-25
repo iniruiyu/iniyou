@@ -24,6 +24,8 @@
 
 - [x] `make test` 通过
 - [x] `make build` 通过
+- [x] `docker compose -f docker-compose.yml config` 校验通过
+- [x] `make deploy` 在本地 Docker 环境可执行并已实跑
 - [x] `build/account-service` 已生成
 - [x] `build/space-service` 已生成
 - [x] `build/message-service` 已生成
@@ -36,6 +38,7 @@
 - [x] 本地服务启动顺序已有文档
 - [x] 最小冒烟流程已有文档与脚本
 - [x] `make migrate` 版本化迁移命令已提供
+- [x] `make deploy` 容器化部署命令已提供
 - [x] `make smoke` 在完整本地环境下实跑并留档
 
 ### 2.5 已知限制
@@ -47,6 +50,9 @@
 ## 3. 当前发布结论
 
 - 当前仓库已具备开发版交付条件
+- 当前仓库已具备开发版容器化部署条件
 - 已完成 `make smoke` 完整实跑并留档
+- 已完成 `make deploy` 完整实跑并留档
 - 若作为正式对外交付版本，仍建议先完成：
-  - 正式部署脚本或容器化方案
+  - 远程部署自动化或 CI/CD 发布流程
+  - 前端正式构建发布链路

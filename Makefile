@@ -5,8 +5,9 @@ FRONTEND_DIR := frontend
 FLUTTER_FRONTEND_DIR := flutter_frontend
 FLUTTER_BIN := /root/flutter-sdk/bin/flutter
 MIGRATE_SERVICE ?= all
+COMPOSE_FILE ?= docker-compose.yml
 
-.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke migrate check
+.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke migrate deploy deploy-down deploy-logs deploy-status check
 
 help:
 	@echo "Available targets / 可用目标:"
@@ -25,6 +26,10 @@ help:
 	@echo "  make migrate-account - Run account migration / 运行账号迁移"
 	@echo "  make migrate-space   - Run space migration / 运行空间迁移"
 	@echo "  make migrate-message - Run message migration / 运行通讯迁移"
+	@echo "  make deploy         - Build and start the container stack / 构建并启动容器栈"
+	@echo "  make deploy-down    - Stop and remove the container stack / 停止并移除容器栈"
+	@echo "  make deploy-logs    - Stream container logs / 查看容器日志"
+	@echo "  make deploy-status  - Show container status / 查看容器状态"
 	@echo "  make smoke          - Run local API smoke script / 运行本地接口冒烟脚本"
 	@echo "  make check          - Alias of test / test 的别名"
 
@@ -82,6 +87,18 @@ migrate-space:
 
 migrate-message:
 	cd $(BACKEND_DIR) && go run ./cmd/migrate -service message
+
+deploy:
+	bash ./scripts/deploy-stack.sh
+
+deploy-down:
+	docker compose -f $(COMPOSE_FILE) down
+
+deploy-logs:
+	docker compose -f $(COMPOSE_FILE) logs -f --tail=100
+
+deploy-status:
+	docker compose -f $(COMPOSE_FILE) ps
 
 smoke:
 	chmod +x scripts/local-smoke.sh
