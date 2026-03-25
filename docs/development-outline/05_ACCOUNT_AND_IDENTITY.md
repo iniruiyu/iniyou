@@ -38,6 +38,7 @@
 
 ## 5. 进度记录
 
+- 2026-03-25：进一步把 Flutter 与 Legacy Web 的 API helper 切到 `data` 包装优先读取，前端现在主要依赖规范化响应对象而不是旧版顶层平铺字段 / Further shifted the Flutter and Legacy Web API helpers to prefer `data` envelopes, so the frontends now primarily consume normalized response objects instead of legacy top-level flat fields.
 - 2026-03-25：继续把 Legacy Web 的接口消费切到兼容解包层，统一通过前端 helper 读取 `data` 包装或旧版顶层字段，避免后续纯包装收口时再次打断 Web 前端 / Continued moving Legacy Web API reads onto a compatibility unwrapping layer so the frontend can consume either the `data` envelope or legacy top-level fields without breaking during the later pure-envelope cleanup.
 - 2026-03-25：为账号、空间、内容和聊天接口补上兼容式统一响应包装，返回 `code/message/data` 同时保留旧顶层字段，并让 Flutter API client 同时兼容新旧两种结构 / Added a compatibility response envelope across account, space, content, and chat APIs, returning `code/message/data` while preserving legacy top-level fields, and updated the Flutter API client to read both formats.
 - 2026-03-24：按当前代码收口账号接口文档，补齐好友、订阅和外部账号接口，并移除尚未落地的用户管理/钱包权益接口口径 / Realigned the account API docs to the current code, adding friend, subscription, and external-account endpoints while removing undocumented user-management and wallet-entitlement APIs.

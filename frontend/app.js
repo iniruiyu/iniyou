@@ -1702,14 +1702,14 @@ const app = createApp({
       return this.unwrapApiPayload(body);
     },
     unwrapApiPayload(body) {
-      // Support both legacy flat payloads and wrapped `data` envelopes.
-      // 同时兼容旧版平铺载荷与 `data` 包装结构。
+      // Prefer the wrapped `data` payload and keep legacy bodies as fallback.
+      // 优先使用 `data` 包装载荷，旧版平铺响应仅作为回退。
       if (!body || typeof body !== 'object' || Array.isArray(body)) {
         return {};
       }
       const data = body.data;
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        return { ...body, ...data };
+        return data;
       }
       return body;
     },
