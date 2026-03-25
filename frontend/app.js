@@ -1688,8 +1688,8 @@ const app = createApp({
   },
   methods: {
     async readApiPayload(response) {
-      // Read one API response and unwrap the compatibility envelope.
-      // 读取单个 API 响应，并解包兼容式响应结构。
+      // Read one API response and unwrap the envelope.
+      // 读取单个 API 响应并解包响应包装。
       if (!response) {
         return {};
       }
@@ -1702,8 +1702,8 @@ const app = createApp({
       return this.unwrapApiPayload(body);
     },
     unwrapApiPayload(body) {
-      // Prefer the wrapped `data` payload and keep legacy bodies as fallback.
-      // 优先使用 `data` 包装载荷，旧版平铺响应仅作为回退。
+      // Prefer the wrapped `data` payload and keep raw bodies as fallback.
+      // 优先使用 `data` 包装载荷，原始响应体仅作为回退。
       if (!body || typeof body !== 'object' || Array.isArray(body)) {
         return {};
       }

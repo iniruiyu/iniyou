@@ -248,9 +248,7 @@ new-project/
 
 进度记录 / Progress log:
 
-- 2026-03-25：进一步把 Flutter 与 Legacy Web 的 API helper 切到 `data` 包装优先读取，前端现在主要依赖规范化响应对象而不是旧版顶层平铺字段 / Further shifted the Flutter and Legacy Web API helpers to prefer `data` envelopes, so the frontends now primarily consume normalized response objects instead of legacy top-level flat fields.
-- 2026-03-25：继续把 Legacy Web 的接口读取切到兼容解包 helper，前端现在可同时消费 `data` 包装和旧版顶层字段，为后续移除平铺字段做准备 / Continued moving Legacy Web API reads onto a compatibility unwrapping helper, so the frontend can now consume both the `data` envelope and legacy top-level fields in preparation for removing the flattened fields later.
-- 2026-03-25：为账号、空间、内容和聊天接口补上兼容式统一响应包装，后端返回 `code/message/data` 并保留旧顶层字段，同时让 Flutter API client 兼容新旧两种响应结构 / Added a compatibility response envelope across account, space, content, and chat APIs so the backend now returns `code/message/data` while preserving legacy top-level fields, and updated the Flutter API client to support both response shapes.
+- 2026-03-25：Flutter 与 Legacy Web 的 API helper 已切到 `data` 优先读取，后端标准接口也已收口为纯 `code/message/data` 包装，旧顶层字段已移除 / Flutter and Legacy Web API helpers now prefer `data`, and the backend standard APIs have been closed to a pure `code/message/data` envelope with legacy top-level fields removed.
 - 2026-03-24：对齐 `docs/API_SPEC.md`、`docs/DATA_MODEL.md` 与后端实际路由/模型，明确当前实现边界并把未落地接口与实体下沉为预留项 / Aligned `docs/API_SPEC.md` and `docs/DATA_MODEL.md` with the actual backend routes and models, clarifying the implemented boundaries and moving not-yet-built APIs/entities into reserved items.
 - 2026-03-24：精简 `README.md` 与 `DESIGN.md`，收口重复说明，保留项目入口、运行方式和账号服务最小设计摘要 / Simplified `README.md` and `DESIGN.md` by removing repeated explanations while keeping the project entry, startup flow, and the minimal account-service design summary.
 - 2026-03-20：继续对齐 Flutter 个人主页为 Vue 风格布局，收紧顶部重复英雄卡，并把用户 ID 留在个人资料摘要、将修改入口拆成资料/隐私两处 / Continued aligning the Flutter profile page with the Vue layout by tightening the duplicated top hero card, keeping the user ID in the personal info summary, and splitting the edit entry into personal-info and privacy actions.

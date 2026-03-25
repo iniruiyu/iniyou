@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,14 +22,14 @@ type apiEnvelope struct {
 }
 
 func respondOK(c *gin.Context, payload any) {
-	// Return a success envelope while flattening legacy payload fields for compatibility.
-	// 返回成功包装结构，并平铺旧版载荷字段以保持兼容。
+	// Return a success envelope.
+	// 返回成功包装结构。
 	respondJSON(c, http.StatusOK, "success", payload, "")
 }
 
 func respondCreated(c *gin.Context, payload any) {
-	// Return a created envelope while flattening legacy payload fields for compatibility.
-	// 返回创建成功包装结构，并平铺旧版载荷字段以保持兼容。
+	// Return a created envelope.
+	// 返回创建成功包装结构。
 	respondJSON(c, http.StatusCreated, "created", payload, "")
 }
 
@@ -47,46 +46,13 @@ func respondDeleted(c *gin.Context) {
 }
 
 func respondJSON(c *gin.Context, status int, message string, payload any, errorMessage string) {
-	// Build one compatibility response that serves both wrapped and legacy readers.
-	// 构建同时兼容包装式读取与旧版字段读取的统一响应。
-	body := gin.H{
-		"code":    status,
-		"message": message,
-	}
-	if payload != nil {
-		body["data"] = payload
-		if flattened, ok := flattenPayload(payload); ok {
-			for key, value := range flattened {
-				if _, exists := body[key]; exists {
-					continue
-				}
-				body[key] = value
-			}
-		}
-	}
-	if errorMessage != "" {
-		body["error"] = errorMessage
+	// Build the canonical wrapped response shape.
+	// 构建规范化的包装响应结构。
+	body := apiEnvelope{
+		Code:    status,
+		Message: message,
+		Data:    payload,
+		Error:   errorMessage,
 	}
 	c.JSON(status, body)
-}
-
-func flattenPayload(payload any) (gin.H, bool) {
-	// Flatten supported payload shapes so older clients can keep reading top-level fields.
-	// 平铺受支持的载荷形状，让旧客户端继续读取顶层字段。
-	switch value := payload.(type) {
-	case gin.H:
-		return value, true
-	case map[string]any:
-		return gin.H(value), true
-	default:
-		raw, err := json.Marshal(payload)
-		if err != nil {
-			return nil, false
-		}
-		var flattened map[string]any
-		if err := json.Unmarshal(raw, &flattened); err != nil {
-			return nil, false
-		}
-		return gin.H(flattened), true
-	}
 }

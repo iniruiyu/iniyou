@@ -501,8 +501,8 @@ class ApiClient {
   }
 
   Map<String, dynamic> _payload(Map<String, dynamic> body) {
-    // Prefer the wrapped `data` payload and keep legacy bodies as fallback.
-    // 优先使用 `data` 包装载荷，旧版平铺响应仅作为回退。
+    // Prefer the wrapped `data` payload and keep raw bodies as fallback.
+    // 优先使用 `data` 包装载荷，原始响应体仅作为回退。
     final data = body['data'];
     if (data is Map<String, dynamic>) {
       return Map<String, dynamic>.from(data);

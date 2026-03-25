@@ -10,7 +10,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - API 统一使用 `/api/v1` 作为版本前缀
 - 资源命名采用复数名词
 - 请求与响应使用 JSON
-- 当前实现已开始统一到 `code/message/data` 包装，同时保留旧字段平铺在顶层以兼容现有前端 / The current implementation now uses a `code/message/data` envelope while keeping legacy top-level fields for frontend compatibility.
+- 当前实现统一到 `code/message/data` 包装，业务载荷都放在 `data` 中 / The current implementation uses a `code/message/data` envelope, with all business payloads placed in `data`.
 - Flutter 前端与 Legacy Web 前端共享同一套后端 RESTful API，接口变更要同时考虑双端兼容
 - 后续新增字段尽量向后兼容
 
@@ -43,7 +43,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 
 说明：
 
-- 新接口语义以 `data` 为准，旧客户端仍可继续读取顶层 `items`、`item`、`user_id`、`token` 等字段
+- 新接口语义以 `data` 为准，列表资源通常读取 `data.items`
 - 删除接口当前返回 `200 + {code,message,data}` 风格确认对象，不再返回空 `204`
 
 ## 4. 鉴权规则
@@ -209,9 +209,9 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
   - 发布时必须携带当前用户拥有的 `space_id`
   - 当前实现只接受 `public` 或 `private` 两种文章可见范围
   - `media_type` 支持 `image` 和 `video`
-  - `media_items` 支持按顺序提交多张图片或单个视频，服务端会把第一项同步到旧版单图字段以兼容旧前端
+  - `media_items` 支持按顺序提交多张图片或单个视频，服务端会把第一项同步到单图字段
   - 图片上传前应优先等比缩放并压缩，前端可使用随机文件名避免重名
-  - `media_data` 为图文或小视频的 base64 载荷，仍作为旧版单图字段保留
+  - `media_data` 为图文或小视频的 base64 载荷
   - `MEDIA_STORAGE_DIR` 用于配置文章媒体的真实落盘目录，默认值为 `D:/codeX/iniyou/uploads/space-service`
   - 服务端会按文章 ID 将媒体写入独立子目录，`media_name` 会被视为服务端存储文件名而不是原始上传名
   - 文章删除、空间删除以及媒体替换时，服务端会同步物理删除不用的文件
@@ -226,7 +226,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 说明补充：
   - 当前实现只接受 `public` 或 `private` 两种文章可见范围
   - `media_items` 为空且未传 `clear_media=true` 时，服务端会继续沿用现有媒体
-  - `media_items` 非空时，服务端会以数组第一项同步旧版 `media_*` 字段，便于双端兼容
+  - `media_items` 非空时，服务端会以数组第一项同步 `media_*` 字段
   - `clear_media=true` 时，服务端会显式清除旧媒体并删除对应磁盘文件
   - `media_items` 发生替换后，已移除的媒体文件会在保存成功后被物理删除
 
@@ -397,7 +397,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 
 ### 2026-03-25
 
-- 后端开始统一返回 `code/message/data` 包装，并保留旧版顶层字段以兼容双前端 / The backend now emits a `code/message/data` envelope while preserving legacy top-level fields for dual-frontend compatibility.
+- 后端统一返回 `code/message/data` 包装，业务载荷都放在 `data` 中 / The backend now emits a `code/message/data` envelope with business payloads placed in `data`.
 
 ### 2026-03-12
 
