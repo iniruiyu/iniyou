@@ -3742,16 +3742,13 @@ const app = createApp({
       this.viewportWidth = typeof window !== 'undefined' ? window.innerWidth : this.viewportWidth;
     },
     enterSpaceShell(space = null) {
-      // Keep the sidebar visible on the space home page, and only collapse into the top-button mode after entering a specific space.
-      // 空间首页保持侧边导航可见，只有进入具体空间后才收进顶部按钮模式。
+      // Preserve the current navigation state for both the space workspace and the specific space shell.
+      // 对空间工作台和具体空间壳层统一保留当前导航状态。
       const targetSpace = space && typeof space === 'object' && space.id ? space : null;
       this.view = 'space';
       this.spaceOwnedExpanded = !targetSpace;
       this.spacePanelTab = 'owned';
       this.spaceWorkspaceMenuOpen = false;
-      if (!targetSpace) {
-        this.sidebarCollapsed = false;
-      }
       if (targetSpace) {
         this.currentSpace = targetSpace;
         this.currentPost = null;

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260326-15" />
+  <link rel="stylesheet" href="assets/styles.css?v=20260326-16" />
 </head>
 <body>
   <!-- Vue root / Vue 根节点 -->
@@ -81,17 +81,17 @@
     <main class="main" :class="{ 'chat-shell': view === 'chat', 'space-shell': isSpaceShell, 'main-collapsed': sidebarCollapsed && !isSpaceShell }" :style="mainShellStyle">
       <!-- Collapsed top navigation / 折叠态顶层导航：收起侧栏后只保留轻量入口。 -->
       <header v-if="!isSpaceShell && sidebarCollapsed" class="topnav-shell">
-        <!-- Refined nav trigger / 精修导航触发器：强化图标容器与状态点，让展开入口更稳定醒目。 -->
+        <!-- Refined nav trigger / 精修导航触发器：改为纯图标入口，让折叠态顶部导航更紧凑。 -->
         <button class="topnav-toggle ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
-          <span class="topnav-toggle-core">
-            <span class="topnav-toggle-icon-shell" aria-hidden="true">
+          <span class="topnav-toggle-core" aria-hidden="true">
+            <span class="topnav-toggle-icon-shell">
               <span class="nav-toggle-icon"></span>
             </span>
-            <span class="topnav-toggle-label">{{ t('nav.expand') }}</span>
           </span>
           <span class="topnav-toggle-accent" aria-hidden="true"></span>
         </button>
         <nav class="topnav-strip" aria-label="Primary navigation">
+          <!-- Keep the current nav state when entering the space workspace from the compact top nav / 从折叠顶层导航进入空间工作台时保持当前导航状态。 -->
           <button class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
             <span class="nav-icon">SP</span>
             <span class="nav-label">{{ t('nav.space') }}</span>

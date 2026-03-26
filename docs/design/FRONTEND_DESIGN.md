@@ -291,7 +291,8 @@
 - 点赞评论转发操作要低学习成本
 - 聊天入口在移动端和桌面端都要快速可达
 - 聊天页在桌面端采用“会话列表 + 消息窗口”双栏布局；侧栏展开时保留双栏并让主内容右移让位，侧栏折叠后切换为单面板全宽并隐藏会话列表，在移动端收敛为单栏堆叠布局 / On desktop, the chat page uses a "conversation list + message window" two-column layout; when the sidebar is expanded, keep the two-column layout and shift the main content right to make room, then switch to a single full-width panel and hide the conversation list when the sidebar collapses, while mobile stays single-column stacked.
-- 宽屏下主导航应保持单一入口：侧栏折叠时使用顶层精简导航和高辨识度胶囊展开按钮，侧栏展开时切换为浮动左侧抽屉并让主内容右移让位，折叠态恢复全宽 / On wide layouts, the main navigation should have a single entry point: use a compact top-level nav with a high-visibility pill expand trigger when collapsed, switch to a floating left drawer when expanded, shift the main content right to make room, and restore full width in collapsed state.
+- 宽屏下主导航应保持单一入口：侧栏折叠时使用顶层精简导航和纯图标胶囊展开按钮，侧栏展开时切换为浮动左侧抽屉并让主内容右移让位，折叠态恢复全宽 / On wide layouts, the main navigation should have a single entry point: use a compact top-level nav with an icon-only pill expand trigger when collapsed, switch to a floating left drawer when expanded, shift the main content right to make room, and restore full width in collapsed state.
+- 宽屏空间流转应保留当前导航状态：从顶部精简导航进入空间首页、点击进入具体空间内容、以及从空间内容返回工作台，都不应自动展开或折叠左侧导航，只由空间壳层临时隐藏导航 / Wide-layout space flows should preserve the current navigation state: entering the space workspace from the compact top nav, opening a specific space, and returning from space content back to the workspace must not auto-expand or auto-collapse the left navigation; the space shell should only hide it temporarily.
 - 除空间页外，顶部主导航应保持可见，侧栏主要承载账号、设置与退出等次级操作 / Outside the dedicated space page, the top navigation should stay visible, while the sidebar mainly carries secondary actions such as account, settings, and sign-out.
 - 新好友提醒以浮动提醒条或卡片角标表达，新消息提示以会话角标或导航徽标表达
 - 媒体消息编辑区需在文本输入附近提供图片、视频、语音入口，并展示压缩后预览
