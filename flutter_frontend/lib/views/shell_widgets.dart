@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import '../i18n/app_i18n.dart';
@@ -9,11 +11,13 @@ class ShellSidebarItem {
     required this.viewKey,
     required this.label,
     required this.icon,
+    required this.activeIcon,
   });
 
   final String viewKey;
   final String label;
   final IconData icon;
+  final IconData activeIcon;
 }
 
 List<ShellSidebarItem> buildShellSidebarItems(String Function(String key) t) {
@@ -21,22 +25,26 @@ List<ShellSidebarItem> buildShellSidebarItems(String Function(String key) t) {
     ShellSidebarItem(
       viewKey: 'space',
       label: t('sidebar.space'),
-      icon: Icons.space_dashboard_outlined,
+      icon: Icons.dashboard_customize_outlined,
+      activeIcon: Icons.dashboard_customize,
     ),
     ShellSidebarItem(
       viewKey: 'friends',
       label: t('sidebar.friends'),
-      icon: Icons.people_alt_outlined,
+      icon: Icons.diversity_3_outlined,
+      activeIcon: Icons.diversity_3,
     ),
     ShellSidebarItem(
       viewKey: 'profile',
       label: t('sidebar.profile'),
-      icon: Icons.person_outline,
+      icon: Icons.account_circle_outlined,
+      activeIcon: Icons.account_circle,
     ),
     ShellSidebarItem(
       viewKey: 'chat',
       label: t('sidebar.chat'),
-      icon: Icons.chat_bubble_outline,
+      icon: Icons.forum_outlined,
+      activeIcon: Icons.forum,
     ),
   ];
 }
@@ -79,8 +87,9 @@ class ShellSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      color: Theme.of(context).colorScheme.surface,
+      color: theme.colorScheme.surface,
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -150,37 +159,151 @@ class ShellSidebar extends StatelessWidget {
                 : unreadCount;
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: FilledButton.tonal(
-                style: FilledButton.styleFrom(
-                  alignment: Alignment.centerLeft,
-                  backgroundColor: selected
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : Theme.of(context).colorScheme.surfaceContainerHighest,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
+              child: _SidebarGlassNavButton(
+                label: item.label,
+                icon: selected ? item.activeIcon : item.icon,
+                selected: selected,
+                badgeCount: badgeCount,
                 onPressed: () => onNavigate(item.viewKey),
-                child: Row(
-                  children: [
-                    Badge(
-                      isLabelVisible: badgeCount > 0,
-                      label: Text(
-                        badgeCount > 99 ? '99+' : '$badgeCount',
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                      child: Icon(item.icon, size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(item.label)),
-                  ],
-                ),
               ),
             );
           }),
         ],
       ),
+    );
+  }
+}
+
+class _SidebarGlassNavButton extends StatelessWidget {
+  const _SidebarGlassNavButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.badgeCount,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final int badgeCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final backgroundStart = selected
+        ? scheme.primary.withValues(alpha: 0.18)
+        : scheme.surface.withValues(alpha: 0.18);
+    final backgroundEnd = selected
+        ? scheme.primaryContainer.withValues(alpha: 0.12)
+        : scheme.surfaceContainerHighest.withValues(alpha: 0.08);
+    final borderColor = selected
+        ? scheme.primary.withValues(alpha: 0.28)
+        : scheme.outlineVariant.withValues(alpha: 0.18);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        // Make sidebar navigation read as translucent glass cards instead of solid filled buttons.
+        // 让侧栏导航呈现为半透明玻璃卡片，而不是实心填充按钮。
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(22),
+            child: Ink(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [backgroundStart, backgroundEnd],
+                ),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: (selected ? scheme.primary : scheme.shadow)
+                        .withValues(alpha: selected ? 0.14 : 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Badge(
+                    isLabelVisible: badgeCount > 0,
+                    label: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                    child: _SidebarNavGlyph(icon: icon, selected: selected),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarNavGlyph extends StatelessWidget {
+  const _SidebarNavGlyph({required this.icon, required this.selected});
+
+  final IconData icon;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final surfaceColor = selected
+        ? scheme.primary.withValues(alpha: 0.2)
+        : scheme.surface.withValues(alpha: 0.16);
+    final borderColor = selected
+        ? scheme.primary.withValues(alpha: 0.32)
+        : scheme.outlineVariant.withValues(alpha: 0.18);
+    final iconColor = selected ? scheme.primary : scheme.onSurfaceVariant;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            surfaceColor,
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
+          ],
+        ),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: iconColor.withValues(alpha: selected ? 0.14 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Icon(icon, size: 18, color: iconColor),
     );
   }
 }

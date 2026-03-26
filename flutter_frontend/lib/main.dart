@@ -1,5 +1,6 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -2944,12 +2945,45 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 顶部导航用于快速切换视图。
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final items = [
-      (AppView.space, _t('sidebar.space')),
-      (AppView.friends, _t('sidebar.friends')),
-      (AppView.profile, _t('sidebar.profile')),
-      (AppView.chat, _t('sidebar.chat')),
-    ];
+    final items =
+        <
+          ({
+            AppView view,
+            String label,
+            IconData icon,
+            IconData activeIcon,
+            int badgeCount,
+          })
+        >[
+          (
+            view: AppView.space,
+            label: _t('sidebar.space'),
+            icon: Icons.dashboard_customize_outlined,
+            activeIcon: Icons.dashboard_customize,
+            badgeCount: 0,
+          ),
+          (
+            view: AppView.friends,
+            label: _t('sidebar.friends'),
+            icon: Icons.diversity_3_outlined,
+            activeIcon: Icons.diversity_3,
+            badgeCount: _pendingFriendCount,
+          ),
+          (
+            view: AppView.profile,
+            label: _t('sidebar.profile'),
+            icon: Icons.account_circle_outlined,
+            activeIcon: Icons.account_circle,
+            badgeCount: 0,
+          ),
+          (
+            view: AppView.chat,
+            label: _t('sidebar.chat'),
+            icon: Icons.forum_outlined,
+            activeIcon: Icons.forum,
+            badgeCount: _unreadMessageCount,
+          ),
+        ];
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: Container(
@@ -2965,42 +2999,132 @@ class _IniyouHomeState extends State<IniyouHome> {
               for (final item in items)
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
-                  child: Badge(
-                    isLabelVisible: item.$1 == AppView.chat
-                        ? _unreadMessageCount > 0
-                        : item.$1 == AppView.friends
-                        ? _pendingFriendCount > 0
-                        : false,
-                    label: Text(
-                      item.$1 == AppView.chat
-                          ? (_unreadMessageCount > 99
-                                ? '99+'
-                                : '$_unreadMessageCount')
-                          : (_pendingFriendCount > 99
-                                ? '99+'
-                                : '$_pendingFriendCount'),
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                    child: FilledButton.tonal(
-                      onPressed: () => _navigateTo(item.$1),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _view == item.$1
-                            ? scheme.primaryContainer
-                            : scheme.surfaceContainerHighest,
-                        foregroundColor: _view == item.$1
-                            ? scheme.onPrimaryContainer
-                            : scheme.onSurfaceVariant,
-                        side: BorderSide(
-                          color: _view == item.$1
-                              ? scheme.primary.withValues(alpha: 0.36)
-                              : scheme.outlineVariant.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: Text(item.$2),
-                    ),
+                  child: _buildGlassTopNavChip(
+                    view: item.view,
+                    label: item.label,
+                    icon: item.icon,
+                    activeIcon: item.activeIcon,
+                    badgeCount: item.badgeCount,
+                    scheme: scheme,
+                    textTheme: theme.textTheme,
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassTopNavChip({
+    required AppView view,
+    required String label,
+    required IconData icon,
+    required IconData activeIcon,
+    required int badgeCount,
+    required ColorScheme scheme,
+    required TextTheme textTheme,
+  }) {
+    final selected = _view == view;
+    final backgroundStart = selected
+        ? scheme.primary.withValues(alpha: 0.18)
+        : scheme.surface.withValues(alpha: 0.18);
+    final backgroundEnd = selected
+        ? scheme.primaryContainer.withValues(alpha: 0.12)
+        : scheme.surfaceContainerHighest.withValues(alpha: 0.08);
+    final borderColor = selected
+        ? scheme.primary.withValues(alpha: 0.28)
+        : scheme.outlineVariant.withValues(alpha: 0.18);
+    final textColor = selected ? scheme.onPrimaryContainer : scheme.onSurface;
+    final iconColor = selected ? scheme.primary : scheme.onSurfaceVariant;
+    return Badge(
+      isLabelVisible: badgeCount > 0,
+      label: Text(
+        badgeCount > 99 ? '99+' : '$badgeCount',
+        style: const TextStyle(fontSize: 10),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          // Render top navigation as translucent glass pills instead of solid chips.
+          // 将顶部导航渲染为半透明玻璃胶囊，而不是实心标签按钮。
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _navigateTo(view),
+              borderRadius: BorderRadius.circular(24),
+              child: Ink(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [backgroundStart, backgroundEnd],
+                  ),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (selected ? scheme.primary : scheme.shadow)
+                          .withValues(alpha: selected ? 0.14 : 0.08),
+                      blurRadius: 18,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: selected
+                              ? [
+                                  scheme.primary.withValues(alpha: 0.2),
+                                  scheme.primaryContainer.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                ]
+                              : [
+                                  Colors.white.withValues(alpha: 0.12),
+                                  scheme.surface.withValues(alpha: 0.08),
+                                ],
+                        ),
+                        border: Border.all(
+                          color: selected
+                              ? scheme.primary.withValues(alpha: 0.26)
+                              : scheme.outlineVariant.withValues(alpha: 0.16),
+                        ),
+                      ),
+                      child: Icon(
+                        selected ? activeIcon : icon,
+                        size: 18,
+                        color: iconColor,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      label,
+                      style: textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 class AuthenticatedShellView extends StatelessWidget {
@@ -56,7 +58,7 @@ class AuthenticatedShellView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         titleSpacing: 20,
-        leadingWidth: compactMode ? null : (wide ? 56 : null),
+        leadingWidth: compactMode ? 72 : (wide ? 72 : null),
         // Keep nav buttons on the same row as the toggle button.
         // 将导航按钮与折叠按钮放在同一行。
         title: compactMode
@@ -95,23 +97,27 @@ class AuthenticatedShellView extends StatelessWidget {
                       ],
                     )),
         leading: compactMode
-            ? IconButton(
+            ? _ShellToolbarIconButton(
                 tooltip: t('spaces.backAction'),
                 onPressed: onCompactBack,
-                icon: const Icon(Icons.arrow_back),
+                icon: Icons.arrow_back_rounded,
               )
             : wide
-            ? IconButton(
+            ? _ShellToolbarIconButton(
                 tooltip: t('shell.toggleSidebar'),
                 onPressed: onToggleSidebar,
-                icon: Icon(sidebarCollapsed ? Icons.menu : Icons.menu_open),
+                icon: sidebarCollapsed
+                    ? Icons.menu_rounded
+                    : Icons.menu_open_rounded,
+                emphasized: sidebarCollapsed,
               )
             : Builder(
                 builder: (context) {
-                  return IconButton(
+                  return _ShellToolbarIconButton(
                     tooltip: t('shell.toggleSidebar'),
                     onPressed: () => Scaffold.of(context).openDrawer(),
-                    icon: const Icon(Icons.menu),
+                    icon: Icons.menu_rounded,
+                    emphasized: true,
                   );
                 },
               ),
@@ -277,6 +283,105 @@ class AuthenticatedShellView extends StatelessWidget {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _ShellToolbarIconButton extends StatelessWidget {
+  const _ShellToolbarIconButton({
+    required this.tooltip,
+    required this.onPressed,
+    required this.icon,
+    this.emphasized = false,
+  });
+
+  final String tooltip;
+  final VoidCallback onPressed;
+  final IconData icon;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final backgroundStart = emphasized
+        ? scheme.primary.withValues(alpha: 0.18)
+        : scheme.surface.withValues(alpha: 0.18);
+    final backgroundEnd = emphasized
+        ? scheme.primaryContainer.withValues(alpha: 0.12)
+        : scheme.surfaceContainerHighest.withValues(alpha: 0.08);
+    final borderColor = emphasized
+        ? scheme.primary.withValues(alpha: 0.3)
+        : scheme.outlineVariant.withValues(alpha: 0.2);
+    final iconColor = emphasized
+        ? scheme.onPrimaryContainer.withValues(alpha: 0.96)
+        : scheme.onSurfaceVariant;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 12, top: 8, bottom: 8),
+      child: Tooltip(
+        message: tooltip,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            // Use a translucent glass shell instead of an opaque icon button.
+            // 使用半透明玻璃外壳替代不透明图标按钮。
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(18),
+                child: Ink(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [backgroundStart, backgroundEnd],
+                    ),
+                    border: Border.all(color: borderColor),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (emphasized ? scheme.primary : scheme.shadow)
+                            .withValues(alpha: emphasized ? 0.16 : 0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: 1,
+                        left: 12,
+                        right: 12,
+                        child: IgnorePointer(
+                          child: Container(
+                            height: 1.2,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.3),
+                                  Colors.white.withValues(alpha: 0.02),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Icon(icon, size: 22, color: iconColor),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
