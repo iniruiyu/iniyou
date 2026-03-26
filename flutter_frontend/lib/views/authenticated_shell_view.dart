@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'shell_widgets.dart';
-
 class AuthenticatedShellView extends StatelessWidget {
   const AuthenticatedShellView({
     super.key,
-    required this.userLabel,
     required this.pageTitle,
     required this.pageSubtitle,
     required this.compactMode,
@@ -14,15 +11,8 @@ class AuthenticatedShellView extends StatelessWidget {
     required this.sidebarCollapsed,
     required this.sidebar,
     required this.body,
-    required this.onRefresh,
-    required this.onLogout,
     required this.onToggleSidebar,
     required this.onCompactBack,
-    required this.currentLanguageCode,
-    required this.onLanguageChanged,
-    required this.currentThemeKey,
-    required this.onThemeChanged,
-    required this.themeOptions,
     required this.backgroundGradient,
     required this.topNav,
     required this.showTopNav,
@@ -30,7 +20,6 @@ class AuthenticatedShellView extends StatelessWidget {
     required this.t,
   });
 
-  final String userLabel;
   final String pageTitle;
   final String pageSubtitle;
   final bool compactMode;
@@ -41,25 +30,12 @@ class AuthenticatedShellView extends StatelessWidget {
   final bool sidebarCollapsed;
   final Widget sidebar;
   final Widget body;
-  final VoidCallback onRefresh;
-  final VoidCallback onLogout;
   // Toggle sidebar collapsed/expanded.
   // 切换侧边栏折叠/展开。
   final VoidCallback onToggleSidebar;
   // Back action for the compact space shell.
   // 紧凑空间壳层的返回动作。
   final VoidCallback onCompactBack;
-  final String currentLanguageCode;
-  final ValueChanged<String> onLanguageChanged;
-  // Current theme key for skin switching.
-  // 皮肤切换的当前主题键。
-  final String currentThemeKey;
-  // Theme change handler.
-  // 主题切换回调。
-  final ValueChanged<String> onThemeChanged;
-  // Available theme options.
-  // 可选主题列表。
-  final List<ThemeOption> themeOptions;
   // Background gradient colors.
   // 背景渐变颜色。
   final List<Color> backgroundGradient;
@@ -80,6 +56,7 @@ class AuthenticatedShellView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         titleSpacing: 20,
+        leadingWidth: compactMode ? null : (wide ? 56 : null),
         // Keep nav buttons on the same row as the toggle button.
         // 将导航按钮与折叠按钮放在同一行。
         title: compactMode
@@ -97,7 +74,26 @@ class AuthenticatedShellView extends StatelessWidget {
                     ),
                 ],
               )
-            : (showTopNav ? topNav : const SizedBox.shrink()),
+            : (showTopNav
+                  ? topNav
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          pageTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (pageSubtitle.isNotEmpty)
+                          Text(
+                            pageSubtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                      ],
+                    )),
         leading: compactMode
             ? IconButton(
                 tooltip: t('spaces.backAction'),
@@ -108,7 +104,7 @@ class AuthenticatedShellView extends StatelessWidget {
             ? IconButton(
                 tooltip: t('shell.toggleSidebar'),
                 onPressed: onToggleSidebar,
-                icon: Icon(sidebarCollapsed ? Icons.menu_open : Icons.menu),
+                icon: Icon(sidebarCollapsed ? Icons.menu : Icons.menu_open),
               )
             : Builder(
                 builder: (context) {
@@ -119,40 +115,12 @@ class AuthenticatedShellView extends StatelessWidget {
                   );
                 },
               ),
-        actions: compactMode
-            ? const []
-            : [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Center(
-                    child: Text(
-                      userLabel,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: t('shell.refresh'),
-                  onPressed: loading ? null : onRefresh,
-                  icon: const Icon(Icons.refresh),
-                ),
-                SettingsMenuButton(
-                  currentLanguageCode: currentLanguageCode,
-                  onLanguageChanged: onLanguageChanged,
-                  currentThemeKey: currentThemeKey,
-                  onThemeChanged: onThemeChanged,
-                  themeOptions: themeOptions,
-                  t: t,
-                ),
-                IconButton(
-                  tooltip: t('shell.logout'),
-                  onPressed: loading ? null : onLogout,
-                  icon: const Icon(Icons.logout),
-                ),
-              ],
+        actions: const [],
         bottom: null,
       ),
-      drawer: wide && !compactMode ? null : (compactMode ? null : Drawer(child: SafeArea(child: sidebar))),
+      drawer: wide && !compactMode
+          ? null
+          : (compactMode ? null : Drawer(child: SafeArea(child: sidebar))),
       body: compactMode
           ? Container(
               decoration: BoxDecoration(
@@ -194,7 +162,9 @@ class AuthenticatedShellView extends StatelessWidget {
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+                              Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.14),
                               Colors.transparent,
                             ],
                           ),
@@ -227,7 +197,8 @@ class AuthenticatedShellView extends StatelessWidget {
             )
           : Row(
               children: [
-                if (wide && !sidebarCollapsed) SizedBox(width: 260, child: sidebar),
+                if (wide && !sidebarCollapsed)
+                  SizedBox(width: 260, child: sidebar),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -271,7 +242,8 @@ class AuthenticatedShellView extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+                                    Theme.of(context).colorScheme.primary
+                                        .withValues(alpha: 0.14),
                                     Colors.transparent,
                                   ],
                                 ),

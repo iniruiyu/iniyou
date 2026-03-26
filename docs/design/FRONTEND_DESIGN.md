@@ -35,6 +35,7 @@
 - 空间卡片应提供进入、编辑和删除入口，文章卡片应提供编辑和删除入口
 - 空间名称与二级域名需解耦展示，二级域名仅允许英文字母和数字，且最长 63 个字符
 - 登录页应提供“记住账号和密码”开关，登录成功后将账号与密码持久化到本地，下次进入页面时优先回填 / The login page should provide a "remember account and password" switch, persist the account and password locally after a successful sign-in, and prefill them on the next visit.
+- 登录后账号、会员等级、语言切换、设置与退出入口应收进主菜单侧栏，顶部右上角尽量留给内容区 / After login, account, membership level, language switch, settings, and sign-out actions should move into the main menu sidebar so the upper-right stays clear for content.
 - 聊天页应尽量占满主内容区，消息历史区独立滚动，输入区固定在底部
 - 常用表情与贴纸应以快捷插入区呈现，减少输入切换成本
 
@@ -243,6 +244,7 @@
 - 聊天会话页需提供附件工具条、消息媒体预览、未读提示和新好友提醒入口
 - 聊天会话页需尽量占满主内容区，消息记录独立滚动，输入区与快捷表情/贴纸区保持在视线范围内
 - 聊天会话页在长历史场景下应提供回到底部浮动按钮，并将右侧滚动条做得更轻量、更清晰
+- 聊天会话页在紧凑布局下应把“最近会话”收纳到右侧菜单入口，Flutter 和 Vue 两端保持同一交互 / In compact layouts, the chat session page should fold "Recent conversations" into a right-side menu entry, and Flutter and Vue should keep the same interaction
 
 ### 8.7 个人主页页面约束
 
@@ -288,7 +290,9 @@
 - 核心发布入口需要清晰可见
 - 点赞评论转发操作要低学习成本
 - 聊天入口在移动端和桌面端都要快速可达
-- 聊天页在桌面端采用“会话列表 + 消息窗口”双栏布局，在移动端收敛为单栏堆叠布局
+- 聊天页在桌面端采用“会话列表 + 消息窗口”双栏布局；侧栏展开时保留双栏并让主内容右移让位，侧栏折叠后切换为单面板全宽并隐藏会话列表，在移动端收敛为单栏堆叠布局 / On desktop, the chat page uses a "conversation list + message window" two-column layout; when the sidebar is expanded, keep the two-column layout and shift the main content right to make room, then switch to a single full-width panel and hide the conversation list when the sidebar collapses, while mobile stays single-column stacked.
+- 宽屏下主导航应保持单一入口：侧栏折叠时使用顶层精简导航和高辨识度胶囊展开按钮，侧栏展开时切换为浮动左侧抽屉并让主内容右移让位，折叠态恢复全宽 / On wide layouts, the main navigation should have a single entry point: use a compact top-level nav with a high-visibility pill expand trigger when collapsed, switch to a floating left drawer when expanded, shift the main content right to make room, and restore full width in collapsed state.
+- 除空间页外，顶部主导航应保持可见，侧栏主要承载账号、设置与退出等次级操作 / Outside the dedicated space page, the top navigation should stay visible, while the sidebar mainly carries secondary actions such as account, settings, and sign-out.
 - 新好友提醒以浮动提醒条或卡片角标表达，新消息提示以会话角标或导航徽标表达
 - 媒体消息编辑区需在文本输入附近提供图片、视频、语音入口，并展示压缩后预览
 - 订阅、外部账号入口应统一放在用户中心体系下

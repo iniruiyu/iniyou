@@ -74,30 +74,42 @@ window.SettingsMenu = {
             @change="app.applyTheme()"
           ></bilingual-select-field>
         </section>
-        <section class="settings-section">
-          <div class="settings-section-head">
-            <div class="settings-section-title">{{ app.t('i18n.addTitle') }}</div>
+        <!-- Keep the language creation form collapsed by default so the panel stays compact. -->
+        <!-- 新增语言表单默认折叠，避免设置面板过长。 -->
+        <details class="settings-section settings-section-collapsible">
+          <summary class="settings-section-summary">
+            <div class="settings-section-summary-copy">
+              <div class="settings-section-title">{{ app.t('i18n.addTitle') }}</div>
+              <div class="settings-section-note">{{ app.peerLocaleText('i18n.addTitle') }}</div>
+            </div>
+            <span class="settings-section-toggle" aria-hidden="true">+</span>
+          </summary>
+          <div class="settings-section-body">
+            <div class="settings-form-grid">
+              <input class="lang-input" type="text" :placeholder="app.t('i18n.codePlaceholder')" v-model="app.newLanguage.code" />
+              <input class="lang-input" type="text" :placeholder="app.t('i18n.namePlaceholder')" v-model="app.newLanguage.name" />
+              <bilingual-select-field
+                :primary-label="app.t('i18n.dirLabel')"
+                :secondary-label="app.peerLocaleText('i18n.dirLabel')"
+                v-model="app.newLanguage.dir"
+                :options="directionSelectOptions()"
+              ></bilingual-select-field>
+              <textarea class="lang-textarea" :placeholder="app.t('i18n.jsonPlaceholder')" v-model="app.newLanguage.json"></textarea>
+            </div>
+            <bilingual-action-button
+              variant="primary"
+              type="button"
+              class="settings-action"
+              :primary-label="app.t('i18n.addButton')"
+              :secondary-label="app.peerLocaleText('i18n.addButton')"
+              @click="app.addLanguage()"
+            ></bilingual-action-button>
           </div>
-          <div class="settings-form-grid">
-            <input class="lang-input" type="text" :placeholder="app.t('i18n.codePlaceholder')" v-model="app.newLanguage.code" />
-            <input class="lang-input" type="text" :placeholder="app.t('i18n.namePlaceholder')" v-model="app.newLanguage.name" />
-            <bilingual-select-field
-              :primary-label="app.t('i18n.dirLabel')"
-              :secondary-label="app.peerLocaleText('i18n.dirLabel')"
-              v-model="app.newLanguage.dir"
-              :options="directionSelectOptions()"
-            ></bilingual-select-field>
-            <textarea class="lang-textarea" :placeholder="app.t('i18n.jsonPlaceholder')" v-model="app.newLanguage.json"></textarea>
-          </div>
-        </section>
-        <bilingual-action-button
-          variant="primary"
-          type="button"
-          class="settings-action"
-          :primary-label="app.t('i18n.addButton')"
-          :secondary-label="app.peerLocaleText('i18n.addButton')"
-          @click="app.addLanguage()"
-        ></bilingual-action-button>
+        </details>
+        <button class="settings-logout ghost danger" type="button" @click="app.closeSettingsMenu(); app.logout()">
+          <span class="settings-logout-label">{{ app.t('auth.logout') }}</span>
+          <span class="settings-logout-meta">{{ app.peerLocaleText('auth.logout') }}</span>
+        </button>
       </div>
     </div>
   `,

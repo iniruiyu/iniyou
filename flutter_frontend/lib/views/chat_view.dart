@@ -139,6 +139,143 @@ class _ChatViewState extends State<ChatView> {
     setState(() => _showQuickInsertPanel = false);
   }
 
+  void _openChatFromMenu(String friendId) {
+    // Jump to the selected friend from the right-side chat menu.
+    // 通过右侧聊天菜单切换到选中的好友会话。
+    final friend = widget.findFriend(friendId);
+    if (friend != null) {
+      widget.onStartChat(friend);
+    }
+  }
+
+  List<PopupMenuEntry<String>> _buildChatMenuEntries() {
+    // Keep recent conversations and quick friend switches inside one menu so compact layouts stay clean.
+    // 将最近会话与好友快捷切换统一收纳到一个菜单里，保持紧凑布局更干净。
+    final entries = <PopupMenuEntry<String>>[
+      PopupMenuItem<String>(
+        enabled: false,
+        child: Text(
+          _l('最近会话', 'Recent conversations', '最近會話'),
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+      ),
+    ];
+
+    if (widget.conversations.isEmpty) {
+      entries.add(
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Text(
+            _l('还没有会话记录。', 'No conversation history yet.', '還沒有會話記錄。'),
+          ),
+        ),
+      );
+    } else {
+      for (final item in widget.conversations) {
+        final friend = widget.findFriend(item.peerId);
+        if (friend == null) {
+          continue;
+        }
+        entries.add(
+          PopupMenuItem<String>(
+            value: friend.id,
+            child: Row(
+              children: [
+                const Icon(Icons.chat_bubble_outline, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    friend.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (item.hasUnread)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Badge(
+                      isLabelVisible: true,
+                      label: Text(
+                        item.unreadCount > 99 ? '99+' : '${item.unreadCount}',
+                      ),
+                      child: const Icon(
+                        Icons.mark_chat_unread_outlined,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    entries.add(const PopupMenuDivider());
+    entries.add(
+      PopupMenuItem<String>(
+        enabled: false,
+        child: Text(
+          _l('好友', 'Friends', '好友'),
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+      ),
+    );
+    final recentPeerIds = widget.conversations
+        .map((item) => item.peerId)
+        .toSet();
+    final friends = widget.acceptedFriends.where(
+      (friend) => !recentPeerIds.contains(friend.id),
+    );
+    if (friends.isEmpty) {
+      entries.add(
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Text(
+            _l(
+              '还没有可聊天的好友。',
+              'No friends available for chat yet.',
+              '還沒有可聊天的好友。',
+            ),
+          ),
+        ),
+      );
+    } else {
+      for (final friend in friends) {
+        entries.add(
+          PopupMenuItem<String>(
+            value: friend.id,
+            child: Row(
+              children: [
+                const Icon(Icons.person_outline, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    friend.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+    return entries;
+  }
+
+  Widget _buildChatMenuButton() {
+    // Put the menu entry on the right so the chat pane keeps its main actions aligned away from the left edge.
+    // 将菜单入口放到右侧，让聊天主操作远离左边缘并保持右对齐。
+    return PopupMenuButton<String>(
+      tooltip: _l('最近会话', 'Recent conversations', '最近會話'),
+      icon: const Icon(Icons.more_vert),
+      onSelected: _openChatFromMenu,
+      itemBuilder: (_) => _buildChatMenuEntries(),
+    );
+  }
+
   void _scrollToBottom({bool immediate = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_messageScrollController.hasClients) {
@@ -273,20 +410,14 @@ class _ChatViewState extends State<ChatView> {
       builder: (context, constraints) {
         final compact = widget.width < 1100;
         final listPane = _buildListPane(context);
-        final chatPane = _buildChatPane(context, constraints.maxWidth);
+        final chatPane = _buildChatPane(
+          context,
+          constraints.maxWidth,
+          compactLayout: compact,
+        );
 
         if (compact) {
-          final listHeight = constraints.hasBoundedHeight
-              ? (constraints.maxHeight * 0.34).clamp(240.0, 320.0).toDouble()
-              : 300.0;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: listHeight, child: listPane),
-              const SizedBox(height: 16),
-              Expanded(child: chatPane),
-            ],
-          );
+          return chatPane;
         }
 
         return Row(
@@ -445,7 +576,11 @@ class _ChatViewState extends State<ChatView> {
     );
   }
 
-  Widget _buildChatPane(BuildContext context, double width) {
+  Widget _buildChatPane(
+    BuildContext context,
+    double width, {
+    required bool compactLayout,
+  }) {
     final attachment = widget.chatAttachment;
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -473,27 +608,36 @@ class _ChatViewState extends State<ChatView> {
                       const SizedBox(height: 4),
                       Text(
                         widget.activeChat?.secondary ??
-                            _l(
-                              '选择左侧好友后会加载历史消息。',
-                              'Pick a friend on the left to load conversation history.',
-                              '選擇左側好友後會載入歷史訊息。',
-                            ),
+                            (compactLayout
+                                ? _l(
+                                    '从右上角菜单选择好友后会加载历史消息。',
+                                    'Pick a friend from the upper-right menu to load conversation history.',
+                                    '從右上角選單選擇好友後會載入歷史訊息。',
+                                  )
+                                : _l(
+                                    '从左侧会话列表选择好友后会加载历史消息。',
+                                    'Pick a friend from the left conversation list to load history.',
+                                    '從左側會話列表選擇好友後會載入歷史訊息。',
+                                  )),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
-                if (widget.activeChat != null)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    _buildChatMenuButton(),
+                    if (widget.activeChat != null)
                       BilingualActionButton(
                         variant: BilingualButtonVariant.tonal,
                         onPressed: () => widget.onStartChat(widget.activeChat!),
                         primaryLabel: _l('刷新会话', 'Refresh chat', '重新整理會話'),
                         secondaryLabel: 'Refresh chat',
                       ),
+                    if (widget.activeChat != null)
                       BilingualActionButton(
                         variant: BilingualButtonVariant.outlined,
                         onPressed: () =>
@@ -501,8 +645,8 @@ class _ChatViewState extends State<ChatView> {
                         primaryLabel: _l('查看资料', 'View profile', '查看資料'),
                         secondaryLabel: 'View profile',
                       ),
-                    ],
-                  ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -510,7 +654,13 @@ class _ChatViewState extends State<ChatView> {
               _buildAttachmentDraft(context, attachment),
               const SizedBox(height: 12),
             ],
-            Expanded(child: _buildHistory(context, width)),
+            Expanded(
+              child: _buildHistory(
+                context,
+                width,
+                compactLayout: compactLayout,
+              ),
+            ),
             const SizedBox(height: 12),
             _buildComposer(context, attachment),
           ],
@@ -519,16 +669,26 @@ class _ChatViewState extends State<ChatView> {
     );
   }
 
-  Widget _buildHistory(BuildContext context, double width) {
+  Widget _buildHistory(
+    BuildContext context,
+    double width, {
+    required bool compactLayout,
+  }) {
     final activeChat = widget.activeChat;
     if (activeChat == null) {
       return Center(
         child: Text(
-          _l(
-            '选择左侧好友后会加载历史消息并接入 WebSocket。',
-            'Choose a friend on the left to load history and connect the WebSocket.',
-            '選擇左側好友後會載入歷史訊息並接入 WebSocket。',
-          ),
+          compactLayout
+              ? _l(
+                  '从右上角菜单选择好友后会加载历史消息并接入 WebSocket。',
+                  'Choose a friend from the upper-right menu to load history and connect the WebSocket.',
+                  '從右上角選單選擇好友後會載入歷史訊息並接入 WebSocket。',
+                )
+              : _l(
+                  '从左侧会话列表选择好友后会加载历史消息并接入 WebSocket。',
+                  'Choose a friend from the left conversation list to load history and connect the WebSocket.',
+                  '從左側會話列表選擇好友後會載入歷史訊息並接入 WebSocket。',
+                ),
         ),
       );
     }

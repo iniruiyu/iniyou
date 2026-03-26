@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260320-4" />
+  <link rel="stylesheet" href="assets/styles.css?v=20260326-15" />
 </head>
 <body>
   <!-- Vue root / Vue 根节点 -->
@@ -62,42 +62,59 @@
         </button>
       </nav>
 
-      <div class="sidebar-foot">
-        <div class="status">
-          <span class="dot"></span>
-          <span>{{ t('ws.statusLabel') }}: {{ wsStatusText }}</span>
+      <!-- Account and settings live inside the main menu instead of the top-right corner. -->
+      <!-- 账号与设置收进主菜单，不再占用右上角。 -->
+      <div class="sidebar-account">
+        <div class="sidebar-account-copy">
+          <div class="sidebar-account-name">{{ user.name }}</div>
+          <div class="sidebar-account-meta">{{ user.domain ? `@${user.domain}` : (user.username ? `@${user.username}` : user.id) }}</div>
+          <div class="sidebar-account-meta">{{ localizedLevelName }}</div>
         </div>
-        <div class="status">
-          <span>{{ t('ws.unreadLabel') }}: {{ unreadCount }}</span>
+        <div class="sidebar-account-actions">
+          <settings-menu :app="appContext"></settings-menu>
         </div>
-        <button class="primary" @click="ws ? disconnectWs() : connectWs()">{{ ws ? t('ws.disconnect') : t('ws.connect') }}</button>
       </div>
+
     </aside>
 
-    <button v-if="!isSpaceShell && sidebarCollapsed" class="sidebar-fab ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
-      <span class="nav-toggle-icon" aria-hidden="true"></span>
-      <span class="sidebar-fab-label">{{ t('nav.expand') }}</span>
-    </button>
-
     <!-- Main content / 主内容 -->
-    <main class="main" :class="{ 'chat-shell': view === 'chat', 'space-shell': isSpaceShell }">
-      <header v-if="!isSpaceShell" class="topbar">
-        <div v-if="view !== 'friends' && view !== 'chat'">
-          <div class="page-title">{{ pageTitle }}</div>
-          <div class="page-sub">{{ pageSub }}</div>
-        </div>
-        <div class="topbar-actions">
-          <div class="profile">
-            <div class="avatar"></div>
-            <div>
-              <div class="profile-name">{{ user.name }}</div>
-              <div class="profile-level">{{ user.domain ? `@${user.domain}` : (user.username ? `@${user.username}` : user.id) }}</div>
-              <div class="profile-level">{{ localizedLevelName }}</div>
-            </div>
-            <settings-menu :app="appContext"></settings-menu>
-            <button v-if="isLoggedIn" class="ghost compact" @click="logout">{{ t('auth.logout') }}</button>
-          </div>
-        </div>
+    <main class="main" :class="{ 'chat-shell': view === 'chat', 'space-shell': isSpaceShell, 'main-collapsed': sidebarCollapsed && !isSpaceShell }" :style="mainShellStyle">
+      <!-- Collapsed top navigation / 折叠态顶层导航：收起侧栏后只保留轻量入口。 -->
+      <header v-if="!isSpaceShell && sidebarCollapsed" class="topnav-shell">
+        <!-- Refined nav trigger / 精修导航触发器：强化图标容器与状态点，让展开入口更稳定醒目。 -->
+        <button class="topnav-toggle ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
+          <span class="topnav-toggle-core">
+            <span class="topnav-toggle-icon-shell" aria-hidden="true">
+              <span class="nav-toggle-icon"></span>
+            </span>
+            <span class="topnav-toggle-label">{{ t('nav.expand') }}</span>
+          </span>
+          <span class="topnav-toggle-accent" aria-hidden="true"></span>
+        </button>
+        <nav class="topnav-strip" aria-label="Primary navigation">
+          <button class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
+            <span class="nav-icon">SP</span>
+            <span class="nav-label">{{ t('nav.space') }}</span>
+          </button>
+          <button class="nav-item topnav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
+            <span class="nav-icon-shell">
+              <span class="nav-icon">FR</span>
+              <span v-if="pendingFriendCount" class="nav-badge">{{ pendingFriendCount > 99 ? '99+' : pendingFriendCount }}</span>
+            </span>
+            <span class="nav-label">{{ t('nav.friends') }}</span>
+          </button>
+          <button class="nav-item topnav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
+            <span class="nav-icon-shell">
+              <span class="nav-icon">CH</span>
+              <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+            </span>
+            <span class="nav-label">{{ t('nav.chat') }}</span>
+          </button>
+          <button class="nav-item topnav-item" data-icon="ME" :class="{active: view === 'profile' && profileUser.id === user.id}" :disabled="!isLoggedIn || !user.id" @click="openMyProfile()">
+            <span class="nav-icon">ME</span>
+            <span class="nav-label">{{ t('nav.profile') }}</span>
+          </button>
+        </nav>
       </header>
 
       <div v-if="flashMessage" class="banner banner-success">{{ flashMessage }}</div>
@@ -1613,8 +1630,10 @@
         <div v-if="friends.length === 0" class="empty-state">{{ t('friends.empty') }}</div>
       </section>
 
-      <section v-if="view === 'chat'" class="chat">
-        <div class="chat-list">
+      <section v-if="view === 'chat'" class="chat" :class="{ 'chat-single': sidebarCollapsed }" :style="chatShellStyle">
+        <!-- Sidebar-collapsed desktop mode hides the conversation list so the message window can span full width. -->
+        <!-- 侧栏折叠时隐藏会话列表，让右侧消息窗口铺满全宽。 -->
+        <div v-if="showChatList" class="chat-list">
           <h3>{{ t('chat.title') }}</h3>
           <div class="chat-list-scroll">
             <div class="chat-item" v-for="friend in chatEntries" :key="friend.id" :class="{active: activeChat && activeChat.id === friend.id}" @click="startChat(friend)">
@@ -1635,8 +1654,56 @@
               <div class="friend-name">{{ activeChat ? activeChat.name : t('chat.pickFriend') }}</div>
               <div class="friend-status">{{ activeChat ? friendSecondary(activeChat) : t('chat.onlineNow') }}</div>
             </div>
-            <div class="chat-header-actions" v-if="activeChat">
-              <button class="ghost compact" type="button" @click.stop="openChatFriendProfile(activeChat)">
+            <div class="chat-header-actions">
+              <div class="chat-conversation-menu" @click.stop>
+                <button
+                  class="ghost compact chat-conversation-toggle"
+                  type="button"
+                  :aria-expanded="chatConversationMenuOpen ? 'true' : 'false'"
+                  :title="t('chat.title')"
+                  @click.stop="toggleChatConversationMenu"
+                >
+                  <span>{{ t('chat.title') }}</span>
+                  <span v-if="unreadCount" class="chat-conversation-count">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+                  <span class="chat-conversation-caret">▾</span>
+                </button>
+                <div v-if="chatConversationMenuOpen" class="chat-conversation-panel" @click.stop>
+                  <div class="chat-conversation-panel-head">
+                    <div>
+                      <div class="chat-quick-title">{{ t('chat.title') }}</div>
+                      <div class="chat-quick-sub">{{ t('chat.latest') }}</div>
+                    </div>
+                    <button
+                      class="chat-quick-close"
+                      type="button"
+                      :aria-label="t('chat.quickClose')"
+                      :title="t('chat.quickClose')"
+                      @click="closeChatConversationMenu"
+                    >×</button>
+                  </div>
+                  <div class="chat-conversation-panel-list">
+                    <button
+                      v-for="friend in chatEntries"
+                      :key="friend.id"
+                      class="chat-conversation-item-panel"
+                      type="button"
+                      :class="{active: activeChat && activeChat.id === friend.id}"
+                      @click="startChat(friend)"
+                    >
+                      <div class="chat-conversation-item-panel-copy">
+                        <div class="friend-name">{{ friend.name }}</div>
+                        <div class="friend-secondary">{{ friend.lastMessagePreview || friend.lastMessage || friendSecondary(friend) }}</div>
+                      </div>
+                      <div class="chat-conversation-item-panel-meta">
+                        <div class="friend-status">{{ friend.lastAt ? formatDateTime(friend.lastAt) : t('chat.latest') }}</div>
+                        <div v-if="friend.unreadCount" class="friend-direction">{{ t('ws.unreadLabel') }}: {{ friend.unreadCount }}</div>
+                      </div>
+                    </button>
+                    <div v-if="chatEntries.length === 0" class="empty-state">{{ t('chat.emptyConversation') }}</div>
+                  </div>
+                </div>
+              </div>
+              <button v-if="activeChat" class="ghost compact" type="button" @click.stop="openChatFriendProfile(activeChat)">
                 {{ t('chat.viewProfile') }}
               </button>
             </div>

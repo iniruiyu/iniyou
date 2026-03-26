@@ -220,7 +220,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   String _themeKeyValue = 'midnight';
   // Sidebar collapsed state.
   // 侧边栏折叠状态。
-  bool _sidebarCollapsed = false;
+  bool _sidebarCollapsed = true;
   // Current profile tab.
   // 当前个人主页选项卡。
   ProfileTab _profileTab = ProfileTab.levels;
@@ -2864,15 +2864,7 @@ class _IniyouHomeState extends State<IniyouHome> {
             activePublicSpace?.id,
           );
           final spaceShell = _view == AppView.space;
-          final identityHandle = _user!.domain.isNotEmpty
-              ? _user!.domain
-              : _user!.username;
           return AuthenticatedShellView(
-            userLabel: _user!.displayName.isEmpty
-                ? (identityHandle.isEmpty ? _user!.id : '@$identityHandle')
-                : (identityHandle.isEmpty
-                      ? _user!.displayName
-                      : '${_user!.displayName} · @$identityHandle'),
             pageTitle: pageTitleForView(
               _view,
               profileUser: _profileUser,
@@ -2894,20 +2886,13 @@ class _IniyouHomeState extends State<IniyouHome> {
             wide: wide,
             sidebarCollapsed: _sidebarCollapsed,
             sidebar: _buildSidebar(),
-            onRefresh: () => _runBusy(_refreshAll),
-            onLogout: _logout,
             onToggleSidebar: _toggleSidebar,
             onCompactBack: () => _navigateTo(AppView.profile),
-            currentLanguageCode: _languageCode,
-            onLanguageChanged: _setLanguage,
-            currentThemeKey: _themeKeyValue,
-            onThemeChanged: _setTheme,
-            themeOptions: _themeOptions,
             backgroundGradient: _backgroundGradientFor(_themeKeyValue),
             topNav: _buildTopNavBar(),
-            // Keep the main navigation hidden on the dedicated space page.
-            // 空间独立页面中保持主导航隐藏。
-            showTopNav: !spaceShell && wide && _sidebarCollapsed,
+            // Keep the top navigation visible only when the sidebar is collapsed on wide layouts.
+            // 仅在宽屏且侧栏折叠时显示顶部导航。
+            showTopNav: !spaceShell && (!wide || _sidebarCollapsed),
             floatingNotice: spaceShell ? null : _buildSocialReminderBanner(),
             t: _t,
             body: AuthenticatedHomeView(
@@ -2939,9 +2924,17 @@ class _IniyouHomeState extends State<IniyouHome> {
       user: _user!,
       conversations: _conversations,
       pendingFriendCount: _pendingFriendCount,
+      loading: _loading,
       selectedViewKey: sidebarViewKey(_view),
       items: buildShellSidebarItems(_t),
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
+      onRefresh: () => _runBusy(_refreshAll),
+      onLogout: _logout,
+      currentLanguageCode: _languageCode,
+      onLanguageChanged: _setLanguage,
+      currentThemeKey: _themeKeyValue,
+      onThemeChanged: _setTheme,
+      themeOptions: _themeOptions,
       t: _t,
     );
   }
@@ -2949,6 +2942,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   PreferredSizeWidget _buildTopNavBar() {
     // Top navigation for quick switching.
     // 顶部导航用于快速切换视图。
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final items = [
       (AppView.space, _t('sidebar.space')),
       (AppView.friends, _t('sidebar.friends')),
@@ -2990,10 +2985,16 @@ class _IniyouHomeState extends State<IniyouHome> {
                       onPressed: () => _navigateTo(item.$1),
                       style: FilledButton.styleFrom(
                         backgroundColor: _view == item.$1
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
+                            ? scheme.primaryContainer
+                            : scheme.surfaceContainerHighest,
+                        foregroundColor: _view == item.$1
+                            ? scheme.onPrimaryContainer
+                            : scheme.onSurfaceVariant,
+                        side: BorderSide(
+                          color: _view == item.$1
+                              ? scheme.primary.withValues(alpha: 0.36)
+                              : scheme.outlineVariant.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: Text(item.$2),
                     ),

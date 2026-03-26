@@ -47,18 +47,34 @@ class ShellSidebar extends StatelessWidget {
     required this.user,
     required this.conversations,
     required this.pendingFriendCount,
+    required this.loading,
     required this.selectedViewKey,
     required this.items,
     required this.onNavigate,
+    required this.onRefresh,
+    required this.onLogout,
+    required this.currentLanguageCode,
+    required this.onLanguageChanged,
+    required this.currentThemeKey,
+    required this.onThemeChanged,
+    required this.themeOptions,
     required this.t,
   });
 
   final CurrentUser user;
   final List<ConversationItem> conversations;
   final int pendingFriendCount;
+  final bool loading;
   final String selectedViewKey;
   final List<ShellSidebarItem> items;
   final ValueChanged<String> onNavigate;
+  final VoidCallback onRefresh;
+  final VoidCallback onLogout;
+  final String currentLanguageCode;
+  final ValueChanged<String> onLanguageChanged;
+  final String currentThemeKey;
+  final ValueChanged<String> onThemeChanged;
+  final List<ThemeOption> themeOptions;
   final String Function(String key) t;
 
   @override
@@ -91,6 +107,33 @@ class ShellSidebar extends StatelessWidget {
               if (user.signature.isNotEmpty) user.signature,
               '${t('sidebar.level')}: ${user.level}',
               '${t('sidebar.unread')}: ${conversations.fold<int>(0, (sum, item) => sum + item.unreadCount)}',
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Keep account-level actions inside the sidebar instead of the app bar.
+          // 将账号级操作收进侧边栏，而不是放在应用栏中。
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              IconButton(
+                tooltip: t('shell.refresh'),
+                onPressed: loading ? null : onRefresh,
+                icon: const Icon(Icons.refresh),
+              ),
+              SettingsMenuButton(
+                currentLanguageCode: currentLanguageCode,
+                onLanguageChanged: onLanguageChanged,
+                currentThemeKey: currentThemeKey,
+                onThemeChanged: onThemeChanged,
+                themeOptions: themeOptions,
+                t: t,
+              ),
+              IconButton(
+                tooltip: t('shell.logout'),
+                onPressed: onLogout,
+                icon: const Icon(Icons.logout),
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -294,7 +337,9 @@ class BannerCard extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                error != null ? Icons.warning_amber_rounded : Icons.bolt_rounded,
+                error != null
+                    ? Icons.warning_amber_rounded
+                    : Icons.bolt_rounded,
                 color: color,
               ),
             ),

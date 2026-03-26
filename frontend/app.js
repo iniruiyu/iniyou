@@ -336,7 +336,10 @@ const app = createApp({
       settingsOpen: false,
       // Sidebar collapsed state.
       // 侧边栏折叠状态。
-      sidebarCollapsed: false,
+      sidebarCollapsed: true,
+      // Track viewport width so runtime shell sizing can follow desktop/mobile breakpoints.
+      // 跟踪视口宽度，让运行时壳层尺寸能够跟随桌面端/移动端断点切换。
+      viewportWidth: typeof window !== 'undefined' ? window.innerWidth : 1440,
       // Space shell mode state.
       // 空间独立壳层状态。
       spacePanelTab: 'owned',
@@ -515,15 +518,7 @@ const app = createApp({
             expand: '展开导航',
           },
           ws: {
-            statusLabel: '连接状态',
             unreadLabel: '未读消息',
-            connect: '连接聊天',
-            disconnect: '断开聊天',
-            disconnected: '未连接',
-            connecting: '连接中...',
-            connected: '已连接',
-            closed: '已断开',
-            needLogin: '需要登录',
           },
           pageTitle: {
             auth: '登录注册',
@@ -950,15 +945,7 @@ const app = createApp({
             expand: 'Expand Nav',
           },
           ws: {
-            statusLabel: 'Connection',
             unreadLabel: 'Unread',
-            connect: 'Connect Chat',
-            disconnect: 'Disconnect Chat',
-            disconnected: 'Disconnected',
-            connecting: 'Connecting...',
-            connected: 'Connected',
-            closed: 'Closed',
-            needLogin: 'Login Required',
           },
           pageTitle: {
             auth: 'Sign In',
@@ -1254,10 +1241,6 @@ const app = createApp({
           },
         },
       },
-      // WebSocket status key.
-      // WebSocket 状态键。
-      wsStatusKey: 'disconnected',
-      ws: null,
       unreadCount: 0,
       user: {
         id: 'u-1001',
@@ -1482,6 +1465,9 @@ const app = createApp({
       // Chat quick panel visibility.
       // 聊天快捷面板显示状态。
       chatQuickPanelOpen: false,
+      // Chat conversation menu visibility.
+      // 聊天会话菜单显示状态。
+      chatConversationMenuOpen: false,
       // Quick inserts for emoji and sticker packs.
       // 表情包与贴纸快捷插入项。
       chatQuickSnippets: CHAT_QUICK_SNIPPETS,
@@ -1556,8 +1542,55 @@ const app = createApp({
     isLoggedIn() {
       return Boolean(this.token);
     },
-    wsStatusText() {
-      return this.t(`ws.${this.wsStatusKey}`);
+    isDesktopViewport() {
+      // Keep runtime shell sizing aligned with the same breakpoint used in CSS.
+      // 让运行时壳层尺寸与 CSS 使用的同一断点保持一致。
+      return Number(this.viewportWidth || 0) > 980;
+    },
+    mainShellStyle() {
+      // Apply explicit main-shell sizing so collapsed state always releases left-side space.
+      // 显式应用主壳层尺寸，确保折叠态一定释放左侧空间。
+      if (!this.isDesktopViewport || this.isSpaceShell) {
+        return null;
+      }
+      if (this.sidebarCollapsed) {
+        return {
+          marginLeft: '0',
+          width: '100%',
+          maxWidth: 'none',
+        };
+      }
+      return {
+        marginLeft: '312px',
+        width: 'calc(100% - 312px)',
+        maxWidth: 'none',
+      };
+    },
+    chatShellStyle() {
+      // Force the collapsed desktop chat layout into a single full-width panel.
+      // 强制桌面折叠态聊天布局进入单面板全宽模式。
+      if (!this.isDesktopViewport || this.view !== 'chat') {
+        return null;
+      }
+      if (this.sidebarCollapsed) {
+        return {
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          width: '100%',
+          minWidth: '0',
+        };
+      }
+      return {
+        display: 'grid',
+        gridTemplateColumns: '300px minmax(0, 1fr)',
+        width: '100%',
+        minWidth: '0',
+      };
+    },
+    showChatList() {
+      // Only keep the desktop chat list mounted when the sidebar is expanded.
+      // 仅在桌面端侧栏展开时保留聊天列表挂载。
+      return this.isDesktopViewport && !this.sidebarCollapsed;
     },
     localizedLevelName() {
       return this.t(`plans.${String(this.user.level || '').toLowerCase()}`) || this.user.level;
@@ -2491,20 +2524,12 @@ const app = createApp({
               empty: '目前沒有公開空間。',
             },
           },
-            ws: {
-              statusLabel: '連線狀態',
-              unreadLabel: '未讀訊息',
-              connect: '連線聊天',
-              disconnect: '中斷聊天',
-              disconnected: '未連線',
-              connecting: '連線中...',
-              connected: '已連線',
-              closed: '已中斷',
-              needLogin: '需要登入',
-            },
-            pageTitle: {
+          ws: {
+            unreadLabel: '未讀訊息',
+          },
+          pageTitle: {
             auth: '登入註冊',
-              dashboard: '帳號主頁',
+            dashboard: '帳號主頁',
               space: '空間',
               private: '空間',
               public: '空間',
@@ -2775,19 +2800,9 @@ const app = createApp({
       this.errorMessage = message;
       this.flashMessage = '';
     },
-    disconnectWs() {
-      // Close the current websocket connection if it exists.
-      // 如果当前存在 WebSocket 连接则主动关闭。
-      if (this.ws) {
-        this.ws.close();
-        this.ws = null;
-      }
-      this.wsStatusKey = 'disconnected';
-    },
     resetSession() {
       // Reset local session state after logout or auth loss.
       // 在登出或鉴权失效后重置本地会话状态。
-      this.disconnectWs();
       this.token = '';
       this.unreadCount = 0;
       this.user = {
@@ -2856,6 +2871,7 @@ const app = createApp({
       this.chatAttachment = null;
       this.chatFriendProfile = null;
       this.chatQuickPanelOpen = false;
+      this.chatConversationMenuOpen = false;
       this.chatHistoryAtBottom = true;
       this.activeChat = null;
       this.activePrivateSpaceId = '';
@@ -3720,6 +3736,11 @@ const app = createApp({
       // 切换侧边栏折叠状态。
       this.sidebarCollapsed = !this.sidebarCollapsed;
     },
+    handleWindowResize() {
+      // Keep runtime shell styles synced with the current viewport width.
+      // 让运行时壳层样式与当前视口宽度保持同步。
+      this.viewportWidth = typeof window !== 'undefined' ? window.innerWidth : this.viewportWidth;
+    },
     enterSpaceShell(space = null) {
       // Keep the sidebar visible on the space home page, and only collapse into the top-button mode after entering a specific space.
       // 空间首页保持侧边导航可见，只有进入具体空间后才收进顶部按钮模式。
@@ -3810,6 +3831,16 @@ const app = createApp({
       // 点击外部或发送后收起聊天快捷面板。
       this.chatQuickPanelOpen = false;
     },
+    toggleChatConversationMenu() {
+      // Toggle the right-side recent conversation menu.
+      // 切换右侧最近会话菜单。
+      this.chatConversationMenuOpen = !this.chatConversationMenuOpen;
+    },
+    closeChatConversationMenu() {
+      // Close the recent conversation menu when leaving the header or choosing a chat.
+      // 离开头部区域或选中会话后收起最近会话菜单。
+      this.chatConversationMenuOpen = false;
+    },
     openProfileTab(tabKey) {
       // Open profile view with a specific tab.
       // 打开个人主页并定位到指定选项卡。
@@ -3843,7 +3874,11 @@ const app = createApp({
       if (event.target.closest('.settings-menu')) {
         return;
       }
+      if (event.target.closest('.chat-conversation-menu')) {
+        return;
+      }
       this.closeSettingsMenu();
+      this.closeChatConversationMenu();
     },
     openIdentityEditor() {
       // Open the profile identity editor as a dialog.
@@ -5173,6 +5208,7 @@ const app = createApp({
       this.view = 'chat';
       this.activeChat = friend;
       this.closeChatQuickPanel();
+      this.closeChatConversationMenu();
       this.closeChatFriendProfile();
       this.chatAttachment = null;
       this.chatMessages = [];
@@ -5271,37 +5307,6 @@ const app = createApp({
         return;
       }
       window.open(message.mediaUrl, '_blank');
-    },
-    connectWs() {
-      // Create websocket connection.
-      // 创建 WebSocket 连接。
-      if (!this.token) {
-        this.wsStatusKey = 'needLogin';
-        this.view = 'auth';
-        return;
-      }
-      if (this.ws) {
-        this.ws.close();
-      }
-      this.wsStatusKey = 'connecting';
-      this.ws = new WebSocket(`ws://localhost:8081/ws?token=${this.token}`);
-      this.ws.onopen = () => {
-        this.wsStatusKey = 'connected';
-      };
-      this.ws.onclose = () => {
-        this.wsStatusKey = 'closed';
-      };
-      this.ws.onmessage = (event) => {
-        const payload = JSON.parse(event.data);
-        const relatesToActiveChat =
-          this.activeChat &&
-          (payload.from === this.activeChat.id || payload.to === this.activeChat.id);
-        if (relatesToActiveChat) {
-          this.refreshActiveConversation();
-          return;
-        }
-        this.loadUnread();
-      };
     },
     async logout() {
       // Logout from the current session and clear local state.
@@ -5417,9 +5422,12 @@ const app = createApp({
         }
       });
     }
+    this.handleWindowResize();
+    window.addEventListener('resize', this.handleWindowResize);
     document.addEventListener('click', this.handleDocumentClick);
   },
   beforeUnmount() {
+    window.removeEventListener('resize', this.handleWindowResize);
     document.removeEventListener('click', this.handleDocumentClick);
     this.revokeChatMediaUrls();
   },
