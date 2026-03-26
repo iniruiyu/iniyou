@@ -32,9 +32,11 @@
 - `display_name`
 - `username`
 - `domain`
+- `avatar_url`
 - `signature`
 - `email`
 - `phone`
+- `birth_date`
 - `age`
 - `gender`
 - `level`
@@ -47,9 +49,10 @@
 
 说明：
 
-- `display_name` 是用户昵称，`username` 是登录别名，`domain` 是身份卡与二级域名入口句柄 / `display_name` is the nickname, `username` is the login alias, and `domain` is the identity-card subdomain handle.
+- `display_name` 是用户昵称，`username` 是登录别名，`domain` 是身份卡与二级域名入口句柄，`avatar_url` 用于前端渲染头像 / `display_name` is the nickname, `username` is the login alias, `domain` is the identity-card subdomain handle, and `avatar_url` is used for avatar rendering.
 - `username` 与 `domain` 都应仅使用英文字母和数字，且与 `spaces.subdomain` 共享同一 host label 命名空间 / `username` and `domain` should both be alphanumeric and share the same host-label namespace as `spaces.subdomain`.
-- `email`、`phone`、`age`、`gender` 等字段可根据可见范围控制对外展示 / `email`, `phone`, `age`, and `gender` are exposed according to the configured visibility scope.
+- `birth_date` 建议按 `DATE` 字段持久化，接口层输出 `YYYY-MM-DD`，并在读取时派生 `birthday` 与 `age` / `birth_date` should be stored as a `DATE`, exposed as `YYYY-MM-DD`, and used to derive `birthday` plus `age` on reads.
+- `email`、`phone`、`birthday/age`、`gender` 等字段可根据可见范围控制对外展示 / `email`, `phone`, `birthday/age`, and `gender` are exposed according to the configured visibility scope.
 - `password_version` 用于 JWT 失效控制，密码修改后会递增该值，从而让旧 token 自动失效 / `password_version` is used for JWT invalidation; it increments after a password change so older tokens expire automatically.
 - `password_hash` 当前直接保存在 `users` 表中，尚未拆分为独立凭据表 / `password_hash` currently remains in `users` and has not been split into a separate credentials table yet.
 

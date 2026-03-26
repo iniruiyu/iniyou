@@ -189,8 +189,9 @@ class _IniyouHomeState extends State<IniyouHome> {
   final _displayNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _domainController = TextEditingController();
+  final _avatarUrlController = TextEditingController();
   final _signatureController = TextEditingController();
-  final _ageController = TextEditingController();
+  final _birthDateController = TextEditingController();
   final _genderController = TextEditingController();
   final _publicPostTitleController = TextEditingController();
   final _publicPostContentController = TextEditingController();
@@ -300,8 +301,9 @@ class _IniyouHomeState extends State<IniyouHome> {
       _displayNameController,
       _usernameController,
       _domainController,
+      _avatarUrlController,
       _signatureController,
-      _ageController,
+      _birthDateController,
       _genderController,
       _publicPostTitleController,
       _publicPostContentController,
@@ -1730,8 +1732,9 @@ class _IniyouHomeState extends State<IniyouHome> {
     _displayNameController.text = dashboard.user.displayName;
     _usernameController.text = dashboard.user.username;
     _domainController.text = dashboard.user.domain;
+    _avatarUrlController.text = dashboard.user.avatarUrl;
     _signatureController.text = dashboard.user.signature;
-    _ageController.text = dashboard.user.age?.toString() ?? '';
+    _birthDateController.text = dashboard.user.birthDate;
     _genderController.text = dashboard.user.gender;
     _phoneVisibility = dashboard.user.phoneVisibility;
     _emailVisibility = dashboard.user.emailVisibility;
@@ -1872,8 +1875,9 @@ class _IniyouHomeState extends State<IniyouHome> {
       _displayNameController.clear();
       _usernameController.clear();
       _domainController.clear();
+      _avatarUrlController.clear();
       _signatureController.clear();
-      _ageController.clear();
+      _birthDateController.clear();
       _genderController.clear();
       _phoneVisibility = 'private';
       _emailVisibility = 'private';
@@ -2693,10 +2697,10 @@ class _IniyouHomeState extends State<IniyouHome> {
     final displayName = _displayNameController.text.trim();
     final username = _usernameController.text.trim().toLowerCase();
     final domain = _domainController.text.trim().toLowerCase();
+    final avatarUrl = _avatarUrlController.text.trim();
     final signature = _signatureController.text.trim();
-    final ageText = _ageController.text.trim();
+    final birthDate = _birthDateController.text.trim();
     final gender = _genderController.text.trim();
-    int? age;
     if (displayName.isEmpty) {
       setState(() => _error = '昵称不能为空');
       return false;
@@ -2713,13 +2717,27 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() => _error = '域名只能包含英文字母和数字，且最长 63 个字符');
       return false;
     }
-    if (ageText.isNotEmpty) {
-      final parsedAge = int.tryParse(ageText);
-      if (parsedAge == null || parsedAge < 0) {
-        setState(() => _error = _t('profile.identity.ageError'));
+    if (birthDate.isNotEmpty && DateTime.tryParse(birthDate) == null) {
+      setState(() => _error = _t('profile.identity.birthDateError'));
+      return false;
+    }
+    if (birthDate.isNotEmpty) {
+      final parsedBirthDate = DateTime.tryParse(birthDate);
+      if (parsedBirthDate == null) {
+        setState(() => _error = _t('profile.identity.birthDateError'));
         return false;
       }
-      age = parsedAge;
+      final today = DateTime.now();
+      final normalizedToday = DateTime(today.year, today.month, today.day);
+      final normalizedBirthDate = DateTime(
+        parsedBirthDate.year,
+        parsedBirthDate.month,
+        parsedBirthDate.day,
+      );
+      if (normalizedBirthDate.isAfter(normalizedToday)) {
+        setState(() => _error = _t('profile.identity.birthDateFutureError'));
+        return false;
+      }
     }
     var success = false;
     await _runBusy(() async {
@@ -2727,8 +2745,9 @@ class _IniyouHomeState extends State<IniyouHome> {
         displayName: displayName,
         username: username,
         domain: domain,
+        avatarUrl: avatarUrl,
         signature: signature,
-        age: age,
+        birthDate: birthDate.isEmpty ? '' : birthDate,
         gender: gender.isEmpty ? null : gender,
         phoneVisibility: _phoneVisibility,
         emailVisibility: _emailVisibility,
@@ -2738,8 +2757,9 @@ class _IniyouHomeState extends State<IniyouHome> {
       _displayNameController.text = _user?.displayName ?? displayName;
       _usernameController.text = _user?.username ?? username;
       _domainController.text = _user?.domain ?? domain;
+      _avatarUrlController.text = _user?.avatarUrl ?? avatarUrl;
       _signatureController.text = _user?.signature ?? signature;
-      _ageController.text = _user?.age?.toString() ?? ageText;
+      _birthDateController.text = _user?.birthDate ?? birthDate;
       _genderController.text = _user?.gender ?? gender;
       _phoneVisibility = _user?.phoneVisibility ?? _phoneVisibility;
       _emailVisibility = _user?.emailVisibility ?? _emailVisibility;
@@ -3420,8 +3440,9 @@ class _IniyouHomeState extends State<IniyouHome> {
         displayNameController: _displayNameController,
         usernameController: _usernameController,
         domainController: _domainController,
+        avatarUrlController: _avatarUrlController,
         signatureController: _signatureController,
-        ageController: _ageController,
+        birthDateController: _birthDateController,
         genderController: _genderController,
         phoneVisibility: _phoneVisibility,
         emailVisibility: _emailVisibility,

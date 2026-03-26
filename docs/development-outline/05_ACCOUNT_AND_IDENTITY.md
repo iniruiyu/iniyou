@@ -32,7 +32,7 @@
 - 用户可以完成注册、登录和基础资料维护
 - 用户可以设置唯一用户名，并通过用户名进入个人主页或作为登录别名使用
 - 用户可以设置唯一域名，并把域名作为身份卡和登录入口使用
-- 用户可以配置手机号、邮箱、年龄、性别等个人信息的可见范围
+- 用户可以配置手机号、邮箱、生日/年龄、性别等个人信息的可见范围
 - 身份认证流程稳定可用
 - 为后续钱包、会员、社交功能提供统一账号基础
 
@@ -55,3 +55,4 @@
 - 2026-03-25：补齐中文主分支的邮箱、手机号、年龄和性别资料标签，并把个人资料摘要说明同步扩展到联系方式与基本信息 / Filled in the missing Chinese labels for email, phone, age, and gender, and expanded the profile summary copy to cover contact details and basic info.
 - 2026-03-25：把本人资料区拆成基础资料、联系方式和隐私三张并列卡片，减少单卡内容堆叠 / Split the owner profile area into three parallel cards for basic info, contact details, and privacy to reduce single-card clutter.
 - 2026-03-25：补齐本人资料编辑入口中的年龄和性别字段，并让 Web 与 Flutter 的保存请求在更新后同步回写资料卡 / Added age and gender fields to the owner profile editor and synced both the Web and Flutter save flows back into the profile card after updates.
+- 2026-03-26：个人资料新增头像地址与出生日期字段，双前端改为根据出生日期派生生日与年龄，并在主页摘要中显示头像预览 / Added avatar-URL and birth-date fields to profiles, switched both frontends to derive birthday and age from the birth date, and showed avatar previews in the profile summaries.

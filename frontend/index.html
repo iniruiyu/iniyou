@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260326-16" />
+  <link rel="stylesheet" href="assets/styles.css?v=20260326-17" />
 </head>
 <body>
   <!-- Vue root / Vue 根节点 -->
@@ -228,27 +228,48 @@
                   <input type="text" :placeholder="t('profile.identity.domainPlaceholder')" v-model="profileDraft.domain" maxlength="63" autocomplete="username" />
                 </bilingual-field>
                 <bilingual-field
+                  :primary-label="t('profile.identity.avatarLabel')"
+                  :secondary-label="peerLocaleText('profile.identity.avatarLabel')"
+                  :helper-text="t('profile.identity.avatarHint')"
+                >
+                  <input type="url" :placeholder="t('profile.identity.avatarPlaceholder')" v-model="profileDraft.avatarUrl" autocomplete="off" />
+                </bilingual-field>
+                <div class="identity-avatar-editor">
+                  <div class="avatar large profile-avatar" :style="profileAvatarStyle(profileDraft.avatarUrl)">
+                    <span v-if="!profileDraft.avatarUrl">{{ profileAvatarInitials(profileDraft.displayName || user.name) }}</span>
+                  </div>
+                  <div class="identity-avatar-copy">
+                    <strong>{{ t('profile.identity.avatarLabel') }}</strong>
+                    <span>{{ t('profile.identity.avatarHint') }}</span>
+                  </div>
+                </div>
+                <bilingual-field
                   :primary-label="t('profile.identity.signature')"
                   :secondary-label="peerLocaleText('profile.identity.signature')"
                 >
                   <textarea class="post-textarea" :placeholder="t('profile.identity.signaturePlaceholder')" v-model="profileDraft.signature"></textarea>
                 </bilingual-field>
-                <!-- Age and gender belong to the editable identity block. -->
-                <!-- 年龄与性别归入可编辑的身份资料区块。 -->
                 <bilingual-field
-                  :primary-label="t('profile.identity.ageLabel')"
-                  :secondary-label="peerLocaleText('profile.identity.ageLabel')"
+                  :primary-label="t('profile.identity.birthDateLabel')"
+                  :secondary-label="peerLocaleText('profile.identity.birthDateLabel')"
                 >
                   <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputmode="numeric"
-                    :placeholder="t('profile.identity.agePlaceholder')"
-                    v-model="profileDraft.age"
+                    type="date"
+                    :placeholder="t('profile.identity.birthDatePlaceholder')"
+                    v-model="profileDraft.birthDate"
                     autocomplete="off"
                   />
                 </bilingual-field>
+                <div class="identity-derived-grid">
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.birthdayLabel') }}</span>
+                    <strong>{{ profileBirthdayFromBirthDate(profileDraft.birthDate) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.ageLabel') }}</span>
+                    <strong>{{ profileAgeFromBirthDate(profileDraft.birthDate) }}</strong>
+                  </div>
+                </div>
                 <bilingual-field
                   :primary-label="t('profile.identity.genderLabel')"
                   :secondary-label="peerLocaleText('profile.identity.genderLabel')"
@@ -902,6 +923,15 @@
                     <p>{{ t('profile.identity.sub') }}</p>
                   </div>
                 </div>
+                <div class="profile-identity-head">
+                  <div class="avatar large profile-avatar" :style="profileAvatarStyle(profileUser.avatarUrl)">
+                    <span v-if="!profileUser.avatarUrl">{{ profileAvatarInitials(profileUser.name) }}</span>
+                  </div>
+                  <div class="profile-identity-head-copy">
+                    <strong>{{ profileDisplayValue(profileUser.name) }}</strong>
+                    <span>{{ profileUser.domain ? `@${profileUser.domain}` : (profileUser.username ? `@${profileUser.username}` : profileUser.id) }}</span>
+                  </div>
+                </div>
                 <div class="identity-summary-list identity-summary-list--compact">
                   <div class="identity-summary-item identity-summary-item--wide">
                     <span>{{ t('profile.identity.userId') }}</span>
@@ -930,6 +960,10 @@
                   <div class="identity-summary-item">
                     <span>{{ t('profile.identity.phoneLabel') }}</span>
                     <strong>{{ profileDisplayValue(profileUser.phone) }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.birthdayLabel') }}</span>
+                    <strong>{{ profileDisplayValue(profileUser.birthday ? profileBirthdayLabel(profileUser.birthday) : '') }}</strong>
                   </div>
                   <div class="identity-summary-item">
                     <span>{{ t('profile.identity.ageLabel') }}</span>
@@ -993,6 +1027,15 @@
                     @click="openIdentityEditor"
                   ></bilingual-action-button>
                 </div>
+                <div class="profile-identity-head">
+                  <div class="avatar large profile-avatar" :style="profileAvatarStyle(profileDraft.avatarUrl || user.avatarUrl)">
+                    <span v-if="!(profileDraft.avatarUrl || user.avatarUrl)">{{ profileAvatarInitials(profileDraft.displayName || user.name) }}</span>
+                  </div>
+                  <div class="profile-identity-head-copy">
+                    <strong>{{ profileDraft.displayName || t('common.notAvailable') }}</strong>
+                    <span>{{ profileDraft.domain ? `@${profileDraft.domain}` : (profileDraft.username ? `@${profileDraft.username}` : profileUser.id) }}</span>
+                  </div>
+                </div>
                 <div class="identity-summary-list identity-summary-list--compact">
                   <div class="identity-summary-item identity-summary-item--wide">
                     <span>{{ t('profile.identity.userId') }}</span>
@@ -1013,6 +1056,14 @@
                   <div class="identity-summary-item identity-summary-item--wide">
                     <span>{{ t('profile.identity.signature') }}</span>
                     <strong>{{ profileDraft.signature || t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.birthDateLabel') }}</span>
+                    <strong>{{ profileDraft.birthDate ? profileBirthDateLabel(profileDraft.birthDate) : t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.birthdayLabel') }}</span>
+                    <strong>{{ profileDraft.birthDate ? profileBirthdayFromBirthDate(profileDraft.birthDate) : t('common.notAvailable') }}</strong>
                   </div>
                 </div>
               </div>
@@ -1040,6 +1091,14 @@
                   <div class="identity-summary-item">
                     <span>{{ t('profile.identity.phoneLabel') }}</span>
                     <strong>{{ profileUser.phone || t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.birthDateLabel') }}</span>
+                    <strong>{{ profileDraft.birthDate ? profileBirthDateLabel(profileDraft.birthDate) : t('common.notAvailable') }}</strong>
+                  </div>
+                  <div class="identity-summary-item">
+                    <span>{{ t('profile.identity.birthdayLabel') }}</span>
+                    <strong>{{ profileDraft.birthDate ? profileBirthdayFromBirthDate(profileDraft.birthDate) : t('common.notAvailable') }}</strong>
                   </div>
                   <div class="identity-summary-item">
                     <span>{{ t('profile.identity.ageLabel') }}</span>

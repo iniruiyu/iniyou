@@ -62,16 +62,18 @@ type externalAccountRequest struct {
 }
 
 type updateProfileRequest struct {
-	DisplayName      string `json:"display_name"`
-	Username         string `json:"username"`
-	Domain           string `json:"domain"`
-	Signature        string `json:"signature"`
-	Age              *int   `json:"age"`
+	DisplayName      string  `json:"display_name"`
+	Username         string  `json:"username"`
+	Domain           string  `json:"domain"`
+	AvatarURL        *string `json:"avatar_url"`
+	Signature        string  `json:"signature"`
+	BirthDate        *string `json:"birth_date"`
+	Age              *int    `json:"age"`
 	Gender           *string `json:"gender"`
-	PhoneVisibility  string `json:"phone_visibility"`
-	EmailVisibility  string `json:"email_visibility"`
-	AgeVisibility    string `json:"age_visibility"`
-	GenderVisibility string `json:"gender_visibility"`
+	PhoneVisibility  string  `json:"phone_visibility"`
+	EmailVisibility  string  `json:"email_visibility"`
+	AgeVisibility    string  `json:"age_visibility"`
+	GenderVisibility string  `json:"gender_visibility"`
 }
 
 type changePasswordRequest struct {
@@ -142,23 +144,7 @@ func (h *AccountHandler) Me(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, "db error")
 		return
 	}
-	respondOK(c, gin.H{
-		"user_id":           user.ID,
-		"email":             user.Email,
-		"phone":             user.Phone,
-		"username":          user.Username,
-		"domain":            user.Domain,
-		"display_name":      user.DisplayName,
-		"signature":         user.Signature,
-		"age":               user.Age,
-		"gender":            user.Gender,
-		"phone_visibility":  user.PhoneVisibility,
-		"email_visibility":  user.EmailVisibility,
-		"age_visibility":    user.AgeVisibility,
-		"gender_visibility": user.GenderVisibility,
-		"level":             user.Level,
-		"status":            user.Status,
-	})
+	respondOK(c, service.BuildCurrentUserView(user))
 }
 
 func (h *AccountHandler) UpdateMe(c *gin.Context) {
@@ -176,7 +162,9 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 		req.DisplayName,
 		req.Username,
 		req.Domain,
+		req.AvatarURL,
 		req.Signature,
+		req.BirthDate,
 		req.Age,
 		req.Gender,
 		req.PhoneVisibility,
@@ -188,19 +176,7 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondOK(c, gin.H{
-		"user_id":           user.ID,
-		"display_name":      user.DisplayName,
-		"username":          user.Username,
-		"domain":            user.Domain,
-		"signature":         user.Signature,
-		"age":               user.Age,
-		"gender":            user.Gender,
-		"phone_visibility":  user.PhoneVisibility,
-		"email_visibility":  user.EmailVisibility,
-		"age_visibility":    user.AgeVisibility,
-		"gender_visibility": user.GenderVisibility,
-	})
+	respondOK(c, service.BuildCurrentUserView(user))
 }
 
 func (h *AccountHandler) ChangePassword(c *gin.Context) {

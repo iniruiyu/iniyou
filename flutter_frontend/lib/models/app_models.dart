@@ -20,7 +20,10 @@ class CurrentUser {
     required this.username,
     required this.domain,
     required this.displayName,
+    required this.avatarUrl,
     required this.signature,
+    required this.birthDate,
+    required this.birthday,
     required this.age,
     required this.gender,
     required this.phoneVisibility,
@@ -37,7 +40,10 @@ class CurrentUser {
   final String username;
   final String domain;
   final String displayName;
+  final String avatarUrl;
   final String signature;
+  final String birthDate;
+  final String birthday;
   final int? age;
   final String gender;
   final String phoneVisibility;
@@ -55,7 +61,10 @@ class CurrentUser {
       username: (json['username'] ?? '').toString(),
       domain: (json['domain'] ?? '').toString(),
       displayName: (json['display_name'] ?? '').toString(),
+      avatarUrl: (json['avatar_url'] ?? '').toString(),
       signature: (json['signature'] ?? '').toString(),
+      birthDate: (json['birth_date'] ?? '').toString(),
+      birthday: (json['birthday'] ?? '').toString(),
       age: json['age'] is int
           ? json['age'] as int
           : int.tryParse((json['age'] ?? '').toString()),
@@ -76,9 +85,12 @@ class UserProfileItem {
     required this.displayName,
     required this.username,
     required this.domain,
+    required this.avatarUrl,
     required this.signature,
     required this.email,
     required this.phone,
+    required this.birthDate,
+    required this.birthday,
     required this.age,
     required this.gender,
     required this.status,
@@ -90,9 +102,12 @@ class UserProfileItem {
   final String displayName;
   final String username;
   final String domain;
+  final String avatarUrl;
   final String signature;
   final String email;
   final String phone;
+  final String birthDate;
+  final String birthday;
   final int? age;
   final String gender;
   final String status;
@@ -105,9 +120,12 @@ class UserProfileItem {
       displayName: (json['display_name'] ?? '').toString(),
       username: (json['username'] ?? '').toString(),
       domain: (json['domain'] ?? '').toString(),
+      avatarUrl: (json['avatar_url'] ?? '').toString(),
       signature: (json['signature'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
       phone: (json['phone'] ?? '').toString(),
+      birthDate: (json['birth_date'] ?? '').toString(),
+      birthday: (json['birthday'] ?? '').toString(),
       age: json['age'] is int
           ? json['age'] as int
           : int.tryParse((json['age'] ?? '').toString()),
@@ -124,9 +142,12 @@ class UserProfileItem {
       displayName: user.displayName,
       username: user.username,
       domain: user.domain,
+      avatarUrl: user.avatarUrl,
       signature: user.signature,
       email: user.email,
       phone: user.phone,
+      birthDate: user.birthDate,
+      birthday: user.birthday,
       age: user.age,
       gender: user.gender,
       status: user.status,

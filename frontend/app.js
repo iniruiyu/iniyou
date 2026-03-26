@@ -420,11 +420,11 @@ const app = createApp({
               title: '身份卡',
               sub: '个人资料与隐私设置分开维护，域名用于登录和子域名入口。',
               personalTitle: '个人资料',
-              personalSub: '展示用户 ID、昵称、用户名、域名、签名、年龄和性别等公开资料。',
+              personalSub: '展示头像、用户 ID、昵称、用户名、域名、签名、出生日期、生日、年龄和性别等资料。',
               contactTitle: '联系方式',
-              contactSub: '展示邮箱、手机号、年龄和性别等信息。',
+              contactSub: '展示邮箱、手机号、出生日期、生日、年龄和性别等信息。',
               privacyTitle: '隐私设置',
-              privacySub: '管理手机号、邮箱、年龄和性别的可见范围。',
+              privacySub: '管理手机号、邮箱、生日/年龄和性别的可见范围。',
               editAction: '修改资料',
               privacyAction: '隐私设置',
               editHint: '点击后弹出编辑弹窗，平时只展示摘要。',
@@ -432,9 +432,12 @@ const app = createApp({
               nickname: '用户昵称',
               username: '用户名',
               domain: '域名',
+              avatarLabel: '头像地址',
               signature: '签名',
               emailLabel: '邮箱',
               phoneLabel: '手机号',
+              birthDateLabel: '出生日期',
+              birthdayLabel: '生日',
               ageLabel: '年龄',
               genderLabel: '性别',
               phoneVisibility: '手机号可见范围',
@@ -447,10 +450,13 @@ const app = createApp({
                 private: '仅自己可见',
               },
               domainPlaceholder: '输入域名',
+              avatarPlaceholder: '输入头像图片 URL',
+              avatarHint: '先使用图片 URL 接入头像，后续再接上传也不会影响当前资料结构。',
               signaturePlaceholder: '输入签名',
-              agePlaceholder: '输入年龄',
+              birthDatePlaceholder: '选择出生日期',
               genderPlaceholder: '输入性别',
-              ageError: '年龄必须是非负整数。',
+              birthDateError: '出生日期必须使用 YYYY-MM-DD 格式。',
+              birthDateFutureError: '出生日期不能晚于今天。',
               domainHint: '域名只能使用英文字母和数字，长度不超过 63，并作为身份卡和登录入口。',
               domainRequired: '请输入域名。',
               domainError: '域名只能包含英文字母和数字，且最长 63 个字符。',
@@ -845,11 +851,11 @@ const app = createApp({
               title: 'Identity Card',
               sub: 'Profile details and privacy settings are maintained separately. The domain is used for login and subdomain entry.',
               personalTitle: 'Personal Info',
-            personalSub: 'Show your user ID, nickname, username, domain, signature, age, and gender.',
+              personalSub: 'Show your avatar, user ID, nickname, username, domain, signature, birth date, birthday, age, and gender.',
               contactTitle: 'Contact Details',
-              contactSub: 'Show your email, phone, age, and gender.',
+              contactSub: 'Show your email, phone, birth date, birthday, age, and gender.',
               privacyTitle: 'Privacy Settings',
-              privacySub: 'Manage visibility for phone, email, age, and gender.',
+              privacySub: 'Manage visibility for phone, email, birthday/age, and gender.',
               editAction: 'Edit Profile',
               privacyAction: 'Privacy settings',
               editHint: 'Open the editor in a dialog; only the summary stays visible by default.',
@@ -857,9 +863,12 @@ const app = createApp({
               nickname: 'Nickname',
               username: 'Username',
               domain: 'Domain',
+              avatarLabel: 'Avatar URL',
               signature: 'Signature',
               emailLabel: 'Email',
               phoneLabel: 'Phone',
+              birthDateLabel: 'Birth date',
+              birthdayLabel: 'Birthday',
               ageLabel: 'Age',
               genderLabel: 'Gender',
               phoneVisibility: 'Phone visibility',
@@ -872,10 +881,13 @@ const app = createApp({
                 private: 'Only me',
               },
               domainPlaceholder: 'Enter domain',
+              avatarPlaceholder: 'Enter an avatar image URL',
+              avatarHint: 'Use an image URL for now; a future upload flow can plug into the same profile model.',
               signaturePlaceholder: 'Enter signature',
-              agePlaceholder: 'Enter age',
+              birthDatePlaceholder: 'Pick a birth date',
               genderPlaceholder: 'Enter gender',
-              ageError: 'Age must be a non-negative integer.',
+              birthDateError: 'Birth date must use the YYYY-MM-DD format.',
+              birthDateFutureError: 'Birth date cannot be later than today.',
               domainHint: 'Use letters and numbers only, up to 63 characters. The domain is your identity card and login handle.',
               domainRequired: 'Domain is required.',
               domainError: 'The domain may contain letters and numbers only, up to 63 characters.',
@@ -1247,7 +1259,10 @@ const app = createApp({
         name: 'Lan Yu',
         username: 'lanyu',
         domain: 'lanyu01',
+        avatarUrl: '',
         signature: 'Build with calm focus.',
+        birthDate: '',
+        birthday: '',
         age: '',
         gender: '',
         email: '',
@@ -1292,7 +1307,12 @@ const app = createApp({
         displayName: '',
         username: '',
         domain: '',
+        avatarUrl: '',
         signature: '',
+        birthDate: '',
+        birthday: '',
+        age: '',
+        gender: '',
         phoneVisibility: 'private',
         emailVisibility: 'private',
         ageVisibility: 'private',
@@ -1362,8 +1382,11 @@ const app = createApp({
         name: '',
         username: '',
         domain: '',
+        avatarUrl: '',
         secondary: '',
         signature: '',
+        birthDate: '',
+        birthday: '',
         age: '',
         gender: '',
         email: '',
@@ -2459,11 +2482,11 @@ const app = createApp({
               title: '身分卡',
               sub: '個人資料與隱私設定分開維護，網域用於登入和子網域入口。',
               personalTitle: '個人資料',
-              personalSub: '展示使用者 ID、暱稱、使用者名稱、網域、簽名、年齡與性別等公開資料。',
+              personalSub: '展示頭像、使用者 ID、暱稱、使用者名稱、網域、簽名、出生日期、生日、年齡與性別等資料。',
               contactTitle: '聯絡資訊',
-              contactSub: '展示信箱、手機號、年齡與性別等資訊。',
+              contactSub: '展示信箱、手機號、出生日期、生日、年齡與性別等資訊。',
               privacyTitle: '隱私設定',
-              privacySub: '管理手機號、信箱、年齡與性別的可見範圍。',
+              privacySub: '管理手機號、信箱、生日/年齡與性別的可見範圍。',
               editAction: '修改資料',
               privacyAction: '隱私設定',
               editHint: '點擊後彈出編輯視窗，平時只顯示摘要。',
@@ -2471,9 +2494,12 @@ const app = createApp({
               nickname: '使用者暱稱',
               username: '使用者名稱',
               domain: '域名',
+              avatarLabel: '頭像網址',
               signature: '簽名',
               emailLabel: '信箱',
               phoneLabel: '手機號',
+              birthDateLabel: '出生日期',
+              birthdayLabel: '生日',
               ageLabel: '年齡',
               genderLabel: '性別',
               phoneVisibility: '手機可見範圍',
@@ -2486,10 +2512,13 @@ const app = createApp({
                 private: '僅自己可見',
               },
               domainPlaceholder: '輸入網域',
+              avatarPlaceholder: '輸入頭像圖片 URL',
+              avatarHint: '先使用圖片 URL 接入頭像，後續再接上傳也不會影響目前資料結構。',
               signaturePlaceholder: '輸入簽名',
-              agePlaceholder: '輸入年齡',
+              birthDatePlaceholder: '選擇出生日期',
               genderPlaceholder: '輸入性別',
-              ageError: '年齡必須是非負整數。',
+              birthDateError: '出生日期必須使用 YYYY-MM-DD 格式。',
+              birthDateFutureError: '出生日期不能晚於今天。',
               domainHint: '域名只能使用英文字母和數字，長度不超過 63，並作為身分卡和登入入口。',
               domainRequired: '請輸入域名。',
               domainError: '域名只能包含英文字母和數字，且最長 63 個字元。',
@@ -2831,8 +2860,11 @@ const app = createApp({
         name: '',
         username: '',
         domain: '',
+        avatarUrl: '',
         secondary: '',
         signature: '',
+        birthDate: '',
+        birthday: '',
         age: '',
         gender: '',
         email: '',
@@ -2879,7 +2911,10 @@ const app = createApp({
       this.profileDraft.displayName = '';
       this.profileDraft.username = '';
       this.profileDraft.domain = '';
+      this.profileDraft.avatarUrl = '';
       this.profileDraft.signature = '';
+      this.profileDraft.birthDate = '';
+      this.profileDraft.birthday = '';
       this.profileDraft.age = '';
       this.profileDraft.gender = '';
       this.profileDraft.phoneVisibility = 'private';
@@ -2887,7 +2922,10 @@ const app = createApp({
       this.profileDraft.ageVisibility = 'private';
       this.profileDraft.genderVisibility = 'private';
       this.user.domain = '';
+      this.user.avatarUrl = '';
       this.user.signature = '';
+      this.user.birthDate = '';
+      this.user.birthday = '';
       this.user.age = '';
       this.user.gender = '';
       this.user.email = '';
@@ -2914,6 +2952,20 @@ const app = createApp({
       // 渲染可用的公开摘要信息。
       return friend.secondary || friend.domain || friend.username || friend.id;
     },
+    profileAvatarInitials(name) {
+      // Keep avatar fallbacks deterministic when no image URL is configured.
+      // 当未配置头像图片时，保持头像回退字样稳定可读。
+      const text = String(name || '').trim();
+      return (text.slice(0, 2) || 'IN').toUpperCase();
+    },
+    profileAvatarStyle(avatarUrl) {
+      // Paint the avatar URL as a background image while keeping the same circular shell.
+      // 将头像 URL 绘制为背景图，同时保留同一套圆形容器样式。
+      const url = String(avatarUrl || '').trim();
+      return url
+        ? { backgroundImage: `url("${url.replace(/"/g, '\\"')}")` }
+        : {};
+    },
     profileDisplayValue(value) {
       // Show a visible field value or the shared "not public" placeholder.
       // 显示字段真实值，或统一的“未公开”占位。
@@ -2926,6 +2978,70 @@ const app = createApp({
       return value === null || value === undefined || value === ''
         ? this.t('common.notPublic')
         : String(value);
+    },
+    profileBirthDateLabel(value) {
+      // Format YYYY-MM-DD birth dates for summary cards and read-only fields.
+      // 将 YYYY-MM-DD 出生日期格式化给摘要卡和只读字段使用。
+      const text = String(value || '').trim();
+      if (!text) {
+        return this.t('common.notAvailable');
+      }
+      const parsed = new Date(`${text}T00:00:00`);
+      if (Number.isNaN(parsed.getTime())) {
+        return text;
+      }
+      if (this.locale === 'en-US') {
+        return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+      }
+      return `${parsed.getFullYear()}年${parsed.getMonth() + 1}月${parsed.getDate()}日`;
+    },
+    profileBirthdayLabel(value) {
+      // Format derived birthday strings so both profile states share the same display logic.
+      // 统一格式化生日字符串，让两种个人主页状态使用同一套展示逻辑。
+      const text = String(value || '').trim();
+      if (!text) {
+        return this.t('common.notAvailable');
+      }
+      const parts = text.split('-');
+      if (parts.length !== 2) {
+        return text;
+      }
+      const month = Number(parts[0]);
+      const day = Number(parts[1]);
+      if (!Number.isInteger(month) || !Number.isInteger(day)) {
+        return text;
+      }
+      if (this.locale === 'en-US') {
+        return `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+      return `${month}月${day}日`;
+    },
+    profileBirthdayFromBirthDate(value) {
+      // Derive the birthday label directly from the editable birth date draft.
+      // 直接从可编辑的出生日期草稿推导生日文案。
+      const text = String(value || '').trim();
+      return text ? this.profileBirthdayLabel(text.slice(5)) : this.t('common.notAvailable');
+    },
+    profileAgeFromBirthDate(value) {
+      // Derive age from the editable birth date so the form can preview the result before save.
+      // 根据可编辑出生日期推导年龄，让表单在保存前就能预览结果。
+      const text = String(value || '').trim();
+      if (!text) {
+        return this.t('common.notAvailable');
+      }
+      const parsed = new Date(`${text}T00:00:00`);
+      if (Number.isNaN(parsed.getTime())) {
+        return this.t('common.notAvailable');
+      }
+      const today = new Date();
+      let age = today.getFullYear() - parsed.getFullYear();
+      const hasHadBirthday =
+        today.getMonth() > parsed.getMonth() ||
+        (today.getMonth() === parsed.getMonth() && today.getDate() >= parsed.getDate());
+      if (!hasHadBirthday) {
+        age -= 1;
+      }
+      return age >= 0 ? String(age) : this.t('common.notAvailable');
     },
     friendProfileRows(friend) {
       // Build the summary rows shown in the chat friend profile modal.
@@ -3886,7 +4002,10 @@ const app = createApp({
         this.profileDraft.displayName = this.user.name || this.profileDraft.displayName;
         this.profileDraft.username = this.user.username || this.profileDraft.username;
         this.profileDraft.domain = this.user.domain || this.profileDraft.domain;
+        this.profileDraft.avatarUrl = this.user.avatarUrl || this.profileDraft.avatarUrl || '';
         this.profileDraft.signature = this.user.signature ?? this.profileDraft.signature ?? '';
+        this.profileDraft.birthDate = this.user.birthDate || '';
+        this.profileDraft.birthday = this.user.birthday || '';
         this.profileDraft.age = this.user.age ?? '';
         this.profileDraft.gender = this.user.gender ?? '';
       }
@@ -4022,7 +4141,10 @@ const app = createApp({
       this.user.name = data.display_name || this.user.name;
       this.user.username = data.username || this.user.username;
       this.user.domain = data.domain || this.user.domain;
+      this.user.avatarUrl = data.avatar_url || '';
       this.user.signature = data.signature ?? this.user.signature ?? '';
+      this.user.birthDate = data.birth_date || '';
+      this.user.birthday = data.birthday || '';
       this.user.age = data.age ?? '';
       this.user.gender = data.gender ?? '';
       this.user.email = data.email ?? this.user.email ?? '';
@@ -4035,7 +4157,10 @@ const app = createApp({
       this.profileDraft.displayName = data.display_name || '';
       this.profileDraft.username = data.username || this.profileDraft.username || '';
       this.profileDraft.domain = data.domain || this.profileDraft.domain || '';
+      this.profileDraft.avatarUrl = data.avatar_url || this.profileDraft.avatarUrl || '';
       this.profileDraft.signature = data.signature ?? this.profileDraft.signature ?? '';
+      this.profileDraft.birthDate = data.birth_date || '';
+      this.profileDraft.birthday = data.birthday || '';
       this.profileDraft.age = data.age ?? '';
       this.profileDraft.gender = data.gender ?? '';
       this.profileDraft.phoneVisibility = data.phone_visibility || this.profileDraft.phoneVisibility || 'private';
@@ -4179,8 +4304,11 @@ const app = createApp({
           name: profile.display_name || fallbackName || userID,
           username: profile.username || '',
           domain: profile.domain || '',
+          avatarUrl: profile.avatar_url || '',
           secondary: profileSecondary,
           signature: profile.signature || '',
+          birthDate: profile.birth_date || '',
+          birthday: profile.birthday || '',
           age: profile.age ?? '',
           gender: profile.gender || '',
           email: profile.email || '',
@@ -4194,8 +4322,11 @@ const app = createApp({
           name: fallbackName || userID,
           username: '',
           domain: '',
+          avatarUrl: '',
           secondary: userID,
           signature: '',
+          birthDate: '',
+          birthday: '',
           age: '',
           gender: '',
           email: '',
@@ -4584,9 +4715,9 @@ const app = createApp({
       const displayName = this.profileDraft.displayName.trim();
       const username = this.profileDraft.username.trim().toLowerCase();
       const domain = this.profileDraft.domain.trim().toLowerCase();
-      const ageText = String(this.profileDraft.age ?? '').trim();
+      const avatarUrl = String(this.profileDraft.avatarUrl ?? '').trim();
+      const birthDate = String(this.profileDraft.birthDate ?? '').trim();
       const genderText = String(this.profileDraft.gender ?? '').trim();
-      let age = null;
       if (!this.token || !displayName) {
         this.setError(this.t('dashboard.saveError'));
         return;
@@ -4607,13 +4738,18 @@ const app = createApp({
         this.setError(this.t('profile.identity.domainError'));
         return;
       }
-      if (ageText) {
-        const parsedAge = Number(ageText);
-        if (!Number.isInteger(parsedAge) || parsedAge < 0) {
-          this.setError(this.t('profile.identity.ageError'));
+      if (birthDate) {
+        const parsedBirthDate = new Date(`${birthDate}T00:00:00`);
+        if (Number.isNaN(parsedBirthDate.getTime())) {
+          this.setError(this.t('profile.identity.birthDateError'));
           return;
         }
-        age = parsedAge;
+        const today = new Date();
+        const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        if (parsedBirthDate.getTime() > normalizedToday.getTime()) {
+          this.setError(this.t('profile.identity.birthDateFutureError'));
+          return;
+        }
       }
       const res = await fetch(`${this.apiBase}/me`, {
         method: 'PUT',
@@ -4625,8 +4761,9 @@ const app = createApp({
           display_name: displayName,
           username,
           domain,
+          avatar_url: avatarUrl,
           signature: this.profileDraft.signature.trim(),
-          age,
+          birth_date: birthDate || '',
           gender: genderText || null,
           phone_visibility: this.profileDraft.phoneVisibility,
           email_visibility: this.profileDraft.emailVisibility,
@@ -4652,8 +4789,11 @@ const app = createApp({
           name: this.user.name || this.profileUser.name,
           username: this.user.username || '',
           domain: this.user.domain || '',
+          avatarUrl: this.user.avatarUrl || '',
           secondary: profileSecondary,
           signature: this.user.signature || '',
+          birthDate: this.user.birthDate || '',
+          birthday: this.user.birthday || '',
           age: this.user.age ?? '',
           gender: this.user.gender || '',
           email: this.user.email || '',

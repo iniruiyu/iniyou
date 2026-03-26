@@ -5,19 +5,21 @@ import "time"
 type User struct {
 	// User core profile.
 	// 用户核心信息。
-	ID               string  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Email            *string `gorm:"uniqueIndex"`
-	Phone            *string `gorm:"uniqueIndex"`
-	Username         *string `gorm:"type:varchar(63);uniqueIndex"`
-	Domain           *string `gorm:"type:varchar(63);uniqueIndex"`
-	DisplayName      string  `gorm:"type:varchar(80);default:''"`
-	Signature        string  `gorm:"type:text;default:''"`
-	Age              *int    `gorm:"default:null"`
-	Gender           *string `gorm:"type:varchar(20);default:null"`
-	PhoneVisibility  string  `gorm:"type:varchar(20);default:private"`
-	EmailVisibility  string  `gorm:"type:varchar(20);default:private"`
-	AgeVisibility    string  `gorm:"type:varchar(20);default:private"`
-	GenderVisibility string  `gorm:"type:varchar(20);default:private"`
+	ID               string     `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Email            *string    `gorm:"uniqueIndex"`
+	Phone            *string    `gorm:"uniqueIndex"`
+	Username         *string    `gorm:"type:varchar(63);uniqueIndex"`
+	Domain           *string    `gorm:"type:varchar(63);uniqueIndex"`
+	DisplayName      string     `gorm:"type:varchar(80);default:''"`
+	AvatarURL        string     `gorm:"type:text;default:''"`
+	Signature        string     `gorm:"type:text;default:''"`
+	Age              *int       `gorm:"default:null"`
+	BirthDate        *time.Time `gorm:"type:date;default:null"`
+	Gender           *string    `gorm:"type:varchar(20);default:null"`
+	PhoneVisibility  string     `gorm:"type:varchar(20);default:private"`
+	EmailVisibility  string     `gorm:"type:varchar(20);default:private"`
+	AgeVisibility    string     `gorm:"type:varchar(20);default:private"`
+	GenderVisibility string     `gorm:"type:varchar(20);default:private"`
 	PasswordHash     string
 	// PasswordVersion invalidates older JWTs after a password change.
 	// PasswordVersion 用于在密码变更后使旧 JWT 失效。

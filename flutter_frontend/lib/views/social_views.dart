@@ -20,6 +20,115 @@ import 'settings_views.dart';
 // 将个人主页编辑器按区块拆分，让每个入口只打开对应的专用弹窗。
 enum _ProfileEditorSection { personal, privacy }
 
+String _profileAvatarInitials(String displayName) {
+  // Keep avatar fallbacks stable when no remote image is configured.
+  // 当未配置远程头像时，保持头像回退字样稳定可读。
+  final trimmed = displayName.trim();
+  if (trimmed.isEmpty) {
+    return 'IN';
+  }
+  final runes = trimmed.runes.take(2).toList();
+  return String.fromCharCodes(runes).toUpperCase();
+}
+
+String _formatProfileBirthDateLabel(String value, String languageCode) {
+  // Format YYYY-MM-DD values into a reader-friendly localized label.
+  // 将 YYYY-MM-DD 值格式化成更易读的本地化日期标签。
+  final parsed = DateTime.tryParse(value.trim());
+  if (parsed == null) {
+    return value.trim();
+  }
+  return localizedText(
+    languageCode,
+    '${parsed.year}年${parsed.month}月${parsed.day}日',
+    '${parsed.year}-${parsed.month.toString().padLeft(2, '0')}-${parsed.day.toString().padLeft(2, '0')}',
+    '${parsed.year}年${parsed.month}月${parsed.day}日',
+  );
+}
+
+String _formatProfileBirthdayLabel(String value, String languageCode) {
+  // Format the derived month-day birthday string for summary cards.
+  // 格式化派生的月-日生日字符串，供摘要卡展示。
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return trimmed;
+  }
+  final parts = trimmed.split('-');
+  if (parts.length != 2) {
+    return trimmed;
+  }
+  final month = int.tryParse(parts[0]);
+  final day = int.tryParse(parts[1]);
+  if (month == null || day == null) {
+    return trimmed;
+  }
+  return localizedText(
+    languageCode,
+    '$month月$day日',
+    '${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}',
+    '$month月$day日',
+  );
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.displayName,
+    required this.avatarUrl,
+    this.radius = 30,
+  });
+
+  final String displayName;
+  final String avatarUrl;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final normalizedUrl = avatarUrl.trim();
+    return Container(
+      width: radius * 2,
+      height: radius * 2,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: normalizedUrl.isEmpty
+            ? LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withValues(alpha: 0.92),
+                  theme.colorScheme.tertiary.withValues(alpha: 0.78),
+                ],
+              )
+            : null,
+        image: normalizedUrl.isNotEmpty
+            ? DecorationImage(
+                image: NetworkImage(normalizedUrl),
+                fit: BoxFit.cover,
+              )
+            : null,
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.58),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: normalizedUrl.isEmpty
+          ? Text(
+              _profileAvatarInitials(displayName),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          : null,
+    );
+  }
+}
+
 class ProfileView extends StatelessWidget {
   const ProfileView({
     super.key,
@@ -30,8 +139,9 @@ class ProfileView extends StatelessWidget {
     required this.displayNameController,
     required this.usernameController,
     required this.domainController,
+    required this.avatarUrlController,
     required this.signatureController,
-    required this.ageController,
+    required this.birthDateController,
     required this.genderController,
     required this.phoneVisibility,
     required this.emailVisibility,
@@ -71,8 +181,9 @@ class ProfileView extends StatelessWidget {
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
   final TextEditingController domainController;
+  final TextEditingController avatarUrlController;
   final TextEditingController signatureController;
-  final TextEditingController ageController;
+  final TextEditingController birthDateController;
   final TextEditingController genderController;
   final String phoneVisibility;
   final String emailVisibility;
@@ -133,18 +244,15 @@ class ProfileView extends StatelessWidget {
     final hasBlockchain = connectedChains.isNotEmpty;
     // Use a shared placeholder when a viewer is not allowed to see a field.
     // 当查看者无权看到字段时，使用统一的未公开占位。
-    final hiddenText = localizedText(
-      languageCode,
-      '未公开',
-      'Not public',
-      '未公開',
-    );
+    final hiddenText = localizedText(languageCode, '未公开', 'Not public', '未公開');
     String showHiddenText(String value) {
       return value.trim().isNotEmpty ? value : hiddenText;
     }
+
     String showHiddenNumber(int? value) {
       return value != null ? value.toString() : hiddenText;
     }
+
     // Ensure the blockchain tab is hidden when there are no accounts.
     // 链上账号为空时隐藏对应选项卡。
     final effectiveTab = !hasBlockchain && profileTab == ProfileTab.blockchain
@@ -165,6 +273,7 @@ class ProfileView extends StatelessWidget {
               '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${showHiddenText(profile.signature)}',
               '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${showHiddenText(profile.email)}',
               '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${showHiddenText(profile.phone)}',
+              '${localizedText(languageCode, '生日', 'Birthday', '生日')}: ${showHiddenText(profile.birthday.isNotEmpty ? _formatProfileBirthdayLabel(profile.birthday, languageCode) : '')}',
               '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${showHiddenNumber(profile.age)}',
               '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${showHiddenText(profile.gender)}',
               '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${profile.status}',
@@ -173,50 +282,62 @@ class ProfileView extends StatelessWidget {
               if (connectedChains.isNotEmpty)
                 '${localizedText(languageCode, '已连接链', 'Connected chains', '已連接鏈')}: ${connectedChains.join(', ')}',
             ],
-            trailing: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (profile.relationStatus.isEmpty)
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    compact: true,
-                    onPressed: () => onAddFriend(profile.id),
-                    primaryLabel: localizedText(
-                      languageCode,
-                      '添加好友',
-                      'Add friend',
-                      '新增好友',
-                    ),
-                    secondaryLabel: 'Add friend',
-                  ),
-                if (profile.relationStatus == 'pending' &&
-                    profile.direction == 'incoming')
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    compact: true,
-                    onPressed: () => onAcceptFriend(profile.id),
-                    primaryLabel: localizedText(
-                      languageCode,
-                      '接受好友',
-                      'Accept friend',
-                      '接受好友',
-                    ),
-                    secondaryLabel: 'Accept friend',
-                  ),
-                if (profile.relationStatus == 'accepted')
-                  BilingualActionButton(
-                    variant: BilingualButtonVariant.tonal,
-                    compact: true,
-                    onPressed: onStartChat,
-                    primaryLabel: localizedText(
-                      languageCode,
-                      '发起聊天',
-                      'Start chat',
-                      '發起聊天',
-                    ),
-                    secondaryLabel: 'Start chat',
-                  ),
+                _ProfileAvatar(
+                  displayName: profile.displayName,
+                  avatarUrl: profile.avatarUrl,
+                  radius: 28,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (profile.relationStatus.isEmpty)
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: () => onAddFriend(profile.id),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '添加好友',
+                          'Add friend',
+                          '新增好友',
+                        ),
+                        secondaryLabel: 'Add friend',
+                      ),
+                    if (profile.relationStatus == 'pending' &&
+                        profile.direction == 'incoming')
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: () => onAcceptFriend(profile.id),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '接受好友',
+                          'Accept friend',
+                          '接受好友',
+                        ),
+                        secondaryLabel: 'Accept friend',
+                      ),
+                    if (profile.relationStatus == 'accepted')
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: onStartChat,
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '发起聊天',
+                          'Start chat',
+                          '發起聊天',
+                        ),
+                        secondaryLabel: 'Start chat',
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -246,9 +367,15 @@ class ProfileView extends StatelessWidget {
               '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${showHiddenText(profile.signature)}',
               '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${showHiddenText(profile.email)}',
               '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${showHiddenText(profile.phone)}',
+              '${localizedText(languageCode, '生日', 'Birthday', '生日')}: ${showHiddenText(profile.birthday.isNotEmpty ? _formatProfileBirthdayLabel(profile.birthday, languageCode) : '')}',
               '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${showHiddenNumber(profile.age)}',
               '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${showHiddenText(profile.gender)}',
             ],
+            trailing: _ProfileAvatar(
+              displayName: profile.displayName,
+              avatarUrl: profile.avatarUrl,
+              radius: 32,
+            ),
           ),
         if (!isOwnProfile) const SizedBox(height: 16),
         if (isOwnProfile)
@@ -643,8 +770,9 @@ class ProfileSummaryView extends StatelessWidget {
     required this.displayNameController,
     required this.usernameController,
     required this.domainController,
+    required this.avatarUrlController,
     required this.signatureController,
-    required this.ageController,
+    required this.birthDateController,
     required this.genderController,
     required this.phoneVisibility,
     required this.emailVisibility,
@@ -675,8 +803,9 @@ class ProfileSummaryView extends StatelessWidget {
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
   final TextEditingController domainController;
+  final TextEditingController avatarUrlController;
   final TextEditingController signatureController;
-  final TextEditingController ageController;
+  final TextEditingController birthDateController;
   final TextEditingController genderController;
   final String phoneVisibility;
   final String emailVisibility;
@@ -740,6 +869,7 @@ class ProfileSummaryView extends StatelessWidget {
     final displayName = displayNameController.text.trim();
     final username = usernameController.text.trim().toLowerCase();
     final domain = domainController.text.trim().toLowerCase();
+    final birthDate = birthDateController.text.trim();
     final handlePattern = RegExp(r'^[a-zA-Z0-9]{1,63}$');
     if (displayName.isEmpty) {
       return localizedText(
@@ -772,6 +902,22 @@ class ProfileSummaryView extends StatelessWidget {
         'Domain can contain letters and numbers only, up to 63 characters.',
         '網域只能包含英文字母和數字，且最長 63 個字元。',
       );
+    }
+    if (birthDate.isNotEmpty) {
+      final parsedBirthDate = DateTime.tryParse(birthDate);
+      if (parsedBirthDate == null) {
+        return t('profile.identity.birthDateError');
+      }
+      final today = DateTime.now();
+      final normalizedToday = DateTime(today.year, today.month, today.day);
+      final normalizedBirthDate = DateTime(
+        parsedBirthDate.year,
+        parsedBirthDate.month,
+        parsedBirthDate.day,
+      );
+      if (normalizedBirthDate.isAfter(normalizedToday)) {
+        return t('profile.identity.birthDateFutureError');
+      }
     }
     return null;
   }
@@ -816,8 +962,9 @@ class ProfileSummaryView extends StatelessWidget {
                         displayNameController: displayNameController,
                         usernameController: usernameController,
                         domainController: domainController,
+                        avatarUrlController: avatarUrlController,
                         signatureController: signatureController,
-                        ageController: ageController,
+                        birthDateController: birthDateController,
                         genderController: genderController,
                         phoneVisibility: phoneVisibility,
                         emailVisibility: emailVisibility,
@@ -966,6 +1113,24 @@ class ProfileSummaryView extends StatelessWidget {
 
     final isOwnProfile = user != null && profile.id == user!.id;
     final hasBlockchain = connectedChains.isNotEmpty;
+    final notAvailableText = localizedText(languageCode, '暂无', 'N/A', '暫無');
+    final birthDateLabel = profile.birthDate.isNotEmpty
+        ? _formatProfileBirthDateLabel(profile.birthDate, languageCode)
+        : notAvailableText;
+    final birthdayLabel = profile.birthday.isNotEmpty
+        ? _formatProfileBirthdayLabel(profile.birthday, languageCode)
+        : notAvailableText;
+    final ownerBirthDateLabel = birthDateController.text.trim().isNotEmpty
+        ? _formatProfileBirthDateLabel(birthDateController.text, languageCode)
+        : birthDateLabel;
+    final ownerBirthdayLabel = birthDateController.text.trim().isNotEmpty
+        ? _formatProfileBirthdayLabel(
+            birthDateController.text.trim().length >= 5
+                ? birthDateController.text.trim().substring(5)
+                : '',
+            languageCode,
+          )
+        : birthdayLabel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1063,36 +1228,52 @@ class ProfileSummaryView extends StatelessWidget {
                 spacing: 16,
                 runSpacing: 16,
                 children: [
-                    SizedBox(
-                      width: cardWidth,
-                      child: InfoCard(
-                        title: t('profile.identity.personalTitle'),
-                        subtitle: t('profile.identity.personalSub'),
+                  SizedBox(
+                    width: cardWidth,
+                    child: InfoCard(
+                      title: t('profile.identity.personalTitle'),
+                      subtitle: t('profile.identity.personalSub'),
                       lines: [
                         '${localizedText(languageCode, '用户 ID', 'User ID', '使用者 ID')}: ${profile.id}',
                         '${localizedText(languageCode, '昵称', 'Nickname', '暱稱')}: ${profile.displayName}',
                         if (profile.username.isNotEmpty)
                           '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
-                          if (profile.domain.isNotEmpty)
-                            '${localizedText(languageCode, '域名', 'Domain', '網域')}: @${profile.domain}',
-                          if (profile.signature.isNotEmpty)
-                            '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
-                          // Show the owner’s own contact/profile facts directly in the personal summary.
-                          // 在本人摘要卡中直接展示自己的联系方式和基本信息。
-                          '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email.isNotEmpty ? profile.email : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
-                          '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone.isNotEmpty ? profile.phone : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
-                          '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age != null ? profile.age.toString() : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
-                          '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender.isNotEmpty ? profile.gender : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+                        if (profile.domain.isNotEmpty)
+                          '${localizedText(languageCode, '域名', 'Domain', '網域')}: @${profile.domain}',
+                        if (profile.signature.isNotEmpty)
+                          '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
+                        '${localizedText(languageCode, '出生日期', 'Birth date', '出生日期')}: $ownerBirthDateLabel',
+                        '${localizedText(languageCode, '生日', 'Birthday', '生日')}: $ownerBirthdayLabel',
+                        // Show the owner’s own contact/profile facts directly in the personal summary.
+                        // 在本人摘要卡中直接展示自己的联系方式和基本信息。
+                        '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email.isNotEmpty ? profile.email : notAvailableText}',
+                        '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone.isNotEmpty ? profile.phone : notAvailableText}',
+                        '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age != null ? profile.age.toString() : notAvailableText}',
+                        '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender.isNotEmpty ? profile.gender : notAvailableText}',
+                      ],
+                      trailing: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ProfileAvatar(
+                            displayName: profile.displayName,
+                            avatarUrl: profile.avatarUrl,
+                            radius: 30,
+                          ),
+                          const SizedBox(height: 12),
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            compact: true,
+                            onPressed: () => _openProfileEditor(
+                              context,
+                              section: _ProfileEditorSection.personal,
+                            ),
+                            primaryLabel: t('profile.identity.editAction'),
+                            secondaryLabel: peerT(
+                              'profile.identity.editAction',
+                            ),
+                          ),
                         ],
-                        trailing: BilingualActionButton(
-                          variant: BilingualButtonVariant.tonal,
-                        compact: true,
-                        onPressed: () => _openProfileEditor(
-                          context,
-                          section: _ProfileEditorSection.personal,
-                        ),
-                        primaryLabel: t('profile.identity.editAction'),
-                        secondaryLabel: peerT('profile.identity.editAction'),
                       ),
                     ),
                   ),
@@ -1250,8 +1431,9 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
     required this.displayNameController,
     required this.usernameController,
     required this.domainController,
+    required this.avatarUrlController,
     required this.signatureController,
-    required this.ageController,
+    required this.birthDateController,
     required this.genderController,
     required this.phoneVisibility,
     required this.emailVisibility,
@@ -1270,8 +1452,9 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
   final TextEditingController domainController;
+  final TextEditingController avatarUrlController;
   final TextEditingController signatureController;
-  final TextEditingController ageController;
+  final TextEditingController birthDateController;
   final TextEditingController genderController;
   final String phoneVisibility;
   final String emailVisibility;
@@ -1289,6 +1472,35 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
   Widget build(BuildContext context) {
     // Render only the selected section so the dialog stays focused on one task.
     // 只渲染弹窗入口对应的区块，让表单始终聚焦单一编辑任务。
+    final parsedBirthDate = DateTime.tryParse(birthDateController.text.trim());
+    final now = DateTime.now();
+    final normalizedToday = DateTime(now.year, now.month, now.day);
+    final normalizedBirthDate = parsedBirthDate == null
+        ? null
+        : DateTime(
+            parsedBirthDate.year,
+            parsedBirthDate.month,
+            parsedBirthDate.day,
+          );
+    final derivedAge = normalizedBirthDate == null
+        ? null
+        : () {
+            var age = normalizedToday.year - normalizedBirthDate.year;
+            if (normalizedToday.month < normalizedBirthDate.month ||
+                (normalizedToday.month == normalizedBirthDate.month &&
+                    normalizedToday.day < normalizedBirthDate.day)) {
+              age--;
+            }
+            return age >= 0 ? age : null;
+          }();
+    final derivedBirthdayLabel = normalizedBirthDate == null
+        ? localizedText(languageCode, '未设置', 'Not set', '未設定')
+        : localizedText(
+            languageCode,
+            '${normalizedBirthDate.month}月${normalizedBirthDate.day}日',
+            '${normalizedBirthDate.month.toString().padLeft(2, '0')}-${normalizedBirthDate.day.toString().padLeft(2, '0')}',
+            '${normalizedBirthDate.month}月${normalizedBirthDate.day}日',
+          );
     switch (section) {
       case _ProfileEditorSection.personal:
         return Column(
@@ -1347,6 +1559,55 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             BilingualField(
+              primaryLabel: t('profile.identity.avatarLabel'),
+              secondaryLabel: peerT('profile.identity.avatarLabel'),
+              child: TextField(
+                controller: avatarUrlController,
+                keyboardType: TextInputType.url,
+                decoration: InputDecoration(
+                  hintText: t('profile.identity.avatarPlaceholder'),
+                ),
+              ),
+              helperText: t('profile.identity.avatarHint'),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.58),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outlineVariant.withValues(alpha: 0.48),
+                ),
+              ),
+              child: Row(
+                children: [
+                  _ProfileAvatar(
+                    displayName: displayNameController.text,
+                    avatarUrl: avatarUrlController.text,
+                    radius: 28,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      localizedText(
+                        languageCode,
+                        '头像会立即用于个人主页卡片和资料摘要。',
+                        'The avatar is used immediately in the profile card and summary.',
+                        '頭像會立即用於個人主頁卡片與資料摘要。',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            BilingualField(
               primaryLabel: t('profile.identity.signature'),
               secondaryLabel: peerT('profile.identity.signature'),
               child: TextField(
@@ -1358,18 +1619,62 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            // Age and gender stay in the editable personal block so users can update them together.
-            // 年龄和性别放在可编辑的个人信息区块，方便一起修改。
             BilingualField(
-              primaryLabel: t('profile.identity.ageLabel'),
-              secondaryLabel: peerT('profile.identity.ageLabel'),
+              primaryLabel: t('profile.identity.birthDateLabel'),
+              secondaryLabel: peerT('profile.identity.birthDateLabel'),
               child: TextField(
-                controller: ageController,
-                keyboardType: TextInputType.number,
+                controller: birthDateController,
+                readOnly: true,
                 decoration: InputDecoration(
-                  hintText: t('profile.identity.agePlaceholder'),
+                  hintText: t('profile.identity.birthDatePlaceholder'),
+                  suffixIcon: IconButton(
+                    tooltip: localizedText(
+                      languageCode,
+                      '选择出生日期',
+                      'Pick birth date',
+                      '選擇出生日期',
+                    ),
+                    onPressed: () async {
+                      final initialDate =
+                          normalizedBirthDate ?? normalizedToday;
+                      final selected = await showDatePicker(
+                        context: context,
+                        initialDate: initialDate,
+                        firstDate: DateTime(1900, 1, 1),
+                        lastDate: normalizedToday,
+                      );
+                      if (selected == null) {
+                        return;
+                      }
+                      birthDateController.text =
+                          '${selected.year.toString().padLeft(4, '0')}-${selected.month.toString().padLeft(2, '0')}-${selected.day.toString().padLeft(2, '0')}';
+                      if (context.mounted) {
+                        (context as Element).markNeedsBuild();
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_month_rounded),
+                  ),
                 ),
+                onTap: () async {
+                  final initialDate = normalizedBirthDate ?? normalizedToday;
+                  final selected = await showDatePicker(
+                    context: context,
+                    initialDate: initialDate,
+                    firstDate: DateTime(1900, 1, 1),
+                    lastDate: normalizedToday,
+                  );
+                  if (selected == null) {
+                    return;
+                  }
+                  birthDateController.text =
+                      '${selected.year.toString().padLeft(4, '0')}-${selected.month.toString().padLeft(2, '0')}-${selected.day.toString().padLeft(2, '0')}';
+                  if (context.mounted) {
+                    (context as Element).markNeedsBuild();
+                  }
+                },
               ),
+              helperText:
+                  '${t('profile.identity.birthdayLabel')}: $derivedBirthdayLabel · ${t('profile.identity.ageLabel')}: ${derivedAge?.toString() ?? localizedText(languageCode, '未设置', 'Not set', '未設定')}',
             ),
             const SizedBox(height: 12),
             BilingualField(
@@ -1562,12 +1867,7 @@ class FriendsView extends StatelessWidget {
   ) async {
     // Open a summary-only modal preview so private contact fields stay hidden.
     // 打开仅含摘要的弹层预览，避免把私密联系方式直接展示出来。
-    final hiddenText = localizedText(
-      languageCode,
-      '未公开',
-      'Not public',
-      '未公開',
-    );
+    final hiddenText = localizedText(languageCode, '未公开', 'Not public', '未公開');
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -1983,12 +2283,7 @@ class ChatView extends StatelessWidget {
                 title: friend.displayName,
                 lines: [
                   friend.secondary,
-                  '${localizedText(
-                    languageCode,
-                    '状态',
-                    'Status',
-                    '狀態',
-                  )}: ${friend.status}',
+                  '${localizedText(languageCode, '状态', 'Status', '狀態')}: ${friend.status}',
                 ],
                 selected: activeChat?.id == friend.id,
                 onTap: () => onStartChat(friend),

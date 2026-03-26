@@ -145,14 +145,16 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 ### 6.2.1 个人资料更新
 
 - `PUT /api/v1/me`
-- 用途：修改当前用户的昵称、用户名、域名、签名和资料可见范围
-- 请求字段建议：`display_name`, `username`, `domain`, `signature`, `phone_visibility`, `email_visibility`, `age_visibility`, `gender_visibility`
+- 用途：修改当前用户的昵称、用户名、域名、头像、出生日期、签名和资料可见范围
+- 请求字段建议：`display_name`, `username`, `domain`, `avatar_url`, `birth_date`, `signature`, `phone_visibility`, `email_visibility`, `age_visibility`, `gender_visibility`
 - 说明：
   - `display_name` 为必填
   - `username` 仅允许英文字母和数字，且需要全局唯一
   - `username` 同时作为个人主页和二级域名入口句柄
   - `domain` 仅允许英文字母和数字，且需要全局唯一
   - `domain` 同时作为身份卡、登录入口与二级域名句柄
+  - `avatar_url` 当前先以图片 URL 接入，后续可无缝切换到上传资源地址
+  - `birth_date` 使用 `YYYY-MM-DD`，服务端会基于它推导 `birthday` 与 `age`
 
 ### 6.2.2 密码修改
 
@@ -169,14 +171,14 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 
 - `GET /api/v1/users/search?q=keyword`
 - 用途：按展示名、用户名、域名、邮箱、手机号、签名或用户 ID 搜索用户
-- 返回字段建议：`user_id`, `display_name`, `username`, `domain`, `signature`, `email`, `phone`, `age`, `gender`, `relation_status`, `direction`
+- 返回字段建议：`user_id`, `display_name`, `avatar_url`, `username`, `domain`, `signature`, `email`, `phone`, `age`, `gender`, `relation_status`, `direction`
 - 说明：用户名同样应参与搜索与展示，便于按子域名句柄反查用户
 
 ### 6.4 用户公开资料
 
 - `GET /api/v1/users/{id}/profile`
 - 用途：获取作者主页所需的公开资料与当前关系状态
-- 返回字段建议：`user_id`, `display_name`, `username`, `domain`, `signature`, `email`, `phone`, `age`, `gender`, `status`, `relation_status`, `direction`
+- 返回字段建议：`user_id`, `display_name`, `avatar_url`, `username`, `domain`, `signature`, `email`, `phone`, `birthday`, `age`, `gender`, `status`, `relation_status`, `direction`
 - `GET /api/v1/users/username/{username}/profile`
 - 用途：通过用户名或二级域名句柄获取同一份作者公开资料
 - `GET /api/v1/users/domain/{domain}/profile`

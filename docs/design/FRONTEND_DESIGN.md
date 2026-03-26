@@ -267,6 +267,7 @@
 - 主导航中的“主页”入口必须固定打开自己的主页；查看他人主页应使用独立入口或好友弹层 / The main-nav "Profile" entry must always open the current user's own profile; viewing others' profiles should use a separate entry or friend modal.
 - 好友主页入口应以弹层优先，完整主页入口放在弹层内 / Friend profile entry points should prefer a modal, with the full profile entry placed inside that modal.
 - 个人资料编辑应通过按钮打开弹窗完成，个人资料摘要应显示用户 ID，页面顶部不再保留单独的用户 ID 卡片 / Profile editing should happen in a button-opened modal, the personal info summary should show the user ID, and the page should no longer keep a separate user-ID card at the top.
+- 个人资料编辑需支持头像与出生日期；生日和年龄应由出生日期派生，主页摘要要展示头像预览与派生后的生日/年龄信息 / Profile editing must support avatar and birth date; birthday and age should be derived from the birth date, and the profile summary should show an avatar preview plus the derived birthday/age details.
 - 会员等级在个人主页只保留当前等级和订阅按钮，点击后在底部抽屉显示等级卡片 / Profile membership should keep only the current level and a subscribe button, with level cards shown in a bottom sheet.
 - 个人资料页应允许编辑用户名、域名和可见范围，用户名同时作为登录别名与个人主页 / 二级域名入口句柄 / The profile page should allow editing the username, domain, and visibility scopes; the username also acts as the login alias and the profile/subdomain handle.
 

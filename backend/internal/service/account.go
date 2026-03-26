@@ -121,6 +121,7 @@ type FriendView struct {
 	// 提供给接口层使用的好友关系视图。
 	FriendID    string    `json:"friend_id"`
 	DisplayName string    `json:"display_name"`
+	AvatarURL   string    `json:"avatar_url,omitempty"`
 	Username    string    `json:"username,omitempty"`
 	Domain      string    `json:"domain,omitempty"`
 	Signature   string    `json:"signature,omitempty"`
@@ -136,6 +137,7 @@ type UserSearchView struct {
 	// 用于添加好友的用户搜索结果。
 	UserID         string  `json:"user_id"`
 	DisplayName    string  `json:"display_name"`
+	AvatarURL      string  `json:"avatar_url,omitempty"`
 	Username       string  `json:"username,omitempty"`
 	Domain         string  `json:"domain,omitempty"`
 	Signature      string  `json:"signature,omitempty"`
@@ -152,16 +154,41 @@ type PublicUserProfileView struct {
 	// 面向作者主页的公开用户资料。
 	UserID         string  `json:"user_id"`
 	DisplayName    string  `json:"display_name"`
+	AvatarURL      string  `json:"avatar_url,omitempty"`
 	Username       string  `json:"username,omitempty"`
 	Domain         string  `json:"domain,omitempty"`
 	Signature      string  `json:"signature,omitempty"`
 	Email          *string `json:"email"`
 	Phone          *string `json:"phone"`
+	Birthday       string  `json:"birthday,omitempty"`
 	Age            *int    `json:"age,omitempty"`
 	Gender         *string `json:"gender,omitempty"`
 	Status         string  `json:"status"`
 	RelationStatus string  `json:"relation_status,omitempty"`
 	Direction      string  `json:"direction,omitempty"`
+}
+
+type CurrentUserView struct {
+	// Owner-facing current-user profile payload shared by /me endpoints.
+	// 提供给 /me 接口的本人资料载荷。
+	UserID           string  `json:"user_id"`
+	Email            *string `json:"email"`
+	Phone            *string `json:"phone"`
+	Username         string  `json:"username,omitempty"`
+	Domain           string  `json:"domain,omitempty"`
+	DisplayName      string  `json:"display_name"`
+	AvatarURL        string  `json:"avatar_url,omitempty"`
+	Signature        string  `json:"signature"`
+	BirthDate        string  `json:"birth_date,omitempty"`
+	Birthday         string  `json:"birthday,omitempty"`
+	Age              *int    `json:"age,omitempty"`
+	Gender           *string `json:"gender,omitempty"`
+	PhoneVisibility  string  `json:"phone_visibility"`
+	EmailVisibility  string  `json:"email_visibility"`
+	AgeVisibility    string  `json:"age_visibility"`
+	GenderVisibility string  `json:"gender_visibility"`
+	Level            string  `json:"level"`
+	Status           string  `json:"status"`
 }
 
 type SubscriptionView struct {
@@ -223,6 +250,103 @@ func GetUserByDomain(db *gorm.DB, domain string) (models.User, error) {
 		return models.User{}, err
 	}
 	return user, nil
+}
+
+func normalizeAvatarURL(raw string) string {
+	// Keep avatar URLs trim-normalized so both frontends can render the same source string.
+	// 统一裁剪头像地址，保证双前端拿到一致的来源字符串。
+	return strings.TrimSpace(raw)
+}
+
+func normalizeBirthDate(raw string) (*time.Time, error) {
+	// Parse a date-only birthday string and reject future dates.
+	// 解析纯日期格式的出生日期，并拒绝未来日期。
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil, nil
+	}
+	parsed, err := time.Parse("2006-01-02", trimmed)
+	if err != nil {
+		return nil, errors.New("birth date must use YYYY-MM-DD")
+	}
+	now := time.Now().UTC()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	birthDate := time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, time.UTC)
+	if birthDate.After(today) {
+		return nil, errors.New("birth date cannot be in the future")
+	}
+	return &birthDate, nil
+}
+
+func birthDateString(value *time.Time) string {
+	// Format stored dates into a stable YYYY-MM-DD payload value.
+	// 将存储日期格式化为稳定的 YYYY-MM-DD 接口值。
+	if value == nil || value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format("2006-01-02")
+}
+
+func birthdayString(value *time.Time) string {
+	// Expose a month-day birthday label derived from the stored birth date.
+	// 基于出生日期导出月-日生日标签。
+	if value == nil || value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format("01-02")
+}
+
+func calculateAgeFromBirthDate(value *time.Time, now time.Time) *int {
+	// Derive age from a stored birth date so the backend stays authoritative.
+	// 根据出生日期推导年龄，让后端保持唯一口径。
+	if value == nil || value.IsZero() {
+		return nil
+	}
+	now = now.UTC()
+	birthDate := value.UTC()
+	age := now.Year() - birthDate.Year()
+	if now.Month() < birthDate.Month() ||
+		(now.Month() == birthDate.Month() && now.Day() < birthDate.Day()) {
+		age--
+	}
+	if age < 0 {
+		return nil
+	}
+	return &age
+}
+
+func derivedProfileAge(user models.User) *int {
+	// Prefer the birth-date-derived age while keeping legacy manual ages readable.
+	// 优先生日推导年龄，同时兼容历史手填年龄数据。
+	if age := calculateAgeFromBirthDate(user.BirthDate, time.Now()); age != nil {
+		return age
+	}
+	return user.Age
+}
+
+func BuildCurrentUserView(user models.User) CurrentUserView {
+	// Build the owner-facing profile payload in one place so /me stays consistent.
+	// 统一构建本人资料载荷，确保 /me 接口字段保持一致。
+	return CurrentUserView{
+		UserID:           user.ID,
+		Email:            user.Email,
+		Phone:            user.Phone,
+		Username:         stringValue(user.Username),
+		Domain:           stringValue(user.Domain),
+		DisplayName:      fallbackDisplayName(user),
+		AvatarURL:        normalizeAvatarURL(user.AvatarURL),
+		Signature:        strings.TrimSpace(user.Signature),
+		BirthDate:        birthDateString(user.BirthDate),
+		Birthday:         birthdayString(user.BirthDate),
+		Age:              derivedProfileAge(user),
+		Gender:           user.Gender,
+		PhoneVisibility:  normalizeProfileVisibility(user.PhoneVisibility),
+		EmailVisibility:  normalizeProfileVisibility(user.EmailVisibility),
+		AgeVisibility:    normalizeProfileVisibility(user.AgeVisibility),
+		GenderVisibility: normalizeProfileVisibility(user.GenderVisibility),
+		Level:            user.Level,
+		Status:           user.Status,
+	}
 }
 
 func IsAccountActive(status string) bool {
@@ -374,7 +498,9 @@ func UpdateProfile(
 	displayName string,
 	username string,
 	domain string,
+	avatarURL *string,
 	signature string,
+	birthDate *string,
 	age *int,
 	gender *string,
 	phoneVisibility string,
@@ -434,9 +560,26 @@ func UpdateProfile(
 		"display_name": displayName,
 		"signature":    signature,
 	}
+	if avatarURL != nil {
+		updates["avatar_url"] = normalizeAvatarURL(*avatarURL)
+	}
 	// Keep optional identity fields writable without forcing the viewer-facing visibility rules to change.
 	// 保留可选身份字段的写入能力，同时不影响查看端的可见性规则。
-	if age != nil {
+	if birthDate != nil {
+		normalizedBirthDate, err := normalizeBirthDate(*birthDate)
+		if err != nil {
+			return models.User{}, err
+		}
+		if normalizedBirthDate == nil {
+			updates["birth_date"] = nil
+			updates["age"] = nil
+		} else {
+			updates["birth_date"] = *normalizedBirthDate
+			if derivedAge := calculateAgeFromBirthDate(normalizedBirthDate, time.Now()); derivedAge != nil {
+				updates["age"] = *derivedAge
+			}
+		}
+	} else if age != nil {
 		updates["age"] = *age
 	}
 	if gender != nil {
@@ -950,6 +1093,7 @@ func SearchUsers(db *gorm.DB, userID string, query string, limit int) ([]UserSea
 		item := UserSearchView{
 			UserID:         view.UserID,
 			DisplayName:    view.DisplayName,
+			AvatarURL:      view.AvatarURL,
 			Username:       view.Username,
 			Domain:         view.Domain,
 			Signature:      view.Signature,
@@ -975,6 +1119,7 @@ func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (Pu
 	view := PublicUserProfileView{
 		UserID:      user.ID,
 		DisplayName: fallbackDisplayName(user),
+		AvatarURL:   normalizeAvatarURL(user.AvatarURL),
 		Username:    stringValue(user.Username),
 		Domain:      stringValue(user.Domain),
 		Signature:   strings.TrimSpace(user.Signature),
@@ -983,7 +1128,8 @@ func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (Pu
 	if viewerID == "" || viewerID == targetUserID {
 		view.Email = user.Email
 		view.Phone = user.Phone
-		view.Age = user.Age
+		view.Birthday = birthdayString(user.BirthDate)
+		view.Age = derivedProfileAge(user)
 		view.Gender = user.Gender
 		return view, nil
 	}
@@ -1011,7 +1157,8 @@ func GetPublicUserProfile(db *gorm.DB, viewerID string, targetUserID string) (Pu
 		view.Phone = user.Phone
 	}
 	if isProfileFieldVisible(user.AgeVisibility, isFriend) {
-		view.Age = user.Age
+		view.Birthday = birthdayString(user.BirthDate)
+		view.Age = derivedProfileAge(user)
 	}
 	if isProfileFieldVisible(user.GenderVisibility, isFriend) {
 		view.Gender = user.Gender
@@ -1172,6 +1319,7 @@ func ListFriends(db *gorm.DB, userID string) ([]FriendView, error) {
 		// 复用公开主页的可见性规则，避免好友预览泄露私密字段。
 		if view, err := GetPublicUserProfile(db, userID, friendUserID); err == nil {
 			item.DisplayName = view.DisplayName
+			item.AvatarURL = view.AvatarURL
 			item.Username = view.Username
 			item.Domain = view.Domain
 			item.Signature = view.Signature
@@ -1179,8 +1327,9 @@ func ListFriends(db *gorm.DB, userID string) ([]FriendView, error) {
 			item.Phone = view.Phone
 		} else {
 			var friendUser models.User
-			if err := db.Select("id", "display_name", "username", "domain", "signature", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
+			if err := db.Select("id", "display_name", "avatar_url", "username", "domain", "signature", "email", "phone").First(&friendUser, "id = ?", friendUserID).Error; err == nil {
 				item.DisplayName = friendUser.DisplayName
+				item.AvatarURL = normalizeAvatarURL(friendUser.AvatarURL)
 				item.Username = stringValue(friendUser.Username)
 				item.Domain = stringValue(friendUser.Domain)
 				item.Signature = strings.TrimSpace(friendUser.Signature)

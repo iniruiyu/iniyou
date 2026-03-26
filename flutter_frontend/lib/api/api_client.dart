@@ -73,7 +73,9 @@ class ApiClient {
     required String displayName,
     required String username,
     required String domain,
+    String? avatarUrl,
     required String signature,
+    String? birthDate,
     int? age,
     String? gender,
     String phoneVisibility = '',
@@ -85,7 +87,9 @@ class ApiClient {
       'display_name': displayName,
       'username': username,
       'domain': domain,
+      'avatar_url': avatarUrl,
       'signature': signature,
+      'birth_date': birthDate,
       'age': age,
       'gender': gender,
       if (phoneVisibility.isNotEmpty) 'phone_visibility': phoneVisibility,
@@ -489,7 +493,10 @@ class ApiClient {
     if (response.statusCode >= 400) {
       final payload = _payload(body);
       throw ApiException(
-        (payload['error'] ?? body['error'] ?? body['message'] ?? 'request failed')
+        (payload['error'] ??
+                body['error'] ??
+                body['message'] ??
+                'request failed')
             .toString(),
       );
     }
