@@ -201,7 +201,6 @@
             <div>
               <div class="space-toolbar-kicker">{{ t('profile.identity.title') }}</div>
               <div class="modal-title">{{ profileEditorTitle(identityEditorSection) }}</div>
-              <div class="modal-hint">{{ t('profile.identity.editHint') }}</div>
             </div>
             <button class="ghost compact" type="button" @click="closeIdentityEditor">×</button>
           </div>
@@ -1210,7 +1209,6 @@
               <div class="topbar">
                 <div>
                   <h3>{{ t('profile.membership.title') }}</h3>
-                  <p>{{ t('profile.membership.sub') }}</p>
                 </div>
                 <bilingual-action-button
                   variant="primary"
@@ -1260,7 +1258,6 @@
             <div class="topbar">
               <div>
                 <h3>{{ t('profile.spaces.title') }}</h3>
-                <p>{{ t('profile.spaces.sub') }}</p>
               </div>
               <div class="space-toolbar-kicker">{{ visibleProfileSpaces.length }} {{ t('profile.spaces.publicList') }}</div>
             </div>
@@ -1294,7 +1291,6 @@
             <div>
               <div class="space-toolbar-kicker">{{ t('profile.membership.title') }}</div>
               <div class="modal-title">{{ t('profile.membership.sheetTitle') }}</div>
-              <div class="modal-hint">{{ t('profile.membership.sheetSub') }}</div>
             </div>
             <button class="ghost compact" type="button" @click="closeMembershipModal">×</button>
           </div>

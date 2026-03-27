@@ -374,15 +374,6 @@ class _ChatViewState extends State<ChatView> {
                 ),
                 const SizedBox(height: 6),
                 Text('${_l('联系方式', 'Contact', '聯絡方式')}: ${friend.secondary}'),
-                const SizedBox(height: 12),
-                Text(
-                  _l(
-                    '这里保留轻量预览，公开空间请打开完整主页查看。',
-                    'This preview stays lightweight; open the full profile to view public spaces.',
-                    '這裡保留輕量預覽，公開空間請打開完整主頁查看。',
-                  ),
-                  style: theme.textTheme.bodySmall,
-                ),
               ],
             ),
           ),

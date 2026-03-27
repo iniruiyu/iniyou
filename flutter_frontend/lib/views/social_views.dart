@@ -1078,15 +1078,6 @@ class ProfileSummaryView extends StatelessWidget {
                     ),
                     style: Theme.of(sheetContext).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    localizedText(
-                      languageCode,
-                      '选择一个等级卡片即可切换。',
-                      'Pick a level card to switch.',
-                      '選擇一張等級卡片即可切換。',
-                    ),
-                  ),
                   const SizedBox(height: 16),
                   LevelsView(
                     currentLevel: currentLevel,
@@ -1348,8 +1339,6 @@ class ProfileSummaryView extends StatelessWidget {
                               t('profile.membership.title'),
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
-                            const SizedBox(height: 8),
-                            Text(t('profile.membership.sub')),
                             const SizedBox(height: 16),
                             Container(
                               width: double.infinity,
@@ -1440,8 +1429,6 @@ class ProfileSummaryView extends StatelessWidget {
           t('profile.spaces.title'),
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        const SizedBox(height: 8),
-        Text(t('profile.spaces.sub')),
         const SizedBox(height: 16),
         SpaceListSection(
           title: t('profile.spaces.publicList'),
@@ -1949,17 +1936,11 @@ class FriendsView extends StatelessWidget {
           ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: InfoCard(
-              title: friend.displayName,
-              subtitle: localizedText(
-                languageCode,
-                '好友主页预览',
-                'Friend profile preview',
-                '好友主頁預覽',
-              ),
-              lines: [
-                '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
-                if (friend.secondary.isNotEmpty)
+          child: InfoCard(
+            title: friend.displayName,
+            lines: [
+              '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: ${friend.username.isNotEmpty ? friend.username : localizedText(languageCode, '暂无', 'N/A', '暫無')}',
+              if (friend.secondary.isNotEmpty)
                   '${localizedText(languageCode, '公开摘要', 'Public summary', '公開摘要')}: ${friend.secondary}',
                 '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${friend.email.isNotEmpty ? friend.email : hiddenText}',
                 '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${friend.phone.isNotEmpty ? friend.phone : hiddenText}',

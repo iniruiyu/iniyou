@@ -342,6 +342,7 @@
 - 2026-03-27：继续优化主页设置按钮与设置弹窗，补上滚动进度条和主题卡片预览，避免设置仍停留在纯下拉样式 / Further refined the home settings trigger and settings popup by adding a scroll progress bar and visual theme card previews instead of a plain select.
 - 2026-03-27：Vue 空间内容页收紧为独立滚动容器，并把帖子图片改成可点击放大查看 / Vue space content pages were tightened into an independent scroll container, and post images now open in a zoom viewer.
 - 2026-03-27：精简聊天里的查看资料弹窗，去掉好友空间的说明句，只保留公开空间标题、卡片和进入入口 / Simplified the chat friend-profile modal by removing the friend-space explanatory copy and keeping only the public-space title, cards, and entry buttons.
+- 2026-03-27：继续收紧 Web 与 Flutter 个人主页中的会员等级、公开空间与好友预览说明句，只保留标题和入口动作 / Further tightened the membership-level, public-space, and friend-preview copy in both Web and Flutter profile views so only titles and entry actions remain.
 - 2026-03-27：具体空间页改回保留主导航与折叠顶栏，不再切换成独立紧凑壳层 / Specific space pages now keep the main navigation and collapsed top bar instead of switching into a separate compact shell.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
 - 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
