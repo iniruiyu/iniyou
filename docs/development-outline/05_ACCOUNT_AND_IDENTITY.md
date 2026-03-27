@@ -7,7 +7,7 @@
 ## 2. 状态
 
 - 状态：进行中
-- 已完成：注册、登录、基础资料、用户名设置、用户名登录别名、域名身份卡与资料可见范围已接通，认证态管理已接入 JWT + active 状态校验，密码修改已接通并会刷新 token 版本，好友关系、当前订阅和外部账号绑定接口已接通，个人主页中的个人资料/隐私设置摘要与弹窗编辑已接通，账号主页与用户主页已合并为单一个人主页入口，顶部重复英雄卡已收敛为 Vue 风格概览，用户 ID 已下移到个人资料摘要并拆分为资料/隐私按钮，Flutter 端修改资料/隐私设置弹窗已按入口拆分为各自独立内容，顶部总览已继续收紧为仅保留空间/好友快速统计，登录页“记住账号和密码”开关已在双前端接入本地持久化，账号/空间/内容/聊天接口已统一到纯 `code/message/data` 响应包装，好友列表与好友主页预览已改为复用公开主页的可见性裁剪，`docs/API_SPEC.md` 已按当前实现更新接口边界
+- 已完成：注册、登录、基础资料、用户名设置、用户名登录别名、域名身份卡与资料可见范围已接通，认证态管理已接入 JWT + active 状态校验，密码修改已接通并会刷新 token 版本，好友关系、当前订阅和外部账号绑定接口已接通，个人主页中的个人资料/联系方式/隐私设置摘要与弹窗编辑已接通，账号主页与用户主页已合并为单一个人主页入口，顶部重复英雄卡已收敛为 Vue 风格概览，用户 ID 已下移到个人资料摘要并拆分为资料/联系方式/隐私按钮，Flutter 端修改资料/联系方式/隐私设置弹窗已按入口拆分为各自独立内容，顶部总览已继续收紧为仅保留空间/好友快速统计，登录页“记住账号和密码”开关已在双前端接入本地持久化，账号/空间/内容/聊天接口已统一到纯 `code/message/data` 响应包装，好友列表与好友主页预览已改为复用公开主页的可见性裁剪，`docs/API_SPEC.md` 已按当前实现更新接口边界
 - 进行中：权限基础结构、密码找回/重置、账号停用/恢复管理、区块链账号绑定安全深化
 
 ## 3. 任务清单
@@ -56,3 +56,6 @@
 - 2026-03-25：把本人资料区拆成基础资料、联系方式和隐私三张并列卡片，减少单卡内容堆叠 / Split the owner profile area into three parallel cards for basic info, contact details, and privacy to reduce single-card clutter.
 - 2026-03-25：补齐本人资料编辑入口中的年龄和性别字段，并让 Web 与 Flutter 的保存请求在更新后同步回写资料卡 / Added age and gender fields to the owner profile editor and synced both the Web and Flutter save flows back into the profile card after updates.
 - 2026-03-26：个人资料新增头像地址与出生日期字段，双前端改为根据出生日期派生生日与年龄，并在主页摘要中显示头像预览 / Added avatar-URL and birth-date fields to profiles, switched both frontends to derive birthday and age from the birth date, and showed avatar previews in the profile summaries.
+- 2026-03-27：继续把个人主页拆成个人资料、联系方式和隐私三个独立入口，避免三个按钮继续共用同一个弹窗表单 / Further split the personal home into separate profile, contact, and privacy entry points so the three buttons no longer share one merged dialog form.
+- 2026-03-27：继续把联系方式编辑区补成邮箱/手机号只读字段，并补上账号资料来源说明，避免用户把只读展示误认为缺失设置 / Continued filling out the contact editor with read-only email and phone fields plus an account-data source note so the contact block no longer looks like missing settings.
+- 2026-03-27：个人资料、联系方式和隐私三张卡的操作按钮统一收口为“编辑”，减少标题与按钮文案重复 / Unified the action buttons on the personal info, contact, and privacy cards under a single Edit label so the button copy no longer repeats the section titles.

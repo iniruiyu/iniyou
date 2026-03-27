@@ -18,7 +18,7 @@ import 'settings_views.dart';
 
 // Split the profile editor by section so each entry opens a focused dialog.
 // 将个人主页编辑器按区块拆分，让每个入口只打开对应的专用弹窗。
-enum _ProfileEditorSection { personal, privacy }
+enum _ProfileEditorSection { personal, contact, privacy }
 
 String _profileAvatarInitials(String displayName) {
   // Keep avatar fallbacks stable when no remote image is configured.
@@ -842,14 +842,11 @@ class ProfileSummaryView extends StatelessWidget {
   String _profileEditorTitle(_ProfileEditorSection section) {
     switch (section) {
       case _ProfileEditorSection.personal:
-        return localizedText(languageCode, '修改个人资料', 'Edit profile', '修改個人資料');
+        return t('profile.identity.personalTitle');
+      case _ProfileEditorSection.contact:
+        return t('profile.identity.contactTitle');
       case _ProfileEditorSection.privacy:
-        return localizedText(
-          languageCode,
-          '修改隐私设置',
-          'Edit privacy settings',
-          '修改隱私設定',
-        );
+        return t('profile.identity.privacyTitle');
     }
   }
 
@@ -857,6 +854,8 @@ class ProfileSummaryView extends StatelessWidget {
     switch (section) {
       case _ProfileEditorSection.personal:
         return 'profile.identity.saveProfile';
+      case _ProfileEditorSection.contact:
+        return 'profile.identity.saveContact';
       case _ProfileEditorSection.privacy:
         return 'profile.identity.savePrivacy';
     }
@@ -926,8 +925,20 @@ class ProfileSummaryView extends StatelessWidget {
     BuildContext context, {
     required _ProfileEditorSection section,
   }) async {
-    // Keep the dialog tied to the tapped action so the two buttons no longer share one merged form.
-    // 让弹窗内容跟随点击入口，避免两个按钮继续复用同一份合并表单。
+    // Refresh the shared draft from the current profile before opening a section dialog.
+    // 打开分区弹窗前先从当前资料回填共享草稿，避免关闭后残留旧输入。
+    final profile = profileUser;
+    if (profile != null) {
+      displayNameController.text = profile.displayName;
+      usernameController.text = profile.username;
+      domainController.text = profile.domain;
+      avatarUrlController.text = profile.avatarUrl;
+      signatureController.text = profile.signature;
+      birthDateController.text = profile.birthDate;
+      genderController.text = profile.gender;
+    }
+    // Keep the dialog tied to the tapped action so each section opens its own form.
+    // 让弹窗内容跟随点击入口，确保每个区块都打开自己的表单。
     String? dialogError;
     await showDialog<void>(
       context: context,
@@ -959,6 +970,8 @@ class ProfileSummaryView extends StatelessWidget {
                       ],
                       _ProfileIdentityEditorBody(
                         section: section,
+                        email: profile?.email ?? '',
+                        phone: profile?.phone ?? '',
                         displayNameController: displayNameController,
                         usernameController: usernameController,
                         domainController: domainController,
@@ -1221,9 +1234,13 @@ class ProfileSummaryView extends StatelessWidget {
         if (isOwnProfile)
           LayoutBuilder(
             builder: (context, constraints) {
-              final cardWidth = constraints.maxWidth >= 980
+              final cardWidth = constraints.maxWidth >= 1200
+                  ? (constraints.maxWidth - 32) / 3
+                  : constraints.maxWidth >= 820
                   ? (constraints.maxWidth - 16) / 2
                   : constraints.maxWidth;
+              // Keep the personal, contact, and privacy cards visually separated on wide screens.
+              // 在宽屏下把个人资料、联系方式和隐私卡片分开排布。
               return Wrap(
                 spacing: 16,
                 runSpacing: 16,
@@ -1240,16 +1257,7 @@ class ProfileSummaryView extends StatelessWidget {
                           '${localizedText(languageCode, '用户名', 'Username', '使用者名稱')}: @${profile.username}',
                         if (profile.domain.isNotEmpty)
                           '${localizedText(languageCode, '域名', 'Domain', '網域')}: @${profile.domain}',
-                        if (profile.signature.isNotEmpty)
-                          '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature}',
-                        '${localizedText(languageCode, '出生日期', 'Birth date', '出生日期')}: $ownerBirthDateLabel',
-                        '${localizedText(languageCode, '生日', 'Birthday', '生日')}: $ownerBirthdayLabel',
-                        // Show the owner’s own contact/profile facts directly in the personal summary.
-                        // 在本人摘要卡中直接展示自己的联系方式和基本信息。
-                        '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email.isNotEmpty ? profile.email : notAvailableText}',
-                        '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone.isNotEmpty ? profile.phone : notAvailableText}',
-                        '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age != null ? profile.age.toString() : notAvailableText}',
-                        '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender.isNotEmpty ? profile.gender : notAvailableText}',
+                        '${localizedText(languageCode, '签名', 'Signature', '簽名')}: ${profile.signature.isNotEmpty ? profile.signature : notAvailableText}',
                       ],
                       trailing: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -1277,8 +1285,31 @@ class ProfileSummaryView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Split the edit entry by section so personal info and privacy settings stay visually separated.
-                  // 将编辑入口按区块拆分，让个人资料与隐私设置保持清晰分区。
+                  SizedBox(
+                    width: cardWidth,
+                    child: InfoCard(
+                      title: t('profile.identity.contactTitle'),
+                      subtitle: t('profile.identity.contactSub'),
+                      lines: [
+                        '${localizedText(languageCode, '邮箱', 'Email', '信箱')}: ${profile.email.isNotEmpty ? profile.email : notAvailableText}',
+                        '${localizedText(languageCode, '手机号', 'Phone', '手機號')}: ${profile.phone.isNotEmpty ? profile.phone : notAvailableText}',
+                        '${localizedText(languageCode, '出生日期', 'Birth date', '出生日期')}: $ownerBirthDateLabel',
+                        '${localizedText(languageCode, '生日', 'Birthday', '生日')}: $ownerBirthdayLabel',
+                        '${localizedText(languageCode, '年龄', 'Age', '年齡')}: ${profile.age != null ? profile.age.toString() : notAvailableText}',
+                        '${localizedText(languageCode, '性别', 'Gender', '性別')}: ${profile.gender.isNotEmpty ? profile.gender : notAvailableText}',
+                      ],
+                      trailing: BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: () => _openProfileEditor(
+                          context,
+                          section: _ProfileEditorSection.contact,
+                        ),
+                        primaryLabel: t('profile.identity.contactAction'),
+                        secondaryLabel: peerT('profile.identity.contactAction'),
+                      ),
+                    ),
+                  ),
                   SizedBox(
                     width: cardWidth,
                     child: InfoCard(
@@ -1428,6 +1459,8 @@ class ProfileSummaryView extends StatelessWidget {
 class _ProfileIdentityEditorBody extends StatelessWidget {
   const _ProfileIdentityEditorBody({
     required this.section,
+    required this.email,
+    required this.phone,
     required this.displayNameController,
     required this.usernameController,
     required this.domainController,
@@ -1449,6 +1482,8 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
   });
 
   final _ProfileEditorSection section;
+  final String email;
+  final String phone;
   final TextEditingController displayNameController;
   final TextEditingController usernameController;
   final TextEditingController domainController;
@@ -1475,6 +1510,9 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
     final parsedBirthDate = DateTime.tryParse(birthDateController.text.trim());
     final now = DateTime.now();
     final normalizedToday = DateTime(now.year, now.month, now.day);
+    final notAvailableText = localizedText(languageCode, '暂无', 'N/A', '暫無');
+    final contactEmail = email.isNotEmpty ? email : notAvailableText;
+    final contactPhone = phone.isNotEmpty ? phone : notAvailableText;
     final normalizedBirthDate = parsedBirthDate == null
         ? null
         : DateTime(
@@ -1619,6 +1657,40 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+          ],
+        );
+      case _ProfileEditorSection.contact:
+        // Contact info editor keeps email and phone visible as read-only account data.
+        // 联系方式编辑区把邮箱和手机号作为只读账号资料展示。
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BilingualField(
+              primaryLabel: t('profile.identity.emailLabel'),
+              secondaryLabel: peerT('profile.identity.emailLabel'),
+              child: TextFormField(
+                initialValue: contactEmail,
+                readOnly: true,
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ),
+            const SizedBox(height: 12),
+            BilingualField(
+              primaryLabel: t('profile.identity.phoneLabel'),
+              secondaryLabel: peerT('profile.identity.phoneLabel'),
+              child: TextFormField(
+                initialValue: contactPhone,
+                readOnly: true,
+                keyboardType: TextInputType.phone,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              t('profile.identity.contactNote'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
             BilingualField(
               primaryLabel: t('profile.identity.birthDateLabel'),
               secondaryLabel: peerT('profile.identity.birthDateLabel'),
@@ -1674,7 +1746,7 @@ class _ProfileIdentityEditorBody extends StatelessWidget {
                 },
               ),
               helperText:
-                  '${t('profile.identity.birthdayLabel')}: $derivedBirthdayLabel · ${t('profile.identity.ageLabel')}: ${derivedAge?.toString() ?? localizedText(languageCode, '未设置', 'Not set', '未設定')}',
+                  '${t('profile.identity.birthdayLabel')}: $derivedBirthdayLabel · ${t('profile.identity.ageLabel')}: ${derivedAge?.toString() ?? localizedText(languageCode, '暂无', 'N/A', '暫無')}',
             ),
             const SizedBox(height: 12),
             BilingualField(

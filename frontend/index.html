@@ -196,14 +196,15 @@
           <div class="modal-header">
             <div>
               <div class="space-toolbar-kicker">{{ t('profile.identity.title') }}</div>
-              <div class="modal-title">{{ t('profile.identity.editAction') }}</div>
+              <div class="modal-title">{{ profileEditorTitle(identityEditorSection) }}</div>
               <div class="modal-hint">{{ t('profile.identity.editHint') }}</div>
             </div>
             <button class="ghost compact" type="button" @click="closeIdentityEditor">×</button>
           </div>
           <form class="form modal-form" @submit.prevent="saveProfile">
             <div class="panel-grid identity-editor-grid">
-              <div class="panel accent identity-editor-card">
+              <!-- Personal info editor / 个人资料编辑区：只保留身份相关字段。 -->
+              <div v-if="identityEditorSection === 'personal'" class="panel accent identity-editor-card">
                 <h3>{{ t('profile.identity.personalTitle') }}</h3>
                 <p>{{ t('profile.identity.personalSub') }}</p>
                 <bilingual-field
@@ -249,6 +250,35 @@
                 >
                   <textarea class="post-textarea" :placeholder="t('profile.identity.signaturePlaceholder')" v-model="profileDraft.signature"></textarea>
                 </bilingual-field>
+              </div>
+
+              <!-- Contact info editor / 联系方式编辑区：邮箱和手机号作为只读账号资料展示，出生日期与性别继续单独编辑。 -->
+              <div v-else-if="identityEditorSection === 'contact'" class="panel accent identity-editor-card">
+                <h3>{{ t('profile.identity.contactTitle') }}</h3>
+                <p>{{ t('profile.identity.contactSub') }}</p>
+                <bilingual-field
+                  :primary-label="t('profile.identity.emailLabel')"
+                  :secondary-label="peerLocaleText('profile.identity.emailLabel')"
+                >
+                  <input
+                    type="email"
+                    :value="profileUser.email || t('common.notAvailable')"
+                    readonly
+                    autocomplete="email"
+                  />
+                </bilingual-field>
+                <bilingual-field
+                  :primary-label="t('profile.identity.phoneLabel')"
+                  :secondary-label="peerLocaleText('profile.identity.phoneLabel')"
+                >
+                  <input
+                    type="tel"
+                    :value="profileUser.phone || t('common.notAvailable')"
+                    readonly
+                    autocomplete="tel"
+                  />
+                </bilingual-field>
+                <p>{{ t('profile.identity.contactNote') }}</p>
                 <bilingual-field
                   :primary-label="t('profile.identity.birthDateLabel')"
                   :secondary-label="peerLocaleText('profile.identity.birthDateLabel')"
@@ -282,7 +312,9 @@
                   />
                 </bilingual-field>
               </div>
-              <div class="panel identity-editor-card">
+
+              <!-- Privacy editor / 隐私设置区：仅保留可见范围开关。 -->
+              <div v-else class="panel identity-editor-card">
                 <h3>{{ t('profile.identity.privacyTitle') }}</h3>
                 <p>{{ t('profile.identity.privacySub') }}</p>
                 <div class="identity-visibility-grid identity-editor-privacy-grid">
@@ -315,7 +347,7 @@
             </div>
             <div class="modal-actions">
               <button class="ghost" type="button" @click="closeIdentityEditor">{{ t('common.cancel') }}</button>
-              <button class="primary" type="submit">{{ t('profile.identity.save') }}</button>
+              <button class="primary" type="submit">{{ t(profileEditorSaveKey(identityEditorSection)) }}</button>
             </div>
           </form>
         </div>
@@ -1024,7 +1056,7 @@
                     type="button"
                     :primary-label="t('profile.identity.editAction')"
                     :secondary-label="peerLocaleText('profile.identity.editAction')"
-                    @click="openIdentityEditor"
+                    @click="openIdentityEditor('personal')"
                   ></bilingual-action-button>
                 </div>
                 <div class="profile-identity-head">
@@ -1057,14 +1089,6 @@
                     <span>{{ t('profile.identity.signature') }}</span>
                     <strong>{{ profileDraft.signature || t('common.notAvailable') }}</strong>
                   </div>
-                  <div class="identity-summary-item">
-                    <span>{{ t('profile.identity.birthDateLabel') }}</span>
-                    <strong>{{ profileDraft.birthDate ? profileBirthDateLabel(profileDraft.birthDate) : t('common.notAvailable') }}</strong>
-                  </div>
-                  <div class="identity-summary-item">
-                    <span>{{ t('profile.identity.birthdayLabel') }}</span>
-                    <strong>{{ profileDraft.birthDate ? profileBirthdayFromBirthDate(profileDraft.birthDate) : t('common.notAvailable') }}</strong>
-                  </div>
                 </div>
               </div>
               <div class="panel identity-summary-card">
@@ -1078,9 +1102,9 @@
                     compact
                     class="profile-summary-action"
                     type="button"
-                    :primary-label="t('profile.identity.editAction')"
-                    :secondary-label="peerLocaleText('profile.identity.editAction')"
-                    @click="openIdentityEditor"
+                    :primary-label="t('profile.identity.contactAction')"
+                    :secondary-label="peerLocaleText('profile.identity.contactAction')"
+                    @click="openIdentityEditor('contact')"
                   ></bilingual-action-button>
                 </div>
                 <div class="identity-summary-list identity-summary-list--compact">
@@ -1123,7 +1147,7 @@
                   type="button"
                   :primary-label="t('profile.identity.privacyAction')"
                   :secondary-label="peerLocaleText('profile.identity.privacyAction')"
-                  @click="openIdentityEditor"
+                  @click="openIdentityEditor('privacy')"
                 ></bilingual-action-button>
                 </div>
                 <div class="identity-summary-list identity-summary-list--compact">

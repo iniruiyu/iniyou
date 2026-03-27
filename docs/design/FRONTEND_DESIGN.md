@@ -252,11 +252,12 @@
   - 作者名称 / Author name
   - 域名身份摘要 / Domain identity summary
   - 个人资料摘要 / Personal info summary
+  - 联系方式摘要 / Contact details summary
   - 隐私设置摘要 / Privacy settings summary
   - 当前会员等级 / Current membership level
   - 公开空间入口 / Public space entrances
 - 个人主页顶部应将原工作台的空间、好友、会员和外部账号统计折叠为一个汇总摘要区 / The top of the personal home should fold the old workspace's space, friend, membership, and external-account stats into a single summary block.
-- 个人资料摘要中应展示用户 ID，修改资料与隐私设置分别通过各自按钮触发 / The personal info summary should show the user ID, and edit/privacy actions should be split into their own buttons.
+- 个人资料、联系方式与隐私设置应分开成独立卡片，三个编辑入口分别触发各自的弹窗 / Personal info, contact details, and privacy settings should be split into separate cards, and the three edit entry points should open their own dialogs.
 - 个人主页默认不展示内容流，只展示公开空间入口与必要摘要信息 / Profile pages should not show a content feed by default; they should only show public space entrances and required summary info.
 - 个人主页中的关系动作需要根据当前关系状态切换：
   - 未建立关系：显示“添加好友”
@@ -335,6 +336,9 @@
 
 - 2026-03-25：补充登录页“记住账号和密码”开关的前端设计约束，并要求双前端在登录成功后本地回填 / Added the frontend design constraint for the login-page "remember account and password" switch and required both frontends to restore credentials locally after a successful sign-in.
 - 2026-03-20：重构个人主页顶部用户 ID 信息框，移除顶部独立卡片并将用户 ID 下移到个人资料摘要，同时拆分修改资料/隐私设置按钮 / Reworked the personal-home top user-ID box, removed the separate header card, moved the user ID into the personal info summary, and split the edit/privacy buttons.
+- 2026-03-27：继续把个人主页从“个人资料 + 隐私”扩展为“个人资料 + 联系方式 + 隐私”，并要求三个入口分别打开独立弹窗 / Expanded the personal home from "personal info + privacy" to "personal info + contact details + privacy", and required each entry point to open its own dialog.
+- 2026-03-27：继续把联系方式编辑区补成邮箱/手机号只读字段，并补上账号资料来源说明，避免把只读联系方式误看成缺失设置 / Continued filling out the contact editor with read-only email and phone fields plus an account-data source note so the read-only contact data is not mistaken for missing settings.
+- 2026-03-27：个人资料、联系方式和隐私三张卡的操作按钮统一显示为“编辑”，减少标题和按钮文案的重复感 / Unified the action buttons on the personal info, contact, and privacy cards to a single Edit label so the button text no longer repeats the section titles.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
 - 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
 - 2026-03-20：继续收紧空间页文案，移除内容流与当前空间设置说明，并在文章图片缩放提示中明确 1600px 上限 / Further tightened the space-page copy, removing feed/current-space-settings text and making the 1600px image cap explicit in article scaling hints.

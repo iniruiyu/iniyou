@@ -359,6 +359,9 @@ const app = createApp({
       // Identity editor dialog visibility.
       // 身份编辑弹窗可见状态。
       identityEditorOpen: false,
+      // Identity editor section key.
+      // 身份编辑弹窗当前区块。
+      identityEditorSection: 'personal',
       // Membership dialog visibility.
       // 会员弹窗可见状态。
       membershipModalOpen: false,
@@ -420,14 +423,16 @@ const app = createApp({
               title: '身份卡',
               sub: '个人资料与隐私设置分开维护，域名用于登录和子域名入口。',
               personalTitle: '个人资料',
-              personalSub: '展示头像、用户 ID、昵称、用户名、域名、签名、出生日期、生日、年龄和性别等资料。',
+              personalSub: '展示头像、用户 ID、昵称、用户名、域名和签名等资料。',
               contactTitle: '联系方式',
-              contactSub: '展示邮箱、手机号、出生日期、生日、年龄和性别等信息。',
+              contactSub: '单独展示邮箱、手机号、出生日期、生日、年龄和性别等联系信息。',
+              contactNote: '邮箱和手机号由账号资料提供，暂不支持在此修改。',
               privacyTitle: '隐私设置',
               privacySub: '管理手机号、邮箱、生日/年龄和性别的可见范围。',
-              editAction: '修改资料',
-              privacyAction: '隐私设置',
-              editHint: '点击后弹出编辑弹窗，平时只展示摘要。',
+              editAction: '编辑',
+              contactAction: '编辑',
+              privacyAction: '编辑',
+              editHint: '点击对应按钮后，只会打开对应区块的编辑弹窗。',
               userId: '用户 ID',
               nickname: '用户昵称',
               username: '用户名',
@@ -461,6 +466,9 @@ const app = createApp({
               domainRequired: '请输入域名。',
               domainError: '域名只能包含英文字母和数字，且最长 63 个字符。',
               save: '保存身份卡',
+              saveProfile: '保存个人资料',
+              saveContact: '保存联系方式',
+              savePrivacy: '保存隐私设置',
             },
             tabs: {
               levels: '会员等级',
@@ -851,14 +859,16 @@ const app = createApp({
               title: 'Identity Card',
               sub: 'Profile details and privacy settings are maintained separately. The domain is used for login and subdomain entry.',
               personalTitle: 'Personal Info',
-              personalSub: 'Show your avatar, user ID, nickname, username, domain, signature, birth date, birthday, age, and gender.',
+              personalSub: 'Show your avatar, user ID, nickname, username, domain, and signature.',
               contactTitle: 'Contact Details',
-              contactSub: 'Show your email, phone, birth date, birthday, age, and gender.',
+              contactSub: 'Show email, phone, birth date, birthday, age, and gender as a separate contact block.',
+              contactNote: 'Email and phone come from account data and cannot be edited here yet.',
               privacyTitle: 'Privacy Settings',
               privacySub: 'Manage visibility for phone, email, birthday/age, and gender.',
-              editAction: 'Edit Profile',
-              privacyAction: 'Privacy settings',
-              editHint: 'Open the editor in a dialog; only the summary stays visible by default.',
+              editAction: 'Edit',
+              contactAction: 'Edit',
+              privacyAction: 'Edit',
+              editHint: 'Each button opens only its own section in the editor dialog.',
               userId: 'User ID',
               nickname: 'Nickname',
               username: 'Username',
@@ -892,6 +902,9 @@ const app = createApp({
               domainRequired: 'Domain is required.',
               domainError: 'The domain may contain letters and numbers only, up to 63 characters.',
               save: 'Save Identity Card',
+              saveProfile: 'Save personal info',
+              saveContact: 'Save contact details',
+              savePrivacy: 'Save privacy settings',
             },
             tabs: {
               levels: 'Membership',
@@ -2482,14 +2495,16 @@ const app = createApp({
               title: '身分卡',
               sub: '個人資料與隱私設定分開維護，網域用於登入和子網域入口。',
               personalTitle: '個人資料',
-              personalSub: '展示頭像、使用者 ID、暱稱、使用者名稱、網域、簽名、出生日期、生日、年齡與性別等資料。',
+              personalSub: '展示頭像、使用者 ID、暱稱、使用者名稱、網域與簽名等資料。',
               contactTitle: '聯絡資訊',
-              contactSub: '展示信箱、手機號、出生日期、生日、年齡與性別等資訊。',
+              contactSub: '單獨顯示信箱、手機號、出生日期、生日、年齡與性別等聯絡資訊。',
+              contactNote: '信箱和手機號由帳號資料提供，暫不支援在此修改。',
               privacyTitle: '隱私設定',
               privacySub: '管理手機號、信箱、生日/年齡與性別的可見範圍。',
-              editAction: '修改資料',
-              privacyAction: '隱私設定',
-              editHint: '點擊後彈出編輯視窗，平時只顯示摘要。',
+              editAction: '編輯',
+              contactAction: '編輯',
+              privacyAction: '編輯',
+              editHint: '點擊對應按鈕後，只會打開對應區塊的編輯彈窗。',
               userId: '使用者 ID',
               nickname: '使用者暱稱',
               username: '使用者名稱',
@@ -2523,6 +2538,9 @@ const app = createApp({
               domainRequired: '請輸入域名。',
               domainError: '域名只能包含英文字母和數字，且最長 63 個字元。',
               save: '儲存身分卡',
+              saveProfile: '儲存個人資料',
+              saveContact: '儲存聯絡資訊',
+              savePrivacy: '儲存隱私設定',
             },
             tabs: {
               levels: '會員等級',
@@ -3993,9 +4011,36 @@ const app = createApp({
       this.closeSettingsMenu();
       this.closeChatConversationMenu();
     },
-    openIdentityEditor() {
-      // Open the profile identity editor as a dialog.
-      // 以弹窗方式打开身份资料编辑器。
+    profileEditorTitle(section) {
+      // Resolve the current identity editor title from its section key.
+      // 根据区块 key 解析当前身份编辑弹窗标题。
+      switch (section) {
+        case 'contact':
+          return this.t('profile.identity.contactTitle');
+        case 'privacy':
+          return this.t('profile.identity.privacyTitle');
+        case 'personal':
+        default:
+          return this.t('profile.identity.personalTitle');
+      }
+    },
+    profileEditorSaveKey(section) {
+      // Resolve the save label from the active editor section.
+      // 根据当前编辑区块解析保存按钮文案 key。
+      switch (section) {
+        case 'contact':
+          return 'profile.identity.saveContact';
+        case 'privacy':
+          return 'profile.identity.savePrivacy';
+        case 'personal':
+        default:
+          return 'profile.identity.saveProfile';
+      }
+    },
+    openIdentityEditor(section = 'personal') {
+      // Open the profile identity editor as a section-specific dialog.
+      // 以分区方式打开身份资料编辑器。
+      this.identityEditorSection = section || 'personal';
       if (this.user) {
         // Pre-fill the editor from the latest owner-side profile values.
         // 使用当前本人资料的最新值预填编辑器。
@@ -4012,9 +4057,10 @@ const app = createApp({
       this.identityEditorOpen = true;
     },
     closeIdentityEditor() {
-      // Close the profile identity editor dialog.
-      // 关闭身份资料编辑弹窗。
+      // Close the profile identity editor dialog and reset the section key.
+      // 关闭身份资料编辑弹窗并重置区块 key。
       this.identityEditorOpen = false;
+      this.identityEditorSection = 'personal';
     },
     openMembershipModal() {
       // Open the membership level switch dialog.
@@ -4709,8 +4755,8 @@ const app = createApp({
       }
     },
     async saveProfile() {
-      // Persist identity card changes to the account service.
-      // 将身份卡变更保存到账号服务。
+      // Persist the shared identity payload even when the dialog only shows one section.
+      // 即使弹窗只展示一个区块，也仍然提交共享的身份资料载荷。
       this.clearFeedback();
       const displayName = this.profileDraft.displayName.trim();
       const username = this.profileDraft.username.trim().toLowerCase();
