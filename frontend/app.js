@@ -1617,8 +1617,17 @@ const app = createApp({
     mainShellStyle() {
       // Apply explicit main-shell sizing so collapsed state always releases left-side space.
       // 显式应用主壳层尺寸，确保折叠态一定释放左侧空间。
+      // Space shell needs the main container pinned to the viewport and independent of sidebar width.
+      // 空间壳层需要主容器固定在视口内，并且不再依赖侧栏宽度。
       if (!this.isDesktopViewport) {
         return null;
+      }
+      if (this.isSpaceShell) {
+        return {
+          marginLeft: '0',
+          width: '100%',
+          maxWidth: 'none',
+        };
       }
       if (this.sidebarCollapsed) {
         return {

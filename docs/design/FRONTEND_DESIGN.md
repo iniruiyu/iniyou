@@ -350,6 +350,7 @@
 - 2026-03-20：统一 Flutter/Web 后端接口口径，并补齐文章编辑弹窗与图片等比缩放设计约束 / Aligned Flutter/Web backend API contracts and added modal post editing plus proportional image scaling constraints.
 - 2026-03-20：完成双前端个人主页摘要页改造，切分个人资料/隐私设置、会员等级底部抽屉与公开空间入口 / Completed the dual-frontend profile summary-page redesign, splitting personal info/privacy settings, adding the membership bottom sheet, and showing public space entrances only.
 - 2026-03-17：完成双前端导航结构与个人主页标签调整 / Completed dual-frontend navigation structure and profile tab alignment.
+- 2026-03-27：补回 Vue 空间壳层的根节点与主容器 class 绑定，让具体空间页真正固定到视口并接管滚动，修复鼠标滚轮失效 / Restored the Vue space-shell root and main class bindings so specific space pages stay fixed to the viewport and take over scrolling, fixing the mouse-wheel failure.
 - 2026-03-17：收敛首批内建语言为中英双语与繁体中文 / Reduced built-in languages to English, Simplified Chinese, and Traditional Chinese.
 - 2026-03-18：收口 Vue 顶部切换并改为整栏折叠 / Removed Vue top switch and switched to full sidebar collapse.
 - 2026-03-18：将设置入口移动到退出登录左侧 / Moved settings entry to the left of logout.
