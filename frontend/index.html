@@ -1956,7 +1956,6 @@
             <div>
               <div class="space-toolbar-kicker">{{ t('chat.friendProfileTitle') }}</div>
               <div class="modal-title">{{ chatFriendProfile.name }}</div>
-              <div class="modal-hint">{{ t('chat.friendProfileSub') }}</div>
             </div>
             <button class="ghost compact" type="button" @click="closeChatFriendProfile">×</button>
           </div>
@@ -1977,7 +1976,6 @@
           <div class="space-section">
             <div class="space-section-head">
               <h3>{{ t('chat.friendSpacesTitle') }}</h3>
-              <p>{{ t('chat.friendSpacesSub') }}</p>
             </div>
             <div v-if="chatFriendSpaces.length === 0" class="empty-state">{{ t('chat.friendSpacesEmpty') }}</div>
             <div class="space-cards">

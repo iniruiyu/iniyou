@@ -341,6 +341,7 @@
 - 2026-03-27：个人资料、联系方式和隐私三张卡的操作按钮统一显示为“编辑”，减少标题和按钮文案的重复感 / Unified the action buttons on the personal info, contact, and privacy cards to a single Edit label so the button text no longer repeats the section titles.
 - 2026-03-27：继续优化主页设置按钮与设置弹窗，补上滚动进度条和主题卡片预览，避免设置仍停留在纯下拉样式 / Further refined the home settings trigger and settings popup by adding a scroll progress bar and visual theme card previews instead of a plain select.
 - 2026-03-27：Vue 空间内容页收紧为独立滚动容器，并把帖子图片改成可点击放大查看 / Vue space content pages were tightened into an independent scroll container, and post images now open in a zoom viewer.
+- 2026-03-27：精简聊天里的查看资料弹窗，去掉好友空间的说明句，只保留公开空间标题、卡片和进入入口 / Simplified the chat friend-profile modal by removing the friend-space explanatory copy and keeping only the public-space title, cards, and entry buttons.
 - 2026-03-27：具体空间页改回保留主导航与折叠顶栏，不再切换成独立紧凑壳层 / Specific space pages now keep the main navigation and collapsed top bar instead of switching into a separate compact shell.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
 - 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
@@ -350,7 +351,6 @@
 - 2026-03-20：统一 Flutter/Web 后端接口口径，并补齐文章编辑弹窗与图片等比缩放设计约束 / Aligned Flutter/Web backend API contracts and added modal post editing plus proportional image scaling constraints.
 - 2026-03-20：完成双前端个人主页摘要页改造，切分个人资料/隐私设置、会员等级底部抽屉与公开空间入口 / Completed the dual-frontend profile summary-page redesign, splitting personal info/privacy settings, adding the membership bottom sheet, and showing public space entrances only.
 - 2026-03-17：完成双前端导航结构与个人主页标签调整 / Completed dual-frontend navigation structure and profile tab alignment.
-- 2026-03-27：补回 Vue 空间壳层的根节点与主容器 class 绑定，让具体空间页真正固定到视口并接管滚动，修复鼠标滚轮失效 / Restored the Vue space-shell root and main class bindings so specific space pages stay fixed to the viewport and take over scrolling, fixing the mouse-wheel failure.
 - 2026-03-17：收敛首批内建语言为中英双语与繁体中文 / Reduced built-in languages to English, Simplified Chinese, and Traditional Chinese.
 - 2026-03-18：收口 Vue 顶部切换并改为整栏折叠 / Removed Vue top switch and switched to full sidebar collapse.
 - 2026-03-18：将设置入口移动到退出登录左侧 / Moved settings entry to the left of logout.
