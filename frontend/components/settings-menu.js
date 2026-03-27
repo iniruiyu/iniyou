@@ -17,6 +17,9 @@ window.SettingsMenu = {
         visibility: 'hidden',
       },
       dropdownPlacement: 'down',
+      // Track scroll progress so the panel can show a small progress bar.
+      // 记录面板滚动进度，便于显示更明确的进度条反馈。
+      panelScrollProgress: 0,
       viewportListenersBound: false,
     };
   },
@@ -57,6 +60,7 @@ window.SettingsMenu = {
             return;
           }
           this.positionDropdown();
+          this.updatePanelScrollProgress();
           this.bindViewportListeners();
         });
         return;
@@ -70,12 +74,14 @@ window.SettingsMenu = {
         visibility: 'hidden',
       };
       this.dropdownPlacement = 'down';
+      this.panelScrollProgress = 0;
     },
     'app.locale'() {
       if (this.app.settingsOpen) {
         this.$nextTick(() => {
           if (this.app.settingsOpen) {
             this.positionDropdown();
+            this.updatePanelScrollProgress();
           }
         });
       }
@@ -85,6 +91,7 @@ window.SettingsMenu = {
         this.$nextTick(() => {
           if (this.app.settingsOpen) {
             this.positionDropdown();
+            this.updatePanelScrollProgress();
           }
         });
       }
@@ -99,11 +106,32 @@ window.SettingsMenu = {
         label: `${option.name} (${option.code})`,
       }));
     },
-    themeSelectOptions() {
+    themeCards() {
+      // Build a visual theme card list with bilingual labels and preview colors.
+      // 构建带双语名称和预览色块的主题卡列表。
       return this.app.themeOptions.map((theme) => ({
-        value: theme.value,
-        label: this.app.t(theme.labelKey),
+        ...theme,
+        primaryLabel: this.app.t(theme.labelKey),
+        secondaryLabel: this.app.peerLocaleText(theme.labelKey),
       }));
+    },
+    currentThemeCard() {
+      // Resolve the active theme card for the trigger badge preview.
+      // 解析当前主题卡，用于触发器上的预览徽章。
+      return this.themeCards().find((theme) => theme.value === this.app.theme) || this.themeCards()[0] || null;
+    },
+    themePreviewStyle(theme) {
+      // Convert theme preview colors into a compact gradient swatch.
+      // 将主题预览色转换为紧凑渐变色块。
+      const preview = Array.isArray(theme?.preview) ? theme.preview : [];
+      const primary = preview[0] || 'var(--primary)';
+      const accent = preview[1] || 'var(--accent)';
+      const surface = preview[2] || 'var(--surface)';
+      return {
+        '--theme-preview-primary': primary,
+        '--theme-preview-accent': accent,
+        '--theme-preview-surface': surface,
+      };
     },
     directionSelectOptions() {
       return [
@@ -119,6 +147,34 @@ window.SettingsMenu = {
     },
     toggleSettingsMenu() {
       this.app.toggleSettingsMenu();
+    },
+    selectTheme(themeValue) {
+      // Update the active theme through an explicit card click.
+      // 通过明确的卡片点击切换当前主题。
+      if (this.app.theme !== themeValue) {
+        this.app.theme = themeValue;
+        this.app.applyTheme();
+      }
+      this.$nextTick(() => {
+        if (this.app.settingsOpen) {
+          this.updatePanelScrollProgress();
+        }
+      });
+    },
+    updatePanelScrollProgress() {
+      // Keep the settings progress bar synchronized with the panel scroll position.
+      // 让设置面板进度条与当前滚动位置同步。
+      const panel = this.$refs.dropdownPanel;
+      if (!panel) {
+        this.panelScrollProgress = 0;
+        return;
+      }
+      const maxScrollTop = Math.max(0, panel.scrollHeight - panel.clientHeight);
+      if (maxScrollTop <= 0) {
+        this.panelScrollProgress = 1;
+        return;
+      }
+      this.panelScrollProgress = Math.min(1, Math.max(0, panel.scrollTop / maxScrollTop));
     },
     bindViewportListeners() {
       if (this.viewportListenersBound || typeof window === 'undefined') {
@@ -155,7 +211,7 @@ window.SettingsMenu = {
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
       const widthLimit = Math.max(0, viewportWidth - viewportPadding * 2);
-      const width = Math.min(360, widthLimit);
+      const width = Math.min(400, widthLimit);
       const maxLeft = Math.max(viewportPadding, viewportWidth - width - viewportPadding);
       const left = Math.min(Math.max(triggerRect.left, viewportPadding), maxLeft);
       const spaceBelow = viewportHeight - triggerRect.bottom - gap - viewportPadding;
@@ -177,6 +233,11 @@ window.SettingsMenu = {
         maxHeight: `${Math.round(availableHeight)}px`,
         visibility: 'visible',
       };
+      this.$nextTick(() => {
+        if (this.app.settingsOpen) {
+          this.updatePanelScrollProgress();
+        }
+      });
     },
   },
   // Viewport-aware settings menu for the main shell.
@@ -196,6 +257,14 @@ window.SettingsMenu = {
           <span class="settings-trigger-label">{{ app.t('settings.menu') }}</span>
           <span class="settings-trigger-meta">{{ app.getLanguageMeta(app.locale).name }}</span>
         </span>
+        <span class="settings-trigger-badges">
+          <span
+            class="settings-trigger-badge settings-trigger-badge--theme"
+            :style="themePreviewStyle(currentThemeCard())"
+          >
+            {{ app.t('theme.options.' + app.theme) }}
+          </span>
+        </span>
       </button>
       <teleport to="body">
         <!-- Render the panel outside the sidebar so overflow cannot clip it. -->
@@ -207,10 +276,28 @@ window.SettingsMenu = {
           :class="{ 'settings-dropdown--up': dropdownPlacement === 'up' }"
           :style="dropdownStyle"
           @click.stop
+          @scroll.passive="updatePanelScrollProgress"
         >
           <div class="settings-header">
             <div class="settings-eyebrow">{{ app.t('settings.customize') }}</div>
             <div class="settings-title">{{ app.t('i18n.title') }}</div>
+          </div>
+          <!-- Scroll progress / 滚动进度：提示设置面板在长内容中的位置。 -->
+          <div
+            class="settings-progress"
+            role="progressbar"
+            :aria-label="app.t('settings.progressLabel')"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-valuenow="Math.round(panelScrollProgress * 100)"
+          >
+            <div class="settings-progress-head">
+              <div class="settings-progress-label">{{ app.t('settings.progressLabel') }}</div>
+              <div class="settings-progress-value">{{ Math.round(panelScrollProgress * 100) }}%</div>
+            </div>
+            <div class="settings-progress-track">
+              <div class="settings-progress-fill" :style="{ width: Math.max(8, Math.round(panelScrollProgress * 100)) + '%' }"></div>
+            </div>
           </div>
           <!-- Split the panel into calm card-like sections / 将面板拆成更安静的卡片分区。 -->
           <section class="settings-section">
@@ -224,17 +311,40 @@ window.SettingsMenu = {
               :options="languageSelectOptions()"
             ></bilingual-select-field>
           </section>
-          <section class="settings-section">
-            <div class="settings-section-head">
-              <div class="settings-section-title">{{ app.t('theme.title') }}</div>
+          <section class="settings-section settings-section-theme">
+            <!-- Theme cards / 主题卡片：用可视化预览替代纯下拉选择。 -->
+            <div class="settings-section-head settings-section-head--theme">
+              <div>
+                <div class="settings-section-title">{{ app.t('theme.title') }}</div>
+                <div class="settings-section-note">{{ app.t('theme.hint') }}</div>
+              </div>
+              <div class="settings-theme-current" :style="themePreviewStyle(currentThemeCard())">
+                <span class="settings-theme-current-dot"></span>
+                <span>{{ app.t('theme.active') }}</span>
+              </div>
             </div>
-            <bilingual-select-field
-              :primary-label="app.t('theme.label')"
-              :secondary-label="app.peerLocaleText('theme.label')"
-              v-model="app.theme"
-              :options="themeSelectOptions()"
-              @change="app.applyTheme()"
-            ></bilingual-select-field>
+            <div class="settings-theme-grid">
+              <button
+                v-for="theme in themeCards()"
+                :key="theme.value"
+                class="settings-theme-card"
+                :class="{ active: app.theme === theme.value }"
+                type="button"
+                :aria-pressed="app.theme === theme.value ? 'true' : 'false'"
+                @click="selectTheme(theme.value)"
+              >
+                <div class="settings-theme-preview" :style="themePreviewStyle(theme)">
+                  <span class="settings-theme-preview-chip settings-theme-preview-chip--primary"></span>
+                  <span class="settings-theme-preview-chip settings-theme-preview-chip--accent"></span>
+                  <span class="settings-theme-preview-chip settings-theme-preview-chip--surface"></span>
+                </div>
+                <div class="settings-theme-copy">
+                  <div class="settings-theme-title">{{ theme.primaryLabel }}</div>
+                  <div class="settings-theme-sub">{{ theme.secondaryLabel }}</div>
+                </div>
+                <div v-if="app.theme === theme.value" class="settings-theme-active">{{ app.t('theme.active') }}</div>
+              </button>
+            </div>
           </section>
           <!-- Keep the language creation form collapsed by default so the panel stays compact. -->
           <!-- 新增语言表单默认折叠，避免设置面板过长。 -->

@@ -384,9 +384,21 @@ const app = createApp({
       // Theme options for skin switching.
       // 皮肤切换可选主题。
       themeOptions: [
-        { value: 'midnight', labelKey: 'theme.options.midnight' },
-        { value: 'dawn', labelKey: 'theme.options.dawn' },
-        { value: 'ocean', labelKey: 'theme.options.ocean' },
+        {
+          value: 'midnight',
+          labelKey: 'theme.options.midnight',
+          preview: ['#6ee7ff', '#ffb86b', '#131a22'],
+        },
+        {
+          value: 'dawn',
+          labelKey: 'theme.options.dawn',
+          preview: ['#2f80ed', '#ff8a4c', '#ffffff'],
+        },
+        {
+          value: 'ocean',
+          labelKey: 'theme.options.ocean',
+          preview: ['#4dd6d3', '#6ee7ff', '#0b1e2d'],
+        },
       ],
       // i18n dictionaries. New languages can be appended at runtime.
       // 国际化字典，可在运行时追加新语言。
@@ -417,6 +429,7 @@ const app = createApp({
           settings: {
             menu: '设置',
             customize: '界面与语言',
+            progressLabel: '滚动进度',
           },
           profile: {
             identity: {
@@ -506,6 +519,8 @@ const app = createApp({
           theme: {
             title: '外观皮肤',
             label: '选择皮肤',
+            hint: '点击卡片即可即时切换。',
+            active: '当前',
             options: {
               midnight: '深空黑',
               dawn: '晨光白',
@@ -855,6 +870,7 @@ const app = createApp({
           settings: {
             menu: 'Settings',
             customize: 'Language & interface',
+            progressLabel: 'Scroll progress',
           },
           profile: {
             identity: {
@@ -944,6 +960,8 @@ const app = createApp({
           theme: {
             title: 'Theme',
             label: 'Choose skin',
+            hint: 'Click a card to switch instantly.',
+            active: 'Current',
             options: {
               midnight: 'Midnight',
               dawn: 'Dawn',

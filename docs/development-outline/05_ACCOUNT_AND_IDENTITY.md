@@ -59,3 +59,4 @@
 - 2026-03-27：继续把个人主页拆成个人资料、联系方式和隐私三个独立入口，避免三个按钮继续共用同一个弹窗表单 / Further split the personal home into separate profile, contact, and privacy entry points so the three buttons no longer share one merged dialog form.
 - 2026-03-27：继续把联系方式编辑区补成邮箱/手机号只读字段，并补上账号资料来源说明，避免用户把只读展示误认为缺失设置 / Continued filling out the contact editor with read-only email and phone fields plus an account-data source note so the contact block no longer looks like missing settings.
 - 2026-03-27：个人资料、联系方式和隐私三张卡的操作按钮统一收口为“编辑”，减少标题与按钮文案重复 / Unified the action buttons on the personal info, contact, and privacy cards under a single Edit label so the button copy no longer repeats the section titles.
+- 2026-03-27：主页设置入口继续优化为更直观的主题徽章与滚动进度反馈，避免设置面板与主题切换仍停留在纯下拉交互 / Further refined the home settings entry with a more readable theme badge and scroll progress feedback so the settings panel and theme switcher no longer rely on a plain select.

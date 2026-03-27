@@ -2946,8 +2946,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 18px;
   background: linear-gradient(180deg, rgba(110, 231, 255, 0.08), rgba(255, 255, 255, 0.03));
   border: 1px solid rgba(110, 231, 255, 0.16);
 }
@@ -2957,6 +2957,8 @@ body {
   flex-direction: column;
   gap: 2px;
   align-items: flex-start;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .settings-trigger-icon {
@@ -2983,6 +2985,39 @@ body {
   font-size: 11px;
 }
 
+/* Settings trigger badges / 设置触发器徽章：显示当前语言与主题概览。 */
+.settings-trigger-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.settings-trigger-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.settings-trigger-badge--theme {
+  background: linear-gradient(135deg, var(--theme-preview-primary), var(--theme-preview-accent));
+  color: #091018;
+  border-color: rgba(255, 255, 255, 0.18);
+  text-shadow: none;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
+}
+
 .settings-menu.nav-item-settings .settings-trigger:hover {
   border-color: rgba(110, 231, 255, 0.32);
   background: linear-gradient(180deg, rgba(110, 231, 255, 0.14), rgba(255, 255, 255, 0.05));
@@ -3006,10 +3041,13 @@ body {
   left: 0;
   right: auto;
   bottom: auto;
-  width: min(360px, calc(100vw - 24px));
+  width: min(400px, calc(100vw - 24px));
   max-height: calc(100dvh - 24px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 231, 255, 0.58) rgba(255, 255, 255, 0.06);
   padding: 18px;
   border-radius: 22px;
   background:
@@ -3023,6 +3061,26 @@ body {
   flex-direction: column;
   gap: 12px;
   z-index: 90;
+}
+
+/* Settings dropdown scrollbar / 设置面板滚动条：让长面板的滚动反馈更清晰。 */
+.settings-dropdown::-webkit-scrollbar {
+  width: 10px;
+}
+
+.settings-dropdown::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+
+.settings-dropdown::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(110, 231, 255, 0.82), rgba(255, 184, 107, 0.7));
+  border: 2px solid rgba(9, 12, 18, 0.56);
+}
+
+.settings-dropdown::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(110, 231, 255, 0.96), rgba(255, 184, 107, 0.82));
 }
 
 .settings-header {
@@ -3042,6 +3100,53 @@ body {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 20px;
   font-weight: 600;
+}
+
+/* Settings progress bar / 设置进度条：显示面板滚动位置。 */
+.settings-progress {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 0 12px;
+  background: linear-gradient(180deg, rgba(18, 26, 37, 0.98), rgba(18, 26, 37, 0.94));
+  backdrop-filter: blur(14px);
+}
+
+.settings-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.settings-progress-label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-progress-value {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.settings-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.settings-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  box-shadow: 0 0 14px rgba(110, 231, 255, 0.2);
+  transition: width 0.18s ease;
 }
 
 .settings-section {
@@ -3114,6 +3219,34 @@ body {
   gap: 10px;
 }
 
+.settings-section-head--theme {
+  align-items: center;
+}
+
+.settings-theme-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, var(--theme-preview-primary), var(--theme-preview-accent));
+  color: #091018;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: none;
+}
+
+.settings-theme-current-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(9, 16, 24, 0.72);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+}
+
 .settings-section-title {
   font-size: 13px;
   font-weight: 600;
@@ -3130,6 +3263,110 @@ body {
 .settings-form-grid {
   display: grid;
   gap: 10px;
+}
+
+/* Theme preview cards / 主题预览卡片：用色块展示当前皮肤。 */
+.settings-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 10px;
+}
+
+.settings-theme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    var(--surface-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-theme-card:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(110, 231, 255, 0.2);
+}
+
+.settings-theme-card:focus-visible {
+  outline: 2px solid rgba(110, 231, 255, 0.42);
+  outline-offset: 2px;
+}
+
+.settings-theme-card.active {
+  border-color: rgba(110, 231, 255, 0.46);
+  box-shadow:
+    0 0 0 1px rgba(110, 231, 255, 0.12) inset,
+    0 16px 30px rgba(0, 0, 0, 0.16);
+}
+
+.settings-theme-preview {
+  width: 100%;
+  min-height: 84px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr 0.8fr;
+  gap: 8px;
+  align-items: end;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--theme-preview-primary), var(--theme-preview-accent));
+}
+
+.settings-theme-preview-chip {
+  height: 18px;
+  border-radius: 999px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+}
+
+.settings-theme-preview-chip--primary {
+  background: var(--theme-preview-primary);
+}
+
+.settings-theme-preview-chip--accent {
+  background: var(--theme-preview-accent);
+}
+
+.settings-theme-preview-chip--surface {
+  background: var(--theme-preview-surface);
+}
+
+.settings-theme-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-theme-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-theme-sub {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.settings-theme-active {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(110, 231, 255, 0.12);
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .settings-dropdown .lang-input,
@@ -3789,8 +4026,8 @@ button:disabled {
     margin-left: auto;
   }
 
-  .settings-trigger {
-    width: auto;
+  .settings-menu.nav-item-settings .settings-trigger {
+    width: 100%;
   }
 
   .post-comment-thread {

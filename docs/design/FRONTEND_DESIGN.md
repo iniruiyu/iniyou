@@ -339,6 +339,7 @@
 - 2026-03-27：继续把个人主页从“个人资料 + 隐私”扩展为“个人资料 + 联系方式 + 隐私”，并要求三个入口分别打开独立弹窗 / Expanded the personal home from "personal info + privacy" to "personal info + contact details + privacy", and required each entry point to open its own dialog.
 - 2026-03-27：继续把联系方式编辑区补成邮箱/手机号只读字段，并补上账号资料来源说明，避免把只读联系方式误看成缺失设置 / Continued filling out the contact editor with read-only email and phone fields plus an account-data source note so the read-only contact data is not mistaken for missing settings.
 - 2026-03-27：个人资料、联系方式和隐私三张卡的操作按钮统一显示为“编辑”，减少标题和按钮文案的重复感 / Unified the action buttons on the personal info, contact, and privacy cards to a single Edit label so the button text no longer repeats the section titles.
+- 2026-03-27：继续优化主页设置按钮与设置弹窗，补上滚动进度条和主题卡片预览，避免设置仍停留在纯下拉样式 / Further refined the home settings trigger and settings popup by adding a scroll progress bar and visual theme card previews instead of a plain select.
 - 2026-03-27：Vue 空间内容页收紧为独立滚动容器，并把帖子图片改成可点击放大查看 / Vue space content pages were tightened into an independent scroll container, and post images now open in a zoom viewer.
 - 2026-03-27：具体空间页改回保留主导航与折叠顶栏，不再切换成独立紧凑壳层 / Specific space pages now keep the main navigation and collapsed top bar instead of switching into a separate compact shell.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
