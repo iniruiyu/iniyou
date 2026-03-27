@@ -457,11 +457,19 @@
                 :key="`${post.id}-media-${index}`"
                 class="post-media-gallery-item"
               >
-                <img
+                <button
                   v-if="mediaItem.mediaType === 'image'"
-                  :src="mediaItem.mediaUrl"
-                  :alt="mediaItem.mediaName || post.title"
-                />
+                  class="post-media-image-trigger"
+                  type="button"
+                  :aria-label="t('posts.openImagePreview')"
+                  :title="t('posts.openImagePreview')"
+                  @click="openSpaceMediaViewer(mediaItem.mediaUrl, mediaItem.mediaName || post.title)"
+                >
+                  <img
+                    :src="mediaItem.mediaUrl"
+                    :alt="mediaItem.mediaName || post.title"
+                  />
+                </button>
                 <video
                   v-else-if="mediaItem.mediaType === 'video'"
                   :src="mediaItem.mediaUrl"
@@ -474,11 +482,19 @@
               </div>
             </div>
             <div v-else-if="post.mediaUrl" class="post-media-preview">
-              <img
+              <button
                 v-if="post.mediaType === 'image'"
-                :src="post.mediaUrl"
-                :alt="post.mediaName || post.title"
-              />
+                class="post-media-image-trigger"
+                type="button"
+                :aria-label="t('posts.openImagePreview')"
+                :title="t('posts.openImagePreview')"
+                @click="openSpaceMediaViewer(post.mediaUrl, post.mediaName || post.title)"
+              >
+                <img
+                  :src="post.mediaUrl"
+                  :alt="post.mediaName || post.title"
+                />
+              </button>
               <video
                 v-else-if="post.mediaType === 'video'"
                 :src="post.mediaUrl"
@@ -747,11 +763,19 @@
                 :key="`${post.id}-media-${index}`"
                 class="post-media-gallery-item"
               >
-                <img
+                <button
                   v-if="mediaItem.mediaType === 'image'"
-                  :src="mediaItem.mediaUrl"
-                  :alt="mediaItem.mediaName || post.title"
-                />
+                  class="post-media-image-trigger"
+                  type="button"
+                  :aria-label="t('posts.openImagePreview')"
+                  :title="t('posts.openImagePreview')"
+                  @click="openSpaceMediaViewer(mediaItem.mediaUrl, mediaItem.mediaName || post.title)"
+                >
+                  <img
+                    :src="mediaItem.mediaUrl"
+                    :alt="mediaItem.mediaName || post.title"
+                  />
+                </button>
                 <video
                   v-else-if="mediaItem.mediaType === 'video'"
                   :src="mediaItem.mediaUrl"
@@ -764,11 +788,19 @@
               </div>
             </div>
             <div v-else-if="post.mediaUrl" class="post-media-preview">
-              <img
+              <button
                 v-if="post.mediaType === 'image'"
-                :src="post.mediaUrl"
-                :alt="post.mediaName || post.title"
-              />
+                class="post-media-image-trigger"
+                type="button"
+                :aria-label="t('posts.openImagePreview')"
+                :title="t('posts.openImagePreview')"
+                @click="openSpaceMediaViewer(post.mediaUrl, post.mediaName || post.title)"
+              >
+                <img
+                  :src="post.mediaUrl"
+                  :alt="post.mediaName || post.title"
+                />
+              </button>
               <video
                 v-else-if="post.mediaType === 'video'"
                 :src="post.mediaUrl"
@@ -1313,11 +1345,19 @@
                 :key="`${currentPost.id}-media-${index}`"
                 class="post-media-gallery-item"
               >
-                <img
+                <button
                   v-if="mediaItem.mediaType === 'image'"
-                  :src="mediaItem.mediaUrl"
-                  :alt="mediaItem.mediaName || currentPost.title"
-                />
+                  class="post-media-image-trigger"
+                  type="button"
+                  :aria-label="t('posts.openImagePreview')"
+                  :title="t('posts.openImagePreview')"
+                  @click="openSpaceMediaViewer(mediaItem.mediaUrl, mediaItem.mediaName || currentPost.title)"
+                >
+                  <img
+                    :src="mediaItem.mediaUrl"
+                    :alt="mediaItem.mediaName || currentPost.title"
+                  />
+                </button>
                 <video
                   v-else-if="mediaItem.mediaType === 'video'"
                   :src="mediaItem.mediaUrl"
@@ -1330,11 +1370,19 @@
               </div>
             </div>
             <div v-else-if="currentPost.mediaUrl" class="post-media-preview">
-              <img
+              <button
                 v-if="currentPost.mediaType === 'image'"
-                :src="currentPost.mediaUrl"
-                :alt="currentPost.mediaName || currentPost.title"
-              />
+                class="post-media-image-trigger"
+                type="button"
+                :aria-label="t('posts.openImagePreview')"
+                :title="t('posts.openImagePreview')"
+                @click="openSpaceMediaViewer(currentPost.mediaUrl, currentPost.mediaName || currentPost.title)"
+              >
+                <img
+                  :src="currentPost.mediaUrl"
+                  :alt="currentPost.mediaName || currentPost.title"
+                />
+              </button>
               <video
                 v-else-if="currentPost.mediaType === 'video'"
                 :src="currentPost.mediaUrl"
@@ -2118,6 +2166,34 @@
               <button class="primary" type="submit">{{ t('posts.publishAction') }}</button>
             </div>
           </form>
+        </div>
+      </div>
+      <!-- Space image viewer / 空间图片查看器：点击帖子图片后，以视口浮层放大查看。 -->
+      <div v-if="spaceMediaViewerOpen" class="modal-backdrop" @click.self="closeSpaceMediaViewer">
+        <div
+          class="modal space-media-viewer-modal"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="t('posts.imagePreviewTitle')"
+          tabindex="0"
+          @keydown.esc.prevent="closeSpaceMediaViewer"
+        >
+          <div class="modal-header">
+            <div>
+              <div class="space-toolbar-kicker">{{ t('posts.mediaPreview') }}</div>
+              <div class="modal-title">{{ t('posts.imagePreviewTitle') }}</div>
+              <div class="modal-hint">{{ spaceMediaViewerAlt || t('posts.mediaPreview') }}</div>
+            </div>
+            <button class="ghost compact" type="button" :aria-label="t('chat.quickClose')" @click="closeSpaceMediaViewer">×</button>
+          </div>
+          <div class="space-media-viewer-frame">
+            <img
+              v-if="spaceMediaViewerUrl"
+              class="space-media-viewer-image"
+              :src="spaceMediaViewerUrl"
+              :alt="spaceMediaViewerAlt || t('posts.mediaPreview')"
+            />
+          </div>
         </div>
       </div>
     </main>

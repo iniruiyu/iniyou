@@ -1321,9 +1321,12 @@ body {
 /* Space content page / 空间内容页：作为空间壳层内的独立滚动区，确保好友空间进入后可以继续向下浏览帖子。 */
 .space-page {
   width: 100%;
-  flex: 1 1 auto;
+  flex: 1 1 0%;
+  height: 0;
   min-width: 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
@@ -1331,6 +1334,7 @@ body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(110, 231, 255, 0.58) rgba(255, 255, 255, 0.04);
+  scrollbar-gutter: stable;
   background:
     radial-gradient(circle at top right, rgba(110, 231, 255, 0.08), transparent 30%),
     radial-gradient(circle at bottom left, rgba(255, 184, 107, 0.08), transparent 26%),
@@ -1493,6 +1497,8 @@ body {
 
 .post-feed {
   margin-top: 22px;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1605,6 +1611,34 @@ body {
   width: min(980px, 100%);
   max-height: calc(100vh - 36px);
   border-radius: 28px 28px 0 0;
+}
+
+/* Space image viewer modal / 空间图片查看器弹窗：给帖子图片单独留出更大的视口上限。 */
+.space-media-viewer-modal {
+  width: min(92vw, 1180px);
+  max-height: min(92vh, 960px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.space-media-viewer-frame {
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(10, 14, 20, 0.94), rgba(24, 32, 44, 0.9));
+}
+
+.space-media-viewer-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(92vh - 220px);
+  object-fit: contain;
+  border-radius: 18px;
 }
 
 .profile-editor-modal,
@@ -1764,6 +1798,7 @@ body {
   margin-top: 12px;
   width: 100%;
   aspect-ratio: 16 / 9;
+  max-height: 420px;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid var(--border);
@@ -1785,6 +1820,7 @@ body {
   position: relative;
   min-height: 180px;
   aspect-ratio: 4 / 3;
+  max-height: 320px;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid var(--border);
@@ -1795,6 +1831,38 @@ body {
 
 .post-media-gallery-item img,
 .post-media-gallery-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Clickable image trigger / 可点击图片触发器：让帖子里的静态图片保持克制尺寸，并提供一键放大入口。 */
+.post-media-image-trigger {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  cursor: zoom-in;
+  transform: none;
+}
+
+.post-media-image-trigger:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.post-media-image-trigger:focus-visible {
+  outline: 2px solid rgba(110, 231, 255, 0.45);
+  outline-offset: 2px;
+}
+
+.post-media-image-trigger img {
   width: 100%;
   height: 100%;
   object-fit: contain;

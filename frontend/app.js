@@ -709,6 +709,8 @@ const app = createApp({
             attachVideo: '添加小视频',
             clearMedia: '清除媒体',
             mediaPreview: '媒体预览',
+            imagePreviewTitle: '图片预览',
+            openImagePreview: '点击放大图片',
             imageSelected: '张图片',
             videoSelected: '个视频',
             imagesSelected: '张图片',
@@ -1147,6 +1149,8 @@ const app = createApp({
             attachVideo: 'Add Video',
             clearMedia: 'Clear Media',
             mediaPreview: 'Media Preview',
+            imagePreviewTitle: 'Image Preview',
+            openImagePreview: 'Open image preview',
             imageSelected: 'image selected',
             videoSelected: 'video selected',
             imagesSelected: 'images selected',
@@ -1350,6 +1354,15 @@ const app = createApp({
         // Post edit modal state.
         // 文章编辑弹窗状态。
         postEditModalOpen: false,
+        // Space image viewer state.
+        // 空间图片查看器状态。
+        spaceMediaViewerOpen: false,
+        // Enlarged space image URL.
+        // 当前放大的空间图片地址。
+        spaceMediaViewerUrl: '',
+        // Enlarged space image alt text.
+        // 当前放大的空间图片说明文本。
+        spaceMediaViewerAlt: '',
         // Lightweight feedback text.
         // 轻量反馈文本。
         flashMessage: '',
@@ -1771,9 +1784,11 @@ const app = createApp({
     view(nextView) {
       if (nextView === 'chat') {
         this.scrollChatHistoryToBottom(true);
+        this.closeSpaceMediaViewer();
         return;
       }
       this.closeChatQuickPanel();
+      this.closeSpaceMediaViewer();
     },
     'externalAccountDraft.provider'(nextProvider) {
       // Keep the selected chain aligned with the selected provider.
@@ -2200,6 +2215,23 @@ const app = createApp({
       // 关闭文章发布弹窗并清理媒体状态。
       this.postModalOpen = false;
       this.postDraft = createEmptyPostDraft();
+    },
+    openSpaceMediaViewer(mediaUrl, mediaAlt = '') {
+      // Open a larger viewer for a space post image.
+      // 以更大视图打开空间文章图片。
+      if (!mediaUrl) {
+        return;
+      }
+      this.spaceMediaViewerUrl = mediaUrl;
+      this.spaceMediaViewerAlt = mediaAlt || '';
+      this.spaceMediaViewerOpen = true;
+    },
+    closeSpaceMediaViewer() {
+      // Close the space image viewer and clear its selection.
+      // 关闭空间图片查看器并清理当前选择。
+      this.spaceMediaViewerOpen = false;
+      this.spaceMediaViewerUrl = '';
+      this.spaceMediaViewerAlt = '';
     },
     clearPostMedia(target = 'create') {
       // Clear post media fields for create or edit state.
