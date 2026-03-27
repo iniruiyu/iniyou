@@ -154,6 +154,7 @@ ThemeData _buildAppTheme({
 
 enum AppView {
   dashboard,
+  services,
   space,
   privateSpace,
   publicSpace,
@@ -238,6 +239,10 @@ class _IniyouHomeState extends State<IniyouHome> {
   // Currently entered space.
   // 当前进入的空间。
   SpaceItem? _currentSpace;
+  // Optional microservice health flags.
+  // 可选微服务健康状态标记。
+  bool _spaceServiceOnline = true;
+  bool _messageServiceOnline = true;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -1727,8 +1732,49 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
   }
 
+  Future<void> _refreshServiceStatus() async {
+    // Probe optional services first so the shell can hide offline entries early.
+    // 先探测可选服务，让壳层尽早隐藏离线入口。
+    final results = await Future.wait([
+      _api.isSpaceServiceHealthy(),
+      _api.isMessageServiceHealthy(),
+    ]);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _spaceServiceOnline = results[0];
+      _messageServiceOnline = results[1];
+      if (!_spaceServiceOnline) {
+        _spaces = const [];
+        _spacePosts = const [];
+        _publicPosts = const [];
+        _privatePosts = const [];
+        _profilePosts = const [];
+        _profileSpaces = const [];
+        _currentPost = null;
+        _currentSpace = null;
+      }
+      if (!_messageServiceOnline) {
+        _conversations = const [];
+        _messages = const [];
+        _activeChat = null;
+        _chatAttachment = null;
+        _socketSubscription?.cancel();
+        _socketSubscription = null;
+        _channel?.sink.close();
+        _channel = null;
+      }
+    });
+  }
+
   Future<void> _refreshAll() async {
-    final dashboard = await AppActions.loadDashboard(_api);
+    await _refreshServiceStatus();
+    final dashboard = await AppActions.loadDashboard(
+      _api,
+      spaceServiceOnline: _spaceServiceOnline,
+      messageServiceOnline: _messageServiceOnline,
+    );
     _displayNameController.text = dashboard.user.displayName;
     _usernameController.text = dashboard.user.username;
     _domainController.text = dashboard.user.domain;
@@ -1891,6 +1937,10 @@ class _IniyouHomeState extends State<IniyouHome> {
   void _connectSocket() {
     _socketSubscription?.cancel();
     _channel?.sink.close();
+    if (!_messageServiceOnline) {
+      _channel = null;
+      return;
+    }
     final channel = SessionActions.connectSocket(_api);
     if (channel == null) {
       _channel = null;
@@ -1944,6 +1994,9 @@ class _IniyouHomeState extends State<IniyouHome> {
         _error = null;
         _flash = null;
       });
+      if (view == AppView.chat && _messageServiceOnline) {
+        _connectSocket();
+      }
     }
   }
 
@@ -2391,6 +2444,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         _api,
         userId: userId,
         ownProfile: _user != null && userId == _user!.id,
+        spaceServiceOnline: _spaceServiceOnline,
       );
       if (!mounted) {
         return;
@@ -2419,21 +2473,32 @@ class _IniyouHomeState extends State<IniyouHome> {
     Future<void> action() async {
       final profile = await _api.fetchUserProfileByUsername(username);
       final ownProfile = _user?.id == profile.id;
-      final results = await Future.wait([
-        _api.listUserSpaces(profile.id, visibility: 'public'),
-        _api.listUserPosts(
-          profile.id,
-          visibility: ownProfile ? 'all' : 'public',
-          limit: 50,
-        ),
-      ]);
+      List<SpaceItem> profileSpaces = <SpaceItem>[];
+      List<PostItem> profilePosts = <PostItem>[];
+      if (_spaceServiceOnline) {
+        try {
+          final results = await Future.wait([
+            _api.listUserSpaces(profile.id, visibility: 'public'),
+            _api.listUserPosts(
+              profile.id,
+              visibility: ownProfile ? 'all' : 'public',
+              limit: 50,
+            ),
+          ]);
+          profileSpaces = results[0] as List<SpaceItem>;
+          profilePosts = results[1] as List<PostItem>;
+        } catch (_) {
+          profileSpaces = <SpaceItem>[];
+          profilePosts = <PostItem>[];
+        }
+      }
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
-        _profileSpaces = results[0] as List<SpaceItem>;
-        _profilePosts = results[1] as List<PostItem>;
+        _profileSpaces = profileSpaces;
+        _profilePosts = profilePosts;
         _view = AppView.profile;
       });
     }
@@ -2451,21 +2516,32 @@ class _IniyouHomeState extends State<IniyouHome> {
     Future<void> action() async {
       final profile = await _api.fetchUserProfileByDomain(domain);
       final ownProfile = _user?.id == profile.id;
-      final results = await Future.wait([
-        _api.listUserSpaces(profile.id, visibility: 'public'),
-        _api.listUserPosts(
-          profile.id,
-          visibility: ownProfile ? 'all' : 'public',
-          limit: 50,
-        ),
-      ]);
+      List<SpaceItem> profileSpaces = <SpaceItem>[];
+      List<PostItem> profilePosts = <PostItem>[];
+      if (_spaceServiceOnline) {
+        try {
+          final results = await Future.wait([
+            _api.listUserSpaces(profile.id, visibility: 'public'),
+            _api.listUserPosts(
+              profile.id,
+              visibility: ownProfile ? 'all' : 'public',
+              limit: 50,
+            ),
+          ]);
+          profileSpaces = results[0] as List<SpaceItem>;
+          profilePosts = results[1] as List<PostItem>;
+        } catch (_) {
+          profileSpaces = <SpaceItem>[];
+          profilePosts = <PostItem>[];
+        }
+      }
       if (!mounted) {
         return;
       }
       setState(() {
         _profileUser = profile;
-        _profileSpaces = results[0] as List<SpaceItem>;
-        _profilePosts = results[1] as List<PostItem>;
+        _profileSpaces = profileSpaces;
+        _profilePosts = profilePosts;
         _view = AppView.profile;
       });
     }
@@ -2947,7 +3023,11 @@ class _IniyouHomeState extends State<IniyouHome> {
       pendingFriendCount: _pendingFriendCount,
       loading: _loading,
       selectedViewKey: sidebarViewKey(_view),
-      items: buildShellSidebarItems(_t),
+      items: buildShellSidebarItems(
+        _t,
+        spaceOnline: _spaceServiceOnline,
+        messageOnline: _messageServiceOnline,
+      ),
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
       onRefresh: () => _runBusy(_refreshAll),
       onLogout: _logout,
@@ -2966,22 +3046,30 @@ class _IniyouHomeState extends State<IniyouHome> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final items =
-        <
-          ({
-            AppView view,
-            String label,
-            IconData icon,
+          <
+            ({
+              AppView view,
+              String label,
+              IconData icon,
             IconData activeIcon,
             int badgeCount,
-          })
-        >[
+            })
+          >[
           (
-            view: AppView.space,
-            label: _t('sidebar.space'),
-            icon: Icons.dashboard_customize_outlined,
-            activeIcon: Icons.dashboard_customize,
+            view: AppView.services,
+            label: _t('sidebar.services'),
+            icon: Icons.api_outlined,
+            activeIcon: Icons.api,
             badgeCount: 0,
           ),
+          if (_spaceServiceOnline)
+            (
+              view: AppView.space,
+              label: _t('sidebar.space'),
+              icon: Icons.dashboard_customize_outlined,
+              activeIcon: Icons.dashboard_customize,
+              badgeCount: 0,
+            ),
           (
             view: AppView.friends,
             label: _t('sidebar.friends'),
@@ -2989,19 +3077,20 @@ class _IniyouHomeState extends State<IniyouHome> {
             activeIcon: Icons.diversity_3,
             badgeCount: _pendingFriendCount,
           ),
+          if (_messageServiceOnline)
+            (
+              view: AppView.chat,
+              label: _t('sidebar.chat'),
+              icon: Icons.forum_outlined,
+              activeIcon: Icons.forum,
+              badgeCount: _unreadMessageCount,
+            ),
           (
             view: AppView.profile,
             label: _t('sidebar.profile'),
             icon: Icons.account_circle_outlined,
             activeIcon: Icons.account_circle,
             badgeCount: 0,
-          ),
-          (
-            view: AppView.chat,
-            label: _t('sidebar.chat'),
-            icon: Icons.forum_outlined,
-            activeIcon: Icons.forum,
-            badgeCount: _unreadMessageCount,
           ),
         ];
     return PreferredSize(
@@ -3350,6 +3439,19 @@ class _IniyouHomeState extends State<IniyouHome> {
         publicPosts: dashboardPublicPosts,
         onOpenPublicSpace: () => _navigateTo(AppView.space),
         onOpenPostDetail: _openPostDetail,
+        languageCode: _languageCode,
+      ),
+      services: buildServicesView(
+        spaceOnline: _spaceServiceOnline,
+        messageOnline: _messageServiceOnline,
+        onOpenProfile: () {
+          _openProfile(_user!.id);
+        },
+        onOpenSpace: () => _navigateTo(AppView.space),
+        onOpenChat: () => _navigateTo(AppView.chat),
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
         languageCode: _languageCode,
       ),
       space: buildSpaceView(

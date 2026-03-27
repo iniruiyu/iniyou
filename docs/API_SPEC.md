@@ -53,6 +53,8 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 后续区块链账号绑定接口需要登录后发起
 - 登录态校验会在中间件层检查账号状态，非 `active` 账号即使持有有效 JWT 也会被拒绝 / The auth middleware also checks account status, so non-`active` accounts are rejected even with a valid JWT.
 - 聊天 WebSocket 入口在握手前也会做同样的 JWT + 账号状态校验 / The chat WebSocket entrypoint performs the same JWT + account-status check before upgrade.
+- 登录不依赖空间或消息服务在线状态，前端可以先完成账号服务登录，再按健康检查决定是否展示空间/消息入口 / Login does not depend on space or message service availability; the frontend can complete account-service sign-in first and then use health checks to decide whether to show space/message entry points.
+- `GET /api/v1/health` 由账号、空间、消息等服务公开，用于前端服务导航与启动刷新时探测在线状态 / `GET /api/v1/health` is exposed by the account, space, and message services for frontend service navigation and startup refresh availability checks.
 
 ## 5. 接口分组
 
@@ -120,11 +122,15 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 
 ### 5.5 预留未实现
 
-- `GET /api/v1/health`
 - 钱包、权益、通用会员资源接口
 - 评论编辑与删除接口
 - 文章取消点赞独立接口（当前为 `POST /posts/{id}/likes` 切换）
 - 用户管理类 `PATCH /users/{id}`、`GET /users/{id}`
+
+### 5.6 健康探针
+
+- `GET /api/v1/health`
+- 说明：账号、空间与消息服务均公开该探针，前端服务导航和登录后的服务状态刷新会用它判断入口是否可见 / The account, space, and message services all expose this public probe, and the frontend service navigator plus the post-login refresh flow use it to decide whether an entry should be visible.
 
 ## 6. 关键接口说明
 

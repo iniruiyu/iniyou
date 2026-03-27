@@ -62,6 +62,8 @@
 - 主导航中的“主页”入口必须始终进入当前登录用户自己的主页，查看他人主页需要走独立入口或弹层 / The main-nav "Profile" entry must always open the current logged-in user's own profile; other users' profiles must use a separate entry or modal.
 - 账号主页和用户主页已合并为个人主页，个人主页顶部只保留一个汇总摘要区，工作台统计不再单独作为一页 / The account home and user profile are merged into a single personal home; its top area keeps one summary block, and the old workspace stats are no longer exposed as a separate page.
 - 好友主页入口应优先使用弹层预览，完整个人主页仅在弹层内进一步打开 / Friend profile entry points should prefer a modal preview, and the full profile page should only open from inside that modal.
+- 登录主链路只依赖账号服务，空间服务与消息服务作为可选微服务，离线时只隐藏对应入口，不阻断登录 / The main login path depends only on the account service; space and message are optional microservices that hide their entry points when offline without blocking login.
+- 服务导航需要按微服务在线状态动态展示模块卡片，并保留独立跳转入口 / Service navigation must dynamically show module cards based on microservice health and keep independent entry points.
 
 细化功能：
 

@@ -38,7 +38,11 @@
           <span class="nav-icon">HD</span>
           <span class="nav-label">{{ t('nav.collapse') }}</span>
         </button>
-        <button class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
+        <button class="nav-item" data-icon="SV" :class="{active: view === 'services'}" :disabled="!isLoggedIn" @click="view = 'services'">
+          <span class="nav-icon">SV</span>
+          <span class="nav-label">{{ t('nav.services') }}</span>
+        </button>
+        <button v-if="isServiceOnline('space')" class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
           <span class="nav-icon">SP</span>
           <span class="nav-label">{{ t('nav.space') }}</span>
         </button>
@@ -49,7 +53,7 @@
           </span>
           <span class="nav-label">{{ t('nav.friends') }}</span>
         </button>
-        <button class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
+        <button v-if="isServiceOnline('message')" class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
           <span class="nav-icon-shell">
             <span class="nav-icon">CH</span>
             <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
@@ -96,7 +100,11 @@
         </button>
         <nav class="topnav-strip" aria-label="Primary navigation">
           <!-- Keep the current nav state when entering the space workspace from the compact top nav / 从折叠顶层导航进入空间工作台时保持当前导航状态。 -->
-          <button class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
+          <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services'}" :disabled="!isLoggedIn" @click="view = 'services'">
+            <span class="nav-icon">SV</span>
+            <span class="nav-label">{{ t('nav.services') }}</span>
+          </button>
+          <button v-if="isServiceOnline('space')" class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
             <span class="nav-icon">SP</span>
             <span class="nav-label">{{ t('nav.space') }}</span>
           </button>
@@ -107,7 +115,7 @@
             </span>
             <span class="nav-label">{{ t('nav.friends') }}</span>
           </button>
-          <button class="nav-item topnav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
+          <button v-if="isServiceOnline('message')" class="nav-item topnav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
             <span class="nav-icon-shell">
               <span class="nav-icon">CH</span>
               <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
@@ -194,6 +202,49 @@
           <button v-if="unreadCount > 0" class="primary compact" type="button" @click="view = 'chat'">{{ t('nav.chat') }}</button>
         </div>
       </div>
+
+      <!-- Service navigation / 服务导航：按微服务在线状态展示独立入口，离线模块不会渲染。 -->
+      <section v-if="view === 'services'" class="panel services-page">
+        <div class="space-page-hero services-page-hero">
+          <div>
+            <div class="space-shell-kicker">{{ t('nav.services') }}</div>
+            <div class="space-page-title">{{ t('services.title') }}</div>
+            <div class="space-page-sub">{{ t('services.sub') }}</div>
+          </div>
+          <bilingual-action-button
+            variant="tonal"
+            compact
+            type="button"
+            :primary-label="t('services.refresh')"
+            :secondary-label="peerLocaleText('services.refresh')"
+            @click="refreshServiceStatus"
+          ></bilingual-action-button>
+        </div>
+        <div class="services-grid">
+          <article v-for="service in visibleServiceSections" :key="service.key" class="service-card">
+            <div class="service-card-head">
+              <div>
+                <div class="service-card-title">{{ service.title }}</div>
+                <div class="service-card-sub">{{ service.sub }}</div>
+              </div>
+              <div class="service-status-badge">{{ t('services.online') }}</div>
+            </div>
+            <div class="service-chip-list">
+              <span v-for="module in service.modules" :key="`${service.key}-${module}`" class="service-chip">{{ module }}</span>
+            </div>
+            <div class="service-card-actions">
+              <bilingual-action-button
+                variant="filled"
+                compact
+                type="button"
+                :primary-label="t('services.open')"
+                :secondary-label="peerLocaleText('services.open')"
+                @click="openServiceSection(service.actionKey)"
+              ></bilingual-action-button>
+            </div>
+          </article>
+        </div>
+      </section>
 
       <div v-if="identityEditorOpen" class="modal-backdrop modal-backdrop--sheet" @click.self="closeIdentityEditor">
         <div class="modal modal--sheet profile-editor-modal">

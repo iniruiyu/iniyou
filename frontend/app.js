@@ -328,6 +328,12 @@ const app = createApp({
       // Message service API base URL.
       // 通讯服务接口基础地址。
       messageApiBase: 'http://localhost:8081/api/v1',
+      // Online state for optional microservice entry points.
+      // 可选微服务入口的在线状态。
+      serviceStatus: {
+        space: true,
+        message: true,
+      },
       // Visible auth mode on the guest landing page.
       // 未登录首页当前显示的认证模式。
       authMode: 'login',
@@ -430,6 +436,20 @@ const app = createApp({
             menu: '设置',
             customize: '界面与语言',
             progressLabel: '滚动进度',
+          },
+          services: {
+            title: '服务导航',
+            sub: '只展示当前在线的微服务入口，离线服务会自动隐藏。',
+            accountTitle: '账号微服务',
+            accountSub: '登录、资料、会员与链上扩展。',
+            spaceTitle: '空间微服务',
+            spaceSub: '空间、帖子、媒体与上下文。',
+            messageTitle: '消息微服务',
+            messageSub: '聊天、会话与实时提醒。',
+            online: '在线',
+            offline: '离线',
+            open: '进入',
+            refresh: '刷新状态',
           },
           profile: {
             identity: {
@@ -538,6 +558,7 @@ const app = createApp({
             dashboard: '账号主页',
             space: '空间',
             profile: '个人主页',
+            services: '服务导航',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -556,6 +577,7 @@ const app = createApp({
             private: '空间',
             public: '空间',
             profile: '个人主页',
+            services: '服务导航',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -569,6 +591,7 @@ const app = createApp({
             private: '查看可见空间并发布内容',
             public: '浏览可见空间与内容',
             profile: '查看个人资料、会员等级与公开空间入口',
+            services: '在线微服务会显示在这里，离线模块会自动隐藏。',
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
             blockchain: '管理外部区块链账号绑定',
@@ -870,6 +893,20 @@ const app = createApp({
             customize: 'Language & interface',
             progressLabel: 'Scroll progress',
           },
+          services: {
+            title: 'Service Navigation',
+            sub: 'Only the online microservice entry points are shown; offline services are hidden automatically.',
+            accountTitle: 'Account microservice',
+            accountSub: 'Sign in, profile, membership, and chain extensions.',
+            spaceTitle: 'Space microservice',
+            spaceSub: 'Spaces, posts, media, and context.',
+            messageTitle: 'Message microservice',
+            messageSub: 'Chat, conversations, and live alerts.',
+            online: 'Online',
+            offline: 'Offline',
+            open: 'Enter',
+            refresh: 'Refresh status',
+          },
           profile: {
             identity: {
               title: 'Identity Card',
@@ -979,6 +1016,7 @@ const app = createApp({
             private: 'Space',
             public: 'Space',
             profile: 'Personal Home',
+            services: 'Services',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain',
@@ -997,6 +1035,7 @@ const app = createApp({
             private: 'Space',
             public: 'Space',
             profile: 'Personal Home',
+            services: 'Service Navigation',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain Accounts',
@@ -1010,6 +1049,7 @@ const app = createApp({
             private: 'Browse visible spaces and publish content',
             public: 'Browse visible spaces and content',
             profile: 'View your profile, membership, and public space entrances.',
+            services: 'Only online microservice entry points are shown here; offline modules hide automatically.',
             postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
             blockchain: 'Manage external blockchain account bindings',
@@ -1784,6 +1824,56 @@ const app = createApp({
     visibleProfileSpaces() {
       return Array.isArray(this.profileSpaces) ? this.profileSpaces : [];
     },
+    serviceSections() {
+      // Build the service directory cards from the current service flags.
+      // 根据当前服务状态生成服务目录卡片。
+      return [
+        {
+          key: 'account',
+          online: true,
+          title: this.t('services.accountTitle'),
+          sub: this.t('services.accountSub'),
+          actionKey: 'profile',
+          modules: [
+            this.t('profile.identity.personalTitle'),
+            this.t('profile.identity.contactTitle'),
+            this.t('profile.identity.privacyTitle'),
+            this.t('profile.membership.title'),
+            this.t('profile.blockchain.title'),
+          ],
+        },
+        {
+          key: 'space',
+          online: this.isServiceOnline('space'),
+          title: this.t('services.spaceTitle'),
+          sub: this.t('services.spaceSub'),
+          actionKey: 'space',
+          modules: [
+            this.t('spaces.workspaceTitle'),
+            this.t('spaces.ownedTab'),
+            this.t('spaces.createTab'),
+            this.t('posts.publishAction'),
+            this.t('posts.openDetail'),
+          ],
+        },
+        {
+          key: 'message',
+          online: this.isServiceOnline('message'),
+          title: this.t('services.messageTitle'),
+          sub: this.t('services.messageSub'),
+          actionKey: 'chat',
+          modules: [
+            this.t('nav.friends'),
+            this.t('nav.chat'),
+            this.t('ws.unreadLabel'),
+            this.t('chat.title'),
+          ],
+        },
+      ];
+    },
+    visibleServiceSections() {
+      return this.serviceSections().filter((section) => section.online);
+    },
     privateSpaces() {
       // Keep the legacy helper aligned with the owned-space-only model.
       // 让旧的辅助方法与“只看自己创建的空间”模型保持一致。
@@ -1823,6 +1913,145 @@ const app = createApp({
     },
   },
   methods: {
+    isServiceOnline(serviceKey) {
+      // Treat the account service as always available after login and only gate optional services.
+      // 账号服务在登录后视为可用，只对可选微服务做在线判断。
+      if (serviceKey === 'account') {
+        return true;
+      }
+      return this.serviceStatus[serviceKey] !== false;
+    },
+    setServiceStatus(serviceKey, online) {
+      // Store optional service availability in a reactive object update.
+      // 通过响应式对象更新记录可选微服务的可用状态。
+      if (serviceKey === 'account') {
+        return;
+      }
+      if (this.serviceStatus[serviceKey] === online) {
+        return;
+      }
+      this.serviceStatus = {
+        ...this.serviceStatus,
+        [serviceKey]: online,
+      };
+    },
+    async checkServiceOnline(baseUrl) {
+      // Probe a microservice health endpoint without blocking the whole login flow.
+      // 探测微服务健康接口，但不阻塞整条登录链路。
+      try {
+        const res = await fetch(`${baseUrl}/health`, { cache: 'no-store' });
+        return res.ok;
+      } catch (_error) {
+        return false;
+      }
+    },
+    async refreshServiceStatus() {
+      // Refresh the optional microservice flags so navigation can hide offline entries.
+      // 刷新可选微服务状态，方便导航隐藏离线入口。
+      const [spaceOnline, messageOnline] = await Promise.all([
+        this.checkServiceOnline(this.spaceApiBase),
+        this.checkServiceOnline(this.messageApiBase),
+      ]);
+      this.setServiceStatus('space', spaceOnline);
+      this.setServiceStatus('message', messageOnline);
+      if (!spaceOnline) {
+        this.spaces = [];
+        this.posts = [];
+        this.privatePosts = [];
+        this.spacePosts = [];
+        this.profileSpaces = [];
+        this.profilePosts = [];
+        this.currentPost = null;
+        this.currentSpace = null;
+        if (
+          this.view === 'space' ||
+          this.view === 'public' ||
+          this.view === 'private' ||
+          this.view === 'postDetail'
+        ) {
+          this.view = 'services';
+        }
+      }
+      if (!messageOnline) {
+        this.chatSummaries = [];
+        this.chatMessages = [];
+        this.unreadCount = 0;
+        this.activeChat = null;
+        this.chatFriendProfile = null;
+        if (this.view === 'chat') {
+          this.view = 'services';
+        }
+      }
+    },
+    async refreshAuthenticatedWorkspace() {
+      // Load every logged-in section, but keep optional services isolated from each other.
+      // 加载所有登录态分区，并让可选微服务彼此独立。
+      await this.refreshServiceStatus();
+      const tasks = [
+        this.loadExternalAccounts(),
+        this.loadFriends(),
+      ];
+      if (this.isServiceOnline('space')) {
+        tasks.push(this.loadSpaces(), this.loadPosts(), this.loadPrivatePosts());
+      }
+      if (this.isServiceOnline('message')) {
+        tasks.push(this.loadConversationSummaries());
+      }
+      await Promise.allSettled(tasks);
+      if (this.isServiceOnline('message')) {
+        if (this.activeChat) {
+          await this.loadConversation(this.activeChat.id);
+        } else {
+          await this.loadUnread();
+        }
+      }
+    },
+    async openServiceSection(serviceKey) {
+      // Jump from the service directory into the corresponding live section.
+      // 从服务目录跳转到对应的在线分区。
+      if (serviceKey === 'profile') {
+        await this.openMyProfile();
+        return;
+      }
+      if (serviceKey === 'space') {
+        if (this.isServiceOnline('space')) {
+          await Promise.allSettled([
+            this.loadSpaces(),
+            this.loadPosts(),
+            this.loadPrivatePosts(),
+          ]);
+        }
+        this.enterSpaceShell();
+        return;
+      }
+      if (serviceKey === 'friends') {
+        await this.loadFriends();
+        this.view = 'friends';
+        return;
+      }
+      if (serviceKey === 'chat') {
+        if (this.isServiceOnline('message')) {
+          await Promise.allSettled([
+            this.loadFriends(),
+            this.loadConversationSummaries(),
+          ]);
+          if (this.activeChat) {
+            await this.loadConversation(this.activeChat.id);
+          } else {
+            await this.loadUnread();
+          }
+        }
+        this.view = 'chat';
+        return;
+      }
+      if (serviceKey === 'levels') {
+        this.view = 'levels';
+        return;
+      }
+      if (serviceKey === 'blockchain') {
+        this.view = 'blockchain';
+      }
+    },
     async readApiPayload(response) {
       // Read one API response and unwrap the envelope.
       // 读取单个 API 响应并解包响应包装。
@@ -4153,19 +4382,7 @@ const app = createApp({
         if (!this.token) {
           return;
         }
-        await Promise.all([
-          this.loadSpaces(),
-          this.loadExternalAccounts(),
-          this.loadPosts(),
-          this.loadPrivatePosts(),
-          this.loadFriends(),
-          this.loadConversationSummaries(),
-        ]);
-        if (this.activeChat) {
-          await this.loadConversation(this.activeChat.id);
-        } else {
-          await this.loadUnread();
-        }
+        await this.refreshAuthenticatedWorkspace();
         const routedToProfile = await this.applyHostRouteFromHost();
         if (!routedToProfile) {
           await this.openMyProfile();
@@ -4201,19 +4418,7 @@ const app = createApp({
         if (!this.token) {
           return;
         }
-        await Promise.all([
-          this.loadSpaces(),
-          this.loadExternalAccounts(),
-          this.loadPosts(),
-          this.loadPrivatePosts(),
-          this.loadFriends(),
-          this.loadConversationSummaries(),
-        ]);
-        if (this.activeChat) {
-          await this.loadConversation(this.activeChat.id);
-        } else {
-          await this.loadUnread();
-        }
+        await this.refreshAuthenticatedWorkspace();
         const routedToProfile = await this.applyHostRouteFromHost();
         if (!routedToProfile) {
           await this.openMyProfile();
@@ -4450,10 +4655,16 @@ const app = createApp({
         this.profileSpaces = [];
         return;
       }
-      const encoded = encodeURIComponent(String(userID).trim());
-      const res = await fetch(`${this.spaceApiBase}/users/${encoded}/spaces?visibility=public`, {
-        headers: { Authorization: `Bearer ${this.token}` },
-      });
+      let res;
+      try {
+        const encoded = encodeURIComponent(String(userID).trim());
+        res = await fetch(`${this.spaceApiBase}/users/${encoded}/spaces?visibility=public`, {
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+      } catch (_error) {
+        this.profileSpaces = [];
+        return;
+      }
       if (!res.ok) {
         this.profileSpaces = [];
         return;
@@ -5639,19 +5850,7 @@ const app = createApp({
         if (!this.token) {
           return;
         }
-        await Promise.all([
-          this.loadSpaces(),
-          this.loadExternalAccounts(),
-          this.loadPosts(),
-          this.loadPrivatePosts(),
-          this.loadFriends(),
-          this.loadConversationSummaries(),
-        ]);
-        if (this.activeChat) {
-          await this.loadConversation(this.activeChat.id);
-        } else {
-          await this.loadUnread();
-        }
+        await this.refreshAuthenticatedWorkspace();
         const routedToProfile = await this.applyHostRouteFromHost();
         if (!routedToProfile) {
           await this.openMyProfile();

@@ -20,31 +20,43 @@ class ShellSidebarItem {
   final IconData activeIcon;
 }
 
-List<ShellSidebarItem> buildShellSidebarItems(String Function(String key) t) {
+List<ShellSidebarItem> buildShellSidebarItems(
+  String Function(String key) t, {
+  required bool spaceOnline,
+  required bool messageOnline,
+}) {
   return [
     ShellSidebarItem(
-      viewKey: 'space',
-      label: t('sidebar.space'),
-      icon: Icons.dashboard_customize_outlined,
-      activeIcon: Icons.dashboard_customize,
+      viewKey: 'services',
+      label: t('sidebar.services'),
+      icon: Icons.api_outlined,
+      activeIcon: Icons.api,
     ),
+    if (spaceOnline)
+      ShellSidebarItem(
+        viewKey: 'space',
+        label: t('sidebar.space'),
+        icon: Icons.dashboard_customize_outlined,
+        activeIcon: Icons.dashboard_customize,
+      ),
     ShellSidebarItem(
       viewKey: 'friends',
       label: t('sidebar.friends'),
       icon: Icons.diversity_3_outlined,
       activeIcon: Icons.diversity_3,
     ),
+    if (messageOnline)
+      ShellSidebarItem(
+        viewKey: 'chat',
+        label: t('sidebar.chat'),
+        icon: Icons.forum_outlined,
+        activeIcon: Icons.forum,
+      ),
     ShellSidebarItem(
       viewKey: 'profile',
       label: t('sidebar.profile'),
       icon: Icons.account_circle_outlined,
       activeIcon: Icons.account_circle,
-    ),
-    ShellSidebarItem(
-      viewKey: 'chat',
-      label: t('sidebar.chat'),
-      icon: Icons.forum_outlined,
-      activeIcon: Icons.forum,
     ),
   ];
 }

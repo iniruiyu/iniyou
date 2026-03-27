@@ -60,6 +60,7 @@
 - 优先选择纯 Go 驱动和纯 Go 工具链，降低构建、部署和跨平台成本
 - 应保持 handler、service、repository、model 的职责清晰
 - 账号域与空间域必须拆分为独立服务：`account-service` 负责身份、登录、资料与可见范围，`space-service` 负责空间、文章、评论、点赞与转发
+- 登录主链路只依赖 `account-service`；`space-service` 与 `message-service` 作为可独立上下线的可选微服务，前端应通过 `GET /api/v1/health` 决定是否展示对应服务导航入口 / The login path depends only on `account-service`; `space-service` and `message-service` are optional microservices that can be brought online or offline independently, and the frontend should use `GET /api/v1/health` to decide whether to show their service navigation entries.
 
 ## 6. 前端架构边界
 

@@ -57,6 +57,14 @@ func main() {
 	// Public routes.
 	// 公共路由。
 	api := r.Group("/api/v1")
+	// Health endpoint stays public so frontends can probe service availability without auth.
+	// 健康检查接口保持公开，方便前端在未鉴权时探测服务是否可用。
+	api.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"service": cfg.ServiceName,
+			"status":  "ok",
+		})
+	})
 	api.POST("/register", h.Register)
 	api.POST("/login", h.Login)
 	api.POST("/logout", h.Logout)

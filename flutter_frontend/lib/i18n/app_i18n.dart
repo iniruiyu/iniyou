@@ -117,6 +117,7 @@ class AppI18n {
       'sidebar.blockchain': '区块链',
       'sidebar.friends': '好友',
       'sidebar.chat': '聊天',
+      'sidebar.services': '服务导航',
       'sidebar.level': '等级',
       'sidebar.plan': '计划',
       'sidebar.unread': '未读会话',
@@ -151,6 +152,7 @@ class AppI18n {
       'page.blockchain': '区块链接入',
       'page.friends': '好友关系',
       'page.chat': '实时聊天',
+      'page.services': '服务导航',
       'subtitle.dashboard': '汇总账号、空间、好友与实时互动状态。',
       'subtitle.space': '管理可见空间与已发布内容。',
       'subtitle.profile': '查看个人资料、会员等级与公开空间入口。',
@@ -159,6 +161,7 @@ class AppI18n {
       'subtitle.blockchain': '绑定链上账号并查看已连接链摘要。',
       'subtitle.friends': '搜索用户、发起好友请求并处理待接受关系。',
       'subtitle.chat': '查看会话摘要并发送实时消息。',
+      'subtitle.services': '只显示当前在线的微服务入口，离线模块会自动隐藏。',
     },
     'en-US': {
       'settings.title': 'Settings',
@@ -262,6 +265,7 @@ class AppI18n {
       'sidebar.blockchain': 'Blockchain',
       'sidebar.friends': 'Friends',
       'sidebar.chat': 'Chat',
+      'sidebar.services': 'Services',
       'sidebar.level': 'Level',
       'sidebar.plan': 'Plan',
       'sidebar.unread': 'Unread Chats',
@@ -297,6 +301,7 @@ class AppI18n {
       'page.blockchain': 'Blockchain Access',
       'page.friends': 'Friend Relations',
       'page.chat': 'Live Chat',
+      'page.services': 'Service Navigation',
       'subtitle.dashboard':
           'Overview of account, spaces, friends, and live interactions.',
       'subtitle.space': 'Manage visible spaces and published content together.',
@@ -312,6 +317,8 @@ class AppI18n {
           'Search users, send requests, and handle pending relations.',
       'subtitle.chat':
           'See conversation summaries and send real-time messages.',
+      'subtitle.services':
+          'Only online microservice entry points are shown here; offline modules hide automatically.',
     },
     'zh-TW': {
       'settings.title': '設定',
@@ -403,6 +410,7 @@ class AppI18n {
       'sidebar.blockchain': '區塊鏈',
       'sidebar.friends': '好友',
       'sidebar.chat': '聊天',
+      'sidebar.services': '服務導航',
       'sidebar.level': '等級',
       'sidebar.plan': '方案',
       'sidebar.unread': '未讀會話',
@@ -437,6 +445,7 @@ class AppI18n {
       'page.blockchain': '區塊鏈接入',
       'page.friends': '好友關係',
       'page.chat': '即時聊天',
+      'page.services': '服務導航',
       'subtitle.dashboard': '彙總帳號、空間、好友與即時互動狀態。',
       'subtitle.space': '管理可見空間與已發布內容。',
       'subtitle.profile': '查看個人資料、會員等級與公開空間入口。',
@@ -445,6 +454,7 @@ class AppI18n {
       'subtitle.blockchain': '綁定鏈上帳號並查看已連接鏈摘要。',
       'subtitle.friends': '搜尋用戶、發起好友請求並處理待接受關係。',
       'subtitle.chat': '查看會話摘要並發送即時訊息。',
+      'subtitle.services': '只顯示目前在線的微服務入口，離線模組會自動隱藏。',
     },
   };
 }

@@ -181,8 +181,8 @@
 
 ## 7.4 当前实现映射
 
-- `frontend/` 当前覆盖：认证、内容流、好友、聊天、订阅、外部账号、多语言能力、空间进入与空间创建弹窗、个人主页单入口与公开空间入口
-- `flutter_frontend/` 当前覆盖：未登录落地页、个人主页、统一空间页、文章详情、好友、聊天、等级、订阅、外部账号、身份卡编辑、空间上下文与弹窗创建入口，工作台摘要已并入个人主页顶部
+- `frontend/` 当前覆盖：认证、内容流、好友、聊天、订阅、外部账号、多语言能力、空间进入与空间创建弹窗、个人主页单入口与公开空间入口，以及按健康状态显示的服务导航页
+- `flutter_frontend/` 当前覆盖：未登录落地页、个人主页、统一空间页、文章详情、好友、聊天、等级、订阅、外部账号、身份卡编辑、空间上下文与弹窗创建入口、服务导航页，工作台摘要已并入个人主页顶部
 - 若某页面只在 Legacy Web 存在而 Flutter 尚未补齐，必须保证导航层级不变，并在页面内提示能力差异
 - 当前聊天页的优化目标包含：媒体附件发送、未读角标、新好友浮动提醒、全屏占满布局、消息滚动与表情/贴纸快捷入口
 
@@ -344,6 +344,7 @@
 - 2026-03-27：精简聊天里的查看资料弹窗，去掉好友空间的说明句，只保留公开空间标题、卡片和进入入口 / Simplified the chat friend-profile modal by removing the friend-space explanatory copy and keeping only the public-space title, cards, and entry buttons.
 - 2026-03-27：继续收紧 Web 与 Flutter 个人主页中的会员等级、公开空间与好友预览说明句，只保留标题和入口动作 / Further tightened the membership-level, public-space, and friend-preview copy in both Web and Flutter profile views so only titles and entry actions remain.
 - 2026-03-27：具体空间页改回保留主导航与折叠顶栏，不再切换成独立紧凑壳层 / Specific space pages now keep the main navigation and collapsed top bar instead of switching into a separate compact shell.
+- 2026-03-27：新增双前端服务导航页，按 account/space/message 微服务健康状态动态展示入口，登录主链路不再被空间/消息离线阻断 / Added a dual-frontend service navigation page that dynamically shows account/space/message entries by microservice health, so login is no longer blocked by offline space/message services.
 - 2026-03-20：完成双前端空间工作台折叠为顶部按钮，并收紧 Vue 空间内容流说明文案 / Completed the dual-frontend workspace collapse into a top button and tightened the Vue space-feed copy.
 - 2026-03-20：继续修复 Vue 个人主页订阅切换异常，并把 Vue 账号主页/用户主页与 Flutter 工作台摘要统一并入个人主页，确保主导航主页只进入自己的主页 / Continued fixing the Vue personal-home subscription switch error and merged the Vue account home/user profile plus Flutter workspace summary into the personal home, keeping the main-nav home entry pinned to the current user's own profile.
 - 2026-03-20：继续收紧空间页文案，移除内容流与当前空间设置说明，并在文章图片缩放提示中明确 1600px 上限 / Further tightened the space-page copy, removing feed/current-space-settings text and making the 1600px image cap explicit in article scaling hints.

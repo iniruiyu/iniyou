@@ -41,6 +41,21 @@ class ApiClient {
     );
   }
 
+  Future<bool> serviceHealthy(String baseUrl) async {
+    // Probe a service health endpoint without forcing the caller to handle exceptions.
+    // 探测服务健康接口，让调用方无需显式处理异常。
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/health'));
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> isSpaceServiceHealthy() => serviceHealthy(spaceBase);
+
+  Future<bool> isMessageServiceHealthy() => serviceHealthy(messageBase);
+
   Future<AuthToken> login(String account, String password) async {
     final json = await _post(accountBase, '/login', {
       'account': account,

@@ -40,6 +40,7 @@
 - 双前端好友列表、好友搜索结果与会话侧栏的摘要字段也已统一为公开身份信息，不再把联系方式当作卡片主展示内容 / Both frontends' friend lists, friend search results, and chat-side summaries were also unified around public identity fields instead of showing contact details as the main card content.
 - Flutter 好友预览弹层与聊天侧栏最近会话/好友列表已统一为卡片化摘要布局，减少不同入口之间的视觉断层 / Flutter friend preview modals and chat sidebar recent-conversation/friend lists were unified into card-based summary layouts to reduce visual drift between entry points.
 - 2026-03-27：具体空间页改回保留主导航与折叠顶栏，不再切换成独立紧凑壳层 / Specific space pages now keep the main navigation and collapsed top bar instead of switching into a separate compact shell.
+- 2026-03-27：把登录链路与空间/消息可选微服务解耦，新增服务导航页并按健康状态隐藏离线模块 / Decoupled the login path from optional space/message microservices, added a service navigation page, and hid offline modules based on health status.
 - 2026-03-27：补回 Vue 空间壳层根节点与主容器 class 绑定，让具体空间页真正进入固定视口滚动态，修复鼠标滚轮无法滚动的问题 / Restored the Vue space-shell root and main class bindings so specific space pages actually enter a fixed viewport scroll state, fixing the mouse-wheel scrolling failure.
 - 2026-03-27：精简聊天里的查看资料弹窗，去掉好友空间的说明句，只保留公开空间标题、卡片和进入入口 / Simplified the chat friend-profile modal by removing the friend-space explanatory copy and keeping only the public-space title, cards, and entry buttons.
 - 2026-03-27：继续收紧 Web 与 Flutter 个人主页中的会员等级、公开空间与好友预览说明句，只保留标题和入口动作 / Further tightened the membership-level, public-space, and friend-preview copy in both Web and Flutter profile views so only titles and entry actions remain.

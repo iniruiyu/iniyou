@@ -1344,6 +1344,31 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
+.services-page {
+  width: 100%;
+  flex: 1 1 0%;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 231, 255, 0.58) rgba(255, 255, 255, 0.04);
+  scrollbar-gutter: stable;
+  background:
+    radial-gradient(circle at top left, rgba(110, 231, 255, 0.08), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255, 184, 107, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(14, 21, 30, 0.98), rgba(8, 12, 18, 0.98));
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
 .space-page-hero {
   display: flex;
   align-items: flex-start;
@@ -1353,6 +1378,79 @@ body {
   border-radius: 22px;
   border: 1px solid rgba(110, 231, 255, 0.12);
   background: linear-gradient(135deg, rgba(18, 26, 37, 0.95), rgba(11, 16, 24, 0.9));
+}
+
+.services-page-hero {
+  margin-bottom: 18px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  padding-bottom: 18px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(110, 231, 255, 0.12);
+  background: linear-gradient(180deg, rgba(20, 28, 40, 0.92), rgba(12, 17, 25, 0.96));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
+}
+
+.service-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.service-card-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.service-card-sub {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.service-status-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(110, 231, 255, 0.12);
+  border: 1px solid rgba(110, 231, 255, 0.22);
+}
+
+.service-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.service-chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.service-card-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .space-topbar {

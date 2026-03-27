@@ -80,25 +80,39 @@ class SpaceCreateBundle {
 class AppActions {
   const AppActions._();
 
-  static Future<DashboardBundle> loadDashboard(ApiClient api) async {
+  static Future<List<T>> _safeList<T>(Future<List<T>> future) async {
+    // Convert optional service failures into empty lists instead of hard errors.
+    // 将可选微服务失败转换为空列表，而不是直接抛错。
+    try {
+      return await future;
+    } catch (_) {
+      return <T>[];
+    }
+  }
+
+  static Future<DashboardBundle> loadDashboard(
+    ApiClient api, {
+    bool spaceServiceOnline = true,
+    bool messageServiceOnline = true,
+  }) async {
     final user = await api.fetchMe();
-    final results = await Future.wait([
-      api.listSpaces(),
-      api.listPosts(visibility: 'public', limit: 50),
-      api.listPosts(visibility: 'private', limit: 50),
-      api.listFriends(),
-      api.listConversations(),
-      api.listExternalAccounts(),
-    ]);
 
     return DashboardBundle(
       user: user,
-      spaces: results[0] as List<SpaceItem>,
-      publicPosts: results[1] as List<PostItem>,
-      privatePosts: results[2] as List<PostItem>,
-      friends: results[3] as List<FriendItem>,
-      conversations: results[4] as List<ConversationItem>,
-      externalAccounts: results[5] as List<ExternalAccountItem>,
+      spaces: spaceServiceOnline
+          ? await _safeList(api.listSpaces())
+          : <SpaceItem>[],
+      publicPosts: spaceServiceOnline
+          ? await _safeList(api.listPosts(visibility: 'public', limit: 50))
+          : <PostItem>[],
+      privatePosts: spaceServiceOnline
+          ? await _safeList(api.listPosts(visibility: 'private', limit: 50))
+          : <PostItem>[],
+      friends: await _safeList(api.listFriends()),
+      conversations: messageServiceOnline
+          ? await _safeList(api.listConversations())
+          : <ConversationItem>[],
+      externalAccounts: await _safeList(api.listExternalAccounts()),
     );
   }
 
@@ -106,23 +120,26 @@ class AppActions {
     ApiClient api, {
     required String userId,
     required bool ownProfile,
+    bool spaceServiceOnline = true,
   }) async {
-    final results = await Future.wait([
-      api.fetchUserProfile(userId),
-      // Profile pages only surface public spaces, even on the owner's page.
-      // 个人主页只展示公开空间，即使是自己的主页也保持一致。
-      api.listUserSpaces(userId, visibility: 'public'),
-      api.listUserPosts(
-        userId,
-        visibility: ownProfile ? 'all' : 'public',
-        limit: 50,
-      ),
-    ]);
-
     return ProfileBundle(
-      profileUser: results[0] as UserProfileItem,
-      spaces: results[1] as List<SpaceItem>,
-      posts: results[2] as List<PostItem>,
+      profileUser: await api.fetchUserProfile(userId),
+      spaces: spaceServiceOnline
+          ? await _safeList(
+              // Profile pages only surface public spaces, even on the owner's page.
+              // 个人主页只展示公开空间，即使是自己的主页也保持一致。
+              api.listUserSpaces(userId, visibility: 'public'),
+            )
+          : <SpaceItem>[],
+      posts: spaceServiceOnline
+          ? await _safeList(
+              api.listUserPosts(
+                userId,
+                visibility: ownProfile ? 'all' : 'public',
+                limit: 50,
+              ),
+            )
+          : <PostItem>[],
     );
   }
 
@@ -188,13 +205,9 @@ class AppActions {
     required String query,
   }) async {
     await api.addFriend(friendId);
-    final results = await Future.wait([
-      api.listFriends(),
-      api.searchUsers(query),
-    ]);
     return FriendSearchBundle(
-      friends: results[0] as List<FriendItem>,
-      searchResults: results[1] as List<UserSearchItem>,
+      friends: await _safeList(api.listFriends()),
+      searchResults: await _safeList(api.searchUsers(query)),
     );
   }
 
@@ -203,13 +216,9 @@ class AppActions {
     String friendId,
   ) async {
     await api.acceptFriend(friendId);
-    final results = await Future.wait([
-      api.listFriends(),
-      api.listConversations(),
-    ]);
     return FriendsBundle(
-      friends: results[0] as List<FriendItem>,
-      conversations: results[1] as List<ConversationItem>,
+      friends: await _safeList(api.listFriends()),
+      conversations: await _safeList(api.listConversations()),
     );
   }
 
@@ -239,13 +248,9 @@ class AppActions {
       mediaData: mediaData,
       expiresInMinutes: expiresInMinutes,
     );
-    final results = await Future.wait([
-      api.listMessages(peerId),
-      api.listConversations(),
-    ]);
     return ChatBundle(
-      messages: results[0] as List<ChatMessage>,
-      conversations: results[1] as List<ConversationItem>,
+      messages: await _safeList(api.listMessages(peerId)),
+      conversations: await _safeList(api.listConversations()),
     );
   }
 

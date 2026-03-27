@@ -47,6 +47,26 @@ Widget buildDashboardView({
   );
 }
 
+Widget buildServicesView({
+  required bool spaceOnline,
+  required bool messageOnline,
+  required VoidCallback onOpenProfile,
+  required VoidCallback onOpenSpace,
+  required VoidCallback onOpenChat,
+  required VoidCallback onRefresh,
+  required String languageCode,
+}) {
+  return ServicesView(
+    spaceOnline: spaceOnline,
+    messageOnline: messageOnline,
+    onOpenProfile: onOpenProfile,
+    onOpenSpace: onOpenSpace,
+    onOpenChat: onOpenChat,
+    onRefresh: onRefresh,
+    languageCode: languageCode,
+  );
+}
+
 Widget buildSpaceView({
   required BuildContext context,
   required bool loading,
@@ -918,6 +938,254 @@ Widget buildChatView({
     onClearAttachment: onClearAttachment,
     languageCode: languageCode,
   );
+}
+
+class ServicesView extends StatelessWidget {
+  const ServicesView({
+    super.key,
+    required this.spaceOnline,
+    required this.messageOnline,
+    required this.onOpenProfile,
+    required this.onOpenSpace,
+    required this.onOpenChat,
+    required this.onRefresh,
+    required this.languageCode,
+  });
+
+  final bool spaceOnline;
+  final bool messageOnline;
+  final VoidCallback onOpenProfile;
+  final VoidCallback onOpenSpace;
+  final VoidCallback onOpenChat;
+  final VoidCallback onRefresh;
+  final String languageCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final availableWidth = MediaQuery.sizeOf(context).width - 32;
+    final cardWidth = availableWidth > 960
+        ? (availableWidth - 16) / 2
+        : availableWidth;
+    final cards = <Widget>[
+      _MicroserviceCard(
+        title: localizedText(
+          languageCode,
+          '账号微服务',
+          'Account microservice',
+          '帳號微服務',
+        ),
+        subtitle: localizedText(
+          languageCode,
+          '登录、资料、会员与链上扩展都从这里进入。',
+          'Sign in, profile, membership, and chain extensions start here.',
+          '登入、資料、會員與鏈上擴充都從這裡進入。',
+        ),
+        statusLabel: localizedText(languageCode, '在线', 'Online', '線上'),
+        modules: [
+          localizedText(languageCode, '个人资料', 'Profile', '個人資料'),
+          localizedText(languageCode, '联系方式', 'Contact details', '聯絡資訊'),
+          localizedText(languageCode, '隐私设置', 'Privacy settings', '隱私設定'),
+          localizedText(languageCode, '会员等级', 'Membership', '會員等級'),
+          localizedText(languageCode, '链上账号', 'Blockchain', '鏈上帳號'),
+        ],
+        actionLabel: localizedText(languageCode, '进入个人主页', 'Open profile', '進入個人主頁'),
+        onOpen: onOpenProfile,
+      ),
+      if (spaceOnline)
+        _MicroserviceCard(
+          title: localizedText(
+            languageCode,
+            '空间微服务',
+            'Space microservice',
+            '空間微服務',
+          ),
+          subtitle: localizedText(
+            languageCode,
+            '空间、帖子、媒体与工作台入口都由这里承载。',
+            'Spaces, posts, media, and the workspace entry live here.',
+            '空間、貼文、媒體與工作台入口都由這裡承載。',
+          ),
+          statusLabel: localizedText(languageCode, '在线', 'Online', '線上'),
+          modules: [
+            localizedText(languageCode, '空间工作台', 'Workspace', '工作台'),
+            localizedText(languageCode, '创建空间', 'Create space', '建立空間'),
+            localizedText(languageCode, '帖子流', 'Post feed', '貼文串流'),
+            localizedText(languageCode, '媒体预览', 'Media preview', '媒體預覽'),
+            localizedText(languageCode, '公开内容', 'Public content', '公開內容'),
+          ],
+          actionLabel: localizedText(languageCode, '打开空间', 'Open space', '打開空間'),
+          onOpen: onOpenSpace,
+        ),
+      if (messageOnline)
+        _MicroserviceCard(
+          title: localizedText(
+            languageCode,
+            '消息微服务',
+            'Message microservice',
+            '訊息微服務',
+          ),
+          subtitle: localizedText(
+            languageCode,
+            '好友关系、会话摘要与实时消息都在这里汇聚。',
+            'Friend relations, conversation summaries, and live messages live here.',
+            '好友關係、會話摘要與即時訊息都在這裡匯聚。',
+          ),
+          statusLabel: localizedText(languageCode, '在线', 'Online', '線上'),
+          modules: [
+            localizedText(languageCode, '好友关系', 'Friends', '好友關係'),
+            localizedText(languageCode, '会话列表', 'Conversations', '會話列表'),
+            localizedText(languageCode, '未读消息', 'Unread', '未讀訊息'),
+            localizedText(languageCode, '实时聊天', 'Live chat', '即時聊天'),
+          ],
+          actionLabel: localizedText(languageCode, '打开聊天', 'Open chat', '打開聊天'),
+          onOpen: onOpenChat,
+        ),
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          localizedText(
+                            languageCode,
+                            '服务导航',
+                            'Service navigation',
+                            '服務導航',
+                          ),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          localizedText(
+                            languageCode,
+                            '只显示在线的微服务入口，离线模块会自动隐藏。',
+                            'Only online microservice entry points are shown. Offline modules hide automatically.',
+                            '只顯示線上的微服務入口，離線模組會自動隱藏。',
+                          ),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: onRefresh,
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '刷新状态',
+                      'Refresh status',
+                      '重新整理狀態',
+                    ),
+                    secondaryLabel: 'Refresh status',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              for (final card in cards)
+                SizedBox(
+                  width: cardWidth,
+                  child: card,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MicroserviceCard extends StatelessWidget {
+  const _MicroserviceCard({
+    required this.title,
+    required this.subtitle,
+    required this.statusLabel,
+    required this.modules,
+    required this.actionLabel,
+    required this.onOpen,
+  });
+
+  final String title;
+  final String subtitle;
+  final String statusLabel;
+  final List<String> modules;
+  final String actionLabel;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Chip(
+                  label: Text(statusLabel),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(subtitle),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final module in modules) Chip(label: Text(module)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: BilingualActionButton(
+                variant: BilingualButtonVariant.filled,
+                compact: true,
+                onPressed: onOpen,
+                primaryLabel: actionLabel,
+                secondaryLabel: actionLabel,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SpaceMetaChip extends StatelessWidget {

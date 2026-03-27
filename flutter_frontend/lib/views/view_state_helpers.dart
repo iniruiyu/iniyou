@@ -142,6 +142,8 @@ String pageTitleForView(
   switch (view) {
     case AppView.dashboard:
       return t('page.profile');
+    case AppView.services:
+      return t('page.services');
     case AppView.space:
       final activeSpace = activePublicSpace ?? activePrivateSpace;
       if (activeSpace?.name.isNotEmpty == true) {
@@ -194,6 +196,8 @@ String pageSubtitleForView(
   switch (view) {
     case AppView.dashboard:
       return t('subtitle.profile');
+    case AppView.services:
+      return t('subtitle.services');
     case AppView.space:
       return t('subtitle.space');
     case AppView.privateSpace:
@@ -221,6 +225,8 @@ String sidebarViewKey(AppView view) {
   switch (view) {
     case AppView.dashboard:
       return 'profile';
+    case AppView.services:
+      return 'services';
     case AppView.space:
     case AppView.privateSpace:
     case AppView.publicSpace:
@@ -258,6 +264,8 @@ AppView appViewFromKey(String key) {
       return AppView.chat;
     case 'dashboard':
       return AppView.profile;
+    case 'services':
+      return AppView.services;
     default:
       return AppView.profile;
   }
