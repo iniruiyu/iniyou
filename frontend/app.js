@@ -1586,7 +1586,7 @@ const app = createApp({
     mainShellStyle() {
       // Apply explicit main-shell sizing so collapsed state always releases left-side space.
       // 显式应用主壳层尺寸，确保折叠态一定释放左侧空间。
-      if (!this.isDesktopViewport || this.isSpaceShell) {
+      if (!this.isDesktopViewport) {
         return null;
       }
       if (this.sidebarCollapsed) {
@@ -3876,8 +3876,8 @@ const app = createApp({
       this.viewportWidth = typeof window !== 'undefined' ? window.innerWidth : this.viewportWidth;
     },
     enterSpaceShell(space = null) {
-      // Preserve the current navigation state for both the space workspace and the specific space shell.
-      // 对空间工作台和具体空间壳层统一保留当前导航状态。
+      // Preserve the current navigation state for both the space workspace and the specific space view.
+      // 对空间工作台和具体空间视图统一保留当前导航状态。
       const targetSpace = space && typeof space === 'object' && space.id ? space : null;
       this.view = 'space';
       this.spaceOwnedExpanded = !targetSpace;

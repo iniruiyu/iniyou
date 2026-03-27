@@ -2900,9 +2900,9 @@ class _IniyouHomeState extends State<IniyouHome> {
               activePublicSpace: activePublicSpace,
               t: _t,
             ),
-            // Space view uses a compact shell so it behaves like a dedicated page.
-            // 空间视图使用紧凑壳层，表现为独立页面。
-            compactMode: spaceShell,
+            // Space view keeps the regular shell so navigation stays visible.
+            // 空间视图保留常规壳层，让导航保持可见。
+            compactMode: false,
             loading: _loading,
             wide: wide,
             sidebarCollapsed: _sidebarCollapsed,
@@ -2911,9 +2911,9 @@ class _IniyouHomeState extends State<IniyouHome> {
             onCompactBack: () => _navigateTo(AppView.profile),
             backgroundGradient: _backgroundGradientFor(_themeKeyValue),
             topNav: _buildTopNavBar(),
-            // Keep the top navigation visible only when the sidebar is collapsed on wide layouts.
-            // 仅在宽屏且侧栏折叠时显示顶部导航。
-            showTopNav: !spaceShell && (!wide || _sidebarCollapsed),
+            // Keep the top navigation visible whenever the sidebar is collapsed.
+            // 只要侧栏处于折叠状态，就保留顶部导航。
+            showTopNav: !wide || _sidebarCollapsed,
             floatingNotice: spaceShell ? null : _buildSocialReminderBanner(),
             t: _t,
             body: AuthenticatedHomeView(

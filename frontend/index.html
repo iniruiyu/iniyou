@@ -14,13 +14,13 @@
   <div
     id="app"
     class="app"
-    :class="{ 'sidebar-collapsed': sidebarCollapsed, 'space-shell-mode': isSpaceShell }"
+    :class="{ 'sidebar-collapsed': sidebarCollapsed }"
   >
     <landing-page v-if="!isLoggedIn" :app="appContext"></landing-page>
 
     <template v-else>
-    <!-- Main navigation shell / 主导航壳层：进入空间页时不渲染。 -->
-    <aside v-if="!isSpaceShell && !sidebarCollapsed" class="sidebar">
+    <!-- Main navigation shell / 主导航壳层：空间页也保留，折叠时再切换到顶部导航。 -->
+    <aside v-if="!sidebarCollapsed" class="sidebar">
       <div class="brand">
         <div class="brand-core">
           <div class="brand-mark">AS</div>
@@ -78,9 +78,9 @@
     </aside>
 
     <!-- Main content / 主内容 -->
-    <main class="main" :class="{ 'chat-shell': view === 'chat', 'space-shell': isSpaceShell, 'main-collapsed': sidebarCollapsed && !isSpaceShell }" :style="mainShellStyle">
-      <!-- Collapsed top navigation / 折叠态顶层导航：收起侧栏后只保留轻量入口。 -->
-      <header v-if="!isSpaceShell && sidebarCollapsed" class="topnav-shell">
+    <main class="main" :class="{ 'chat-shell': view === 'chat', 'main-collapsed': sidebarCollapsed }" :style="mainShellStyle">
+      <!-- Collapsed top navigation / 折叠态顶层导航：空间页在收起侧栏时也保留，方便继续切换页面。 -->
+      <header v-if="sidebarCollapsed" class="topnav-shell">
         <!-- Refined nav trigger / 精修导航触发器：改为纯图标入口，让折叠态顶部导航更紧凑。 -->
         <button class="topnav-toggle ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
           <span class="topnav-toggle-core" aria-hidden="true">
