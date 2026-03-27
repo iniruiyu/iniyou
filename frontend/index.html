@@ -203,48 +203,8 @@
         </div>
       </div>
 
-      <!-- Service navigation / 服务导航：按微服务在线状态展示独立入口，离线模块不会渲染。 -->
-      <section v-if="view === 'services'" class="panel services-page">
-        <div class="space-page-hero services-page-hero">
-          <div>
-            <div class="space-shell-kicker">{{ t('nav.services') }}</div>
-            <div class="space-page-title">{{ t('services.title') }}</div>
-            <div class="space-page-sub">{{ t('services.sub') }}</div>
-          </div>
-          <bilingual-action-button
-            variant="tonal"
-            compact
-            type="button"
-            :primary-label="t('services.refresh')"
-            :secondary-label="peerLocaleText('services.refresh')"
-            @click="refreshServiceStatus"
-          ></bilingual-action-button>
-        </div>
-        <div class="services-grid">
-          <article v-for="service in visibleServiceSections" :key="service.key" class="service-card">
-            <div class="service-card-head">
-              <div>
-                <div class="service-card-title">{{ service.title }}</div>
-                <div class="service-card-sub">{{ service.sub }}</div>
-              </div>
-              <div class="service-status-badge">{{ t('services.online') }}</div>
-            </div>
-            <div class="service-chip-list">
-              <span v-for="module in service.modules" :key="`${service.key}-${module}`" class="service-chip">{{ module }}</span>
-            </div>
-            <div class="service-card-actions">
-              <bilingual-action-button
-                variant="filled"
-                compact
-                type="button"
-                :primary-label="t('services.open')"
-                :secondary-label="peerLocaleText('services.open')"
-                @click="openServiceSection(service.actionKey)"
-              ></bilingual-action-button>
-            </div>
-          </article>
-        </div>
-      </section>
+      <!-- Service navigation / 服务导航：抽成独立组件，避免根模板继续膨胀。 -->
+      <service-navigation v-if="view === 'services'" :app="appContext"></service-navigation>
 
       <div v-if="identityEditorOpen" class="modal-backdrop modal-backdrop--sheet" @click.self="closeIdentityEditor">
         <div class="modal modal--sheet profile-editor-modal">
@@ -2256,6 +2216,7 @@
   <script src="components/settings-menu.js"></script>
   <script src="components/auth-panel.js"></script>
   <script src="components/landing-page.js"></script>
+  <script src="components/service-navigation.js"></script>
   <script src="components/bilingual-field.js"></script>
   <script src="components/bilingual-select-field.js"></script>
   <script src="components/bilingual-action-button.js"></script>

@@ -7,7 +7,7 @@
 ## 2. 状态
 
 - 状态：进行中
-- 当前基线：Flutter 与 Vue 3 的职责边界、页面映射和 API 对接关系已定义 / Flutter vs. Vue responsibilities, page mapping, and API linkage are already defined.
+- 当前基线：Flutter 与 Vue 3 的职责边界、页面映射和 API 对接关系已定义，Vue 的服务导航页已拆成独立组件 / Flutter vs. Vue responsibilities, page mapping, and API linkage are already defined, and the Vue service navigation page has been split into a standalone component.
 - 进行中：前端工程初始化、公共组件目录和页面骨架补齐 / In progress: frontend bootstrapping, shared component folders, and page scaffolding.
 
 ## 3. 任务清单
@@ -20,6 +20,7 @@
 - 建立 API 请求封装规范
 - 建立设计稿到页面实现的映射关系
 - 建立页面与 `docs/API_SPEC.md` 的对接映射
+- 继续把 Vue 大页面/大区块拆成职责单一的小组件，减少 `app.js` 和根模板的膨胀 / Continue splitting large Vue pages and blocks into single-responsibility components to keep `app.js` and the root template lean.
 - 为登录、注册、首页、文章、聊天、个人中心预留页面结构
 
 ## 4. 完成标准

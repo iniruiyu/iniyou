@@ -1824,56 +1824,6 @@ const app = createApp({
     visibleProfileSpaces() {
       return Array.isArray(this.profileSpaces) ? this.profileSpaces : [];
     },
-    serviceSections() {
-      // Build the service directory cards from the current service flags.
-      // 根据当前服务状态生成服务目录卡片。
-      return [
-        {
-          key: 'account',
-          online: true,
-          title: this.t('services.accountTitle'),
-          sub: this.t('services.accountSub'),
-          actionKey: 'profile',
-          modules: [
-            this.t('profile.identity.personalTitle'),
-            this.t('profile.identity.contactTitle'),
-            this.t('profile.identity.privacyTitle'),
-            this.t('profile.membership.title'),
-            this.t('profile.blockchain.title'),
-          ],
-        },
-        {
-          key: 'space',
-          online: this.isServiceOnline('space'),
-          title: this.t('services.spaceTitle'),
-          sub: this.t('services.spaceSub'),
-          actionKey: 'space',
-          modules: [
-            this.t('spaces.workspaceTitle'),
-            this.t('spaces.ownedTab'),
-            this.t('spaces.createTab'),
-            this.t('posts.publishAction'),
-            this.t('posts.openDetail'),
-          ],
-        },
-        {
-          key: 'message',
-          online: this.isServiceOnline('message'),
-          title: this.t('services.messageTitle'),
-          sub: this.t('services.messageSub'),
-          actionKey: 'chat',
-          modules: [
-            this.t('nav.friends'),
-            this.t('nav.chat'),
-            this.t('ws.unreadLabel'),
-            this.t('chat.title'),
-          ],
-        },
-      ];
-    },
-    visibleServiceSections() {
-      return this.serviceSections().filter((section) => section.online);
-    },
     privateSpaces() {
       // Keep the legacy helper aligned with the owned-space-only model.
       // 让旧的辅助方法与“只看自己创建的空间”模型保持一致。
@@ -5871,6 +5821,7 @@ const app = createApp({
 app.component('settings-menu', window.SettingsMenu);
 app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
+app.component('service-navigation', window.ServiceNavigation);
 app.component('bilingual-field', window.BilingualField);
 app.component('bilingual-select-field', window.BilingualSelectField);
 app.component('bilingual-action-button', window.BilingualActionButton);
