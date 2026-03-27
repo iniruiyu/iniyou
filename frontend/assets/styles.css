@@ -1672,6 +1672,12 @@ body {
   gap: 14px;
 }
 
+.learning-status-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .learning-code-shell {
   display: grid;
   gap: 10px;

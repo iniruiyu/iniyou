@@ -3466,6 +3466,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       learning: buildLearningCourseView(
         languageCode: _languageCode,
         activeCourseId: _activeLearningCourseId,
+        apiClient: _api,
         onSelectCourse: (courseId) {
           setState(() => _activeLearningCourseId = courseId);
         },

@@ -82,6 +82,17 @@ class ApiClient {
 
   Future<bool> isLearningServiceHealthy() => serviceHealthy(learningBase);
 
+  Future<MarkdownFileDocument> fetchLearningMarkdownFile(
+    String relativePath,
+  ) async {
+    return MarkdownFileDocument.fromJson(
+      await _get(
+        learningBase,
+        '/markdown-files/${_encodeRelativePath(relativePath)}',
+      ),
+    );
+  }
+
   Future<AuthToken> login(String account, String password) async {
     final json = await _post(accountBase, '/login', {
       'account': account,
@@ -551,6 +562,16 @@ class ApiClient {
       );
     }
     return _payload(body);
+  }
+
+  String _encodeRelativePath(String relativePath) {
+    // Encode one nested relative path while preserving slash separators for the backend wildcard route.
+    // 对嵌套相对路径逐段编码，同时保留斜杠分隔，兼容后端通配路由。
+    return relativePath
+        .split('/')
+        .where((segment) => segment.trim().isNotEmpty)
+        .map(Uri.encodeComponent)
+        .join('/');
   }
 
   List<T> _list<T>(

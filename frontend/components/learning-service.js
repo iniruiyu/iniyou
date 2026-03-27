@@ -957,6 +957,9 @@ window.LearningService = {
     return {
       activeCategory: 'all',
       activeCourseId: catalog[0]?.id || '',
+      markdownCache: {},
+      markdownLoading: false,
+      markdownError: '',
     };
   },
   computed: {
@@ -1032,22 +1035,36 @@ window.LearningService = {
         }),
       ];
     },
+    activeCourseMarkdown() {
+      if (!this.activeCourse) {
+        return '';
+      }
+      const localePath = this.courseMarkdownPath(this.activeCourse, this.app?.locale);
+      const fallbackPath = this.courseMarkdownPath(this.activeCourse, 'zh-CN');
+      return this.markdownCache[localePath]?.content
+        || this.markdownCache[fallbackPath]?.content
+        || this.courseFallbackMarkdown(this.activeCourse, this.app?.locale);
+    },
   },
   watch: {
     activeCourseId() {
+      this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
     activeCategory() {
       if (!this.visibleCourses.find((course) => course.id === this.activeCourseId)) {
         this.activeCourseId = this.visibleCourses[0]?.id || this.courses[0]?.id || '';
       }
+      this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
     'app.locale'() {
+      this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
   },
   mounted() {
+    this.loadActiveCourseMarkdown();
     this.scheduleMermaidRender();
   },
   updated() {
@@ -1076,10 +1093,88 @@ window.LearningService = {
       const tags = localizedLearningText(this.app, course?.tags);
       return Array.isArray(tags) ? tags : [];
     },
+    courseFallbackMarkdown(course, locale) {
+      // Keep the existing built-in markdown as a resilient fallback.
+      // 保留现有内建 Markdown 作为兜底内容。
+      return localizedLearningText(this.app, course?.markdown) || course?.markdown?.[locale] || course?.markdown?.['zh-CN'] || '';
+    },
+    courseMarkdownPath(course, locale) {
+      // Map one course and locale to the backend markdown-file resource path.
+      // 将课程与语言映射到后端 Markdown 文件资源路径。
+      const normalizedLocale = locale || 'zh-CN';
+      return `courses/${course.id}.${normalizedLocale}.md`;
+    },
+    async fetchCourseMarkdown(relativePath) {
+      // Load one markdown document from the learning service and unwrap the API envelope.
+      // 从学习服务加载单个 Markdown 文档，并解包 API 包装。
+      const encodedPath = String(relativePath || '')
+        .split('/')
+        .filter(Boolean)
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+      const response = await fetch(`${this.app.learningApiBase}/markdown-files/${encodedPath}`, {
+        headers: {
+          Authorization: `Bearer ${this.app.token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`markdown request failed: ${response.status}`);
+      }
+      return this.app.readApiPayload(response);
+    },
+    async loadActiveCourseMarkdown() {
+      // Prefer backend markdown content, then gracefully fall back to the local built-in course body.
+      // 优先读取后端 Markdown 内容，失败时再平稳回退到本地内建课程正文。
+      if (!this.activeCourse || !this.app?.token || !this.app?.learningApiBase) {
+        return;
+      }
+      const locale = this.app?.locale || 'zh-CN';
+      const candidatePaths = [
+        this.courseMarkdownPath(this.activeCourse, locale),
+      ];
+      if (locale !== 'zh-CN') {
+        candidatePaths.push(this.courseMarkdownPath(this.activeCourse, 'zh-CN'));
+      }
+      const nextCache = {};
+      let loaded = false;
+      this.markdownLoading = true;
+      this.markdownError = '';
+      for (const path of candidatePaths) {
+        if (this.markdownCache[path]?.content) {
+          loaded = true;
+          continue;
+        }
+        try {
+          const payload = await this.fetchCourseMarkdown(path);
+          nextCache[path] = {
+            content: String(payload.content || ''),
+            updatedAt: payload.updated_at || '',
+          };
+          loaded = true;
+        } catch (_error) {
+          // Ignore missing locale variants and keep the fallback path chain going.
+          // 忽略缺失的语言变体，并继续尝试后续兜底路径。
+        }
+      }
+      if (Object.keys(nextCache).length) {
+        this.markdownCache = {
+          ...this.markdownCache,
+          ...nextCache,
+        };
+      }
+      if (!loaded && this.app.isServiceOnline('learning')) {
+        this.markdownError = localizedLearningText(this.app, {
+          'zh-CN': '后端课程文件暂未返回，当前显示内建示例内容。',
+          'en-US': 'The backend lesson file is not available yet, so the built-in sample is shown.',
+          'zh-TW': '後端課程檔案暫未返回，目前顯示內建示例內容。',
+        });
+      }
+      this.markdownLoading = false;
+    },
     renderCourseMarkdown(course) {
       // Render the selected course body into safe HTML.
       // 将当前课程正文渲染为安全 HTML。
-      return renderLearningMarkdownContent(this.courseText(course, 'markdown'));
+      return renderLearningMarkdownContent(this.activeCourseMarkdown);
     },
     scheduleMermaidRender() {
       // Wait for the DOM patch, then render newly mounted Mermaid nodes.
@@ -1166,6 +1261,8 @@ window.LearningService = {
           <div class="learning-course-tags learning-course-tags--detail">
             <span v-for="tag in courseTags(activeCourse)" :key="activeCourse.id + '-detail-' + tag" class="service-chip">{{ tag }}</span>
           </div>
+          <p v-if="markdownLoading" class="learning-status-note">Loading course markdown...</p>
+          <p v-else-if="markdownError" class="learning-status-note">{{ markdownError }}</p>
           <div class="post-content--markdown learning-markdown-body" v-html="renderCourseMarkdown(activeCourse)"></div>
         </article>
       </div>

@@ -23,6 +23,9 @@ func main() {
 	if err := os.MkdirAll(cfg.MarkdownStorageDir, 0o755); err != nil {
 		log.Fatalf("markdown storage dir create error: %v", err)
 	}
+	if err := service.EnsureDefaultLearningMarkdownFiles(); err != nil {
+		log.Fatalf("learning markdown seed error: %v", err)
+	}
 
 	database, err := db.Connect(cfg.DBDsn)
 	if err != nil {

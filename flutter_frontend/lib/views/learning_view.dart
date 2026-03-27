@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../api/api_client.dart';
+import '../models/app_models.dart';
 import '../widgets/bilingual_action_button.dart';
 import '../widgets/post_markdown.dart';
 import 'view_state_helpers.dart';
@@ -9,38 +11,131 @@ const defaultLearningCourseId = 'english-storytelling';
 Widget buildLearningView({
   required String languageCode,
   required String activeCourseId,
+  required ApiClient apiClient,
   required ValueChanged<String> onSelectCourse,
   required VoidCallback onBackToServices,
 }) {
   return LearningView(
     languageCode: languageCode,
     activeCourseId: activeCourseId,
+    apiClient: apiClient,
     onSelectCourse: onSelectCourse,
     onBackToServices: onBackToServices,
   );
 }
 
-class LearningView extends StatelessWidget {
+class LearningView extends StatefulWidget {
   const LearningView({
     super.key,
     required this.languageCode,
     required this.activeCourseId,
+    required this.apiClient,
     required this.onSelectCourse,
     required this.onBackToServices,
   });
 
   final String languageCode;
   final String activeCourseId;
+  final ApiClient apiClient;
   final ValueChanged<String> onSelectCourse;
   final VoidCallback onBackToServices;
 
   @override
+  State<LearningView> createState() => _LearningViewState();
+}
+
+class _LearningViewState extends State<LearningView> {
+  final Map<String, MarkdownFileDocument> _markdownCache = {};
+  bool _markdownLoading = false;
+  String? _markdownError;
+  int _loadVersion = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActiveCourseMarkdown();
+  }
+
+  @override
+  void didUpdateWidget(covariant LearningView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeCourseId != widget.activeCourseId ||
+        oldWidget.languageCode != widget.languageCode) {
+      _loadActiveCourseMarkdown();
+    }
+  }
+
+  _LearningCourse get _activeCourse => learningCourseCatalog.firstWhere(
+    (course) => course.id == widget.activeCourseId,
+    orElse: () => learningCourseCatalog.first,
+  );
+
+  String _courseMarkdownPath(_LearningCourse course, String languageCode) {
+    // Map one course and locale to the learning-service markdown resource path.
+    // 将课程与语言映射到 learning-service 的 Markdown 资源路径。
+    return 'courses/${course.id}.$languageCode.md';
+  }
+
+  String _resolvedCourseMarkdown(_LearningCourse course) {
+    final localePath = _courseMarkdownPath(course, widget.languageCode);
+    final fallbackPath = _courseMarkdownPath(course, 'zh-CN');
+    return _markdownCache[localePath]?.content ??
+        _markdownCache[fallbackPath]?.content ??
+        course.markdownText(widget.languageCode);
+  }
+
+  Future<void> _loadActiveCourseMarkdown() async {
+    // Prefer backend markdown content and keep the built-in markdown as a stable fallback.
+    // 优先读取后端 Markdown 内容，并把内建 Markdown 保留为稳定兜底。
+    final course = _activeCourse;
+    final currentVersion = ++_loadVersion;
+    final candidatePaths = <String>[
+      _courseMarkdownPath(course, widget.languageCode),
+      if (widget.languageCode != 'zh-CN') _courseMarkdownPath(course, 'zh-CN'),
+    ];
+    final nextCache = <String, MarkdownFileDocument>{};
+    var loaded = false;
+    if (mounted) {
+      setState(() {
+        _markdownLoading = true;
+        _markdownError = null;
+      });
+    }
+    for (final path in candidatePaths) {
+      if (_markdownCache.containsKey(path)) {
+        loaded = true;
+        continue;
+      }
+      try {
+        final document = await widget.apiClient.fetchLearningMarkdownFile(path);
+        nextCache[path] = document;
+        loaded = true;
+      } catch (_) {
+        // Ignore missing locale variants and continue to the next fallback path.
+        // 忽略缺失的语言版本，并继续尝试下一条兜底路径。
+      }
+    }
+    if (!mounted || currentVersion != _loadVersion) {
+      return;
+    }
+    setState(() {
+      _markdownCache.addAll(nextCache);
+      _markdownLoading = false;
+      _markdownError = loaded
+          ? null
+          : localizedText(
+              widget.languageCode,
+              '后端课程文件暂未返回，当前显示内建示例内容。',
+              'The backend lesson file is not available yet, so the built-in sample is shown.',
+              '後端課程檔案暫未返回，目前顯示內建示例內容。',
+            );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final activeCourse = learningCourseCatalog.firstWhere(
-      (course) => course.id == activeCourseId,
-      orElse: () => learningCourseCatalog.first,
-    );
+    final activeCourse = _activeCourse;
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 980;
@@ -48,9 +143,9 @@ class LearningView extends StatelessWidget {
           for (final course in learningCourseCatalog)
             _LearningCourseCard(
               course: course,
-              languageCode: languageCode,
+              languageCode: widget.languageCode,
               active: course.id == activeCourse.id,
-              onTap: () => onSelectCourse(course.id),
+              onTap: () => widget.onSelectCourse(course.id),
             ),
         ];
         return Column(
@@ -86,7 +181,7 @@ class LearningView extends StatelessWidget {
                           children: [
                             Text(
                               localizedText(
-                                languageCode,
+                                widget.languageCode,
                                 '学习服务',
                                 'Learning Service',
                                 '學習服務',
@@ -100,7 +195,7 @@ class LearningView extends StatelessWidget {
                             const SizedBox(height: 10),
                             Text(
                               localizedText(
-                                languageCode,
+                                widget.languageCode,
                                 '学习课程',
                                 'Learning Courses',
                                 '學習課程',
@@ -112,7 +207,7 @@ class LearningView extends StatelessWidget {
                             const SizedBox(height: 10),
                             Text(
                               localizedText(
-                                languageCode,
+                                widget.languageCode,
                                 '用课程卡片组织英语、编程、AI 等内容，并完整展示 Markdown、代码块、表格与 Mermaid 思维导图。',
                                 'Organize English, programming, AI, and more into course cards while fully rendering Markdown, code fences, tables, and Mermaid mind maps.',
                                 '用課程卡片組織英語、程式、AI 等內容，並完整顯示 Markdown、程式碼塊、表格與 Mermaid 思維導圖。',
@@ -129,15 +224,15 @@ class LearningView extends StatelessWidget {
                       BilingualActionButton(
                         variant: BilingualButtonVariant.tonal,
                         compact: true,
-                        onPressed: onBackToServices,
+                        onPressed: widget.onBackToServices,
                         primaryLabel: localizedText(
-                          languageCode,
+                          widget.languageCode,
                           '返回服务导航',
                           'Back to Services',
                           '返回服務導航',
                         ),
                         secondaryLabel: localizedText(
-                          languageCode,
+                          widget.languageCode,
                           'Back to Services',
                           '返回服务导航',
                           'Back to Services',
@@ -152,20 +247,25 @@ class LearningView extends StatelessWidget {
                     children: [
                       for (final label in [
                         localizedText(
-                          languageCode,
+                          widget.languageCode,
                           'Markdown 正文',
                           'Markdown lessons',
                           'Markdown 正文',
                         ),
                         localizedText(
-                          languageCode,
+                          widget.languageCode,
                           '代码块',
                           'Code fences',
                           '程式碼塊',
                         ),
-                        localizedText(languageCode, '表格', 'Tables', '表格'),
                         localizedText(
-                          languageCode,
+                          widget.languageCode,
+                          '表格',
+                          'Tables',
+                          '表格',
+                        ),
+                        localizedText(
+                          widget.languageCode,
                           'Mermaid 思维导图',
                           'Mermaid mind maps',
                           'Mermaid 思維導圖',
@@ -188,7 +288,10 @@ class LearningView extends StatelessWidget {
                     flex: 6,
                     child: _LearningDetailCard(
                       course: activeCourse,
-                      languageCode: languageCode,
+                      languageCode: widget.languageCode,
+                      markdownContent: _resolvedCourseMarkdown(activeCourse),
+                      loading: _markdownLoading,
+                      statusText: _markdownError,
                     ),
                   ),
                 ],
@@ -198,7 +301,10 @@ class LearningView extends StatelessWidget {
               const SizedBox(height: 18),
               _LearningDetailCard(
                 course: activeCourse,
-                languageCode: languageCode,
+                languageCode: widget.languageCode,
+                markdownContent: _resolvedCourseMarkdown(activeCourse),
+                loading: _markdownLoading,
+                statusText: _markdownError,
               ),
             ],
           ],
@@ -357,10 +463,19 @@ class _LearningCourseCard extends StatelessWidget {
 }
 
 class _LearningDetailCard extends StatelessWidget {
-  const _LearningDetailCard({required this.course, required this.languageCode});
+  const _LearningDetailCard({
+    required this.course,
+    required this.languageCode,
+    required this.markdownContent,
+    required this.loading,
+    required this.statusText,
+  });
 
   final _LearningCourse course;
   final String languageCode;
+  final String markdownContent;
+  final bool loading;
+  final String? statusText;
 
   @override
   Widget build(BuildContext context) {
@@ -424,7 +539,16 @@ class _LearningDetailCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          PostMarkdownBody(content: course.markdownText(languageCode)),
+          if (loading || (statusText ?? '').isNotEmpty) ...[
+            Text(
+              loading ? 'Loading course markdown...' : (statusText ?? ''),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+          PostMarkdownBody(content: markdownContent),
         ],
       ),
     );

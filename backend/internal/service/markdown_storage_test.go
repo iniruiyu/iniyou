@@ -116,3 +116,27 @@ func TestGetMarkdownFileReturnsNotFound(t *testing.T) {
 		t.Fatalf("unexpected normalized path: %q", normalized)
 	}
 }
+
+func TestEnsureDefaultLearningMarkdownFilesSeedsDefaults(t *testing.T) {
+	// Seed the bundled learning markdown files into an empty storage directory.
+	// 将内嵌学习 Markdown 文件种子写入空的存储目录。
+	oldDir := markdownStorageDir
+	t.Cleanup(func() {
+		markdownStorageDir = oldDir
+	})
+
+	tempDir := t.TempDir()
+	SetMarkdownStorageDir(tempDir)
+
+	if err := EnsureDefaultLearningMarkdownFiles(); err != nil {
+		t.Fatalf("seed learning markdown files: %v", err)
+	}
+
+	document, err := GetMarkdownFile("courses/english-storytelling.zh-CN.md")
+	if err != nil {
+		t.Fatalf("get seeded markdown file: %v", err)
+	}
+	if !strings.Contains(document.Content, "故事化开口") {
+		t.Fatalf("unexpected seeded markdown content: %q", document.Content)
+	}
+}

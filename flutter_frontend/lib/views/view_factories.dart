@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../api/api_client.dart';
 import '../models/app_models.dart';
 import 'content_sections.dart';
 import 'learning_view.dart';
@@ -75,12 +76,14 @@ Widget buildServicesView({
 Widget buildLearningCourseView({
   required String languageCode,
   required String activeCourseId,
+  required ApiClient apiClient,
   required ValueChanged<String> onSelectCourse,
   required VoidCallback onBackToServices,
 }) {
   return buildLearningView(
     languageCode: languageCode,
     activeCourseId: activeCourseId,
+    apiClient: apiClient,
     onSelectCourse: onSelectCourse,
     onBackToServices: onBackToServices,
   );

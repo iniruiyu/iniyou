@@ -256,6 +256,7 @@ new-project/
 
 - 2026-03-27：启动双前端“学习”服务板块，实现英语 / 编程 / AI 课程目录，并补齐 Markdown 课程正文与 Mermaid 思维导图展示链路 / Started the dual-frontend "Learning" service area with English/programming/AI course catalogs, plus Markdown course-body and Mermaid mind-map rendering.
 - 2026-03-27：新增独立 `learning-service`，提供 `/api/v1/markdown-files` 列表、读取和保存接口，并将 Markdown 课程文件落盘到可配置目录 / Added an independent `learning-service` with `/api/v1/markdown-files` list/read/save endpoints, persisting Markdown course files to a configurable on-disk directory.
+- 2026-03-27：双前端学习页已接入 `learning-service` 读取课程 Markdown，服务启动时自动补齐默认课程种子文件，读取失败时再回退到前端内建示例内容 / Both frontends now load lesson Markdown from `learning-service`, the service seeds default course files on startup, and the UI falls back to built-in sample content only when the fetch fails.
 - 2026-03-25：补齐 GitHub Actions Release 工作流与远程部署脚本，CI 通过后可通过 SSH 自动把最新 `main` 分支部署到目标主机 / Added the GitHub Actions Release workflow and remote deployment script so the latest `main` branch can now be SSH-deployed to the target host after CI passes.
 - 2026-03-25：补齐 GitHub Actions CI 检查流水线，后端、前端、Flutter 和容器构建现在可以在 push / PR 时同步验证 / Added a GitHub Actions CI pipeline so the backend, frontend, Flutter, and container builds can now be validated on push and pull request.
 - 2026-03-25：`make deploy` 本地实跑通过，容器栈已完成镜像构建、版本化迁移、服务启动与停机回收 / `make deploy` passed locally, and the container stack completed image builds, versioned migrations, service startup, and teardown.

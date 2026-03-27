@@ -12,6 +12,29 @@ class AuthToken {
   }
 }
 
+class MarkdownFileDocument {
+  MarkdownFileDocument({
+    required this.path,
+    required this.content,
+    required this.size,
+    required this.updatedAt,
+  });
+
+  final String path;
+  final String content;
+  final int size;
+  final DateTime? updatedAt;
+
+  factory MarkdownFileDocument.fromJson(Map<String, dynamic> json) {
+    return MarkdownFileDocument(
+      path: (json['path'] ?? '').toString(),
+      content: (json['content'] ?? '').toString(),
+      size: toInt(json['size']),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+    );
+  }
+}
+
 class CurrentUser {
   CurrentUser({
     required this.id,

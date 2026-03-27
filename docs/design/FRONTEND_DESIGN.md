@@ -295,6 +295,7 @@
 - 课程页应采用“课程列表 + 当前课程正文”结构，宽屏优先双栏，窄屏收敛为上下堆叠 / The course page should use a "course list + current course body" structure, preferring a two-column layout on wide screens and a stacked layout on narrow screens.
 - 课程正文需要完整支持常用 Markdown 渲染，包括标题、列表、引用、表格、代码块和 `mermaid` 思维导图 / Course bodies must fully support common Markdown rendering, including headings, lists, blockquotes, tables, code fences, and `mermaid` mind maps.
 - Vue Web 作为学习服务 Markdown / Mermaid 的主实现，Flutter 需要保持相同信息架构，并在 Flutter Web 上补齐图表渲染；非 Web 端若暂时无法直出图表，需至少稳定展示图表源码和说明 / Vue Web is the primary implementation for learning-service Markdown / Mermaid rendering; Flutter must keep the same information architecture and render diagrams on Flutter Web; if non-web platforms cannot render diagrams yet, they must at least show stable diagram source plus guidance.
+- 双前端课程详情优先从独立 `learning-service` 拉取 Markdown 正文；若服务离线、文件缺失或读取失败，界面才允许回退到前端内建示例内容 / Both frontends should prefer loading lesson Markdown from the independent `learning-service`; only when the service is offline, files are missing, or the fetch fails may the UI fall back to built-in sample content.
 
 ## 9. 交互规则
 
@@ -345,6 +346,7 @@
 ## 13. 进度记录
 
 - 2026-03-27：新增双前端“学习”服务板块，服务导航可直接进入英语 / 编程 / AI 课程，并补齐 Markdown 课程正文与 Mermaid 思维导图展示约束 / Added the dual-frontend "Learning" service area so the service navigator can open English/programming/AI courses, and added Markdown course-body plus Mermaid mind-map presentation constraints.
+- 2026-03-27：学习课程正文已改为优先从 `learning-service` 读取，服务启动时自动补齐默认课程种子，前端保留内建内容作为失败兜底 / Learning course bodies now prefer `learning-service` reads, the service seeds default lessons on startup, and the frontends keep built-in content as a failure fallback.
 - 2026-03-25：补充登录页“记住账号和密码”开关的前端设计约束，并要求双前端在登录成功后本地回填 / Added the frontend design constraint for the login-page "remember account and password" switch and required both frontends to restore credentials locally after a successful sign-in.
 - 2026-03-20：重构个人主页顶部用户 ID 信息框，移除顶部独立卡片并将用户 ID 下移到个人资料摘要，同时拆分修改资料/隐私设置按钮 / Reworked the personal-home top user-ID box, removed the separate header card, moved the user ID into the personal info summary, and split the edit/privacy buttons.
 - 2026-03-27：继续把个人主页从“个人资料 + 隐私”扩展为“个人资料 + 联系方式 + 隐私”，并要求三个入口分别打开独立弹窗 / Expanded the personal home from "personal info + privacy" to "personal info + contact details + privacy", and required each entry point to open its own dialog.
