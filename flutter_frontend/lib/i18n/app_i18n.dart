@@ -153,6 +153,7 @@ class AppI18n {
       'page.friends': '好友关系',
       'page.chat': '实时聊天',
       'page.services': '服务导航',
+      'page.learning': '学习课程',
       'subtitle.dashboard': '汇总账号、空间、好友与实时互动状态。',
       'subtitle.space': '管理可见空间与已发布内容。',
       'subtitle.profile': '查看个人资料、会员等级与公开空间入口。',
@@ -162,6 +163,7 @@ class AppI18n {
       'subtitle.friends': '搜索用户、发起好友请求并处理待接受关系。',
       'subtitle.chat': '查看会话摘要并发送实时消息。',
       'subtitle.services': '只显示当前在线的微服务入口，离线模块会自动隐藏。',
+      'subtitle.learning': '查看英语、编程、AI 等课程，并完整预览 Markdown 与 Mermaid 内容。',
     },
     'en-US': {
       'settings.title': 'Settings',
@@ -302,6 +304,7 @@ class AppI18n {
       'page.friends': 'Friend Relations',
       'page.chat': 'Live Chat',
       'page.services': 'Service Navigation',
+      'page.learning': 'Learning Courses',
       'subtitle.dashboard':
           'Overview of account, spaces, friends, and live interactions.',
       'subtitle.space': 'Manage visible spaces and published content together.',
@@ -319,6 +322,8 @@ class AppI18n {
           'See conversation summaries and send real-time messages.',
       'subtitle.services':
           'Only online microservice entry points are shown here; offline modules hide automatically.',
+      'subtitle.learning':
+          'Browse English, programming, and AI lessons with full Markdown and Mermaid previews.',
     },
     'zh-TW': {
       'settings.title': '設定',
@@ -446,6 +451,7 @@ class AppI18n {
       'page.friends': '好友關係',
       'page.chat': '即時聊天',
       'page.services': '服務導航',
+      'page.learning': '學習課程',
       'subtitle.dashboard': '彙總帳號、空間、好友與即時互動狀態。',
       'subtitle.space': '管理可見空間與已發布內容。',
       'subtitle.profile': '查看個人資料、會員等級與公開空間入口。',
@@ -455,6 +461,7 @@ class AppI18n {
       'subtitle.friends': '搜尋用戶、發起好友請求並處理待接受關係。',
       'subtitle.chat': '查看會話摘要並發送即時訊息。',
       'subtitle.services': '只顯示目前在線的微服務入口，離線模組會自動隱藏。',
+      'subtitle.learning': '查看英語、程式、AI 等課程，並完整預覽 Markdown 與 Mermaid 內容。',
     },
   };
 }

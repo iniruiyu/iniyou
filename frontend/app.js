@@ -347,11 +347,15 @@ const app = createApp({
       // Message service API base URL.
       // 通讯服务接口基础地址。
       messageApiBase: 'http://localhost:8081/api/v1',
+      // Learning service API base URL.
+      // 学习服务接口基础地址。
+      learningApiBase: 'http://localhost:8083/api/v1',
       // Online state for optional microservice entry points.
       // 可选微服务入口的在线状态。
       serviceStatus: {
         space: false,
         message: false,
+        learning: false,
       },
       // Visible auth mode on the guest landing page.
       // 未登录首页当前显示的认证模式。
@@ -465,10 +469,26 @@ const app = createApp({
             spaceSub: '空间、帖子、媒体与上下文。',
             messageTitle: '消息微服务',
             messageSub: '聊天、会话与实时提醒。',
+            learningTitle: '学习服务',
+            learningSub: '英语、编程、AI 等课程统一在这里查看。',
             online: '在线',
             offline: '离线',
             open: '进入',
             refresh: '刷新状态',
+          },
+          learning: {
+            kicker: '学习服务',
+            title: '学习课程',
+            sub: '用课程卡片组织英语、编程、AI 等内容，并完整展示 Markdown、代码块、表格与 Mermaid 思维导图。',
+            backToServices: '返回服务导航',
+            catalogTitle: '课程目录',
+            catalogSub: '先选分类，再打开当前课程。',
+            currentCourse: '当前课程',
+            categoryEnglish: '英语',
+            categoryProgramming: '编程',
+            categoryAi: 'AI',
+            featureMarkdown: 'Markdown 正文',
+            featureMermaid: 'Mermaid 思维导图',
           },
           profile: {
             identity: {
@@ -578,6 +598,7 @@ const app = createApp({
             space: '空间',
             profile: '个人主页',
             services: '服务导航',
+            learning: '学习课程',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -597,6 +618,7 @@ const app = createApp({
             public: '空间',
             profile: '个人主页',
             services: '服务导航',
+            learning: '学习课程',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -611,6 +633,7 @@ const app = createApp({
             public: '浏览可见空间与内容',
             profile: '查看个人资料、会员等级与公开空间入口',
             services: '在线微服务会显示在这里，离线模块会自动隐藏。',
+            learning: '查看英语、编程、AI 等课程，并完整预览 Markdown 与 Mermaid 内容。',
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
             blockchain: '管理外部区块链账号绑定',
@@ -921,10 +944,26 @@ const app = createApp({
             spaceSub: 'Spaces, posts, media, and context.',
             messageTitle: 'Message microservice',
             messageSub: 'Chat, conversations, and live alerts.',
+            learningTitle: 'Learning service',
+            learningSub: 'Browse English, programming, AI, and other courses here.',
             online: 'Online',
             offline: 'Offline',
             open: 'Enter',
             refresh: 'Refresh status',
+          },
+          learning: {
+            kicker: 'Learning Service',
+            title: 'Learning Courses',
+            sub: 'Organize English, programming, AI, and more into course cards while fully rendering Markdown, code fences, tables, and Mermaid mind maps.',
+            backToServices: 'Back to Services',
+            catalogTitle: 'Course Catalog',
+            catalogSub: 'Pick a category first, then open the active lesson.',
+            currentCourse: 'Current Lesson',
+            categoryEnglish: 'English',
+            categoryProgramming: 'Programming',
+            categoryAi: 'AI',
+            featureMarkdown: 'Markdown lessons',
+            featureMermaid: 'Mermaid mind maps',
           },
           profile: {
             identity: {
@@ -1036,6 +1075,7 @@ const app = createApp({
             public: 'Space',
             profile: 'Personal Home',
             services: 'Services',
+            learning: 'Learning',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain',
@@ -1055,6 +1095,7 @@ const app = createApp({
             public: 'Space',
             profile: 'Personal Home',
             services: 'Service Navigation',
+            learning: 'Learning Courses',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain Accounts',
@@ -1069,6 +1110,7 @@ const app = createApp({
             public: 'Browse visible spaces and content',
             profile: 'View your profile, membership, and public space entrances.',
             services: 'Only online microservice entry points are shown here; offline modules hide automatically.',
+            learning: 'Browse English, programming, and AI lessons with full Markdown and Mermaid previews.',
             postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
             blockchain: 'Manage external blockchain account bindings',
@@ -1917,12 +1959,14 @@ const app = createApp({
     async refreshServiceStatus() {
       // Refresh the optional microservice flags so navigation can hide offline entries.
       // 刷新可选微服务状态，方便导航隐藏离线入口。
-      const [spaceOnline, messageOnline] = await Promise.all([
+      const [spaceOnline, messageOnline, learningOnline] = await Promise.all([
         this.checkServiceOnline(this.spaceApiBase),
         this.checkServiceOnline(this.messageApiBase),
+        this.checkServiceOnline(this.learningApiBase),
       ]);
       this.setServiceStatus('space', spaceOnline);
       this.setServiceStatus('message', messageOnline);
+      this.setServiceStatus('learning', learningOnline);
       if (!spaceOnline) {
         this.spaces = [];
         this.posts = [];
@@ -2011,6 +2055,15 @@ const app = createApp({
           }
         }
         this.view = 'chat';
+        return;
+      }
+      if (serviceKey === 'learning') {
+        // Open the learning service only when the dedicated backend is online.
+        // 仅在独立学习服务在线时打开学习页面。
+        if (!this.isServiceOnline('learning')) {
+          return;
+        }
+        this.view = 'learning';
         return;
       }
       if (serviceKey === 'levels') {
@@ -2736,6 +2789,8 @@ const app = createApp({
               private: '私人空間',
               public: '公共空間',
               profile: '個人主頁',
+              services: '服務導航',
+              learning: '學習課程',
               levels: '會員等級',
               blockchain: '鏈上帳號',
               friends: '好友',
@@ -2743,6 +2798,24 @@ const app = createApp({
               collapse: '收合導航',
               expand: '展開導航',
             },
+          services: {
+            learningTitle: '學習服務',
+            learningSub: '英語、程式、AI 等課程統一在這裡查看。',
+          },
+          learning: {
+            kicker: '學習服務',
+            title: '學習課程',
+            sub: '用課程卡片組織英語、程式、AI 等內容，並完整顯示 Markdown、程式碼塊、表格與 Mermaid 思維導圖。',
+            backToServices: '返回服務導航',
+            catalogTitle: '課程目錄',
+            catalogSub: '先選分類，再打開目前課程。',
+            currentCourse: '目前課程',
+            categoryEnglish: '英語',
+            categoryProgramming: '程式',
+            categoryAi: 'AI',
+            featureMarkdown: 'Markdown 正文',
+            featureMermaid: 'Mermaid 思維導圖',
+          },
           profile: {
             identity: {
               title: '身分卡',
@@ -2834,6 +2907,8 @@ const app = createApp({
               private: '空間',
               public: '空間',
               profile: '個人主頁',
+              services: '服務導航',
+              learning: '學習課程',
               levels: '會員等級',
               blockchain: '鏈上帳號',
               friends: '好友',
@@ -2846,6 +2921,8 @@ const app = createApp({
               private: '查看可見空間並發布內容',
               public: '瀏覽可見空間與內容',
               profile: '查看個人資料、會員等級與公開空間入口',
+              services: '線上微服務會顯示在這裡，離線模組會自動隱藏。',
+              learning: '查看英語、程式、AI 等課程，並完整預覽 Markdown 與 Mermaid 內容。',
               levels: '選擇適合你的會員等級',
               blockchain: '管理外部鏈上帳號綁定',
               friends: '建立聯繫與私聊',
@@ -5845,6 +5922,7 @@ app.component('settings-menu', window.SettingsMenu);
 app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
 app.component('service-navigation', window.ServiceNavigation);
+app.component('learning-service', window.LearningService);
 app.component('profile-page', window.ProfilePage);
 app.component('profile-identity-editor', window.ProfileIdentityEditor);
 app.component('profile-membership-modal', window.ProfileMembershipModal);

@@ -85,6 +85,7 @@
 
 - 认证页
 - 个人主页 / Personal Home
+- 学习页 / Learning
 - 内容流 / 发布页
 - 个人资料页
 - 好友页
@@ -182,7 +183,8 @@
 ## 7.4 当前实现映射
 
 - `frontend/` 当前覆盖：认证、内容流、好友、聊天、订阅、外部账号、多语言能力、空间进入与空间创建弹窗、个人主页单入口与公开空间入口，以及按健康状态显示的服务导航页
-- `flutter_frontend/` 当前覆盖：未登录落地页、个人主页、统一空间页、文章详情、好友、聊天、等级、订阅、外部账号、身份卡编辑、空间上下文与弹窗创建入口、服务导航页，工作台摘要已并入个人主页顶部
+- `frontend/` 当前覆盖：认证、内容流、好友、聊天、订阅、外部账号、多语言能力、空间进入与空间创建弹窗、个人主页单入口与公开空间入口、学习服务页，以及按健康状态显示的服务导航页
+- `flutter_frontend/` 当前覆盖：未登录落地页、个人主页、统一空间页、文章详情、好友、聊天、等级、订阅、外部账号、身份卡编辑、空间上下文与弹窗创建入口、学习服务页、服务导航页，工作台摘要已并入个人主页顶部
 - 若某页面只在 Legacy Web 存在而 Flutter 尚未补齐，必须保证导航层级不变，并在页面内提示能力差异
 - 当前聊天页的优化目标包含：媒体附件发送、未读角标、新好友浮动提醒、全屏占满布局、消息滚动与表情/贴纸快捷入口
 - Vue 的服务导航页已独立拆成单文件组件，根模板只保留挂载与路由收口，后续其他大区块也应按同样方式拆分 / The Vue service navigation page has been split into a standalone component, leaving only mount and routing coordination in the root template; other large blocks should follow the same pattern.
@@ -287,6 +289,13 @@
 - 空间子域名输入应显式提示仅支持英文字母和数字，且最长 63 个字符 / The space subdomain input should explicitly indicate that only letters and digits are allowed, up to 63 characters.
 - 桌面端优先使用居中的弹窗，移动端优先使用底部抽屉，以保证空间和内容创建路径短而清晰
 
+### 8.9 学习服务页面约束
+
+- 学习服务需要作为服务导航中的独立卡片与独立详情页存在，默认提供英语、编程、AI 等课程入口 / The learning service should exist as both a dedicated service card and a dedicated detail page, with English, programming, AI, and similar course entries by default.
+- 课程页应采用“课程列表 + 当前课程正文”结构，宽屏优先双栏，窄屏收敛为上下堆叠 / The course page should use a "course list + current course body" structure, preferring a two-column layout on wide screens and a stacked layout on narrow screens.
+- 课程正文需要完整支持常用 Markdown 渲染，包括标题、列表、引用、表格、代码块和 `mermaid` 思维导图 / Course bodies must fully support common Markdown rendering, including headings, lists, blockquotes, tables, code fences, and `mermaid` mind maps.
+- Vue Web 作为学习服务 Markdown / Mermaid 的主实现，Flutter 需要保持相同信息架构，并在 Flutter Web 上补齐图表渲染；非 Web 端若暂时无法直出图表，需至少稳定展示图表源码和说明 / Vue Web is the primary implementation for learning-service Markdown / Mermaid rendering; Flutter must keep the same information architecture and render diagrams on Flutter Web; if non-web platforms cannot render diagrams yet, they must at least show stable diagram source plus guidance.
+
 ## 9. 交互规则
 
 - 登录注册流程要尽量短
@@ -335,6 +344,7 @@
 
 ## 13. 进度记录
 
+- 2026-03-27：新增双前端“学习”服务板块，服务导航可直接进入英语 / 编程 / AI 课程，并补齐 Markdown 课程正文与 Mermaid 思维导图展示约束 / Added the dual-frontend "Learning" service area so the service navigator can open English/programming/AI courses, and added Markdown course-body plus Mermaid mind-map presentation constraints.
 - 2026-03-25：补充登录页“记住账号和密码”开关的前端设计约束，并要求双前端在登录成功后本地回填 / Added the frontend design constraint for the login-page "remember account and password" switch and required both frontends to restore credentials locally after a successful sign-in.
 - 2026-03-20：重构个人主页顶部用户 ID 信息框，移除顶部独立卡片并将用户 ID 下移到个人资料摘要，同时拆分修改资料/隐私设置按钮 / Reworked the personal-home top user-ID box, removed the separate header card, moved the user ID into the personal info summary, and split the edit/privacy buttons.
 - 2026-03-27：继续把个人主页从“个人资料 + 隐私”扩展为“个人资料 + 联系方式 + 隐私”，并要求三个入口分别打开独立弹窗 / Expanded the personal home from "personal info + privacy" to "personal info + contact details + privacy", and required each entry point to open its own dialog.

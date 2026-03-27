@@ -10,7 +10,7 @@ compose() {
 }
 
 echo "Building deployment images / 构建部署镜像"
-compose build migrate account-service space-service message-service legacy-web
+compose build migrate account-service space-service message-service learning-service legacy-web
 
 echo "Starting database / 启动数据库"
 compose up -d "$DB_SERVICE"
@@ -33,7 +33,7 @@ echo "Running versioned migrations / 运行版本化迁移"
 compose run --rm migrate
 
 echo "Starting application services / 启动应用服务"
-compose up -d account-service space-service message-service legacy-web
+compose up -d account-service space-service message-service learning-service legacy-web
 
 echo "Deployment stack is up / 部署栈已启动"
 compose ps

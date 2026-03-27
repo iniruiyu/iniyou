@@ -155,6 +155,7 @@ ThemeData _buildAppTheme({
 enum AppView {
   dashboard,
   services,
+  learning,
   space,
   privateSpace,
   publicSpace,
@@ -243,6 +244,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   // 可选微服务健康状态标记。
   bool _spaceServiceOnline = false;
   bool _messageServiceOnline = false;
+  bool _learningServiceOnline = false;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -260,6 +262,9 @@ class _IniyouHomeState extends State<IniyouHome> {
   // Whether the current edit draft should clear the existing media.
   // 当前编辑草稿是否需要清除已有媒体。
   bool _editPostMediaCleared = false;
+  // Active built-in learning course ID.
+  // 当前内建学习课程 ID。
+  String _activeLearningCourseId = 'english-storytelling';
   AppView _view = AppView.profile;
 
   CurrentUser? _user;
@@ -1738,6 +1743,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     final results = await Future.wait([
       _api.isSpaceServiceHealthy(),
       _api.isMessageServiceHealthy(),
+      _api.isLearningServiceHealthy(),
     ]);
     if (!mounted) {
       return;
@@ -1745,6 +1751,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     setState(() {
       _spaceServiceOnline = results[0];
       _messageServiceOnline = results[1];
+      _learningServiceOnline = results[2];
       if (!_spaceServiceOnline) {
         _spaces = const [];
         _spacePosts = const [];
@@ -3046,15 +3053,15 @@ class _IniyouHomeState extends State<IniyouHome> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final items =
-          <
-            ({
-              AppView view,
-              String label,
-              IconData icon,
+        <
+          ({
+            AppView view,
+            String label,
+            IconData icon,
             IconData activeIcon,
             int badgeCount,
-            })
-          >[
+          })
+        >[
           (
             view: AppView.services,
             label: _t('sidebar.services'),
@@ -3444,15 +3451,25 @@ class _IniyouHomeState extends State<IniyouHome> {
       services: buildServicesView(
         spaceOnline: _spaceServiceOnline,
         messageOnline: _messageServiceOnline,
+        learningOnline: _learningServiceOnline,
         onOpenProfile: () {
           _openProfile(_user!.id);
         },
         onOpenSpace: () => _navigateTo(AppView.space),
         onOpenChat: () => _navigateTo(AppView.chat),
+        onOpenLearning: () => _navigateTo(AppView.learning),
         onRefresh: () {
           _runBusy(_refreshAll);
         },
         languageCode: _languageCode,
+      ),
+      learning: buildLearningCourseView(
+        languageCode: _languageCode,
+        activeCourseId: _activeLearningCourseId,
+        onSelectCourse: (courseId) {
+          setState(() => _activeLearningCourseId = courseId);
+        },
+        onBackToServices: () => _navigateTo(AppView.services),
       ),
       space: buildSpaceView(
         context: context,

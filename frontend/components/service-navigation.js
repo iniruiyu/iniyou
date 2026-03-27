@@ -46,6 +46,21 @@ function buildServiceSections(app) {
         app.t('chat.title'),
       ],
     },
+    {
+      key: 'learning',
+      online: app.isServiceOnline('learning'),
+      title: app.t('services.learningTitle'),
+      sub: app.t('services.learningSub'),
+      actionKey: 'learning',
+      actionLabel: app.t('services.open'),
+      modules: [
+        app.t('learning.categoryEnglish'),
+        app.t('learning.categoryProgramming'),
+        app.t('learning.categoryAi'),
+        app.t('learning.featureMarkdown'),
+        app.t('learning.featureMermaid'),
+      ],
+    },
   ];
 }
 

@@ -61,6 +61,7 @@
 - 应保持 handler、service、repository、model 的职责清晰
 - 账号域与空间域必须拆分为独立服务：`account-service` 负责身份、登录、资料与可见范围，`space-service` 负责空间、文章、评论、点赞与转发
 - 登录主链路只依赖 `account-service`；`space-service` 与 `message-service` 作为可独立上下线的可选微服务，前端应通过 `GET /api/v1/health` 决定是否展示对应服务导航入口 / The login path depends only on `account-service`; `space-service` and `message-service` are optional microservices that can be brought online or offline independently, and the frontend should use `GET /api/v1/health` to decide whether to show their service navigation entries.
+- 学习课程文件能力拆分为独立 `learning-service`，负责 Markdown 文件存取与健康检查，避免课程资源和空间内容共享同一服务边界 / Learning course-file capability is split into an independent `learning-service` that owns Markdown file storage plus health checks, keeping course resources separate from the space-content service boundary.
 
 ## 6. 前端架构边界
 
@@ -68,6 +69,8 @@
 - 前端负责界面、交互、路由、页面状态和 API 调用
 - 前端不直接承担服务端业务判定
 - 组件层、页面层、服务调用层应明确分离
+- 学习服务的 Markdown 渲染优先复用双前端现有页面能力与浏览器 / Flutter 官方基础能力，避免为了课程展示引入重量级富文本栈 / The learning-service Markdown renderer should prefer the existing dual-frontend page capabilities plus browser / Flutter official primitives instead of introducing a heavyweight rich-text stack.
+- `mermaid` 思维导图在 Web 端可通过浏览器脚本渲染，在 Flutter Web 端可通过原生 Html view 桥接渲染，非 Web 端允许退化为源码预览但不得影响正文其它 Markdown 能力 / `mermaid` mind maps may be rendered through a browser script on Web and a native Html-view bridge on Flutter Web; non-web platforms may degrade to source preview without breaking the rest of the Markdown content.
 
 ## 7. 后端架构边界
 
@@ -131,6 +134,7 @@
 - 用户名与域名共享同一英数字 host label 命名空间，用户名作为登录别名，域名作为身份卡与登录入口句柄 / Username and domain share the same alphanumeric host-label namespace; username is the login alias, and domain is the identity-card and login-entry handle.
 - 个人空间列表只展示 `source=user` 的空间，历史默认空间通过 `source=system` 隐藏
 - 空间编辑、空间删除与文章删除均通过 REST 资源操作完成
+- 学习课程文件通过独立 `learning-service` 的文件型 REST 资源暴露，不新增数据库表，直接落盘到 `MARKDOWN_STORAGE_DIR` / Learning course files are exposed as file-backed REST resources in the independent `learning-service`, without adding new database tables, and are persisted directly to `MARKDOWN_STORAGE_DIR`.
 - 数据库迁移采用“双路径”：服务启动继续保留 `AutoMigrate` 作为开发回退，显式 `make migrate` 负责版本化脚本执行与发布前迁移 / Database migration now uses a dual path: service startup keeps `AutoMigrate` as a development fallback, while explicit `make migrate` handles versioned script execution and pre-release migration.
 - 数据模型需预留扩展字段
 - 数据库设计需兼容 MySQL 与 PostgreSQL
@@ -147,7 +151,14 @@
 
 ## 12. 第三方库登记表
 
-当前登记：无
+当前登记：
+
+- 名称：Mermaid.js
+  用途：学习服务与 Markdown 正文中的流程图 / 思维导图渲染
+  引入原因：在不引入完整富文本框架的前提下补齐 `mermaid` 图表能力
+  影响范围：`frontend/` 与 `flutter_frontend/web/`
+  维护成本评估：低，作为前端静态脚本引入，仅承载图表渲染
+  是否涉及 CGO：否
 
 后续新增依赖时，按以下格式追加：
 
@@ -205,3 +216,8 @@
 - 补齐本地容器化部署基线，使用 `docker-compose.yml`、`backend/Dockerfile`、`frontend/Dockerfile` 和 `scripts/deploy-stack.sh` 统一启动顺序，并在迁移完成后再拉起业务服务 / Added the local containerized deployment baseline using `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, and `scripts/deploy-stack.sh` to standardize startup order and start application services only after migrations complete.
 - 补充 GitHub Actions CI 检查流水线，统一覆盖后端测试、前端语法、Flutter 分析与容器构建 / Added a GitHub Actions CI pipeline to consistently cover backend tests, frontend syntax checks, Flutter analysis, and container builds.
 - 补充 GitHub Actions Release 工作流与 SSH 远程部署脚本，形成主分支通过 CI 后的发布闭环 / Added a GitHub Actions Release workflow and SSH remote deployment script to close the release loop after the main branch passes CI.
+
+### 2026-03-27
+
+- 为双前端学习服务补充轻依赖 Markdown / Mermaid 渲染策略，并登记 Mermaid.js 的引入边界 / Added the lightweight Markdown / Mermaid rendering strategy for the dual-frontend learning service and registered the Mermaid.js dependency boundary.
+- 新增独立 `learning-service`，将学习课程 Markdown 文件存取从 `space-service` 边界中拆出 / Added an independent `learning-service`, splitting learning-course Markdown file storage out of the `space-service` boundary.

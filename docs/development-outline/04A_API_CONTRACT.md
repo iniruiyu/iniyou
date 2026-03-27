@@ -8,6 +8,7 @@
 
 - 状态：进行中
 - 当前基线：API 契约清单、统一响应、鉴权边界和主要接口分组已建立 / API contract, unified responses, auth boundaries, and major endpoint groups are established.
+- 当前基线补充：学习课程 Markdown 文件接口已从空间接口中拆分，独立归属 `learning-service` / Baseline update: learning-course Markdown file APIs are split out of the space APIs and now belong to `learning-service`.
 - 进行中：与最新需求、数据模型和页面映射逐项复核 / In progress: reconciling the latest requirements, data model, and page mapping.
 
 ## 3. 任务清单
@@ -18,6 +19,7 @@
 - 明确鉴权接口与免鉴权接口
 - 明确分页、筛选、排序规则
 - 将账户、资产、内容、互动、聊天、外部身份接口完整补齐
+- 将学习课程 Markdown 文件的列表、读取、保存接口纳入 API 契约
 - 确保 API 文档与数据模型文档相互对应
 - 确保 API 文档与页面设计映射一致
 

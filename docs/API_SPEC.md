@@ -105,7 +105,23 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `POST /api/v1/posts/{id}/comments`
 - `POST /api/v1/posts/{id}/shares`
 
-### 5.4 聊天
+说明：
+
+- 文章与互动接口由 `space-service` 提供，默认监听 `http://localhost:8082/api/v1`
+
+### 5.4 学习课程文件
+
+- `GET /api/v1/markdown-files`
+- `GET /api/v1/markdown-files/{path}`
+- `PUT /api/v1/markdown-files/{path}`
+
+说明：
+
+- 学习课程文件接口由独立 `learning-service` 提供，默认监听 `http://localhost:8083/api/v1`
+- 仅允许访问与写入 `.md` 文件，`{path}` 为相对存储根目录的多级路径
+- 文件内容通过 JSON `content` 字段传输，响应中返回规范化相对路径、内容、大小和更新时间
+
+### 5.5 聊天
 
 - `GET /api/v1/conversations`
 - `GET /api/v1/messages`
@@ -120,17 +136,17 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 媒体消息在发送前由前端压缩后再提交，服务端保存压缩后的 payload
 - 过期消息会由服务端自动清理，前端无需额外调用删除接口
 
-### 5.5 预留未实现
+### 5.6 预留未实现
 
 - 钱包、权益、通用会员资源接口
 - 评论编辑与删除接口
 - 文章取消点赞独立接口（当前为 `POST /posts/{id}/likes` 切换）
 - 用户管理类 `PATCH /users/{id}`、`GET /users/{id}`
 
-### 5.6 健康探针
+### 5.7 健康探针
 
 - `GET /api/v1/health`
-- 说明：账号、空间与消息服务均公开该探针，前端服务导航和登录后的服务状态刷新会用它判断入口是否可见 / The account, space, and message services all expose this public probe, and the frontend service navigator plus the post-login refresh flow use it to decide whether an entry should be visible.
+- 说明：账号、空间、学习与消息服务均公开该探针，前端服务导航和登录后的服务状态刷新会用它判断入口是否可见 / The account, space, learning, and message services all expose this public probe, and the frontend service navigator plus the post-login refresh flow use it to decide whether an entry should be visible.
 
 ## 6. 关键接口说明
 
@@ -372,6 +388,37 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
   - 删除空间时应同步清理该空间下文章对应的媒体文件
   - 删除后个人空间列表应立即移除该空间
 
+### 6.20 学习课程文件列表
+
+- `GET /api/v1/markdown-files`
+- 用途：列出当前学习服务中已落盘的 Markdown 课程文件
+- 返回字段建议：`items[].path`, `items[].size`, `items[].updated_at`
+- 说明：
+  - 接口由 `learning-service` 提供
+  - 仅返回 `.md` 文件
+  - 路径统一使用相对存储根目录的 `/` 风格分隔
+
+### 6.21 读取学习课程文件
+
+- `GET /api/v1/markdown-files/{path}`
+- 用途：按相对路径读取单个 Markdown 课程文件
+- 返回字段建议：`path`, `content`, `size`, `updated_at`
+- 说明：
+  - `{path}` 仅允许安全的多级 `.md` 相对路径
+  - 非法路径返回 `400 Bad Request`
+  - 文件不存在时返回 `404 Not Found`
+
+### 6.22 保存学习课程文件
+
+- `PUT /api/v1/markdown-files/{path}`
+- 用途：创建或覆盖指定路径下的 Markdown 课程文件
+- 请求字段建议：`content`
+- 返回字段建议：`path`, `content`, `size`, `updated_at`
+- 说明：
+  - 新文件创建成功返回 `201 Created`
+  - 既有文件覆盖成功返回 `200 OK`
+  - 服务端只允许写入 `.md` 文件，并将文件落盘到 `MARKDOWN_STORAGE_DIR`（默认位于 `D:/codeX/iniyou/uploads/learning-service/markdown-files`）
+
 ## 7. 分页与筛选规则
 
 - 列表接口优先支持 `page`、`page_size`
@@ -406,6 +453,10 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 ### 2026-03-25
 
 - 后端统一返回 `code/message/data` 包装，业务载荷都放在 `data` 中 / The backend now emits a `code/message/data` envelope with business payloads placed in `data`.
+
+### 2026-03-27
+
+- 新增独立 `learning-service` 的 Markdown 文件列表、读取与保存接口，并明确默认服务地址为 `http://localhost:8083/api/v1` / Added independent `learning-service` Markdown file list, read, and save endpoints, and clarified the default service base as `http://localhost:8083/api/v1`.
 
 ### 2026-03-12
 

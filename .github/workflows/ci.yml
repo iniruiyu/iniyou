@@ -98,4 +98,4 @@ jobs:
         run: docker compose -f docker-compose.yml config --quiet
 
       - name: Build deployment images / 构建部署镜像
-        run: docker compose -f docker-compose.yml build account-service space-service message-service migrate legacy-web
+        run: docker compose -f docker-compose.yml build account-service space-service message-service learning-service migrate legacy-web

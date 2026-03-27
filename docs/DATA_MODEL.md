@@ -140,6 +140,19 @@
 - `content` 建议按 Markdown 语法存储，前端渲染时保持同一套富文本规则 / `content` should preferably be stored as Markdown syntax so both frontends can render it with the same rich-text rules.
 - 当前写接口只接受 `public` 或 `private` 两种文章可见范围，`friends` 仅在读取逻辑里保留兼容判断 / Current write APIs only accept `public` and `private` post visibility; `friends` remains only in read-side compatibility logic.
 
+#### `learning_markdown_files`（文件系统资源）
+
+- `path`
+- `content`
+- `size`
+- `updated_at`
+
+说明：
+
+- 学习课程 Markdown 文件不进入关系数据库，改为由独立 `learning-service` 以文件系统资源方式管理 / Learning course Markdown files do not enter the relational database; they are managed as filesystem resources by the independent `learning-service`.
+- `path` 作为相对存储根目录的稳定资源标识，只允许安全的多级 `.md` 相对路径 / `path` acts as the stable resource identifier relative to the storage root and only allows safe nested `.md` relative paths.
+- `content` 保存 UTF-8 Markdown 正文，供双前端统一渲染 / `content` stores the UTF-8 Markdown body used by both frontends for shared rendering.
+
 ### 4.4 内容与互动域
 
 #### `comments`
@@ -201,6 +214,7 @@
 - `posts` 与 `post_likes` 为一对多关系
 - `posts` 与 `post_shares` 为一对多关系
 - `posts.media_*` 与 `posts.media_items` 一起用于承载图文和小视频附件 / `posts.media_*` and `posts.media_items` together carry image and short-video attachments.
+- `learning_markdown_files` 通过文件系统目录与学习课程详情形成一对一内容关系，不新增数据库外键 / `learning_markdown_files` map one-to-one to learning course details through the filesystem directory and do not add database foreign keys.
 - `users` 与 `messages` 分别通过 `sender_id`、`receiver_id` 形成双向一对多关系
 - `users` 与 `external_accounts` 为一对多关系
 
@@ -290,6 +304,10 @@
 
 - 收回 `posts.space_user_id` 的持久化误写，并明确该字段只在 `PostView` 中派生 / Removed the mistaken persistent `posts.space_user_id` entry and clarified that the field is only derived in `PostView`.
 - 对齐 `spaces(user_id, type)` 复合索引说明与后端实现 / Aligned the `spaces(user_id, type)` composite index note with the backend implementation.
+
+### 2026-03-27
+
+- 新增 `learning_markdown_files` 文件系统资源说明，明确学习课程 Markdown 文件不进入关系数据库 / Added the `learning_markdown_files` filesystem-resource note and clarified that learning-course Markdown files do not enter the relational database.
 
 ### 2026-03-11
 

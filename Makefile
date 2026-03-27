@@ -7,7 +7,7 @@ FLUTTER_BIN := /root/flutter-sdk/bin/flutter
 MIGRATE_SERVICE ?= all
 COMPOSE_FILE ?= docker-compose.yml
 
-.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-flutter-web smoke migrate deploy deploy-remote deploy-down deploy-logs deploy-status check
+.PHONY: help test test-backend test-frontend test-flutter build build-backend build-flutter-web run-account run-space run-message run-learning run-flutter-web smoke migrate deploy deploy-remote deploy-down deploy-logs deploy-status check
 
 help:
 	@echo "Available targets / 可用目标:"
@@ -20,6 +20,7 @@ help:
 	@echo "  make run-account    - Run account service / 启动账号服务"
 	@echo "  make run-space      - Run space service / 启动空间服务"
 	@echo "  make run-message    - Run message service / 启动消息服务"
+	@echo "  make run-learning   - Run learning service / 启动学习服务"
 	@echo "  make run-flutter-web - Run Flutter web client / 启动 Flutter Web 前端"
 	@echo "  make migrate        - Run versioned schema/backfill migration / 运行版本化迁移与回填"
 	@echo "  make migrate MIGRATE_SERVICE=account - Run one service migration / 仅运行单服务迁移"
@@ -59,6 +60,7 @@ build-backend:
 	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/account-service ./cmd/account-service
 	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/space-service ./cmd/space-service
 	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/message-service ./cmd/message-service
+	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/learning-service ./cmd/learning-service
 	cd $(BACKEND_DIR) && CGO_ENABLED=0 go build -o ../build/migrate ./cmd/migrate
 
 build-flutter-web:
@@ -73,6 +75,9 @@ run-space:
 
 run-message:
 	cd $(BACKEND_DIR) && SERVICE_PORT=8081 go run ./cmd/message-service
+
+run-learning:
+	cd $(BACKEND_DIR) && SERVICE_PORT=8083 go run ./cmd/learning-service
 
 run-flutter-web:
 	cd $(FLUTTER_FRONTEND_DIR) && CI=true FLUTTER_SUPPRESS_ANALYTICS=true $(FLUTTER_BIN) run -d web-server --web-hostname 0.0.0.0 --web-port 3000

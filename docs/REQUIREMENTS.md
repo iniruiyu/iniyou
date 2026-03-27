@@ -64,6 +64,9 @@
 - 好友主页入口应优先使用弹层预览，完整个人主页仅在弹层内进一步打开 / Friend profile entry points should prefer a modal preview, and the full profile page should only open from inside that modal.
 - 登录主链路只依赖账号服务，空间服务与消息服务作为可选微服务，离线时只隐藏对应入口，不阻断登录 / The main login path depends only on the account service; space and message are optional microservices that hide their entry points when offline without blocking login.
 - 服务导航需要按微服务在线状态动态展示模块卡片，并保留独立跳转入口 / Service navigation must dynamically show module cards based on microservice health and keep independent entry points.
+- 服务导航需要新增“学习”服务板块，至少内置英语、编程、AI 三类课程，并支持课程卡片与详情页两级浏览 / Service navigation must add a "Learning" service area with at least English, programming, and AI course categories, and support both course-card and course-detail browsing.
+- 学习服务中的课程正文需要完整支持常用 Markdown 语法，至少包含标题、列表、引用、分隔线、表格、代码块以及 `mermaid` 思维导图 / Course bodies inside the learning service must fully support common Markdown syntax, including headings, lists, blockquotes, thematic breaks, tables, code fences, and `mermaid` mind maps at minimum.
+- 学习课程内容需要由独立 `learning-service` 提供 Markdown 文件存取接口，支持保存 `.md` 文件与按路径读取 `.md` 文件，并将文件落盘到可配置目录 / Learning course content must be served by an independent `learning-service` that exposes Markdown file save/read APIs, supports storing `.md` files and reading them by path, and persists files to a configurable on-disk directory.
 
 细化功能：
 
@@ -201,6 +204,9 @@
 - 文章编辑
 - 文章列表
 - 文章详情
+- 学习课程列表
+- 学习课程详情
+- 学习课程 Markdown 文件存取
 - 用户主页内容展示
 - 空间内文章发布
 - 空间内文章浏览
@@ -292,6 +298,12 @@
 当前需求为首版基础范围，后续还会继续补充。每次补充需求时，应把新增能力、影响范围和优先级写入本文件。
 
 ## 12. 变更日志
+
+### 2026-03-27
+
+- 新增“学习”服务板块需求，要求服务导航可直接进入课程区，并至少覆盖英语、编程、AI 三类课程 / Added the "Learning" service requirement so the service navigator can open a course area that covers at least English, programming, and AI.
+- 明确学习课程正文需要完整支持常用 Markdown 语法，并补充 `mermaid` 思维导图展示能力 / Clarified that course bodies must fully support common Markdown syntax and added `mermaid` mind-map rendering support.
+- 明确学习课程内容由独立 `learning-service` 提供 Markdown 文件存取接口，后端需要支持 `.md` 文件落盘与按路径读取 / Clarified that learning course content is provided by an independent `learning-service`, and the backend must support on-disk `.md` persistence plus path-based reads.
 
 ### 2026-03-20
 

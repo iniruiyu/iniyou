@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'mermaid_diagram.dart';
+
 class PostMarkdownBody extends StatelessWidget {
   const PostMarkdownBody({super.key, required this.content});
 
@@ -38,7 +40,7 @@ class PostMarkdownBody extends StatelessWidget {
     final children = <Widget>[];
     for (var index = 0; index < blocks.length; index += 1) {
       if (index > 0) {
-        children.add(const SizedBox(height: 10));
+        children.add(const SizedBox(height: 12));
       }
       children.add(
         _buildBlock(
@@ -51,9 +53,11 @@ class PostMarkdownBody extends StatelessWidget {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
+    return SelectionArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 
@@ -64,6 +68,7 @@ class PostMarkdownBody extends StatelessWidget {
     required TextStyle codeStyle,
     required TextStyle linkStyle,
   }) {
+    final theme = Theme.of(context);
     switch (block.type) {
       case _MarkdownBlockType.heading:
         final headingStyle = _headingStyle(context, block.level, baseStyle);
@@ -83,13 +88,10 @@ class PostMarkdownBody extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(14),
             border: Border(
-              left: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 4,
-              ),
+              left: BorderSide(color: theme.colorScheme.primary, width: 4),
             ),
           ),
           child: Text.rich(
@@ -109,26 +111,54 @@ class PostMarkdownBody extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
-          child: SelectableText(
-            block.text,
-            style: codeStyle.copyWith(height: 1.5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (block.info.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    block.info,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              SelectableText(
+                block.text,
+                style: codeStyle.copyWith(height: 1.5),
+              ),
+            ],
           ),
         );
+      case _MarkdownBlockType.mermaid:
+        return MermaidDiagramBlock(code: block.text);
       case _MarkdownBlockType.unorderedList:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (var index = 0; index < block.items.length; index += 1) ...[
-              if (index > 0) const SizedBox(height: 4),
+            for (var index = 0; index < block.listItems.length; index += 1) ...[
+              if (index > 0) const SizedBox(height: 6),
               _buildListItem(
-                prefix: '•',
-                text: block.items[index],
+                marker: block.listItems[index].checked == null
+                    ? const _ListMarkerData.text('•')
+                    : _ListMarkerData.task(block.listItems[index].checked!),
+                text: block.listItems[index].text,
                 baseStyle: baseStyle,
                 codeStyle: codeStyle,
                 linkStyle: linkStyle,
@@ -141,9 +171,9 @@ class PostMarkdownBody extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (var index = 0; index < block.items.length; index += 1) ...[
-              if (index > 0) const SizedBox(height: 4),
+              if (index > 0) const SizedBox(height: 6),
               _buildListItem(
-                prefix: '${index + 1}.',
+                marker: _ListMarkerData.text('${index + 1}.'),
                 text: block.items[index],
                 baseStyle: baseStyle,
                 codeStyle: codeStyle,
@@ -152,6 +182,16 @@ class PostMarkdownBody extends StatelessWidget {
             ],
           ],
         );
+      case _MarkdownBlockType.table:
+        return _MarkdownTable(
+          header: block.header,
+          rows: block.rows,
+          baseStyle: baseStyle,
+          codeStyle: codeStyle,
+          linkStyle: linkStyle,
+        );
+      case _MarkdownBlockType.thematicBreak:
+        return Divider(color: theme.colorScheme.outlineVariant, height: 12);
       case _MarkdownBlockType.paragraph:
         return Text.rich(
           TextSpan(
@@ -168,7 +208,7 @@ class PostMarkdownBody extends StatelessWidget {
   }
 
   Widget _buildListItem({
-    required String prefix,
+    required _ListMarkerData marker,
     required String text,
     required TextStyle baseStyle,
     required TextStyle codeStyle,
@@ -177,10 +217,32 @@ class PostMarkdownBody extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$prefix ',
-          style: baseStyle.copyWith(fontWeight: FontWeight.w700),
-        ),
+        if (marker.taskChecked == null)
+          Text(
+            '${marker.text} ',
+            style: baseStyle.copyWith(fontWeight: FontWeight.w700),
+          )
+        else
+          Container(
+            margin: const EdgeInsets.only(top: 2, right: 8),
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: marker.taskChecked!
+                  ? Colors.teal.withValues(alpha: 0.16)
+                  : Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Center(
+              child: Text(
+                marker.taskChecked! ? '✓' : '○',
+                style: baseStyle.copyWith(
+                  fontSize: (baseStyle.fontSize ?? 15) - 2,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
         Expanded(
           child: Text.rich(
             TextSpan(
@@ -229,7 +291,7 @@ List<_MarkdownBlock> _parseMarkdownBlocks(String content) {
       .split('\n');
   final blocks = <_MarkdownBlock>[];
   final paragraphLines = <String>[];
-  var fence = '';
+  _CodeFenceState? fence;
   var codeLines = <String>[];
 
   void flushParagraph() {
@@ -244,10 +306,14 @@ List<_MarkdownBlock> _parseMarkdownBlocks(String content) {
     final line = lines[index];
     final trimmed = line.trim();
 
-    if (fence.isNotEmpty) {
-      if (trimmed.startsWith(fence)) {
-        blocks.add(_MarkdownBlock.code(codeLines.join('\n')));
-        fence = '';
+    if (fence != null) {
+      if (trimmed.startsWith(fence.delimiter)) {
+        blocks.add(
+          fence.info == 'mermaid'
+              ? _MarkdownBlock.mermaid(codeLines.join('\n'))
+              : _MarkdownBlock.code(codeLines.join('\n'), fence.info),
+        );
+        fence = null;
         codeLines = <String>[];
       } else {
         codeLines.add(line);
@@ -275,11 +341,44 @@ List<_MarkdownBlock> _parseMarkdownBlocks(String content) {
       continue;
     }
 
-    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+    final fenceMatch = RegExp(
+      r'^(```|~~~)\s*([\w-]+)?\s*$',
+    ).firstMatch(trimmed);
+    if (fenceMatch != null) {
       flushParagraph();
-      fence = trimmed.substring(0, 3);
+      fence = _CodeFenceState(
+        delimiter: fenceMatch.group(1)!,
+        info: (fenceMatch.group(2) ?? '').toLowerCase(),
+      );
       codeLines = <String>[];
       index += 1;
+      continue;
+    }
+
+    if (RegExp(r'^([-*_])(?:\s*\1){2,}\s*$').hasMatch(trimmed)) {
+      flushParagraph();
+      blocks.add(_MarkdownBlock.thematicBreak());
+      index += 1;
+      continue;
+    }
+
+    if (index + 1 < lines.length &&
+        line.contains('|') &&
+        lines[index + 1].contains('|') &&
+        _isTableSeparator(lines[index + 1])) {
+      flushParagraph();
+      final header = _splitTableRow(line);
+      final rows = <List<String>>[];
+      index += 2;
+      while (index < lines.length) {
+        final current = lines[index];
+        if (current.trim().isEmpty || !current.contains('|')) {
+          break;
+        }
+        rows.add(_splitTableRow(current));
+        index += 1;
+      }
+      blocks.add(_MarkdownBlock.table(header, rows));
       continue;
     }
 
@@ -301,7 +400,7 @@ List<_MarkdownBlock> _parseMarkdownBlocks(String content) {
     final unorderedMatch = RegExp(r'^[-*+]\s+(.+)$').firstMatch(trimmed);
     if (unorderedMatch != null) {
       flushParagraph();
-      final items = <String>[];
+      final items = <_MarkdownListItem>[];
       while (index < lines.length) {
         final current = RegExp(
           r'^[-*+]\s+(.+)$',
@@ -309,7 +408,16 @@ List<_MarkdownBlock> _parseMarkdownBlocks(String content) {
         if (current == null) {
           break;
         }
-        items.add(current.group(1) ?? '');
+        final itemText = current.group(1) ?? '';
+        final taskMatch = RegExp(r'^\[( |x|X)\]\s+(.+)$').firstMatch(itemText);
+        items.add(
+          _MarkdownListItem(
+            text: taskMatch?.group(2) ?? itemText,
+            checked: taskMatch == null
+                ? null
+                : (taskMatch.group(1)?.toLowerCase() == 'x'),
+          ),
+        );
         index += 1;
       }
       blocks.add(_MarkdownBlock.unorderedList(items));
@@ -339,11 +447,37 @@ List<_MarkdownBlock> _parseMarkdownBlocks(String content) {
   }
 
   flushParagraph();
-  if (fence.isNotEmpty) {
-    blocks.add(_MarkdownBlock.code(codeLines.join('\n')));
+  if (fence != null) {
+    blocks.add(
+      fence.info == 'mermaid'
+          ? _MarkdownBlock.mermaid(codeLines.join('\n'))
+          : _MarkdownBlock.code(codeLines.join('\n'), fence.info),
+    );
   }
 
   return blocks;
+}
+
+List<String> _splitTableRow(String line) {
+  // Split one markdown table row into trimmed cells.
+  // 将一行 Markdown 表格拆分成去空白后的单元格。
+  return line
+      .trim()
+      .replaceFirst(RegExp(r'^\|'), '')
+      .replaceFirst(RegExp(r'\|$'), '')
+      .split('|')
+      .map((cell) => cell.trim())
+      .toList();
+}
+
+bool _isTableSeparator(String line) {
+  // Detect the separator row between table head and body.
+  // 识别表头和表体之间的分隔线。
+  final cells = _splitTableRow(line);
+  if (cells.isEmpty) {
+    return false;
+  }
+  return cells.every((cell) => RegExp(r'^:?-{3,}:?$').hasMatch(cell));
 }
 
 List<InlineSpan> _buildInlineSpans(
@@ -519,8 +653,11 @@ enum _MarkdownBlockType {
   heading,
   quote,
   code,
+  mermaid,
   unorderedList,
   orderedList,
+  table,
+  thematicBreak,
 }
 
 class _MarkdownBlock {
@@ -528,55 +665,236 @@ class _MarkdownBlock {
     required this.type,
     required this.text,
     required this.items,
+    required this.listItems,
     required this.level,
+    required this.info,
+    required this.header,
+    required this.rows,
   });
 
   factory _MarkdownBlock.paragraph(String text) => _MarkdownBlock._(
     type: _MarkdownBlockType.paragraph,
     text: text,
     items: const [],
+    listItems: const [],
     level: 0,
+    info: '',
+    header: const [],
+    rows: const [],
   );
 
   factory _MarkdownBlock.heading(int level, String text) => _MarkdownBlock._(
     type: _MarkdownBlockType.heading,
     text: text,
     items: const [],
+    listItems: const [],
     level: level,
+    info: '',
+    header: const [],
+    rows: const [],
   );
 
   factory _MarkdownBlock.quote(String text) => _MarkdownBlock._(
     type: _MarkdownBlockType.quote,
     text: text,
     items: const [],
+    listItems: const [],
     level: 0,
+    info: '',
+    header: const [],
+    rows: const [],
   );
 
-  factory _MarkdownBlock.code(String text) => _MarkdownBlock._(
+  factory _MarkdownBlock.code(String text, String info) => _MarkdownBlock._(
     type: _MarkdownBlockType.code,
     text: text,
     items: const [],
+    listItems: const [],
     level: 0,
+    info: info,
+    header: const [],
+    rows: const [],
   );
 
-  factory _MarkdownBlock.unorderedList(List<String> items) => _MarkdownBlock._(
-    type: _MarkdownBlockType.unorderedList,
-    text: '',
-    items: items,
+  factory _MarkdownBlock.mermaid(String text) => _MarkdownBlock._(
+    type: _MarkdownBlockType.mermaid,
+    text: text,
+    items: const [],
+    listItems: const [],
     level: 0,
+    info: 'mermaid',
+    header: const [],
+    rows: const [],
   );
+
+  factory _MarkdownBlock.unorderedList(List<_MarkdownListItem> items) =>
+      _MarkdownBlock._(
+        type: _MarkdownBlockType.unorderedList,
+        text: '',
+        items: items,
+        listItems: items,
+        level: 0,
+        info: '',
+        header: const [],
+        rows: const [],
+      );
 
   factory _MarkdownBlock.orderedList(List<String> items) => _MarkdownBlock._(
     type: _MarkdownBlockType.orderedList,
     text: '',
     items: items,
+    listItems: const [],
     level: 0,
+    info: '',
+    header: const [],
+    rows: const [],
+  );
+
+  factory _MarkdownBlock.table(List<String> header, List<List<String>> rows) =>
+      _MarkdownBlock._(
+        type: _MarkdownBlockType.table,
+        text: '',
+        items: const [],
+        listItems: const [],
+        level: 0,
+        info: '',
+        header: header,
+        rows: rows,
+      );
+
+  factory _MarkdownBlock.thematicBreak() => _MarkdownBlock._(
+    type: _MarkdownBlockType.thematicBreak,
+    text: '',
+    items: const [],
+    listItems: const [],
+    level: 0,
+    info: '',
+    header: const [],
+    rows: const [],
   );
 
   final _MarkdownBlockType type;
   final String text;
-  final List<String> items;
+  final List<dynamic> items;
+  final List<_MarkdownListItem> listItems;
   final int level;
+  final String info;
+  final List<String> header;
+  final List<List<String>> rows;
+}
+
+class _MarkdownListItem {
+  const _MarkdownListItem({required this.text, required this.checked});
+
+  final String text;
+  final bool? checked;
+}
+
+class _CodeFenceState {
+  const _CodeFenceState({required this.delimiter, required this.info});
+
+  final String delimiter;
+  final String info;
+}
+
+class _ListMarkerData {
+  const _ListMarkerData._({required this.text, required this.taskChecked});
+
+  const _ListMarkerData.text(String text)
+    : this._(text: text, taskChecked: null);
+
+  const _ListMarkerData.task(bool checked)
+    : this._(text: '', taskChecked: checked);
+
+  final String text;
+  final bool? taskChecked;
+}
+
+class _MarkdownTable extends StatelessWidget {
+  const _MarkdownTable({
+    required this.header,
+    required this.rows,
+    required this.baseStyle,
+    required this.codeStyle,
+    required this.linkStyle,
+  });
+
+  final List<String> header;
+  final List<List<String>> rows;
+  final TextStyle baseStyle;
+  final TextStyle codeStyle;
+  final TextStyle linkStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final effectiveRows = <TableRow>[
+      TableRow(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        ),
+        children: [
+          for (final cell in header)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text.rich(
+                TextSpan(
+                  style: baseStyle.copyWith(fontWeight: FontWeight.w800),
+                  children: _buildInlineSpans(
+                    cell,
+                    baseStyle.copyWith(fontWeight: FontWeight.w800),
+                    codeStyle,
+                    linkStyle,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      for (final row in rows)
+        TableRow(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withValues(alpha: 0.2),
+          ),
+          children: [
+            for (final cell in row)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text.rich(
+                  TextSpan(
+                    style: baseStyle,
+                    children: _buildInlineSpans(
+                      cell,
+                      baseStyle,
+                      codeStyle,
+                      linkStyle,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+    ];
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Table(
+            defaultColumnWidth: const IntrinsicColumnWidth(),
+            border: TableBorder.symmetric(
+              inside: BorderSide(color: theme.colorScheme.outlineVariant),
+            ),
+            children: effectiveRows,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 enum _InlineType { code, link, bold, italic }

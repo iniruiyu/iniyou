@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
 import 'content_sections.dart';
+import 'learning_view.dart';
 import 'settings_views.dart';
 import 'chat_view.dart';
 import 'social_views.dart' hide ChatView;
@@ -50,20 +51,38 @@ Widget buildDashboardView({
 Widget buildServicesView({
   required bool spaceOnline,
   required bool messageOnline,
+  required bool learningOnline,
   required VoidCallback onOpenProfile,
   required VoidCallback onOpenSpace,
   required VoidCallback onOpenChat,
+  required VoidCallback onOpenLearning,
   required VoidCallback onRefresh,
   required String languageCode,
 }) {
   return ServicesView(
     spaceOnline: spaceOnline,
     messageOnline: messageOnline,
+    learningOnline: learningOnline,
     onOpenProfile: onOpenProfile,
     onOpenSpace: onOpenSpace,
     onOpenChat: onOpenChat,
+    onOpenLearning: onOpenLearning,
     onRefresh: onRefresh,
     languageCode: languageCode,
+  );
+}
+
+Widget buildLearningCourseView({
+  required String languageCode,
+  required String activeCourseId,
+  required ValueChanged<String> onSelectCourse,
+  required VoidCallback onBackToServices,
+}) {
+  return buildLearningView(
+    languageCode: languageCode,
+    activeCourseId: activeCourseId,
+    onSelectCourse: onSelectCourse,
+    onBackToServices: onBackToServices,
   );
 }
 
@@ -945,18 +964,22 @@ class ServicesView extends StatelessWidget {
     super.key,
     required this.spaceOnline,
     required this.messageOnline,
+    required this.learningOnline,
     required this.onOpenProfile,
     required this.onOpenSpace,
     required this.onOpenChat,
+    required this.onOpenLearning,
     required this.onRefresh,
     required this.languageCode,
   });
 
   final bool spaceOnline;
   final bool messageOnline;
+  final bool learningOnline;
   final VoidCallback onOpenProfile;
   final VoidCallback onOpenSpace;
   final VoidCallback onOpenChat;
+  final VoidCallback onOpenLearning;
   final VoidCallback onRefresh;
   final String languageCode;
 
@@ -989,7 +1012,12 @@ class ServicesView extends StatelessWidget {
           localizedText(languageCode, '会员等级', 'Membership', '會員等級'),
           localizedText(languageCode, '链上账号', 'Blockchain', '鏈上帳號'),
         ],
-        actionLabel: localizedText(languageCode, '进入个人主页', 'Open profile', '進入個人主頁'),
+        actionLabel: localizedText(
+          languageCode,
+          '进入个人主页',
+          'Open profile',
+          '進入個人主頁',
+        ),
         onOpen: onOpenProfile,
       ),
       if (spaceOnline)
@@ -1014,7 +1042,12 @@ class ServicesView extends StatelessWidget {
             localizedText(languageCode, '媒体预览', 'Media preview', '媒體預覽'),
             localizedText(languageCode, '公开内容', 'Public content', '公開內容'),
           ],
-          actionLabel: localizedText(languageCode, '打开空间', 'Open space', '打開空間'),
+          actionLabel: localizedText(
+            languageCode,
+            '打开空间',
+            'Open space',
+            '打開空間',
+          ),
           onOpen: onOpenSpace,
         ),
       if (messageOnline)
@@ -1041,6 +1074,46 @@ class ServicesView extends StatelessWidget {
           actionLabel: localizedText(languageCode, '打开聊天', 'Open chat', '打開聊天'),
           onOpen: onOpenChat,
         ),
+      if (learningOnline)
+        _MicroserviceCard(
+          title: localizedText(
+            languageCode,
+            '学习服务',
+            'Learning service',
+            '學習服務',
+          ),
+          subtitle: localizedText(
+            languageCode,
+            '英语、编程、AI 等课程统一在这里查看，并完整渲染 Markdown 内容。',
+            'English, programming, AI, and other lessons live here with full Markdown rendering.',
+            '英語、程式、AI 等課程統一在這裡查看，並完整渲染 Markdown 內容。',
+          ),
+          statusLabel: localizedText(languageCode, '在线', 'Online', '線上'),
+          modules: [
+            localizedText(languageCode, '英语', 'English', '英語'),
+            localizedText(languageCode, '编程', 'Programming', '程式'),
+            localizedText(languageCode, 'AI', 'AI', 'AI'),
+            localizedText(
+              languageCode,
+              'Markdown 课程',
+              'Markdown lessons',
+              'Markdown 課程',
+            ),
+            localizedText(
+              languageCode,
+              'Mermaid 思维导图',
+              'Mermaid mind maps',
+              'Mermaid 思維導圖',
+            ),
+          ],
+          actionLabel: localizedText(
+            languageCode,
+            '打开课程',
+            'Open courses',
+            '打開課程',
+          ),
+          onOpen: onOpenLearning,
+        ),
     ];
 
     return SingleChildScrollView(
@@ -1049,7 +1122,9 @@ class ServicesView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -1104,11 +1179,7 @@ class ServicesView extends StatelessWidget {
             spacing: 16,
             runSpacing: 16,
             children: [
-              for (final card in cards)
-                SizedBox(
-                  width: cardWidth,
-                  child: card,
-                ),
+              for (final card in cards) SizedBox(width: cardWidth, child: card),
             ],
           ),
         ],
@@ -1155,9 +1226,7 @@ class _MicroserviceCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Chip(
-                  label: Text(statusLabel),
-                ),
+                Chip(label: Text(statusLabel)),
               ],
             ),
             const SizedBox(height: 10),

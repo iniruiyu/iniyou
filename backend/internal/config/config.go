@@ -9,12 +9,13 @@ import (
 )
 
 type Config struct {
-	ServiceName     string
-	Port            string
-	DBDsn           string
-	JWTSecret       string
-	MediaStorageDir string
-	TokenTTL        time.Duration
+	ServiceName        string
+	Port               string
+	DBDsn              string
+	JWTSecret          string
+	MediaStorageDir    string
+	MarkdownStorageDir string
+	TokenTTL           time.Duration
 }
 
 func Load(serviceName string) Config {
@@ -25,6 +26,8 @@ func Load(serviceName string) Config {
 		port = getenv("SERVICE_PORT", "8081")
 	} else if serviceName == "space" {
 		port = getenv("SERVICE_PORT", "8082")
+	} else if serviceName == "learning" {
+		port = getenv("SERVICE_PORT", "8083")
 	}
 
 	// Token TTL in minutes.
@@ -35,13 +38,17 @@ func Load(serviceName string) Config {
 		ttlInt = 120
 	}
 
+	mediaStorageDir := filepath.Clean(getenv("MEDIA_STORAGE_DIR", defaultMediaStorageDir()))
+	markdownStorageDir := filepath.Clean(getenv("MARKDOWN_STORAGE_DIR", defaultMarkdownStorageDir(serviceName, mediaStorageDir)))
+
 	return Config{
-		ServiceName:     serviceName,
-		Port:            port,
-		DBDsn:           getenv("DB_DSN", "host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable"),
-		JWTSecret:       getenv("JWT_SECRET", "dev-secret"),
-		MediaStorageDir: filepath.Clean(getenv("MEDIA_STORAGE_DIR", defaultMediaStorageDir())),
-		TokenTTL:        time.Duration(ttlInt) * time.Minute,
+		ServiceName:        serviceName,
+		Port:               port,
+		DBDsn:              getenv("DB_DSN", "host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable"),
+		JWTSecret:          getenv("JWT_SECRET", "dev-secret"),
+		MediaStorageDir:    mediaStorageDir,
+		MarkdownStorageDir: markdownStorageDir,
+		TokenTTL:           time.Duration(ttlInt) * time.Minute,
 	}
 }
 
@@ -52,6 +59,18 @@ func defaultMediaStorageDir() string {
 		return filepath.FromSlash("D:/codeX/iniyou/uploads/space-service")
 	}
 	return "/data/uploads/space-service"
+}
+
+func defaultMarkdownStorageDir(serviceName string, mediaStorageDir string) string {
+	// Keep markdown storage service-specific while preserving the shared fallback for existing services.
+	// 让 Markdown 存储保持服务级隔离，同时为现有服务保留共享回退路径。
+	if serviceName == "learning" {
+		if runtime.GOOS == "windows" {
+			return filepath.FromSlash("D:/codeX/iniyou/uploads/learning-service/markdown-files")
+		}
+		return "/data/uploads/learning-service/markdown-files"
+	}
+	return filepath.Join(mediaStorageDir, "markdown-files")
 }
 
 func getenv(key, fallback string) string {

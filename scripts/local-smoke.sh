@@ -7,6 +7,7 @@ set -euo pipefail
 
 ACCOUNT_API_BASE="${ACCOUNT_API_BASE:-http://localhost:8080/api/v1}"
 MESSAGE_API_BASE="${MESSAGE_API_BASE:-http://localhost:8081/api/v1}"
+LEARNING_API_BASE="${LEARNING_API_BASE:-http://localhost:8083/api/v1}"
 
 timestamp="$(date +%s)"
 user1_email="smoke-${timestamp}-a@example.com"
@@ -39,6 +40,18 @@ get_json() {
   local url="$1"
   local token="$2"
   curl -fsS "$url" -H "Authorization: Bearer ${token}"
+}
+
+put_json() {
+  # Send a JSON PUT request and capture response body.
+  # 发送 JSON PUT 请求并获取响应内容。
+  local url="$1"
+  local payload="$2"
+  shift 2
+  curl -fsS -X PUT "$url" \
+    -H 'Content-Type: application/json' \
+    "$@" \
+    -d "$payload"
 }
 
 echo "1. Register first user / 注册第一个用户"
@@ -77,5 +90,12 @@ curl -fsS -X POST "${MESSAGE_API_BASE}/messages" \
 
 echo "7. Load conversations / 读取会话摘要"
 get_json "${MESSAGE_API_BASE}/conversations" "${token_two}" >/dev/null
+
+echo "8. Save markdown lesson / 保存 Markdown 课程文件"
+put_json "${LEARNING_API_BASE}/markdown-files/smoke/lesson.md" "{\"content\":\"# smoke lesson\"}" \
+  -H "Authorization: Bearer ${token_one}" >/dev/null
+
+echo "9. Load markdown lesson / 读取 Markdown 课程文件"
+get_json "${LEARNING_API_BASE}/markdown-files/smoke/lesson.md" "${token_one}" >/dev/null
 
 echo "Smoke test passed / 冒烟测试通过"

@@ -82,6 +82,25 @@ services:
       - "8081:8081"
     restart: unless-stopped
 
+  learning-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: learning-service
+    environment:
+      <<: *backend_env
+      SERVICE_PORT: "8083"
+      MARKDOWN_STORAGE_DIR: /data/uploads/learning-service/markdown-files
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    volumes:
+      - iniyou_uploads:/data/uploads/learning-service
+    restart: unless-stopped
+
   legacy-web:
     build:
       context: ./frontend
@@ -90,6 +109,7 @@ services:
       - account-service
       - space-service
       - message-service
+      - learning-service
     ports:
       - "3000:80"
     restart: unless-stopped

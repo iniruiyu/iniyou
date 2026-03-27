@@ -45,6 +45,8 @@
 - 建立多语言界面基线，覆盖首批内建语言与后续扩展机制
 - 建立账号身份卡与空间单入口基线，账号服务与空间服务按职责拆分
 - 建立个人主页单入口，账号主页与用户主页合并为一个 personal home，避免双前端重复展示同类内容
+- 建立服务导航下的学习服务板块，提供英语、编程、AI 等课程入口，并统一 Markdown 课程渲染能力
+- 建立独立 `learning-service`，负责 Markdown 课程文件的保存、读取与健康检查
 
 ### 4.2 前端职责范围
 
@@ -135,6 +137,8 @@
 - 基础聊天
 - 聊天媒体附件、未读角标与好友提醒
 - 聊天全屏布局、历史滚动、回到底部按钮与表情/贴纸快捷插入
+- 学习服务导航、课程目录与 Markdown / Mermaid 课程内容展示
+- 学习服务后端 Markdown 文件存取与独立微服务化
 
 ### 6.2 第二阶段：资产与权益
 
@@ -250,6 +254,8 @@ new-project/
 
 进度记录 / Progress log:
 
+- 2026-03-27：启动双前端“学习”服务板块，实现英语 / 编程 / AI 课程目录，并补齐 Markdown 课程正文与 Mermaid 思维导图展示链路 / Started the dual-frontend "Learning" service area with English/programming/AI course catalogs, plus Markdown course-body and Mermaid mind-map rendering.
+- 2026-03-27：新增独立 `learning-service`，提供 `/api/v1/markdown-files` 列表、读取和保存接口，并将 Markdown 课程文件落盘到可配置目录 / Added an independent `learning-service` with `/api/v1/markdown-files` list/read/save endpoints, persisting Markdown course files to a configurable on-disk directory.
 - 2026-03-25：补齐 GitHub Actions Release 工作流与远程部署脚本，CI 通过后可通过 SSH 自动把最新 `main` 分支部署到目标主机 / Added the GitHub Actions Release workflow and remote deployment script so the latest `main` branch can now be SSH-deployed to the target host after CI passes.
 - 2026-03-25：补齐 GitHub Actions CI 检查流水线，后端、前端、Flutter 和容器构建现在可以在 push / PR 时同步验证 / Added a GitHub Actions CI pipeline so the backend, frontend, Flutter, and container builds can now be validated on push and pull request.
 - 2026-03-25：`make deploy` 本地实跑通过，容器栈已完成镜像构建、版本化迁移、服务启动与停机回收 / `make deploy` passed locally, and the container stack completed image builds, versioned migrations, service startup, and teardown.

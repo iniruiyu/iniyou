@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260327-01" />
+  <link rel="stylesheet" href="assets/styles.css?v=20260327-02" />
 </head>
 <body>
   <!-- Vue root / Vue 根节点 -->
@@ -38,7 +38,7 @@
           <span class="nav-icon">HD</span>
           <span class="nav-label">{{ t('nav.collapse') }}</span>
         </button>
-        <button class="nav-item" data-icon="SV" :class="{active: view === 'services'}" :disabled="!isLoggedIn" @click="view = 'services'">
+        <button class="nav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="view = 'services'">
           <span class="nav-icon">SV</span>
           <span class="nav-label">{{ t('nav.services') }}</span>
         </button>
@@ -100,7 +100,7 @@
         </button>
         <nav class="topnav-strip" aria-label="Primary navigation">
           <!-- Keep the current nav state when entering the space workspace from the compact top nav / 从折叠顶层导航进入空间工作台时保持当前导航状态。 -->
-          <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services'}" :disabled="!isLoggedIn" @click="view = 'services'">
+          <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="view = 'services'">
             <span class="nav-icon">SV</span>
             <span class="nav-label">{{ t('nav.services') }}</span>
           </button>
@@ -205,6 +205,7 @@
 
       <!-- Service navigation / 服务导航：抽成独立组件，避免根模板继续膨胀。 -->
       <service-navigation v-if="view === 'services'" :app="appContext"></service-navigation>
+      <learning-service v-if="view === 'learning'" :app="appContext"></learning-service>
 
       <!-- Identity editor / 身份编辑器：继续保持为独立浮层组件。 -->
       <profile-identity-editor :app="appContext"></profile-identity-editor>
@@ -2218,10 +2219,12 @@
 
   <!-- Local Vue runtime / 本地 Vue 运行时：避免首屏依赖外网 CDN。 -->
   <script src="vendor/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <script src="components/settings-menu.js"></script>
   <script src="components/auth-panel.js"></script>
   <script src="components/landing-page.js"></script>
   <script src="components/service-navigation.js"></script>
+  <script src="components/learning-service.js"></script>
   <script src="components/profile-page.js"></script>
   <script src="components/profile-identity-editor.js"></script>
   <script src="components/profile-membership-modal.js"></script>
