@@ -5823,6 +5823,8 @@ app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
 app.component('service-navigation', window.ServiceNavigation);
 app.component('profile-page', window.ProfilePage);
+app.component('profile-identity-editor', window.ProfileIdentityEditor);
+app.component('profile-membership-modal', window.ProfileMembershipModal);
 app.component('bilingual-field', window.BilingualField);
 app.component('bilingual-select-field', window.BilingualSelectField);
 app.component('bilingual-action-button', window.BilingualActionButton);

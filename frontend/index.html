@@ -206,7 +206,9 @@
       <!-- Service navigation / 服务导航：抽成独立组件，避免根模板继续膨胀。 -->
       <service-navigation v-if="view === 'services'" :app="appContext"></service-navigation>
 
-      <div v-if="identityEditorOpen" class="modal-backdrop modal-backdrop--sheet" @click.self="closeIdentityEditor">
+      <!-- Identity editor / 身份编辑器：继续保持为独立浮层组件。 -->
+      <profile-identity-editor :app="appContext"></profile-identity-editor>
+      <div v-if="false" class="modal-backdrop modal-backdrop--sheet" @click.self="closeIdentityEditor">
         <div class="modal modal--sheet profile-editor-modal">
           <div class="modal-header">
             <div>
@@ -1297,7 +1299,9 @@
         <div v-else class="empty-state">{{ t('posts.profileEmpty') }}</div>
       </section>
 
-      <div v-if="membershipModalOpen" class="modal-backdrop modal-backdrop--sheet" @click.self="closeMembershipModal">
+      <!-- Membership sheet / 会员切换浮层：继续保持为独立组件。 -->
+      <profile-membership-modal :app="appContext"></profile-membership-modal>
+      <div v-if="false" class="modal-backdrop modal-backdrop--sheet" @click.self="closeMembershipModal">
         <div class="modal modal--sheet membership-modal">
           <div class="modal-header">
             <div>
@@ -2219,6 +2223,8 @@
   <script src="components/landing-page.js"></script>
   <script src="components/service-navigation.js"></script>
   <script src="components/profile-page.js"></script>
+  <script src="components/profile-identity-editor.js"></script>
+  <script src="components/profile-membership-modal.js"></script>
   <script src="components/bilingual-field.js"></script>
   <script src="components/bilingual-select-field.js"></script>
   <script src="components/bilingual-action-button.js"></script>
