@@ -1205,17 +1205,15 @@ class ProfileSummaryView extends StatelessWidget {
           ),
         if (isOwnProfile) ...[
           const SizedBox(height: 16),
-          // Keep only quick-glance stats on the personal home.
-          // 个人主页这里只保留快速概览统计。
+          // Keep the owner summary focused on relationship signals instead of personal-space counts.
+          // 个人主页概览只保留关系信息，不再展示自己的空间数量。
           LayoutBuilder(
             builder: (context, constraints) {
               return TopSummaryRow(
                 width: constraints.maxWidth,
                 cards: buildHomeSummaryCards(
-                  spaces: profileSpaces,
                   friends: friends,
                   t: t,
-                  languageCode: languageCode,
                 ),
               );
             },
@@ -1424,20 +1422,24 @@ class ProfileSummaryView extends StatelessWidget {
               );
             },
           ),
-        if (isOwnProfile) const SizedBox(height: 16),
-        Text(
-          t('profile.spaces.title'),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        SpaceListSection(
-          title: t('profile.spaces.publicList'),
-          spaces: profileSpaces,
-          activeSpaceId: null,
-          currentUserId: user?.id,
-          onEnterSpace: onEnterSpace,
-          languageCode: languageCode,
-        ),
+        if (!isOwnProfile) ...[
+          const SizedBox(height: 16),
+          // Only friend profiles should surface public-space entries and enter actions.
+          // 只有好友资料才展示公开空间入口和进入动作。
+          Text(
+            t('profile.spaces.title'),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          SpaceListSection(
+            title: t('profile.spaces.publicList'),
+            spaces: profileSpaces,
+            activeSpaceId: null,
+            currentUserId: user?.id,
+            onEnterSpace: onEnterSpace,
+            languageCode: languageCode,
+          ),
+        ],
       ],
     );
   }

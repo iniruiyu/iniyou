@@ -107,22 +107,12 @@ List<String> connectedChains(List<ExternalAccountItem> externalAccounts) {
 }
 
 List<SummaryCardData> buildHomeSummaryCards({
-  required List<SpaceItem> spaces,
   required List<FriendItem> friends,
   required String Function(String key) t,
-  required String languageCode,
 }) {
-  // Keep only the quick-glance indicators here; membership and chain details live in dedicated cards below.
-  // 这里只保留快速概览指标，会员等级和链上账号明细放到下方独立卡片展示。
-  // Count only public-type spaces in the dashboard summary.
-  // 仪表盘摘要只统计公共类型空间，避免把旧私人空间算进去。
-  final visibleSpaces = publicSpaces(spaces);
+  // Keep the owner summary focused on relationships instead of personal-space counts.
+  // 让个人主页概览只保留关系信息，不再展示自己的空间数量。
   return [
-    SummaryCardData(
-      t('summary.spaces'),
-      '${visibleSpaces.length}',
-      localizedText(languageCode, '可见空间总数', 'Visible spaces', '可見空間總數'),
-    ),
     SummaryCardData(
       t('summary.friends'),
       '${acceptedFriends(friends).length}',

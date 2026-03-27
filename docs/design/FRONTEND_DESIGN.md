@@ -205,7 +205,7 @@
 
 ### 8.1 个人主页
 
-- 展示个人摘要、会员状态与公开空间入口 / Show personal summary, membership status, and public space entrances.
+- 展示个人摘要与会员状态；公开空间入口只在好友资料里出现 / Show personal summary and membership status; public-space entrances appear only in friend profiles.
 - 展示最近活动 / Show recent activity.
 - 提供订阅、资料编辑与设置快捷入口 / Provide quick actions for subscription, profile editing, and settings.
 
@@ -257,9 +257,9 @@
   - 隐私设置摘要 / Privacy settings summary
   - 当前会员等级 / Current membership level
   - 公开空间入口 / Public space entrances
-- 个人主页顶部应将原工作台的空间、好友、会员和外部账号统计折叠为一个汇总摘要区 / The top of the personal home should fold the old workspace's space, friend, membership, and external-account stats into a single summary block.
+- 个人主页顶部应将好友、会员和外部账号统计折叠为一个汇总摘要区，自己的空间数量不再单列；公开空间入口只在好友资料里展示 / The top of the personal home should fold friend, membership, and external-account stats into a summary block, without separately surfacing the owner's own space count; public-space entrances should appear only in friend profiles.
 - 个人资料、联系方式与隐私设置应分开成独立卡片，三个编辑入口分别触发各自的弹窗 / Personal info, contact details, and privacy settings should be split into separate cards, and the three edit entry points should open their own dialogs.
-- 个人主页默认不展示内容流，只展示公开空间入口与必要摘要信息 / Profile pages should not show a content feed by default; they should only show public space entrances and required summary info.
+- 个人主页默认不展示内容流；本人视图只展示必要摘要信息，公开空间入口只在好友资料里展示 / Profile pages should not show a content feed by default; the owner view should only show required summary info, and public-space entrances should appear only in friend profiles.
 - 个人主页中的关系动作需要根据当前关系状态切换：
   - 未建立关系：显示“添加好友”
   - 收到待处理请求：显示“接受好友”

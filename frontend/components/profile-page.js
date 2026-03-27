@@ -185,10 +185,8 @@ window.ProfilePage = {
                   <span>{{ app.t('profile.identity.genderLabel') }}</span>
                   <strong>{{ profileDisplayValue(profileUser.gender) }}</strong>
                 </div>
-                <div class="identity-summary-item identity-summary-item--wide">
-                  <span>{{ app.t('profile.spaces.title') }}</span>
-                  <strong>{{ visibleProfileSpaces.length }}</strong>
-                </div>
+                <!-- Keep the owner summary focused on identity and relationships instead of personal-space counts. -->
+                <!-- 个人主页概览只保留身份和关系信息，不再展示自己的空间数量。 -->
               </div>
             </div>
           </div>
@@ -198,11 +196,9 @@ window.ProfilePage = {
             <div class="panel">
               <h2>{{ app.t('dashboard.overviewTitle') }}</h2>
               <p>{{ app.t('dashboard.overviewSub') }}</p>
+              <!-- Keep the owner overview focused on relationships, membership, and blockchain status instead of personal-space counts. -->
+              <!-- 个人主页概览只保留关系、会员和链上状态，不再展示自己的空间数量。 -->
               <div class="stats">
-                <div class="stat">
-                  <div class="stat-title">{{ app.t('profile.spaces.title') }}</div>
-                  <div class="stat-value">{{ visibleProfileSpaces.length }}</div>
-                </div>
                 <div class="stat">
                   <div class="stat-title">{{ app.t('dashboard.friendStat') }}</div>
                   <div class="stat-value">{{ acceptedFriends.length }}</div>
@@ -399,7 +395,9 @@ window.ProfilePage = {
             </div>
           </div>
         </template>
-        <div class="panel profile-spaces-card">
+        <!-- Only friend profiles should surface public-space cards and entry actions. -->
+        <!-- 只有好友资料才展示公开空间卡片与进入入口。 -->
+        <div v-if="profileUser.id !== user.id" class="panel profile-spaces-card">
           <div class="topbar">
             <div>
               <h3>{{ app.t('profile.spaces.title') }}</h3>
