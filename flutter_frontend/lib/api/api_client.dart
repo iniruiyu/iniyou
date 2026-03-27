@@ -16,6 +16,8 @@ List<Map<String, dynamic>> _serializePostMediaItems(
 }
 
 class ApiClient {
+  static const Duration optionalServiceTimeout = Duration(milliseconds: 800);
+
   static const String accountBase = String.fromEnvironment(
     'ACCOUNT_API_BASE',
     defaultValue: 'http://localhost:8080/api/v1',
@@ -31,6 +33,24 @@ class ApiClient {
 
   String? token;
 
+  bool _isOptionalServiceBase(String base) {
+    // Only the space and message services are optional; account service stays on the main login path.
+    // 只有空间和消息服务是可选项，账号服务仍然保留在主登录链路上。
+    return base == spaceBase || base == messageBase;
+  }
+
+  Future<http.Response> _send(
+    String base,
+    Future<http.Response> request,
+  ) {
+    // Cap optional-service requests so offline services fail fast instead of waiting on network timeouts.
+    // 为可选服务请求加上超时，避免离线服务继续等待网络超时。
+    if (_isOptionalServiceBase(base)) {
+      return request.timeout(optionalServiceTimeout);
+    }
+    return request;
+  }
+
   Uri wsUri(String token) {
     final parsed = Uri.parse(messageBase);
     final scheme = parsed.scheme == 'https' ? 'wss' : 'ws';
@@ -45,7 +65,7 @@ class ApiClient {
     // Probe a service health endpoint without forcing the caller to handle exceptions.
     // 探测服务健康接口，让调用方无需显式处理异常。
     try {
-      final response = await http.get(Uri.parse('$baseUrl/health'));
+      final response = await _send(baseUrl, http.get(Uri.parse('$baseUrl/health')));
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (_) {
       return false;
@@ -438,9 +458,12 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> _get(String base, String path) async {
-    final response = await http.get(
-      Uri.parse('$base$path'),
-      headers: _headers(),
+    final response = await _send(
+      base,
+      http.get(
+        Uri.parse('$base$path'),
+        headers: _headers(),
+      ),
     );
     return _decode(response);
   }
@@ -450,10 +473,13 @@ class ApiClient {
     String path,
     Map<String, dynamic> body,
   ) async {
-    final response = await http.post(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-      body: jsonEncode(body),
+    final response = await _send(
+      base,
+      http.post(
+        Uri.parse('$base$path'),
+        headers: _headers(),
+        body: jsonEncode(body),
+      ),
     );
     return _decode(response);
   }
@@ -463,10 +489,13 @@ class ApiClient {
     String path,
     Map<String, dynamic> body,
   ) async {
-    final response = await http.put(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-      body: jsonEncode(body),
+    final response = await _send(
+      base,
+      http.put(
+        Uri.parse('$base$path'),
+        headers: _headers(),
+        body: jsonEncode(body),
+      ),
     );
     return _decode(response);
   }
@@ -476,18 +505,24 @@ class ApiClient {
     String path,
     Map<String, dynamic> body,
   ) async {
-    final response = await http.patch(
-      Uri.parse('$base$path'),
-      headers: _headers(),
-      body: jsonEncode(body),
+    final response = await _send(
+      base,
+      http.patch(
+        Uri.parse('$base$path'),
+        headers: _headers(),
+        body: jsonEncode(body),
+      ),
     );
     return _decode(response);
   }
 
   Future<Map<String, dynamic>> _delete(String base, String path) async {
-    final response = await http.delete(
-      Uri.parse('$base$path'),
-      headers: _headers(),
+    final response = await _send(
+      base,
+      http.delete(
+        Uri.parse('$base$path'),
+        headers: _headers(),
+      ),
     );
     return _decode(response);
   }

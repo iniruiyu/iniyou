@@ -241,8 +241,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   SpaceItem? _currentSpace;
   // Optional microservice health flags.
   // 可选微服务健康状态标记。
-  bool _spaceServiceOnline = true;
-  bool _messageServiceOnline = true;
+  bool _spaceServiceOnline = false;
+  bool _messageServiceOnline = false;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';

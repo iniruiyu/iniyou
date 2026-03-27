@@ -33,6 +33,25 @@ const CHAT_STICKER_TOKENS = new Set(
   ),
 );
 
+// Keep optional microservice probes short so offline services fail fast.
+// 将可选微服务探测控制得更短，避免离线服务拖慢页面打开。
+const OPTIONAL_SERVICE_TIMEOUT_MS = 800;
+
+async function fetchWithTimeout(input, init = {}, timeoutMs = OPTIONAL_SERVICE_TIMEOUT_MS) {
+  // Abort optional-service requests quickly instead of waiting for the network stack to time out.
+  // 让可选服务请求尽快中止，而不是等网络栈自己超时。
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 // Limit article image uploads to a bounded long edge so previews stay lightweight.
 // 将文章图片上传的最长边限制在可控范围内，避免预览和传输过大。
 const POST_MEDIA_MAX_DIMENSION = 1600;
@@ -331,8 +350,8 @@ const app = createApp({
       // Online state for optional microservice entry points.
       // 可选微服务入口的在线状态。
       serviceStatus: {
-        space: true,
-        message: true,
+        space: false,
+        message: false,
       },
       // Visible auth mode on the guest landing page.
       // 未登录首页当前显示的认证模式。
@@ -1889,7 +1908,7 @@ const app = createApp({
       // Probe a microservice health endpoint without blocking the whole login flow.
       // 探测微服务健康接口，但不阻塞整条登录链路。
       try {
-        const res = await fetch(`${baseUrl}/health`, { cache: 'no-store' });
+        const res = await fetchWithTimeout(`${baseUrl}/health`, { cache: 'no-store' });
         return res.ok;
       } catch (_error) {
         return false;
@@ -4601,21 +4620,25 @@ const app = createApp({
     async loadProfileSpaces(userID) {
       // Load public spaces for the opened profile.
       // 加载当前主页的公开空间。
-      if (!this.token || !userID) {
+      // Skip the fetch immediately when the space service is offline so profile opening never waits on a dead backend.
+      // 空间服务离线时直接跳过拉取，避免打开个人主页时等待失联后端。
+      if (!this.token || !userID || !this.isServiceOnline('space')) {
         this.profileSpaces = [];
         return;
       }
       let res;
       try {
         const encoded = encodeURIComponent(String(userID).trim());
-        res = await fetch(`${this.spaceApiBase}/users/${encoded}/spaces?visibility=public`, {
+        res = await fetchWithTimeout(`${this.spaceApiBase}/users/${encoded}/spaces?visibility=public`, {
           headers: { Authorization: `Bearer ${this.token}` },
         });
       } catch (_error) {
+        this.setServiceStatus('space', false);
         this.profileSpaces = [];
         return;
       }
       if (!res.ok) {
+        this.setServiceStatus('space', false);
         this.profileSpaces = [];
         return;
       }
