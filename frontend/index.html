@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/styles.css?v=20260326-17" />
+  <link rel="stylesheet" href="assets/styles.css?v=20260327-01" />
 </head>
 <body>
   <!-- Vue root / Vue 根节点 -->
@@ -60,18 +60,16 @@
           <span class="nav-icon">ME</span>
           <span class="nav-label">{{ t('nav.profile') }}</span>
         </button>
+        <!-- Settings action now lives in the main menu / 设置入口现在放到主菜单里。 -->
+        <settings-menu :app="appContext" class="nav-item-settings"></settings-menu>
       </nav>
 
-      <!-- Account and settings live inside the main menu instead of the top-right corner. -->
-      <!-- 账号与设置收进主菜单，不再占用右上角。 -->
+      <!-- Account summary stays in the sidebar / 账号摘要保留在侧栏底部。 -->
       <div class="sidebar-account">
         <div class="sidebar-account-copy">
           <div class="sidebar-account-name">{{ user.name }}</div>
           <div class="sidebar-account-meta">{{ user.domain ? `@${user.domain}` : (user.username ? `@${user.username}` : user.id) }}</div>
           <div class="sidebar-account-meta">{{ localizedLevelName }}</div>
-        </div>
-        <div class="sidebar-account-actions">
-          <settings-menu :app="appContext"></settings-menu>
         </div>
       </div>
 

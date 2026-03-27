@@ -35,7 +35,7 @@
 - 空间卡片应提供进入、编辑和删除入口，文章卡片应提供编辑和删除入口
 - 空间名称与二级域名需解耦展示，二级域名仅允许英文字母和数字，且最长 63 个字符
 - 登录页应提供“记住账号和密码”开关，登录成功后将账号与密码持久化到本地，下次进入页面时优先回填 / The login page should provide a "remember account and password" switch, persist the account and password locally after a successful sign-in, and prefill them on the next visit.
-- 登录后账号、会员等级、语言切换、设置与退出入口应收进主菜单侧栏，顶部右上角尽量留给内容区 / After login, account, membership level, language switch, settings, and sign-out actions should move into the main menu sidebar so the upper-right stays clear for content.
+- 登录后账号、会员等级、语言切换、设置与退出入口应收进主菜单侧栏，设置弹层在窄视口中需要自动贴合可视区域，避免被侧栏 overflow 裁切 / After login, account, membership level, language switch, settings, and sign-out actions should move into the main menu sidebar, and the settings panel should auto-fit the visible viewport on narrow screens so it is not clipped by the sidebar overflow.
 - 聊天页应尽量占满主内容区，消息历史区独立滚动，输入区固定在底部
 - 常用表情与贴纸应以快捷插入区呈现，减少输入切换成本
 
