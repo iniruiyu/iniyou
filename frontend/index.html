@@ -931,7 +931,8 @@
         </div>
       </section>
 
-      <section v-if="view === 'profile'" class="panel profile-page">
+      <profile-page v-if="view === 'profile'" :app="appContext"></profile-page>
+      <section v-if="false" class="panel profile-page">
         <div v-if="profileUser" class="profile-home-feed">
           <div v-if="profileUser.id !== user.id" class="post-composer profile-hero-card">
             <div class="post-header">
@@ -2217,6 +2218,7 @@
   <script src="components/auth-panel.js"></script>
   <script src="components/landing-page.js"></script>
   <script src="components/service-navigation.js"></script>
+  <script src="components/profile-page.js"></script>
   <script src="components/bilingual-field.js"></script>
   <script src="components/bilingual-select-field.js"></script>
   <script src="components/bilingual-action-button.js"></script>

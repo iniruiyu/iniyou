@@ -5822,6 +5822,7 @@ app.component('settings-menu', window.SettingsMenu);
 app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
 app.component('service-navigation', window.ServiceNavigation);
+app.component('profile-page', window.ProfilePage);
 app.component('bilingual-field', window.BilingualField);
 app.component('bilingual-select-field', window.BilingualSelectField);
 app.component('bilingual-action-button', window.BilingualActionButton);
