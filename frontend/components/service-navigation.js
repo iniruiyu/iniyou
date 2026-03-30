@@ -61,6 +61,23 @@ function buildServiceSections(app) {
         app.t('learning.featureMermaid'),
       ],
     },
+    ...(String(app?.user?.level || '').toLowerCase() === 'admin' && app.isServiceOnline('learning')
+      ? [{
+          key: 'learning-admin',
+          online: true,
+          title: app.t('services.learningAdminTitle'),
+          sub: app.t('services.learningAdminSub'),
+          actionKey: 'learning-admin',
+          actionLabel: app.t('services.open'),
+          modules: [
+            app.t('learningAdmin.featureDraft'),
+            app.t('learningAdmin.featurePublished'),
+            app.t('learningAdmin.featureArchived'),
+            app.t('learningAdmin.featureLocales'),
+            app.t('learningAdmin.featureOps'),
+          ],
+        }]
+      : []),
   ];
 }
 

@@ -206,6 +206,7 @@
       <!-- Service navigation / 服务导航：抽成独立组件，避免根模板继续膨胀。 -->
       <service-navigation v-if="view === 'services'" :app="appContext"></service-navigation>
       <learning-service v-if="view === 'learning'" :app="appContext"></learning-service>
+      <learning-service v-if="view === 'learning-admin'" :app="appContext" :admin-workspace-only="true"></learning-service>
 
       <!-- Identity editor / 身份编辑器：继续保持为独立浮层组件。 -->
       <profile-identity-editor :app="appContext"></profile-identity-editor>

@@ -136,6 +136,8 @@ String pageTitleForView(
       return t('page.services');
     case AppView.learning:
       return t('page.learning');
+    case AppView.learningAdmin:
+      return t('page.learningAdmin');
     case AppView.space:
       final activeSpace = activePublicSpace ?? activePrivateSpace;
       if (activeSpace?.name.isNotEmpty == true) {
@@ -192,6 +194,8 @@ String pageSubtitleForView(
       return t('subtitle.services');
     case AppView.learning:
       return t('subtitle.learning');
+    case AppView.learningAdmin:
+      return t('subtitle.learningAdmin');
     case AppView.space:
       return t('subtitle.space');
     case AppView.privateSpace:
@@ -222,6 +226,7 @@ String sidebarViewKey(AppView view) {
     case AppView.services:
       return 'services';
     case AppView.learning:
+    case AppView.learningAdmin:
       return 'services';
     case AppView.space:
     case AppView.privateSpace:
@@ -264,6 +269,8 @@ AppView appViewFromKey(String key) {
       return AppView.services;
     case 'learning':
       return AppView.learning;
+    case 'learning-admin':
+      return AppView.learningAdmin;
     default:
       return AppView.profile;
   }

@@ -18,12 +18,14 @@ class MarkdownFileDocument {
     required this.content,
     required this.size,
     required this.updatedAt,
+    required this.status,
   });
 
   final String path;
   final String content;
   final int size;
   final DateTime? updatedAt;
+  final String status;
 
   factory MarkdownFileDocument.fromJson(Map<String, dynamic> json) {
     return MarkdownFileDocument(
@@ -31,6 +33,7 @@ class MarkdownFileDocument {
       content: (json['content'] ?? '').toString(),
       size: toInt(json['size']),
       updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+      status: (json['status'] ?? '').toString(),
     );
   }
 }
@@ -40,17 +43,20 @@ class MarkdownFileSummary {
     required this.path,
     required this.size,
     required this.updatedAt,
+    required this.status,
   });
 
   final String path;
   final int size;
   final DateTime? updatedAt;
+  final String status;
 
   factory MarkdownFileSummary.fromJson(Map<String, dynamic> json) {
     return MarkdownFileSummary(
       path: (json['path'] ?? '').toString(),
       size: toInt(json['size']),
       updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+      status: (json['status'] ?? '').toString(),
     );
   }
 }

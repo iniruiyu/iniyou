@@ -156,6 +156,7 @@ enum AppView {
   dashboard,
   services,
   learning,
+  learningAdmin,
   space,
   privateSpace,
   publicSpace,
@@ -3452,12 +3453,14 @@ class _IniyouHomeState extends State<IniyouHome> {
         spaceOnline: _spaceServiceOnline,
         messageOnline: _messageServiceOnline,
         learningOnline: _learningServiceOnline,
+        isAdmin: (_user?.level ?? '').toLowerCase() == 'admin',
         onOpenProfile: () {
           _openProfile(_user!.id);
         },
         onOpenSpace: () => _navigateTo(AppView.space),
         onOpenChat: () => _navigateTo(AppView.chat),
         onOpenLearning: () => _navigateTo(AppView.learning),
+        onOpenLearningAdmin: () => _navigateTo(AppView.learningAdmin),
         onRefresh: () {
           _runBusy(_refreshAll);
         },
@@ -3467,6 +3470,17 @@ class _IniyouHomeState extends State<IniyouHome> {
         languageCode: _languageCode,
         activeCourseId: _activeLearningCourseId,
         isAdmin: (_user?.level ?? '').toLowerCase() == 'admin',
+        apiClient: _api,
+        onSelectCourse: (courseId) {
+          setState(() => _activeLearningCourseId = courseId);
+        },
+        onBackToServices: () => _navigateTo(AppView.services),
+      ),
+      learningAdmin: buildLearningCourseView(
+        languageCode: _languageCode,
+        activeCourseId: _activeLearningCourseId,
+        isAdmin: (_user?.level ?? '').toLowerCase() == 'admin',
+        adminWorkspaceOnly: true,
         apiClient: _api,
         onSelectCourse: (courseId) {
           setState(() => _activeLearningCourseId = courseId);

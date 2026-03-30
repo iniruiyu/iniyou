@@ -35,6 +35,9 @@ type MarkdownFileSummary struct {
 	// UpdatedAt keeps the last modification time for listing and cache checks.
 	// UpdatedAt 保存最后修改时间，便于列表展示与缓存判断。
 	UpdatedAt time.Time `json:"updated_at"`
+	// Status keeps the lesson publication state for learning course files.
+	// Status 保存学习课程文件的发布状态。
+	Status string `json:"status,omitempty"`
 }
 
 type MarkdownFileDocument struct {
@@ -50,6 +53,9 @@ type MarkdownFileDocument struct {
 	// UpdatedAt keeps the last modification time for the document.
 	// UpdatedAt 保存文档最后修改时间。
 	UpdatedAt time.Time `json:"updated_at"`
+	// Status keeps the lesson publication state for learning course files.
+	// Status 保存学习课程文件的发布状态。
+	Status string `json:"status,omitempty"`
 }
 
 func SetMarkdownStorageDir(dir string) {
@@ -144,12 +150,17 @@ func GetMarkdownFile(relativePath string) (MarkdownFileDocument, error) {
 		return MarkdownFileDocument{}, err
 	}
 
-	return MarkdownFileDocument{
+	document := MarkdownFileDocument{
 		Path:      normalizedPath,
 		Content:   string(content),
 		Size:      info.Size(),
 		UpdatedAt: info.ModTime(),
-	}, nil
+	}
+	metadata, metadataErr := loadLearningCourseMetadata()
+	if metadataErr == nil {
+		document.Status = learningCourseStatusForPath(metadata, normalizedPath)
+	}
+	return document, nil
 }
 
 func SaveMarkdownFile(relativePath string, content string) (MarkdownFileDocument, bool, error) {
@@ -167,6 +178,11 @@ func SaveMarkdownFile(relativePath string, content string) (MarkdownFileDocument
 	if err := os.WriteFile(absolutePath, []byte(content), 0o644); err != nil {
 		return MarkdownFileDocument{}, false, err
 	}
+	if created {
+		if err := EnsureLearningCourseStatusIfMissing(normalizedPath, LearningCourseStatusDraft); err != nil {
+			return MarkdownFileDocument{}, false, err
+		}
+	}
 
 	document, err := GetMarkdownFile(normalizedPath)
 	if err != nil {
@@ -178,7 +194,7 @@ func SaveMarkdownFile(relativePath string, content string) (MarkdownFileDocument
 func DeleteMarkdownFile(relativePath string) error {
 	// Delete one markdown file beneath the configured storage root and ignore duplicate deletes.
 	// 删除配置存储根目录下的单个 Markdown 文件，并对重复删除保持幂等。
-	_, absolutePath, err := markdownFileAbsolutePath(relativePath)
+	normalizedPath, absolutePath, err := markdownFileAbsolutePath(relativePath)
 	if err != nil {
 		return err
 	}
@@ -188,7 +204,7 @@ func DeleteMarkdownFile(relativePath string) error {
 		}
 		return err
 	}
-	return nil
+	return DeleteLearningCourseMetadata(normalizedPath)
 }
 
 func markdownFileAbsolutePath(relativePath string) (string, string, error) {

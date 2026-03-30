@@ -1137,20 +1137,27 @@ window.LearningService = {
       type: Object,
       required: true,
     },
+    adminWorkspaceOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     const catalog = getLearningCourseCatalog();
     return {
       activeCategory: 'all',
       activeCourseId: catalog[0]?.id || '',
+      catalogItems: [],
       backendCourses: [],
       catalogLoading: false,
       catalogError: '',
       markdownCache: {},
       markdownLoading: false,
       markdownError: '',
+      adminConsoleMode: false,
       editorMode: false,
       markdownSaving: false,
+      adminOverviewFilter: 'all',
       saveStatus: '',
       markdownDraft: '',
       markdownDraftBaseline: '',
@@ -1258,6 +1265,116 @@ window.LearningService = {
     hasUnsavedEditorChanges() {
       return this.markdownDraft !== this.markdownDraftBaseline;
     },
+    activeCourseFiles() {
+      if (!this.activeCourse) {
+        return [];
+      }
+      const prefix = `courses/${this.activeCourse.id}.`;
+      return this.catalogItems
+        .filter((item) => String(item?.path || '').startsWith(prefix))
+        .sort((left, right) => String(left.path || '').localeCompare(String(right.path || '')));
+    },
+    activeCourseStatusCounts() {
+      return this.activeCourseFiles.reduce((summary, item) => {
+        const status = String(item?.status || 'published').trim().toLowerCase();
+        if (status === 'draft') {
+          summary.draft += 1;
+        } else if (status === 'archived') {
+          summary.archived += 1;
+        } else {
+          summary.published += 1;
+        }
+        return summary;
+      }, {
+        draft: 0,
+        published: 0,
+        archived: 0,
+      });
+    },
+    adminCourseSummaries() {
+      const summaries = new Map(
+        this.courses.map((course) => [course.id, {
+          courseId: course.id,
+          title: this.courseText(course, 'title') || course.id,
+          totalFiles: 0,
+          draftFiles: 0,
+          publishedFiles: 0,
+          archivedFiles: 0,
+        }]),
+      );
+      this.catalogItems.forEach((item) => {
+        const match = String(item?.path || '').match(/^courses\/(.+)\.([^.]+)\.md$/);
+        if (!match) {
+          return;
+        }
+        const courseId = match[1];
+        const summary = summaries.get(courseId) || {
+          courseId,
+          title: courseId,
+          totalFiles: 0,
+          draftFiles: 0,
+          publishedFiles: 0,
+          archivedFiles: 0,
+        };
+        summary.totalFiles += 1;
+        const status = String(item?.status || 'published').trim().toLowerCase();
+        if (status === 'draft') {
+          summary.draftFiles += 1;
+        } else if (status === 'archived') {
+          summary.archivedFiles += 1;
+        } else {
+          summary.publishedFiles += 1;
+        }
+        summaries.set(courseId, summary);
+      });
+      return Array.from(summaries.values()).sort((left, right) => {
+        const leftPriority = left.draftFiles > 0 && left.publishedFiles === 0
+          ? 0
+          : left.draftFiles > 0 && left.publishedFiles > 0
+          ? 1
+          : left.publishedFiles > 0
+          ? 2
+          : left.archivedFiles > 0
+          ? 3
+          : 4;
+        const rightPriority = right.draftFiles > 0 && right.publishedFiles === 0
+          ? 0
+          : right.draftFiles > 0 && right.publishedFiles > 0
+          ? 1
+          : right.publishedFiles > 0
+          ? 2
+          : right.archivedFiles > 0
+          ? 3
+          : 4;
+        if (leftPriority !== rightPriority) {
+          return leftPriority - rightPriority;
+        }
+        if (left.draftFiles !== right.draftFiles) {
+          return right.draftFiles - left.draftFiles;
+        }
+        if (left.totalFiles !== right.totalFiles) {
+          return right.totalFiles - left.totalFiles;
+        }
+        return String(left.courseId).localeCompare(String(right.courseId));
+      });
+    },
+    filteredAdminCourseSummaries() {
+      switch (this.adminOverviewFilter) {
+        case 'pending':
+          return this.adminCourseSummaries.filter((summary) => summary.draftFiles > 0);
+        case 'draft':
+          return this.adminCourseSummaries.filter((summary) => summary.draftFiles > 0);
+        case 'published':
+          return this.adminCourseSummaries.filter((summary) => summary.publishedFiles > 0);
+        case 'archived':
+          return this.adminCourseSummaries.filter((summary) => summary.archivedFiles > 0);
+        default:
+          return this.adminCourseSummaries;
+      }
+    },
+    nextPendingCourseId() {
+      return this.adminCourseSummaries.find((summary) => summary.draftFiles > 0)?.courseId || '';
+    },
     isAdmin() {
       // Resolve whether the current signed-in account can manage lesson publishing.
       // 判断当前登录账号是否具备课程上架管理权限。
@@ -1267,6 +1384,7 @@ window.LearningService = {
   watch: {
     activeCourseId() {
       this.editorMode = false;
+      this.adminConsoleMode = this.adminWorkspaceOnly;
       this.saveStatus = '';
       this.syncEditorWithActiveCourse(true);
       this.loadActiveCourseMarkdown();
@@ -1277,6 +1395,7 @@ window.LearningService = {
         this.activeCourseId = this.visibleCourses[0]?.id || this.courses[0]?.id || '';
       }
       this.editorMode = false;
+      this.adminConsoleMode = this.adminWorkspaceOnly;
       this.saveStatus = '';
       this.syncEditorWithActiveCourse(true);
       this.loadActiveCourseMarkdown();
@@ -1284,13 +1403,20 @@ window.LearningService = {
     },
     'app.locale'() {
       this.editorMode = false;
+      this.adminConsoleMode = this.adminWorkspaceOnly;
       this.saveStatus = '';
       this.syncEditorWithActiveCourse(true);
       this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
+    adminWorkspaceOnly(value) {
+      if (value) {
+        this.adminConsoleMode = true;
+      }
+    },
   },
   mounted() {
+    this.adminConsoleMode = this.adminWorkspaceOnly;
     this.loadCourseCatalog();
     this.loadActiveCourseMarkdown();
     this.scheduleMermaidRender();
@@ -1444,6 +1570,30 @@ window.LearningService = {
       const payload = await this.app.readApiPayload(response);
       if (!response.ok) {
         throw new Error(payload.error || payload.message || `markdown delete failed: ${response.status}`);
+      }
+      return payload;
+    },
+    async updateCourseMarkdownStatus(relativePath, status) {
+      // Update one lesson file publishing status through the administrator-only learning endpoint.
+      // 通过仅管理员可用的学习接口更新单个课程文件的发布状态。
+      const encodedPath = String(relativePath || '')
+        .split('/')
+        .filter(Boolean)
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+      const response = await fetch(`${this.app.learningApiBase}/markdown-file-status/${encodedPath}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${this.app.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status,
+        }),
+      });
+      const payload = await this.app.readApiPayload(response);
+      if (!response.ok) {
+        throw new Error(payload.error || payload.message || `markdown status update failed: ${response.status}`);
       }
       return payload;
     },
@@ -1652,6 +1802,7 @@ window.LearningService = {
           nextCache[path] = {
             content: String(payload.content || ''),
             updatedAt: payload.updated_at || '',
+            status: String(payload.status || 'published'),
           };
           loaded = true;
         } catch (_error) {
@@ -1685,6 +1836,7 @@ window.LearningService = {
       this.catalogError = '';
       try {
         const items = await this.listCourseMarkdownFiles();
+        this.catalogItems = Array.isArray(items) ? items : [];
         this.backendCourses = buildBackendLearningCatalog(items);
       } catch (_error) {
         this.catalogError = localizedLearningText(this.app, {
@@ -1705,6 +1857,23 @@ window.LearningService = {
         this.syncEditorWithActiveCourse(true);
       }
       this.editorMode = !this.editorMode;
+      this.saveStatus = '';
+    },
+    toggleAdminConsoleMode() {
+      // Switch between learner preview and administrator workspace.
+      // 在学习者预览与管理员工作区之间切换。
+      if (!this.isAdmin) {
+        return;
+      }
+      if (this.adminWorkspaceOnly) {
+        return;
+      }
+      this.adminConsoleMode = !this.adminConsoleMode;
+      if (!this.adminConsoleMode) {
+        this.editorMode = false;
+      } else {
+        this.syncEditorWithActiveCourse(true);
+      }
       this.saveStatus = '';
     },
     toggleCreateLessonForm() {
@@ -1773,6 +1942,7 @@ window.LearningService = {
           [relativePath]: {
             content: String(payload.content || ''),
             updatedAt: payload.updated_at || '',
+            status: String(payload.status || 'published'),
           },
         };
         this.markdownDraft = String(payload.content || '');
@@ -1804,6 +1974,14 @@ window.LearningService = {
         return;
       }
       const relativePath = this.activeCourseMarkdownPath();
+      await this.deleteSpecificLessonFile(relativePath);
+    },
+    async deleteSpecificLessonFile(relativePath) {
+      // Delete one specific lesson file from the admin console file list.
+      // 从管理员后台文件列表中删除指定课程文件。
+      if (!relativePath || !this.isAdmin) {
+        return;
+      }
       this.markdownSaving = true;
       this.saveStatus = '';
       try {
@@ -1821,6 +1999,80 @@ window.LearningService = {
         });
         await this.loadCourseCatalog();
         await this.loadActiveCourseMarkdown();
+      } catch (error) {
+        this.saveStatus = String(error?.message || error || '');
+      }
+      this.markdownSaving = false;
+    },
+    lessonStatusText(status) {
+      // Resolve one localized lesson status label for the admin file list.
+      // 为管理员文件列表解析本地化课程状态标签。
+      switch (String(status || 'published').trim().toLowerCase()) {
+        case 'draft':
+          return this.learningText({
+            'zh-CN': '草稿',
+            'en-US': 'Draft',
+            'zh-TW': '草稿',
+          });
+        case 'archived':
+          return this.learningText({
+            'zh-CN': '已归档',
+            'en-US': 'Archived',
+            'zh-TW': '已歸檔',
+          });
+        default:
+          return this.learningText({
+            'zh-CN': '已发布',
+            'en-US': 'Published',
+            'zh-TW': '已發布',
+          });
+      }
+    },
+    lessonStatusClass(status) {
+      // Map one lesson status to the matching badge skin class.
+      // 将课程状态映射到对应的徽章样式类。
+      switch (String(status || 'published').trim().toLowerCase()) {
+        case 'draft':
+          return 'learning-status-badge--draft';
+        case 'archived':
+          return 'learning-status-badge--archived';
+        default:
+          return 'learning-status-badge--published';
+      }
+    },
+    async updateSpecificLessonStatus(relativePath, status) {
+      // Publish or archive one specific lesson file from the admin console file list.
+      // 在管理员后台文件列表中发布或归档指定课程文件。
+      if (!relativePath || !this.isAdmin) {
+        return;
+      }
+      this.markdownSaving = true;
+      this.saveStatus = '';
+      try {
+        await this.updateCourseMarkdownStatus(relativePath, status);
+        const cachedDocument = this.markdownCache[relativePath];
+        if (cachedDocument) {
+          this.markdownCache = {
+            ...this.markdownCache,
+            [relativePath]: {
+              ...cachedDocument,
+              status,
+            },
+          };
+        }
+        this.saveStatus = localizedLearningText(this.app, status === 'published' ? {
+          'zh-CN': '课程文件已发布，学员端现可见。',
+          'en-US': 'The lesson file is now published and visible to learners.',
+          'zh-TW': '課程檔案已發布，學員端現在可見。',
+        } : {
+          'zh-CN': '课程文件已归档，学员端现已隐藏。',
+          'en-US': 'The lesson file is now archived and hidden from learners.',
+          'zh-TW': '課程檔案已歸檔，學員端現在已隱藏。',
+        });
+        await this.loadCourseCatalog();
+        if (relativePath === this.activeCourseMarkdownPath()) {
+          await this.loadActiveCourseMarkdown();
+        }
       } catch (error) {
         this.saveStatus = String(error?.message || error || '');
       }
@@ -1855,13 +2107,14 @@ window.LearningService = {
           [relativePath]: {
             content: String(payload.content || ''),
             updatedAt: payload.updated_at || '',
+            status: String(payload.status || 'draft'),
           },
         };
         this.createLessonOpen = false;
         this.saveStatus = localizedLearningText(this.app, {
-          'zh-CN': '新课程文件已创建并保存。',
-          'en-US': 'The new lesson file was created and saved.',
-          'zh-TW': '新課程檔案已建立並儲存。',
+          'zh-CN': '新课程文件已创建为草稿并保存。',
+          'en-US': 'The new lesson file was created as a draft and saved.',
+          'zh-TW': '新課程檔案已建立為草稿並儲存。',
         });
         await this.loadCourseCatalog();
         this.activeCourseId = normalizedCourseId;
@@ -1966,8 +2219,8 @@ window.LearningService = {
       <div class="space-page-hero services-page-hero learning-hero">
         <div class="learning-hero-copy">
           <div class="space-shell-kicker">{{ app.t('learning.kicker') }}</div>
-          <div class="space-page-title">{{ app.t('learning.title') }}</div>
-          <div class="space-page-sub">{{ app.t('learning.sub') }}</div>
+          <div class="space-page-title">{{ adminWorkspaceOnly ? app.t('learningAdmin.title') : app.t('learning.title') }}</div>
+          <div class="space-page-sub">{{ adminWorkspaceOnly ? app.t('learningAdmin.sub') : app.t('learning.sub') }}</div>
           <div class="learning-feature-row">
             <span v-for="chip in featureChips" :key="chip" class="learning-feature-chip">{{ chip }}</span>
           </div>
@@ -2044,6 +2297,24 @@ window.LearningService = {
             <span v-for="tag in courseTags(activeCourse)" :key="activeCourse.id + '-detail-' + tag" class="service-chip">{{ tag }}</span>
           </div>
           <div v-if="isAdmin" class="learning-editor-toolbar">
+            <bilingual-action-button
+              v-if="!adminWorkspaceOnly"
+              :variant="adminConsoleMode ? 'primary' : 'tonal'"
+              compact
+              type="button"
+              :primary-label="adminConsoleMode ? learningText({
+                'zh-CN': '返回课程预览',
+                'en-US': 'Back to lesson preview',
+                'zh-TW': '返回課程預覽',
+              }) : learningText({
+                'zh-CN': '管理员后台',
+                'en-US': 'Admin console',
+                'zh-TW': '管理員後台',
+              })"
+              secondary-label=""
+              @click="toggleAdminConsoleMode"
+            ></bilingual-action-button>
+            <template v-if="adminConsoleMode">
             <bilingual-action-button
               :variant="editorMode ? 'primary' : 'tonal'"
               compact
@@ -2129,6 +2400,7 @@ window.LearningService = {
                 @click="saveActiveCourseMarkdown"
               ></bilingual-action-button>
             </template>
+            </template>
           </div>
           <p v-else class="learning-status-note">
             {{ learningText({
@@ -2141,12 +2413,87 @@ window.LearningService = {
           <p v-else-if="markdownError" class="learning-status-note">{{ markdownError }}</p>
           <p v-if="saveStatus" class="learning-status-note">{{ saveStatus }}</p>
           <p v-if="clipboardMessage" class="learning-status-note">{{ clipboardMessage }}</p>
-          <div v-if="createLessonOpen" class="learning-editor-shell">
+          <div v-if="isAdmin && adminConsoleMode && activeCourseFiles.length" class="learning-admin-files">
+            <div class="learning-admin-files-head">
+              <div class="service-card-title">{{ learningText({
+                'zh-CN': '课程版本文件',
+                'en-US': 'Lesson files',
+                'zh-TW': '課程版本檔案',
+              }) }}</div>
+              <div class="service-card-sub">{{ learningText({
+                'zh-CN': '管理员可直接查看当前课程已存在的语言版本文件，并逐个发布、归档或删除。',
+                'en-US': 'Administrators can inspect every locale file for this lesson and publish, archive, or delete them one by one.',
+                'zh-TW': '管理員可直接查看目前課程已存在的語言版本檔案，並逐一發布、歸檔或刪除。',
+              }) }}</div>
+            </div>
+            <div class="learning-admin-file-list">
+              <div v-for="item in activeCourseFiles" :key="item.path" class="learning-admin-file-row">
+                <div class="learning-admin-file-copy">
+                  <div class="learning-admin-file-path">{{ item.path }}</div>
+                  <div class="learning-admin-file-meta">
+                    {{ item.size || 0 }}B · {{ item.updated_at || item.updatedAt || '--' }}
+                    <span v-if="item.path === activeCourseMarkdownPath()"> · {{ learningText({
+                      'zh-CN': '当前界面版本',
+                      'en-US': 'Active in this view',
+                      'zh-TW': '目前介面版本',
+                    }) }}</span>
+                  </div>
+                  <div :class="['learning-status-badge', lessonStatusClass(item.status)]">
+                    {{ lessonStatusText(item.status) }}
+                  </div>
+                </div>
+                <div class="learning-admin-file-actions">
+                  <bilingual-action-button
+                    variant="tonal"
+                    compact
+                    type="button"
+                    :primary-label="learningText({
+                      'zh-CN': '发布',
+                      'en-US': 'Publish',
+                      'zh-TW': '發布',
+                    })"
+                    secondary-label=""
+                    :disabled="markdownSaving || String(item.status || 'published').toLowerCase() === 'published'"
+                    @click="updateSpecificLessonStatus(item.path, 'published')"
+                  ></bilingual-action-button>
+                  <bilingual-action-button
+                    variant="ghost"
+                    compact
+                    type="button"
+                    :primary-label="learningText({
+                      'zh-CN': '归档',
+                      'en-US': 'Archive',
+                      'zh-TW': '歸檔',
+                    })"
+                    secondary-label=""
+                    :disabled="markdownSaving || String(item.status || '').toLowerCase() === 'archived'"
+                    @click="updateSpecificLessonStatus(item.path, 'archived')"
+                  ></bilingual-action-button>
+                </div>
+                <div class="learning-admin-file-actions">
+                  <bilingual-action-button
+                    variant="ghost"
+                    compact
+                    type="button"
+                    :primary-label="learningText({
+                      'zh-CN': '删除',
+                      'en-US': 'Delete',
+                      'zh-TW': '刪除',
+                    })"
+                    secondary-label=""
+                    :disabled="markdownSaving"
+                    @click="deleteSpecificLessonFile(item.path)"
+                  ></bilingual-action-button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="adminConsoleMode && createLessonOpen" class="learning-editor-shell">
             <p class="learning-editor-help">
               {{ learningText({
                 'zh-CN': '创建后会在 learning-service 中生成 courses/{courseId}.{locale}.md 文件。',
-                'en-US': 'This creates a courses/{courseId}.{locale}.md file inside learning-service.',
-                'zh-TW': '建立後會在 learning-service 中生成 courses/{courseId}.{locale}.md 檔案。',
+                'en-US': 'This creates a courses/{courseId}.{locale}.md draft file inside learning-service.',
+                'zh-TW': '建立後會在 learning-service 中生成 courses/{courseId}.{locale}.md 草稿檔案。',
               }) }}
             </p>
             <div class="learning-create-grid">
@@ -2223,7 +2570,7 @@ window.LearningService = {
               ></bilingual-action-button>
             </div>
           </div>
-          <div v-if="editorMode" class="learning-editor-shell">
+          <div v-else-if="adminConsoleMode && editorMode" class="learning-editor-shell">
             <p class="learning-editor-help">
               {{ learningText({
                 'zh-CN': '在这里直接编辑课程 Markdown，保存后会写回 learning-service。',
@@ -2240,6 +2587,151 @@ window.LearningService = {
                 'zh-TW': '支援標題、表格、程式碼塊與 Mermaid 語法。',
               })"
             ></textarea>
+          </div>
+          <div v-else-if="adminConsoleMode" class="learning-admin-files">
+            <div class="learning-admin-files-head">
+              <div class="service-card-title">{{ learningText({
+                'zh-CN': '管理员后台工作区',
+                'en-US': 'Administrator workspace',
+                'zh-TW': '管理員後台工作區',
+              }) }}</div>
+              <div class="service-card-sub">{{ learningText({
+                'zh-CN': '这里会集中放置课程创建、版本管理、上架与下架动作。当前版本已支持新建、编辑、发布、归档、删除和文件清单管理。',
+                'en-US': 'This workspace centralizes lesson creation, version management, and publishing actions. The current build already supports create, edit, publish, archive, delete, and file-list management.',
+                'zh-TW': '這裡會集中放置課程建立、版本管理、上架與下架動作。目前版本已支援新建、編輯、發布、歸檔、刪除與檔案清單管理。',
+              }) }}</div>
+            </div>
+            <div v-if="nextPendingCourseId" class="learning-admin-overview-filters">
+              <bilingual-action-button
+                variant="primary"
+                compact
+                type="button"
+                :primary-label="learningText({
+                  'zh-CN': '打开待处理课程',
+                  'en-US': 'Open next pending lesson',
+                  'zh-TW': '打開待處理課程',
+                })"
+                secondary-label=""
+                @click="openCourse(nextPendingCourseId)"
+              ></bilingual-action-button>
+            </div>
+            <div class="learning-admin-file-meta">
+              {{ learningText({
+                'zh-CN': '当前课程文件数',
+                'en-US': 'Current lesson file count',
+                'zh-TW': '目前課程檔案數',
+              }) }}: {{ activeCourseFiles.length }}
+            </div>
+            <div class="learning-admin-file-meta">
+              {{ learningText({
+                'zh-CN': '草稿',
+                'en-US': 'Draft',
+                'zh-TW': '草稿',
+              }) }} {{ activeCourseStatusCounts.draft }} ·
+              {{ learningText({
+                'zh-CN': '已发布',
+                'en-US': 'Published',
+                'zh-TW': '已發布',
+              }) }} {{ activeCourseStatusCounts.published }} ·
+              {{ learningText({
+                'zh-CN': '已归档',
+                'en-US': 'Archived',
+                'zh-TW': '已歸檔',
+              }) }} {{ activeCourseStatusCounts.archived }}
+            </div>
+            <div class="learning-admin-overview">
+              <div class="service-card-title">{{ learningText({
+                'zh-CN': '课程总览',
+                'en-US': 'Course overview',
+                'zh-TW': '課程總覽',
+              }) }}</div>
+              <div class="service-card-sub">{{ learningText({
+                'zh-CN': '先看全局课程状态，再切到具体课程继续维护语言版本和上架动作。',
+                'en-US': 'Scan global course status first, then jump into a specific lesson to manage locale variants and publishing.',
+                'zh-TW': '先看全域課程狀態，再切到具體課程繼續維護語言版本與上架動作。',
+              }) }}</div>
+              <div class="learning-admin-overview-filters">
+                <bilingual-action-button
+                  v-for="filter in [
+                    { key: 'all', label: learningText({ 'zh-CN': '全部', 'en-US': 'All', 'zh-TW': '全部' }) },
+                    { key: 'pending', label: learningText({ 'zh-CN': '待处理', 'en-US': 'Pending', 'zh-TW': '待處理' }) },
+                    { key: 'draft', label: learningText({ 'zh-CN': '草稿', 'en-US': 'Draft', 'zh-TW': '草稿' }) },
+                    { key: 'published', label: learningText({ 'zh-CN': '已发布', 'en-US': 'Published', 'zh-TW': '已發布' }) },
+                    { key: 'archived', label: learningText({ 'zh-CN': '已归档', 'en-US': 'Archived', 'zh-TW': '已歸檔' }) },
+                  ]"
+                  :key="filter.key"
+                  :variant="adminOverviewFilter === filter.key ? 'primary' : 'tonal'"
+                  compact
+                  type="button"
+                  :primary-label="filter.label"
+                  secondary-label=""
+                  @click="adminOverviewFilter = filter.key"
+                ></bilingual-action-button>
+              </div>
+              <div class="learning-admin-overview-list">
+                <p v-if="!filteredAdminCourseSummaries.length" class="learning-status-note">
+                  {{ learningText({
+                    'zh-CN': '当前筛选条件下暂无课程。',
+                    'en-US': 'No lessons match the current filter.',
+                    'zh-TW': '目前篩選條件下沒有課程。',
+                  }) }}
+                </p>
+                <div v-for="summary in filteredAdminCourseSummaries" :key="summary.courseId" class="learning-admin-overview-row">
+                  <div class="learning-admin-overview-copy">
+                    <div class="learning-admin-file-path">{{ summary.title }}</div>
+                    <div class="learning-admin-file-meta">{{ summary.courseId }}</div>
+                    <div class="learning-admin-overview-chips">
+                      <span v-if="summary.draftFiles > 0 && summary.publishedFiles === 0" class="service-chip">{{ learningText({
+                        'zh-CN': '待上架',
+                        'en-US': 'Needs publish',
+                        'zh-TW': '待上架',
+                      }) }}</span>
+                      <span v-if="summary.draftFiles > 0 && summary.publishedFiles > 0" class="service-chip">{{ learningText({
+                        'zh-CN': '待更新',
+                        'en-US': 'Needs update',
+                        'zh-TW': '待更新',
+                      }) }}</span>
+                      <span class="service-chip">{{ learningText({
+                        'zh-CN': '文件',
+                        'en-US': 'Files',
+                        'zh-TW': '檔案',
+                      }) }} {{ summary.totalFiles }}</span>
+                      <span class="service-chip">{{ learningText({
+                        'zh-CN': '草稿',
+                        'en-US': 'Draft',
+                        'zh-TW': '草稿',
+                      }) }} {{ summary.draftFiles }}</span>
+                      <span class="service-chip">{{ learningText({
+                        'zh-CN': '已发布',
+                        'en-US': 'Published',
+                        'zh-TW': '已發布',
+                      }) }} {{ summary.publishedFiles }}</span>
+                      <span class="service-chip">{{ learningText({
+                        'zh-CN': '已归档',
+                        'en-US': 'Archived',
+                        'zh-TW': '已歸檔',
+                      }) }} {{ summary.archivedFiles }}</span>
+                    </div>
+                  </div>
+                  <bilingual-action-button
+                    :variant="summary.courseId === activeCourseId ? 'primary' : 'tonal'"
+                    compact
+                    type="button"
+                    :primary-label="summary.courseId === activeCourseId ? learningText({
+                      'zh-CN': '当前课程',
+                      'en-US': 'Current lesson',
+                      'zh-TW': '目前課程',
+                    }) : learningText({
+                      'zh-CN': '打开课程',
+                      'en-US': 'Open lesson',
+                      'zh-TW': '打開課程',
+                    })"
+                    secondary-label=""
+                    @click="openCourse(summary.courseId)"
+                  ></bilingual-action-button>
+                </div>
+              </div>
+            </div>
           </div>
           <div v-else class="post-content--markdown learning-markdown-body" v-html="renderCourseMarkdown(activeCourse)"></div>
         </article>

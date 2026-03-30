@@ -7,6 +7,7 @@ Widget sectionBodyForView(
   required Widget dashboard,
   required Widget services,
   required Widget learning,
+  required Widget learningAdmin,
   required Widget space,
   required Widget privateSpace,
   required Widget publicSpace,
@@ -24,6 +25,8 @@ Widget sectionBodyForView(
       return services;
     case AppView.learning:
       return learning;
+    case AppView.learningAdmin:
+      return learningAdmin;
     case AppView.space:
     case AppView.privateSpace:
     case AppView.publicSpace:

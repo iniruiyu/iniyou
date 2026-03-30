@@ -471,6 +471,8 @@ const app = createApp({
             messageSub: '聊天、会话与实时提醒。',
             learningTitle: '学习服务',
             learningSub: '英语、编程、AI 等课程统一在这里查看。',
+            learningAdminTitle: '课程后台',
+            learningAdminSub: '管理员在这里维护课程文件、语言版本与上架状态。',
             online: '在线',
             offline: '离线',
             open: '进入',
@@ -489,6 +491,15 @@ const app = createApp({
             categoryAi: 'AI',
             featureMarkdown: 'Markdown 正文',
             featureMermaid: 'Mermaid 思维导图',
+          },
+          learningAdmin: {
+            title: '管理员课程后台',
+            sub: '集中处理课程草稿、语言版本、发布与归档动作。',
+            featureDraft: '草稿管理',
+            featurePublished: '发布控制',
+            featureArchived: '归档下架',
+            featureLocales: '语言版本',
+            featureOps: '文件维护',
           },
           profile: {
             identity: {
@@ -599,6 +610,7 @@ const app = createApp({
             profile: '个人主页',
             services: '服务导航',
             learning: '学习课程',
+            'learning-admin': '课程后台',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -619,6 +631,7 @@ const app = createApp({
             profile: '个人主页',
             services: '服务导航',
             learning: '学习课程',
+            'learning-admin': '课程后台',
             postDetail: '文章详情',
             levels: '会员等级',
             blockchain: '链上账号',
@@ -634,6 +647,7 @@ const app = createApp({
             profile: '查看个人资料、会员等级与公开空间入口',
             services: '在线微服务会显示在这里，离线模块会自动隐藏。',
             learning: '查看英语、编程、AI 等课程，并完整预览 Markdown 与 Mermaid 内容。',
+            'learning-admin': '管理员在这里维护课程文件、语言版本与发布状态。',
             postDetail: '查看文章正文、评论与互动详情',
             levels: '选择适合你的会员等级',
             blockchain: '管理外部区块链账号绑定',
@@ -946,6 +960,8 @@ const app = createApp({
             messageSub: 'Chat, conversations, and live alerts.',
             learningTitle: 'Learning service',
             learningSub: 'Browse English, programming, AI, and other courses here.',
+            learningAdminTitle: 'Course console',
+            learningAdminSub: 'Administrators manage lesson files, locale variants, and publishing states here.',
             online: 'Online',
             offline: 'Offline',
             open: 'Enter',
@@ -964,6 +980,15 @@ const app = createApp({
             categoryAi: 'AI',
             featureMarkdown: 'Markdown lessons',
             featureMermaid: 'Mermaid mind maps',
+          },
+          learningAdmin: {
+            title: 'Administrator Course Console',
+            sub: 'Centralize draft handling, locale variants, publishing, and archiving here.',
+            featureDraft: 'Draft management',
+            featurePublished: 'Publishing control',
+            featureArchived: 'Archiving',
+            featureLocales: 'Locale variants',
+            featureOps: 'File operations',
           },
           profile: {
             identity: {
@@ -1076,6 +1101,7 @@ const app = createApp({
             profile: 'Personal Home',
             services: 'Services',
             learning: 'Learning',
+            'learning-admin': 'Course Console',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain',
@@ -1096,6 +1122,7 @@ const app = createApp({
             profile: 'Personal Home',
             services: 'Service Navigation',
             learning: 'Learning Courses',
+            'learning-admin': 'Course Console',
             postDetail: 'Post Detail',
             levels: 'Membership',
             blockchain: 'Blockchain Accounts',
@@ -1111,6 +1138,7 @@ const app = createApp({
             profile: 'View your profile, membership, and public space entrances.',
             services: 'Only online microservice entry points are shown here; offline modules hide automatically.',
             learning: 'Browse English, programming, and AI lessons with full Markdown and Mermaid previews.',
+            'learning-admin': 'Administrators manage lesson files, locale variants, and publishing states here.',
             postDetail: 'Read the full post, comments, and interaction details',
             levels: 'Choose the right membership tier',
             blockchain: 'Manage external blockchain account bindings',
@@ -1995,6 +2023,9 @@ const app = createApp({
           this.view = 'services';
         }
       }
+      if (!learningOnline && (this.view === 'learning' || this.view === 'learning-admin')) {
+        this.view = 'services';
+      }
     },
     async refreshAuthenticatedWorkspace() {
       // Load every logged-in section, but keep optional services isolated from each other.
@@ -2064,6 +2095,15 @@ const app = createApp({
           return;
         }
         this.view = 'learning';
+        return;
+      }
+      if (serviceKey === 'learning-admin') {
+        // Open the administrator course console only for admin users while the learning service is online.
+        // 仅在学习服务在线且当前用户为管理员时打开课程后台。
+        if (!this.isServiceOnline('learning') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+          return;
+        }
+        this.view = 'learning-admin';
         return;
       }
       if (serviceKey === 'levels') {
@@ -2801,6 +2841,8 @@ const app = createApp({
           services: {
             learningTitle: '學習服務',
             learningSub: '英語、程式、AI 等課程統一在這裡查看。',
+            learningAdminTitle: '課程後台',
+            learningAdminSub: '管理員在這裡維護課程檔案、語言版本與發布狀態。',
           },
           learning: {
             kicker: '學習服務',
@@ -2815,6 +2857,15 @@ const app = createApp({
             categoryAi: 'AI',
             featureMarkdown: 'Markdown 正文',
             featureMermaid: 'Mermaid 思維導圖',
+          },
+          learningAdmin: {
+            title: '管理員課程後台',
+            sub: '集中處理課程草稿、語言版本、發布與歸檔動作。',
+            featureDraft: '草稿管理',
+            featurePublished: '發布控制',
+            featureArchived: '歸檔下架',
+            featureLocales: '語言版本',
+            featureOps: '檔案維護',
           },
           profile: {
             identity: {
@@ -2909,6 +2960,7 @@ const app = createApp({
               profile: '個人主頁',
               services: '服務導航',
               learning: '學習課程',
+              'learning-admin': '課程後台',
               levels: '會員等級',
               blockchain: '鏈上帳號',
               friends: '好友',
@@ -2923,6 +2975,7 @@ const app = createApp({
               profile: '查看個人資料、會員等級與公開空間入口',
               services: '線上微服務會顯示在這裡，離線模組會自動隱藏。',
               learning: '查看英語、程式、AI 等課程，並完整預覽 Markdown 與 Mermaid 內容。',
+              'learning-admin': '管理員在這裡維護課程檔案、語言版本與發布狀態。',
               levels: '選擇適合你的會員等級',
               blockchain: '管理外部鏈上帳號綁定',
               friends: '建立聯繫與私聊',

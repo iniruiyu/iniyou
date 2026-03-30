@@ -53,10 +53,12 @@ Widget buildServicesView({
   required bool spaceOnline,
   required bool messageOnline,
   required bool learningOnline,
+  required bool isAdmin,
   required VoidCallback onOpenProfile,
   required VoidCallback onOpenSpace,
   required VoidCallback onOpenChat,
   required VoidCallback onOpenLearning,
+  required VoidCallback onOpenLearningAdmin,
   required VoidCallback onRefresh,
   required String languageCode,
 }) {
@@ -64,10 +66,12 @@ Widget buildServicesView({
     spaceOnline: spaceOnline,
     messageOnline: messageOnline,
     learningOnline: learningOnline,
+    isAdmin: isAdmin,
     onOpenProfile: onOpenProfile,
     onOpenSpace: onOpenSpace,
     onOpenChat: onOpenChat,
     onOpenLearning: onOpenLearning,
+    onOpenLearningAdmin: onOpenLearningAdmin,
     onRefresh: onRefresh,
     languageCode: languageCode,
   );
@@ -77,6 +81,7 @@ Widget buildLearningCourseView({
   required String languageCode,
   required String activeCourseId,
   required bool isAdmin,
+  bool adminWorkspaceOnly = false,
   required ApiClient apiClient,
   required ValueChanged<String> onSelectCourse,
   required VoidCallback onBackToServices,
@@ -85,6 +90,7 @@ Widget buildLearningCourseView({
     languageCode: languageCode,
     activeCourseId: activeCourseId,
     isAdmin: isAdmin,
+    adminWorkspaceOnly: adminWorkspaceOnly,
     apiClient: apiClient,
     onSelectCourse: onSelectCourse,
     onBackToServices: onBackToServices,
@@ -970,10 +976,12 @@ class ServicesView extends StatelessWidget {
     required this.spaceOnline,
     required this.messageOnline,
     required this.learningOnline,
+    required this.isAdmin,
     required this.onOpenProfile,
     required this.onOpenSpace,
     required this.onOpenChat,
     required this.onOpenLearning,
+    required this.onOpenLearningAdmin,
     required this.onRefresh,
     required this.languageCode,
   });
@@ -981,10 +989,12 @@ class ServicesView extends StatelessWidget {
   final bool spaceOnline;
   final bool messageOnline;
   final bool learningOnline;
+  final bool isAdmin;
   final VoidCallback onOpenProfile;
   final VoidCallback onOpenSpace;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenLearning;
+  final VoidCallback onOpenLearningAdmin;
   final VoidCallback onRefresh;
   final String languageCode;
 
@@ -1118,6 +1128,10 @@ class ServicesView extends StatelessWidget {
             '打開課程',
           ),
           onOpen: onOpenLearning,
+          secondaryActionLabel: isAdmin
+              ? localizedText(languageCode, '课程后台', 'Course console', '課程後台')
+              : null,
+          onSecondaryOpen: isAdmin ? onOpenLearningAdmin : null,
         ),
     ];
 
@@ -1201,6 +1215,8 @@ class _MicroserviceCard extends StatelessWidget {
     required this.modules,
     required this.actionLabel,
     required this.onOpen,
+    this.secondaryActionLabel,
+    this.onSecondaryOpen,
   });
 
   final String title;
@@ -1209,6 +1225,8 @@ class _MicroserviceCard extends StatelessWidget {
   final List<String> modules;
   final String actionLabel;
   final VoidCallback onOpen;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -1247,12 +1265,28 @@ class _MicroserviceCard extends StatelessWidget {
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerRight,
-              child: BilingualActionButton(
-                variant: BilingualButtonVariant.filled,
-                compact: true,
-                onPressed: onOpen,
-                primaryLabel: actionLabel,
-                secondaryLabel: actionLabel,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                children: [
+                  if ((secondaryActionLabel ?? '').isNotEmpty &&
+                      onSecondaryOpen != null)
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.tonal,
+                      compact: true,
+                      onPressed: onSecondaryOpen,
+                      primaryLabel: secondaryActionLabel!,
+                      secondaryLabel: secondaryActionLabel!,
+                    ),
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.filled,
+                    compact: true,
+                    onPressed: onOpen,
+                    primaryLabel: actionLabel,
+                    secondaryLabel: actionLabel,
+                  ),
+                ],
               ),
             ),
           ],

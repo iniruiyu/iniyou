@@ -122,6 +122,19 @@ class ApiClient {
     );
   }
 
+  Future<void> updateLearningMarkdownFileStatus(
+    String relativePath,
+    String status,
+  ) async {
+    // Update one administrator-managed lesson file status.
+    // 更新单个管理员维护的课程文件状态。
+    await _put(
+      learningBase,
+      '/markdown-file-status/${_encodeRelativePath(relativePath)}',
+      {'status': status},
+    );
+  }
+
   Future<GoExecutionResult> executeLearningCodeSnippet(
     String language,
     String source,

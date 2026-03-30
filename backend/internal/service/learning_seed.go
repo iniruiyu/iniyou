@@ -48,5 +48,9 @@ func seedMarkdownFileIfMissing(relativePath string, assetPath string) error {
 		return err
 	}
 	_, _, err = SaveMarkdownFile(relativePath, string(content))
+	if err != nil {
+		return err
+	}
+	_, err = SetLearningCourseStatus(relativePath, LearningCourseStatusPublished)
 	return err
 }

@@ -1721,6 +1721,124 @@ body {
   box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.08);
 }
 
+.learning-admin-files {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.learning-admin-files-head {
+  display: grid;
+  gap: 6px;
+}
+
+.learning-admin-file-list {
+  display: grid;
+  gap: 10px;
+}
+
+.learning-admin-file-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 18, 0.52);
+}
+
+.learning-admin-file-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.learning-admin-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.learning-admin-overview {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.learning-admin-overview-list {
+  display: grid;
+  gap: 10px;
+}
+
+.learning-admin-overview-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.learning-admin-overview-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.learning-admin-overview-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.learning-admin-overview-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.learning-admin-file-path {
+  font-weight: 700;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.learning-admin-file-meta {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.learning-status-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.learning-status-badge--draft {
+  background: #ffe7ba;
+  color: #8a5a00;
+}
+
+.learning-status-badge--published {
+  background: #cfeedb;
+  color: #0b6b45;
+}
+
+.learning-status-badge--archived {
+  background: #e5e7eb;
+  color: #5e6472;
+}
+
 .learning-code-shell {
   display: grid;
   gap: 10px;

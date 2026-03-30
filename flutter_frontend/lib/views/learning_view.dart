@@ -17,6 +17,7 @@ Widget buildLearningView({
   required String languageCode,
   required String activeCourseId,
   required bool isAdmin,
+  bool adminWorkspaceOnly = false,
   required ApiClient apiClient,
   required ValueChanged<String> onSelectCourse,
   required VoidCallback onBackToServices,
@@ -25,6 +26,7 @@ Widget buildLearningView({
     languageCode: languageCode,
     activeCourseId: activeCourseId,
     isAdmin: isAdmin,
+    adminWorkspaceOnly: adminWorkspaceOnly,
     apiClient: apiClient,
     onSelectCourse: onSelectCourse,
     onBackToServices: onBackToServices,
@@ -37,6 +39,7 @@ class LearningView extends StatefulWidget {
     required this.languageCode,
     required this.activeCourseId,
     required this.isAdmin,
+    required this.adminWorkspaceOnly,
     required this.apiClient,
     required this.onSelectCourse,
     required this.onBackToServices,
@@ -45,6 +48,7 @@ class LearningView extends StatefulWidget {
   final String languageCode;
   final String activeCourseId;
   final bool isAdmin;
+  final bool adminWorkspaceOnly;
   final ApiClient apiClient;
   final ValueChanged<String> onSelectCourse;
   final VoidCallback onBackToServices;
@@ -57,13 +61,16 @@ class _LearningViewState extends State<LearningView> {
   final Map<String, MarkdownFileDocument> _markdownCache = {};
   final TextEditingController _markdownEditorController =
       TextEditingController();
+  List<MarkdownFileSummary> _catalogItems = const [];
   List<_LearningCourse> _backendCourseCatalog = const [];
   bool _catalogLoading = false;
   String? _catalogError;
   bool _markdownLoading = false;
   String? _markdownError;
+  bool _adminConsoleMode = false;
   bool _editorMode = false;
   bool _markdownSaving = false;
+  String _adminOverviewFilter = 'all';
   String? _saveStatus;
   String _editorBaseline = '';
   int _loadVersion = 0;
@@ -72,6 +79,7 @@ class _LearningViewState extends State<LearningView> {
   @override
   void initState() {
     super.initState();
+    _adminConsoleMode = widget.adminWorkspaceOnly;
     _markdownEditorController.addListener(_handleMarkdownEditorChanged);
     _loadCourseCatalog();
     _loadActiveCourseMarkdown();
@@ -90,9 +98,14 @@ class _LearningViewState extends State<LearningView> {
     if (oldWidget.activeCourseId != widget.activeCourseId ||
         oldWidget.languageCode != widget.languageCode) {
       _editorMode = false;
+      _adminConsoleMode = widget.adminWorkspaceOnly;
       _saveStatus = null;
       _syncEditorWithActiveCourse(force: true);
       _loadActiveCourseMarkdown();
+    }
+    if (oldWidget.adminWorkspaceOnly != widget.adminWorkspaceOnly &&
+        widget.adminWorkspaceOnly) {
+      _adminConsoleMode = true;
     }
   }
 
@@ -133,6 +146,95 @@ class _LearningViewState extends State<LearningView> {
 
   bool get _hasUnsavedEditorChanges =>
       _markdownEditorController.text != _editorBaseline;
+
+  List<MarkdownFileSummary> get _activeCourseFiles {
+    final prefix = 'courses/${_activeCourse.id}.';
+    return _catalogItems.where((item) => item.path.startsWith(prefix)).toList()
+      ..sort((left, right) => left.path.compareTo(right.path));
+  }
+
+  List<_LearningAdminCourseSummary> get _adminCourseSummaries {
+    final summariesByCourseId = <String, _LearningAdminCourseSummaryBuilder>{};
+    for (final course in _courseCatalog) {
+      summariesByCourseId[course.id] = _LearningAdminCourseSummaryBuilder(
+        courseId: course.id,
+        title: course.titleText(widget.languageCode),
+      );
+    }
+    for (final item in _catalogItems) {
+      final descriptor = _parseLearningCourseFilePath(item.path);
+      if (descriptor == null) {
+        continue;
+      }
+      final builder = summariesByCourseId.putIfAbsent(
+        descriptor.courseId,
+        () => _LearningAdminCourseSummaryBuilder(
+          courseId: descriptor.courseId,
+          title: descriptor.courseId,
+        ),
+      );
+      builder.totalFiles += 1;
+      switch (item.status.trim().toLowerCase()) {
+        case 'draft':
+          builder.draftFiles += 1;
+          break;
+        case 'archived':
+          builder.archivedFiles += 1;
+          break;
+        default:
+          builder.publishedFiles += 1;
+          break;
+      }
+    }
+    final summaries = summariesByCourseId.values
+        .map((builder) => builder.build())
+        .toList();
+    summaries.sort((left, right) {
+      if (left.adminPriority != right.adminPriority) {
+        return left.adminPriority.compareTo(right.adminPriority);
+      }
+      if (left.draftFiles != right.draftFiles) {
+        return right.draftFiles.compareTo(left.draftFiles);
+      }
+      if (left.totalFiles != right.totalFiles) {
+        return right.totalFiles.compareTo(left.totalFiles);
+      }
+      return left.courseId.compareTo(right.courseId);
+    });
+    return summaries;
+  }
+
+  List<_LearningAdminCourseSummary> get _filteredAdminCourseSummaries {
+    switch (_adminOverviewFilter) {
+      case 'pending':
+        return _adminCourseSummaries
+            .where((summary) => summary.hasDrafts)
+            .toList();
+      case 'draft':
+        return _adminCourseSummaries
+            .where((summary) => summary.draftFiles > 0)
+            .toList();
+      case 'published':
+        return _adminCourseSummaries
+            .where((summary) => summary.publishedFiles > 0)
+            .toList();
+      case 'archived':
+        return _adminCourseSummaries
+            .where((summary) => summary.archivedFiles > 0)
+            .toList();
+      default:
+        return _adminCourseSummaries;
+    }
+  }
+
+  String? get _nextPendingCourseId {
+    for (final summary in _adminCourseSummaries) {
+      if (summary.hasDrafts) {
+        return summary.courseId;
+      }
+    }
+    return null;
+  }
 
   void _handleMarkdownEditorChanged() {
     // Rebuild editor actions when the draft changes so save/reset availability stays current.
@@ -255,6 +357,7 @@ class _LearningViewState extends State<LearningView> {
         return;
       }
       setState(() {
+        _catalogItems = items;
         _backendCourseCatalog = backendCourses;
         _catalogLoading = false;
         _catalogError = null;
@@ -298,6 +401,23 @@ class _LearningViewState extends State<LearningView> {
         _syncEditorWithActiveCourse(force: true);
       }
       _editorMode = !_editorMode;
+      _saveStatus = null;
+    });
+  }
+
+  void _toggleAdminConsoleMode() {
+    // Switch between the learner-facing preview and the administrator console workspace.
+    // 在学习者预览模式与管理员后台工作区之间切换。
+    if (widget.adminWorkspaceOnly) {
+      return;
+    }
+    setState(() {
+      _adminConsoleMode = !_adminConsoleMode;
+      if (!_adminConsoleMode) {
+        _editorMode = false;
+      } else {
+        _syncEditorWithActiveCourse(force: true);
+      }
       _saveStatus = null;
     });
   }
@@ -504,12 +624,7 @@ class _LearningViewState extends State<LearningView> {
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
                   child: Text(
-                    localizedText(
-                      widget.languageCode,
-                      '取消',
-                      'Cancel',
-                      '取消',
-                    ),
+                    localizedText(widget.languageCode, '取消', 'Cancel', '取消'),
                   ),
                 ),
                 FilledButton(
@@ -545,12 +660,13 @@ class _LearningViewState extends State<LearningView> {
                           content: contentController.text,
                           size: contentController.text.length,
                           updatedAt: DateTime.now(),
+                          status: 'draft',
                         );
                         _saveStatus = localizedText(
                           widget.languageCode,
-                          '新课程文件已创建并保存。',
-                          'The new lesson file was created and saved.',
-                          '新課程檔案已建立並儲存。',
+                          '新课程文件已创建为草稿并保存。',
+                          'The new lesson file was created as a draft and saved.',
+                          '新課程檔案已建立為草稿並儲存。',
                         );
                       });
                       await _loadCourseCatalog();
@@ -564,12 +680,7 @@ class _LearningViewState extends State<LearningView> {
                     }
                   },
                   child: Text(
-                    localizedText(
-                      widget.languageCode,
-                      '创建',
-                      'Create',
-                      '建立',
-                    ),
+                    localizedText(widget.languageCode, '创建', 'Create', '建立'),
                   ),
                 ),
               ],
@@ -587,10 +698,9 @@ class _LearningViewState extends State<LearningView> {
     }
   }
 
-  Future<void> _deleteActiveLessonFile() async {
-    // Delete the active locale lesson file so administrators can take a course variant offline quickly.
-    // 删除当前语言课程文件，让管理员可以快速下架某个课程版本。
-    final relativePath = _activeCourseMarkdownPath;
+  Future<void> _deleteLessonFile(String relativePath) async {
+    // Delete one lesson file so administrators can take a specific locale variant offline quickly.
+    // 删除单个课程文件，让管理员可以快速下架指定语言版本。
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -615,23 +725,13 @@ class _LearningViewState extends State<LearningView> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(
-                localizedText(
-                  widget.languageCode,
-                  '取消',
-                  'Cancel',
-                  '取消',
-                ),
+                localizedText(widget.languageCode, '取消', 'Cancel', '取消'),
               ),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
-                localizedText(
-                  widget.languageCode,
-                  '删除',
-                  'Delete',
-                  '刪除',
-                ),
+                localizedText(widget.languageCode, '删除', 'Delete', '刪除'),
               ),
             ),
           ],
@@ -663,6 +763,64 @@ class _LearningViewState extends State<LearningView> {
       });
       await _loadCourseCatalog();
       await _loadActiveCourseMarkdown();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _markdownSaving = false;
+        _saveStatus = error is ApiException ? error.message : error.toString();
+      });
+    }
+  }
+
+  Future<void> _deleteActiveLessonFile() async {
+    await _deleteLessonFile(_activeCourseMarkdownPath);
+  }
+
+  Future<void> _updateLessonFileStatus(
+    String relativePath,
+    String status,
+  ) async {
+    // Update one lesson file status so administrators can publish or archive a locale variant directly.
+    // 更新单个课程文件状态，让管理员可以直接发布或归档指定语言版本。
+    setState(() {
+      _markdownSaving = true;
+      _saveStatus = null;
+    });
+    try {
+      await widget.apiClient.updateLearningMarkdownFileStatus(
+        relativePath,
+        status,
+      );
+      if (!mounted) {
+        return;
+      }
+      final cachedDocument = _markdownCache[relativePath];
+      setState(() {
+        _markdownSaving = false;
+        if (cachedDocument != null) {
+          _markdownCache[relativePath] = MarkdownFileDocument(
+            path: cachedDocument.path,
+            content: cachedDocument.content,
+            size: cachedDocument.size,
+            updatedAt: cachedDocument.updatedAt,
+            status: status,
+          );
+        }
+        _saveStatus = localizedText(
+          widget.languageCode,
+          status == 'published' ? '课程文件已发布，学员端现可见。' : '课程文件已归档，学员端现已隐藏。',
+          status == 'published'
+              ? 'The lesson file is now published and visible to learners.'
+              : 'The lesson file is now archived and hidden from learners.',
+          status == 'published' ? '課程檔案已發布，學員端現在可見。' : '課程檔案已歸檔，學員端現在已隱藏。',
+        );
+      });
+      await _loadCourseCatalog();
+      if (relativePath == _activeCourseMarkdownPath) {
+        await _loadActiveCourseMarkdown();
+      }
     } catch (error) {
       if (!mounted) {
         return;
@@ -851,17 +1009,36 @@ class _LearningViewState extends State<LearningView> {
                       loading: _markdownLoading,
                       statusText: _markdownError,
                       editorMode: _editorMode,
+                      adminConsoleMode: _adminConsoleMode,
+                      adminWorkspaceOnly: widget.adminWorkspaceOnly,
                       markdownSaving: _markdownSaving,
                       saveStatus: _saveStatus,
                       markdownEditorController: _markdownEditorController,
                       hasUnsavedChanges: _hasUnsavedEditorChanges,
                       isAdmin: widget.isAdmin,
+                      onToggleAdminConsoleMode: _toggleAdminConsoleMode,
                       onToggleEditorMode: _toggleEditorMode,
                       onResetDraft: _resetMarkdownDraft,
                       onReloadMarkdown: _reloadActiveCourseMarkdown,
                       onSaveMarkdown: _saveActiveCourseMarkdown,
                       onCreateLesson: _showCreateLessonDialog,
                       onDeleteLesson: _deleteActiveLessonFile,
+                      courseFiles: _activeCourseFiles,
+                      courseSummaries: _filteredAdminCourseSummaries,
+                      adminOverviewFilter: _adminOverviewFilter,
+                      nextPendingCourseId: _nextPendingCourseId,
+                      onDeleteSpecificLesson: _deleteLessonFile,
+                      onUpdateLessonStatus: _updateLessonFileStatus,
+                      onAdminOverviewFilterChanged: (value) {
+                        setState(() => _adminOverviewFilter = value);
+                      },
+                      onOpenNextPendingCourse: () {
+                        final nextPendingCourseId = _nextPendingCourseId;
+                        if (nextPendingCourseId != null) {
+                          widget.onSelectCourse(nextPendingCourseId);
+                        }
+                      },
+                      onOpenCourse: widget.onSelectCourse,
                       onRunGoSnippet: _runCodeSnippet,
                     ),
                   ),
@@ -877,17 +1054,36 @@ class _LearningViewState extends State<LearningView> {
                 loading: _markdownLoading,
                 statusText: _markdownError,
                 editorMode: _editorMode,
+                adminConsoleMode: _adminConsoleMode,
+                adminWorkspaceOnly: widget.adminWorkspaceOnly,
                 markdownSaving: _markdownSaving,
                 saveStatus: _saveStatus,
                 markdownEditorController: _markdownEditorController,
                 hasUnsavedChanges: _hasUnsavedEditorChanges,
                 isAdmin: widget.isAdmin,
+                onToggleAdminConsoleMode: _toggleAdminConsoleMode,
                 onToggleEditorMode: _toggleEditorMode,
                 onResetDraft: _resetMarkdownDraft,
                 onReloadMarkdown: _reloadActiveCourseMarkdown,
                 onSaveMarkdown: _saveActiveCourseMarkdown,
                 onCreateLesson: _showCreateLessonDialog,
                 onDeleteLesson: _deleteActiveLessonFile,
+                courseFiles: _activeCourseFiles,
+                courseSummaries: _filteredAdminCourseSummaries,
+                adminOverviewFilter: _adminOverviewFilter,
+                nextPendingCourseId: _nextPendingCourseId,
+                onDeleteSpecificLesson: _deleteLessonFile,
+                onUpdateLessonStatus: _updateLessonFileStatus,
+                onAdminOverviewFilterChanged: (value) {
+                  setState(() => _adminOverviewFilter = value);
+                },
+                onOpenNextPendingCourse: () {
+                  final nextPendingCourseId = _nextPendingCourseId;
+                  if (nextPendingCourseId != null) {
+                    widget.onSelectCourse(nextPendingCourseId);
+                  }
+                },
+                onOpenCourse: widget.onSelectCourse,
                 onRunGoSnippet: _runCodeSnippet,
               ),
             ],
@@ -1054,17 +1250,29 @@ class _LearningDetailCard extends StatelessWidget {
     required this.loading,
     required this.statusText,
     required this.editorMode,
+    required this.adminConsoleMode,
+    required this.adminWorkspaceOnly,
     required this.markdownSaving,
     required this.saveStatus,
     required this.markdownEditorController,
     required this.hasUnsavedChanges,
     required this.isAdmin,
+    required this.onToggleAdminConsoleMode,
     required this.onToggleEditorMode,
     required this.onResetDraft,
     required this.onReloadMarkdown,
     required this.onSaveMarkdown,
     required this.onCreateLesson,
     required this.onDeleteLesson,
+    required this.courseFiles,
+    required this.courseSummaries,
+    required this.adminOverviewFilter,
+    required this.nextPendingCourseId,
+    required this.onDeleteSpecificLesson,
+    required this.onUpdateLessonStatus,
+    required this.onAdminOverviewFilterChanged,
+    required this.onOpenNextPendingCourse,
+    required this.onOpenCourse,
     required this.onRunGoSnippet,
   });
 
@@ -1074,17 +1282,29 @@ class _LearningDetailCard extends StatelessWidget {
   final bool loading;
   final String? statusText;
   final bool editorMode;
+  final bool adminConsoleMode;
+  final bool adminWorkspaceOnly;
   final bool markdownSaving;
   final String? saveStatus;
   final TextEditingController markdownEditorController;
   final bool hasUnsavedChanges;
   final bool isAdmin;
+  final VoidCallback onToggleAdminConsoleMode;
   final VoidCallback onToggleEditorMode;
   final VoidCallback onResetDraft;
   final Future<void> Function() onReloadMarkdown;
   final Future<void> Function() onSaveMarkdown;
   final Future<void> Function() onCreateLesson;
   final Future<void> Function() onDeleteLesson;
+  final List<MarkdownFileSummary> courseFiles;
+  final List<_LearningAdminCourseSummary> courseSummaries;
+  final String adminOverviewFilter;
+  final String? nextPendingCourseId;
+  final Future<void> Function(String path) onDeleteSpecificLesson;
+  final Future<void> Function(String path, String status) onUpdateLessonStatus;
+  final ValueChanged<String> onAdminOverviewFilterChanged;
+  final VoidCallback onOpenNextPendingCourse;
+  final ValueChanged<String> onOpenCourse;
   final CodeSnippetRunner onRunGoSnippet;
 
   @override
@@ -1101,7 +1321,14 @@ class _LearningDetailCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            localizedText(languageCode, '当前课程', 'Current Lesson', '目前課程'),
+            localizedText(
+              languageCode,
+              adminWorkspaceOnly ? '管理员课程后台' : '当前课程',
+              adminWorkspaceOnly
+                  ? 'Administrator Course Console'
+                  : 'Current Lesson',
+              adminWorkspaceOnly ? '管理員課程後台' : '目前課程',
+            ),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.primary,
               fontWeight: FontWeight.w800,
@@ -1117,7 +1344,14 @@ class _LearningDetailCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            course.subtitleText(languageCode),
+            adminWorkspaceOnly
+                ? localizedText(
+                    languageCode,
+                    '在这里维护课程文件、语言版本和上架状态。学员可见内容以发布状态为准。',
+                    'Maintain lesson files, locale variants, and publishing states here. Learner visibility follows the published state.',
+                    '在這裡維護課程檔案、語言版本與上架狀態。學員可見內容以發布狀態為準。',
+                  )
+                : course.subtitleText(languageCode),
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.55,
@@ -1154,83 +1388,102 @@ class _LearningDetailCard extends StatelessWidget {
               spacing: 10,
               runSpacing: 10,
               children: [
-                BilingualActionButton(
-                  variant: editorMode
-                      ? BilingualButtonVariant.filled
-                      : BilingualButtonVariant.tonal,
-                  compact: true,
-                  onPressed: onToggleEditorMode,
-                  primaryLabel: localizedText(
-                    languageCode,
-                    editorMode ? '切换到预览' : '编辑 Markdown',
-                    editorMode ? 'Back to preview' : 'Edit markdown',
-                    editorMode ? '切換到預覽' : '編輯 Markdown',
+                if (!adminWorkspaceOnly)
+                  BilingualActionButton(
+                    variant: adminConsoleMode
+                        ? BilingualButtonVariant.filled
+                        : BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: onToggleAdminConsoleMode,
+                    primaryLabel: localizedText(
+                      languageCode,
+                      adminConsoleMode ? '返回课程预览' : '管理员后台',
+                      adminConsoleMode
+                          ? 'Back to lesson preview'
+                          : 'Admin console',
+                      adminConsoleMode ? '返回課程預覽' : '管理員後台',
+                    ),
+                    secondaryLabel: '',
                   ),
-                  secondaryLabel: '',
-                ),
-                BilingualActionButton(
-                  variant: BilingualButtonVariant.tonal,
-                  compact: true,
-                  onPressed: () => onCreateLesson(),
-                  primaryLabel: localizedText(
-                    languageCode,
-                    '新建课程',
-                    'New lesson',
-                    '新建課程',
+                if (adminConsoleMode) ...[
+                  BilingualActionButton(
+                    variant: editorMode
+                        ? BilingualButtonVariant.filled
+                        : BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: onToggleEditorMode,
+                    primaryLabel: localizedText(
+                      languageCode,
+                      editorMode ? '切换到预览' : '编辑 Markdown',
+                      editorMode ? 'Back to preview' : 'Edit markdown',
+                      editorMode ? '切換到預覽' : '編輯 Markdown',
+                    ),
+                    secondaryLabel: '',
                   ),
-                  secondaryLabel: '',
-                ),
-                BilingualActionButton(
-                  variant: BilingualButtonVariant.outlined,
-                  compact: true,
-                  onPressed: loading ? null : () => onReloadMarkdown(),
-                  primaryLabel: localizedText(
-                    languageCode,
-                    '重新加载',
-                    'Reload',
-                    '重新載入',
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.tonal,
+                    compact: true,
+                    onPressed: () => onCreateLesson(),
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '新建课程',
+                      'New lesson',
+                      '新建課程',
+                    ),
+                    secondaryLabel: '',
                   ),
-                  secondaryLabel: '',
-                ),
-                BilingualActionButton(
-                  variant: BilingualButtonVariant.outlined,
-                  compact: true,
-                  onPressed: markdownSaving ? null : () => onDeleteLesson(),
-                  primaryLabel: localizedText(
-                    languageCode,
-                    '删除当前版本',
-                    'Delete locale file',
-                    '刪除目前版本',
-                  ),
-                  secondaryLabel: '',
-                ),
-                if (editorMode) ...[
                   BilingualActionButton(
                     variant: BilingualButtonVariant.outlined,
                     compact: true,
-                    onPressed: markdownSaving ? null : onResetDraft,
+                    onPressed: loading ? null : () => onReloadMarkdown(),
                     primaryLabel: localizedText(
                       languageCode,
-                      '重置草稿',
-                      'Reset draft',
-                      '重設草稿',
+                      '重新加载',
+                      'Reload',
+                      '重新載入',
                     ),
                     secondaryLabel: '',
                   ),
                   BilingualActionButton(
-                    variant: BilingualButtonVariant.filled,
+                    variant: BilingualButtonVariant.outlined,
                     compact: true,
-                    onPressed: markdownSaving || !hasUnsavedChanges
-                        ? null
-                        : () => onSaveMarkdown(),
+                    onPressed: markdownSaving ? null : () => onDeleteLesson(),
                     primaryLabel: localizedText(
                       languageCode,
-                      markdownSaving ? '保存中...' : '保存到服务',
-                      markdownSaving ? 'Saving...' : 'Save to service',
-                      markdownSaving ? '儲存中...' : '儲存到服務',
+                      '删除当前版本',
+                      'Delete locale file',
+                      '刪除目前版本',
                     ),
                     secondaryLabel: '',
                   ),
+                  if (editorMode) ...[
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.outlined,
+                      compact: true,
+                      onPressed: markdownSaving ? null : onResetDraft,
+                      primaryLabel: localizedText(
+                        languageCode,
+                        '重置草稿',
+                        'Reset draft',
+                        '重設草稿',
+                      ),
+                      secondaryLabel: '',
+                    ),
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.filled,
+                      compact: true,
+                      onPressed: markdownSaving || !hasUnsavedChanges
+                          ? null
+                          : () => onSaveMarkdown(),
+                      primaryLabel: localizedText(
+                        languageCode,
+                        markdownSaving ? '保存中...' : '保存到服务',
+                        markdownSaving ? 'Saving...' : 'Save to service',
+                        markdownSaving ? '儲存中...' : '儲存到服務',
+                      ),
+                      secondaryLabel: '',
+                    ),
+                  ],
                 ],
               ],
             ),
@@ -1258,6 +1511,17 @@ class _LearningDetailCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
           ],
+          if (isAdmin && adminConsoleMode && courseFiles.isNotEmpty) ...[
+            _LearningCourseFilesPanel(
+              languageCode: languageCode,
+              activePath: 'courses/${course.id}.$languageCode.md',
+              files: courseFiles,
+              onDeleteFile: onDeleteSpecificLesson,
+              onUpdateStatus: onUpdateLessonStatus,
+              saving: markdownSaving,
+            ),
+            const SizedBox(height: 18),
+          ],
           if (loading || (statusText ?? '').isNotEmpty) ...[
             Text(
               loading ? 'Loading course markdown...' : (statusText ?? ''),
@@ -1267,10 +1531,32 @@ class _LearningDetailCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
           ],
-          if (editorMode)
+          if (adminConsoleMode && editorMode)
             _LearningMarkdownEditor(
               languageCode: languageCode,
               controller: markdownEditorController,
+            )
+          else if (adminConsoleMode)
+            _LearningAdminConsoleSummary(
+              languageCode: languageCode,
+              courseFilesCount: courseFiles.length,
+              hasUnsavedChanges: hasUnsavedChanges,
+              draftCount: courseFiles
+                  .where((item) => item.status == 'draft')
+                  .length,
+              publishedCount: courseFiles
+                  .where((item) => item.status == 'published')
+                  .length,
+              archivedCount: courseFiles
+                  .where((item) => item.status == 'archived')
+                  .length,
+              activeCourseId: course.id,
+              courseSummaries: courseSummaries,
+              adminOverviewFilter: adminOverviewFilter,
+              nextPendingCourseId: nextPendingCourseId,
+              onAdminOverviewFilterChanged: onAdminOverviewFilterChanged,
+              onOpenNextPendingCourse: onOpenNextPendingCourse,
+              onOpenCourse: onOpenCourse,
             )
           else
             PostMarkdownBody(
@@ -1408,6 +1694,622 @@ class _LearningMarkdownEditor extends StatelessWidget {
       ),
     );
   }
+}
+
+class _LearningCourseFilesPanel extends StatelessWidget {
+  const _LearningCourseFilesPanel({
+    required this.languageCode,
+    required this.activePath,
+    required this.files,
+    required this.onDeleteFile,
+    required this.onUpdateStatus,
+    required this.saving,
+  });
+
+  final String languageCode;
+  final String activePath;
+  final List<MarkdownFileSummary> files;
+  final Future<void> Function(String path) onDeleteFile;
+  final Future<void> Function(String path, String status) onUpdateStatus;
+  final bool saving;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.22,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            localizedText(languageCode, '课程版本文件', 'Lesson files', '課程版本檔案'),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            localizedText(
+              languageCode,
+              '管理员可直接查看当前课程已存在的语言版本文件，并逐个发布、归档或删除。',
+              'Administrators can inspect every locale file for this lesson and publish, archive, or delete them one by one.',
+              '管理員可直接查看目前課程已存在的語言版本檔案，並逐一發布、歸檔或刪除。',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (final item in files)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.path,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${formatByteSize(item.size)} · ${item.updatedAt != null ? formatDateTime(item.updatedAt!) : '--'}${item.path == activePath ? ' · ${localizedText(languageCode, '当前界面版本', 'Active in this view', '目前介面版本')}' : ''}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _LearningLessonStatusBadge(
+                          languageCode: languageCode,
+                          status: item.status,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: saving || item.status == 'published'
+                            ? null
+                            : () => onUpdateStatus(item.path, 'published'),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '发布',
+                          'Publish',
+                          '發布',
+                        ),
+                        secondaryLabel: '',
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.outlined,
+                        compact: true,
+                        onPressed: saving || item.status == 'archived'
+                            ? null
+                            : () => onUpdateStatus(item.path, 'archived'),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '归档',
+                          'Archive',
+                          '歸檔',
+                        ),
+                        secondaryLabel: '',
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.outlined,
+                        compact: true,
+                        onPressed: saving
+                            ? null
+                            : () => onDeleteFile(item.path),
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '删除',
+                          'Delete',
+                          '刪除',
+                        ),
+                        secondaryLabel: '',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LearningAdminConsoleSummary extends StatelessWidget {
+  const _LearningAdminConsoleSummary({
+    required this.languageCode,
+    required this.courseFilesCount,
+    required this.hasUnsavedChanges,
+    required this.draftCount,
+    required this.publishedCount,
+    required this.archivedCount,
+    required this.activeCourseId,
+    required this.courseSummaries,
+    required this.adminOverviewFilter,
+    required this.nextPendingCourseId,
+    required this.onAdminOverviewFilterChanged,
+    required this.onOpenNextPendingCourse,
+    required this.onOpenCourse,
+  });
+
+  final String languageCode;
+  final int courseFilesCount;
+  final bool hasUnsavedChanges;
+  final int draftCount;
+  final int publishedCount;
+  final int archivedCount;
+  final String activeCourseId;
+  final List<_LearningAdminCourseSummary> courseSummaries;
+  final String adminOverviewFilter;
+  final String? nextPendingCourseId;
+  final ValueChanged<String> onAdminOverviewFilterChanged;
+  final VoidCallback onOpenNextPendingCourse;
+  final ValueChanged<String> onOpenCourse;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.22,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            localizedText(
+              languageCode,
+              '管理员后台工作区',
+              'Administrator workspace',
+              '管理員後台工作區',
+            ),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            localizedText(
+              languageCode,
+              '这里会集中放置课程创建、版本管理、上架与下架动作。当前版本已支持新建、编辑、发布、归档、删除和文件清单管理。',
+              'This workspace centralizes lesson creation, version management, and publishing actions. The current build already supports create, edit, publish, archive, delete, and file-list management.',
+              '這裡會集中放置課程建立、版本管理、上架與下架動作。目前版本已支援新建、編輯、發布、歸檔、刪除與檔案清單管理。',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (nextPendingCourseId != null) ...[
+            BilingualActionButton(
+              variant: BilingualButtonVariant.filled,
+              compact: true,
+              onPressed: onOpenNextPendingCourse,
+              primaryLabel: localizedText(
+                languageCode,
+                '打开待处理课程',
+                'Open next pending lesson',
+                '打開待處理課程',
+              ),
+              secondaryLabel: '',
+            ),
+            const SizedBox(height: 12),
+          ],
+          Text(
+            localizedText(
+              languageCode,
+              '当前课程文件数：$courseFilesCount；${hasUnsavedChanges ? '存在未保存草稿' : '当前无未保存草稿'}',
+              'Current lesson file count: $courseFilesCount; ${hasUnsavedChanges ? 'unsaved draft present' : 'no unsaved draft'}',
+              '目前課程檔案數：$courseFilesCount；${hasUnsavedChanges ? '存在未儲存草稿' : '目前沒有未儲存草稿'}',
+            ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _LearningMetricChip(
+                label: localizedText(
+                  languageCode,
+                  '草稿 $draftCount',
+                  'Draft $draftCount',
+                  '草稿 $draftCount',
+                ),
+              ),
+              _LearningMetricChip(
+                label: localizedText(
+                  languageCode,
+                  '已发布 $publishedCount',
+                  'Published $publishedCount',
+                  '已發布 $publishedCount',
+                ),
+              ),
+              _LearningMetricChip(
+                label: localizedText(
+                  languageCode,
+                  '已归档 $archivedCount',
+                  'Archived $archivedCount',
+                  '已歸檔 $archivedCount',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            localizedText(languageCode, '课程总览', 'Course overview', '課程總覽'),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            localizedText(
+              languageCode,
+              '先看全局课程状态，再切到具体课程继续维护语言版本和上架动作。',
+              'Scan global course status first, then jump into a specific lesson to manage locale variants and publishing.',
+              '先看全域課程狀態，再切到具體課程繼續維護語言版本與上架動作。',
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final filter in const [
+                ('all', '全部', 'All', '全部'),
+                ('pending', '待处理', 'Pending', '待處理'),
+                ('draft', '草稿', 'Draft', '草稿'),
+                ('published', '已发布', 'Published', '已發布'),
+                ('archived', '已归档', 'Archived', '已歸檔'),
+              ])
+                BilingualActionButton(
+                  variant: adminOverviewFilter == filter.$1
+                      ? BilingualButtonVariant.filled
+                      : BilingualButtonVariant.tonal,
+                  compact: true,
+                  onPressed: () => onAdminOverviewFilterChanged(filter.$1),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    filter.$2,
+                    filter.$3,
+                    filter.$4,
+                  ),
+                  secondaryLabel: '',
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (courseSummaries.isEmpty)
+            Text(
+              localizedText(
+                languageCode,
+                '当前筛选条件下暂无课程。',
+                'No lessons match the current filter.',
+                '目前篩選條件下沒有課程。',
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          for (final summary in courseSummaries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  color: theme.colorScheme.surface,
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            summary.title,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            summary.courseId,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (summary.needsInitialPublish)
+                                _LearningMetricChip(
+                                  label: localizedText(
+                                    languageCode,
+                                    '待上架',
+                                    'Needs publish',
+                                    '待上架',
+                                  ),
+                                ),
+                              if (summary.needsUpdatePublish)
+                                _LearningMetricChip(
+                                  label: localizedText(
+                                    languageCode,
+                                    '待更新',
+                                    'Needs update',
+                                    '待更新',
+                                  ),
+                                ),
+                              _LearningMetricChip(
+                                label: localizedText(
+                                  languageCode,
+                                  '文件 ${summary.totalFiles}',
+                                  'Files ${summary.totalFiles}',
+                                  '檔案 ${summary.totalFiles}',
+                                ),
+                              ),
+                              _LearningMetricChip(
+                                label: localizedText(
+                                  languageCode,
+                                  '草稿 ${summary.draftFiles}',
+                                  'Draft ${summary.draftFiles}',
+                                  '草稿 ${summary.draftFiles}',
+                                ),
+                              ),
+                              _LearningMetricChip(
+                                label: localizedText(
+                                  languageCode,
+                                  '已发布 ${summary.publishedFiles}',
+                                  'Published ${summary.publishedFiles}',
+                                  '已發布 ${summary.publishedFiles}',
+                                ),
+                              ),
+                              _LearningMetricChip(
+                                label: localizedText(
+                                  languageCode,
+                                  '已归档 ${summary.archivedFiles}',
+                                  'Archived ${summary.archivedFiles}',
+                                  '已歸檔 ${summary.archivedFiles}',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    BilingualActionButton(
+                      variant: summary.courseId == activeCourseId
+                          ? BilingualButtonVariant.filled
+                          : BilingualButtonVariant.tonal,
+                      compact: true,
+                      onPressed: () => onOpenCourse(summary.courseId),
+                      primaryLabel: localizedText(
+                        languageCode,
+                        summary.courseId == activeCourseId ? '当前课程' : '打开课程',
+                        summary.courseId == activeCourseId
+                            ? 'Current lesson'
+                            : 'Open lesson',
+                        summary.courseId == activeCourseId ? '目前課程' : '打開課程',
+                      ),
+                      secondaryLabel: '',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LearningLessonStatusBadge extends StatelessWidget {
+  const _LearningLessonStatusBadge({
+    required this.languageCode,
+    required this.status,
+  });
+
+  final String languageCode;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final normalizedStatus = status.trim().isEmpty
+        ? 'published'
+        : status.trim();
+    final Color foregroundColor;
+    final Color backgroundColor;
+    final String label;
+    switch (normalizedStatus) {
+      case 'draft':
+        foregroundColor = const Color(0xFF8A5A00);
+        backgroundColor = const Color(0xFFFFE7BA);
+        label = localizedText(languageCode, '草稿', 'Draft', '草稿');
+        break;
+      case 'archived':
+        foregroundColor = const Color(0xFF5E6472);
+        backgroundColor = const Color(0xFFE5E7EB);
+        label = localizedText(languageCode, '已归档', 'Archived', '已歸檔');
+        break;
+      default:
+        foregroundColor = const Color(0xFF0B6B45);
+        backgroundColor = const Color(0xFFCFEEDB);
+        label = localizedText(languageCode, '已发布', 'Published', '已發布');
+        break;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: backgroundColor,
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: foregroundColor,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _LearningMetricChip extends StatelessWidget {
+  const _LearningMetricChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: theme.colorScheme.surface,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _LearningAdminCourseSummary {
+  const _LearningAdminCourseSummary({
+    required this.courseId,
+    required this.title,
+    required this.totalFiles,
+    required this.draftFiles,
+    required this.publishedFiles,
+    required this.archivedFiles,
+  });
+
+  final String courseId;
+  final String title;
+  final int totalFiles;
+  final int draftFiles;
+  final int publishedFiles;
+  final int archivedFiles;
+
+  bool get hasDrafts => draftFiles > 0;
+  bool get needsInitialPublish => draftFiles > 0 && publishedFiles == 0;
+  bool get needsUpdatePublish => draftFiles > 0 && publishedFiles > 0;
+  int get adminPriority {
+    if (needsInitialPublish) {
+      return 0;
+    }
+    if (needsUpdatePublish) {
+      return 1;
+    }
+    if (publishedFiles > 0) {
+      return 2;
+    }
+    if (archivedFiles > 0) {
+      return 3;
+    }
+    return 4;
+  }
+}
+
+class _LearningAdminCourseSummaryBuilder {
+  _LearningAdminCourseSummaryBuilder({
+    required this.courseId,
+    required this.title,
+  });
+
+  final String courseId;
+  final String title;
+  int totalFiles = 0;
+  int draftFiles = 0;
+  int publishedFiles = 0;
+  int archivedFiles = 0;
+
+  _LearningAdminCourseSummary build() {
+    return _LearningAdminCourseSummary(
+      courseId: courseId,
+      title: title,
+      totalFiles: totalFiles,
+      draftFiles: draftFiles,
+      publishedFiles: publishedFiles,
+      archivedFiles: archivedFiles,
+    );
+  }
+}
+
+class _LearningCourseFileDescriptor {
+  const _LearningCourseFileDescriptor({
+    required this.courseId,
+    required this.languageCode,
+  });
+
+  final String courseId;
+  final String languageCode;
+}
+
+_LearningCourseFileDescriptor? _parseLearningCourseFilePath(String path) {
+  final normalized = path.trim();
+  if (!normalized.startsWith('courses/') || !normalized.endsWith('.md')) {
+    return null;
+  }
+  final fileName = normalized.substring('courses/'.length);
+  final lastDot = fileName.lastIndexOf('.');
+  if (lastDot <= 0) {
+    return null;
+  }
+  final localeDot = fileName.substring(0, lastDot).lastIndexOf('.');
+  if (localeDot <= 0) {
+    return null;
+  }
+  return _LearningCourseFileDescriptor(
+    courseId: fileName.substring(0, localeDot),
+    languageCode: fileName.substring(localeDot + 1, lastDot),
+  );
 }
 
 class _LearningCourse {
@@ -1591,16 +2493,6 @@ Color _learningCourseAccentColor(String courseId) {
   ];
   final hash = courseId.codeUnits.fold<int>(0, (value, code) => value + code);
   return palette[hash % palette.length];
-}
-
-class _LearningCourseFileDescriptor {
-  const _LearningCourseFileDescriptor({
-    required this.courseId,
-    required this.languageCode,
-  });
-
-  final String courseId;
-  final String languageCode;
 }
 
 const learningCourseCatalog = <_LearningCourse>[

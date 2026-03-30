@@ -43,7 +43,7 @@ func main() {
 		// 为本地 SPA 开发提供基础 CORS 支持。
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
@@ -70,6 +70,7 @@ func main() {
 	admin.Use(middleware.RequireAdminMiddleware())
 	admin.PUT("/markdown-files/*path", markdownHandler.PutMarkdownFile)
 	admin.DELETE("/markdown-files/*path", markdownHandler.DeleteMarkdownFile)
+	admin.PUT("/markdown-file-status/*path", markdownHandler.UpdateMarkdownFileStatus)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)
