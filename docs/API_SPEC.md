@@ -120,6 +120,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - 学习课程文件接口由独立 `learning-service` 提供，默认监听 `http://localhost:8083/api/v1`
 - 仅允许访问与写入 `.md` 文件，`{path}` 为相对存储根目录的多级路径
 - 文件内容通过 JSON `content` 字段传输，响应中返回规范化相对路径、内容、大小和更新时间
+- 另提供 `POST /api/v1/code-executions/{language}`，用于执行受限示例代码并返回 `stdout`、`stderr`、`exit_code`、`duration_ms` 与 `timed_out`
 
 ### 5.5 聊天
 
@@ -419,6 +420,21 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
   - 既有文件覆盖成功返回 `200 OK`
   - 服务端只允许写入 `.md` 文件，并将文件落盘到 `MARKDOWN_STORAGE_DIR`（默认位于 `D:/codeX/iniyou/uploads/learning-service/markdown-files`）
 
+### 6.23 执行学习页代码块
+
+- `POST /api/v1/code-executions/{language}`
+- 用途：执行学习页中的受限示例代码，并把运行结果回传给前端
+- 请求字段建议：`source`
+- 返回字段建议：`stdout`, `stderr`, `exit_code`, `duration_ms`, `timed_out`
+- 说明：
+  - 接口由 `learning-service` 提供，默认监听 `http://localhost:8083/api/v1`
+  - 当前仅用于学习示例运行，不是通用远程代码执行平台
+  - 当前 `language` 支持 `go`、`javascript`、`python`
+  - 当前限制为 32 KB 代码体积、Go 8 秒执行超时、JavaScript/Python 5 秒执行超时、16 KB 输出上限
+  - Go 当前会拒绝 `os`、`os/exec`、`net`、`net/http`、`net/url`、`syscall`、`unsafe` 等高风险导入
+  - JavaScript 当前会拒绝 `child_process`、`fs`、`net`、`http` 和 `process.exit(...)` 等高风险能力
+  - Python 当前会拒绝 `os`、`sys`、`subprocess`、`socket`、`http`、`urllib`、`open(...)` 与 `__import__(...)` 等高风险能力
+
 ## 7. 分页与筛选规则
 
 - 列表接口优先支持 `page`、`page_size`
@@ -457,6 +473,11 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 ### 2026-03-27
 
 - 新增独立 `learning-service` 的 Markdown 文件列表、读取与保存接口，并明确默认服务地址为 `http://localhost:8083/api/v1` / Added independent `learning-service` Markdown file list, read, and save endpoints, and clarified the default service base as `http://localhost:8083/api/v1`.
+
+### 2026-03-30
+
+- 新增 `POST /api/v1/code-executions/go`，供学习页内的 Go 代码块点击执行并内嵌展示输出 / Added `POST /api/v1/code-executions/go` so the learning page can run Go code blocks on click and show inline output.
+- 将学习页代码执行扩展为 `go`、`javascript`、`python` 三种语言，并统一到 `POST /api/v1/code-executions/{language}` / Expanded learning-page code execution to `go`, `javascript`, and `python`, unified behind `POST /api/v1/code-executions/{language}`.
 
 ### 2026-03-12
 

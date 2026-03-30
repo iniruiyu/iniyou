@@ -93,6 +93,21 @@ class ApiClient {
     );
   }
 
+  Future<GoExecutionResult> executeLearningCodeSnippet(
+    String language,
+    String source,
+  ) async {
+    final normalizedLanguage = _normalizeLearningExecutionLanguage(language);
+    if (normalizedLanguage.isEmpty) {
+      throw ApiException('unsupported language: $language');
+    }
+    return GoExecutionResult.fromJson(
+      await _post(learningBase, '/code-executions/$normalizedLanguage', {
+        'source': source,
+      }),
+    );
+  }
+
   Future<AuthToken> login(String account, String password) async {
     final json = await _post(accountBase, '/login', {
       'account': account,
@@ -572,6 +587,25 @@ class ApiClient {
         .where((segment) => segment.trim().isNotEmpty)
         .map(Uri.encodeComponent)
         .join('/');
+  }
+
+  String _normalizeLearningExecutionLanguage(String language) {
+    // Normalize one markdown fence info string into a backend execution language token.
+    // 将 Markdown 代码块语言标记规范化为后端执行语言标记。
+    switch (language.trim().toLowerCase()) {
+      case 'go':
+      case 'golang':
+        return 'go';
+      case 'js':
+      case 'javascript':
+      case 'node':
+        return 'javascript';
+      case 'py':
+      case 'python':
+        return 'python';
+      default:
+        return '';
+    }
   }
 
   List<T> _list<T>(

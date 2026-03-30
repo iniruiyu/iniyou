@@ -15,9 +15,12 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/service ./cmd/${SERVICE_DIR}
 
-FROM scratch
+FROM alpine:3.20
 
 WORKDIR /app
+RUN apk add --no-cache ca-certificates nodejs python3
+COPY --from=build /usr/local/go /usr/local/go
 COPY --from=build /out/service /app/service
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 ENTRYPOINT ["/app/service"]

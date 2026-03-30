@@ -29,6 +29,34 @@ function escapeLearningHtml(value) {
   });
 }
 
+function escapeLearningAttribute(value) {
+  // Escape attribute values before embedding them into generated HTML.
+  // 在生成 HTML 时转义属性值。
+  return escapeLearningHtml(value).replace(/`/g, '&#96;');
+}
+
+async function copyLearningText(value) {
+  // Copy text into the clipboard with a legacy fallback for older browsers.
+  // 将文本复制到剪贴板，并为旧浏览器保留回退方案。
+  const text = String(value || '');
+  if (!text) {
+    return;
+  }
+  if (navigator?.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'readonly');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+}
+
 function sanitizeLearningUrl(value) {
   // Keep only safe anchor targets inside learning markdown.
   // 仅保留学习 Markdown 中安全的链接目标。
@@ -283,11 +311,11 @@ function parseLearningMarkdownBlocks(content) {
   return blocks;
 }
 
-function renderLearningMarkdownContent(content) {
+function renderLearningMarkdownContent(content, options = {}) {
   // Convert course markdown into safe HTML for the learning view.
   // 将课程 Markdown 转换为学习页可用的安全 HTML。
   return parseLearningMarkdownBlocks(content)
-    .map((block) => {
+    .map((block, blockIndex) => {
       switch (block.type) {
         case 'heading':
           return `<h${block.level}>${renderLearningMarkdownInline(block.text)}</h${block.level}>`;
@@ -296,10 +324,72 @@ function renderLearningMarkdownContent(content) {
         case 'thematicBreak':
           return '<hr />';
         case 'code': {
+          const isRunnable = typeof options.isRunnableCode === 'function'
+            ? Boolean(options.isRunnableCode(block, blockIndex))
+            : false;
+          const executionState = typeof options.executionState === 'function'
+            ? options.executionState(block, blockIndex) || null
+            : null;
+          const runLabels = options.labels || {};
           const languageBadge = block.info
             ? `<div class="learning-code-head"><span class="learning-code-badge">${escapeLearningHtml(block.info)}</span></div>`
             : '';
-          return `<div class="learning-code-shell">${languageBadge}<pre><code>${escapeLearningHtml(block.text)}</code></pre></div>`;
+          const runnableActions = isRunnable
+            ? `
+              <div class="learning-code-head">
+                <span class="learning-code-badge">${escapeLearningHtml(block.info || 'go')}</span>
+                <div class="learning-code-actions">
+                  <button
+                    type="button"
+                    class="ghost compact learning-copy-button"
+                    data-learning-copy-code="true"
+                    data-learning-block-index="${blockIndex}"
+                  >${escapeLearningHtml(runLabels.copy || 'Copy code')}</button>
+                  <button
+                    type="button"
+                    class="tonal compact learning-run-button"
+                    data-learning-run="code"
+                    data-learning-block-index="${blockIndex}"
+                    ${executionState?.running ? 'disabled' : ''}
+                  >${escapeLearningHtml(executionState?.running ? (runLabels.running || 'Running...') : (runLabels.run || 'Run'))}</button>
+                </div>
+              </div>
+            `
+            : languageBadge;
+          const outputShell = isRunnable && executionState
+            ? `
+              <div class="learning-run-result">
+                <div class="learning-run-result-head">
+                  <span class="learning-run-result-badge">${escapeLearningHtml(executionState.error ? (runLabels.error || 'Request error') : (runLabels.output || 'Output'))}</span>
+                  <div class="learning-run-result-actions">
+                    <span class="learning-run-result-meta">${escapeLearningHtml(executionState.meta || '')}</span>
+                    <button
+                      type="button"
+                      class="ghost compact learning-reset-button"
+                      data-learning-reset-output="true"
+                      data-learning-block-index="${blockIndex}"
+                    >${escapeLearningHtml(runLabels.reset || 'Reset output')}</button>
+                  </div>
+                </div>
+                ${executionState.error
+                  ? `<pre class="learning-run-result-body learning-run-result-body--error"><code>${escapeLearningHtml(executionState.error)}</code></pre>`
+                  : `
+                    ${executionState.stdout
+                      ? `<pre class="learning-run-result-body"><code>${escapeLearningHtml(executionState.stdout)}</code></pre>`
+                      : `<div class="learning-run-result-empty">${escapeLearningHtml(runLabels.empty || 'No stdout output.')}</div>`}
+                    ${executionState.stderr
+                      ? `
+                        <div class="learning-run-result-head learning-run-result-head--stderr">
+                          <span class="learning-run-result-badge learning-run-result-badge--stderr">${escapeLearningHtml(runLabels.stderr || 'stderr')}</span>
+                        </div>
+                        <pre class="learning-run-result-body learning-run-result-body--error"><code>${escapeLearningHtml(executionState.stderr)}</code></pre>
+                      `
+                      : ''}
+                  `}
+              </div>
+            `
+            : '';
+          return `<div class="learning-code-shell">${runnableActions}<pre><code>${escapeLearningHtml(block.text)}</code></pre>${outputShell}</div>`;
         }
         case 'mermaid':
           return `
@@ -960,6 +1050,8 @@ window.LearningService = {
       markdownCache: {},
       markdownLoading: false,
       markdownError: '',
+      codeExecutionStates: {},
+      clipboardMessage: '',
     };
   },
   computed: {
@@ -1066,11 +1158,25 @@ window.LearningService = {
   mounted() {
     this.loadActiveCourseMarkdown();
     this.scheduleMermaidRender();
+    this.$el.addEventListener('click', this.handleLearningBodyClick);
+  },
+  beforeUnmount() {
+    if (this._clipboardTimer) {
+      window.clearTimeout(this._clipboardTimer);
+    }
+    if (this.$el) {
+      this.$el.removeEventListener('click', this.handleLearningBodyClick);
+    }
   },
   updated() {
     this.scheduleMermaidRender();
   },
   methods: {
+    learningText(values) {
+      // Resolve one localized UI label for the current course view.
+      // 为当前课程视图解析一条本地化文案。
+      return localizedLearningText(this.app, values);
+    },
     setCategory(categoryKey) {
       // Switch the course category and keep the selected course aligned.
       // 切换课程分类，并保持当前课程选择同步。
@@ -1121,6 +1227,184 @@ window.LearningService = {
         throw new Error(`markdown request failed: ${response.status}`);
       }
       return this.app.readApiPayload(response);
+    },
+    normalizeRunnableLanguage(language) {
+      // Normalize one markdown fence info string into a backend execution language token.
+      // 将 Markdown 代码块语言标识规范化为后端执行语言标记。
+      const normalized = String(language || '').trim().toLowerCase();
+      switch (normalized) {
+        case 'go':
+        case 'golang':
+          return 'go';
+        case 'js':
+        case 'javascript':
+        case 'node':
+          return 'javascript';
+        case 'py':
+        case 'python':
+          return 'python';
+        default:
+          return '';
+      }
+    },
+    codeLanguageLabel(language) {
+      // Resolve one concise runtime label for UI actions.
+      // 为界面动作解析简短的运行时标签。
+      switch (this.normalizeRunnableLanguage(language)) {
+        case 'javascript':
+          return 'JS';
+        case 'python':
+          return 'Python';
+        case 'go':
+        default:
+          return 'Go';
+      }
+    },
+    async executeCodeSnippet(language, source) {
+      // Send one runnable snippet to the backend executor and unwrap the API payload.
+      // 将一段可运行代码发送到后端执行器，并解包接口响应。
+      const normalizedLanguage = this.normalizeRunnableLanguage(language);
+      if (!normalizedLanguage) {
+        throw new Error(`unsupported language: ${language}`);
+      }
+      const response = await fetch(`${this.app.learningApiBase}/code-executions/${encodeURIComponent(normalizedLanguage)}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.app.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source,
+        }),
+      });
+      const payload = await this.app.readApiPayload(response);
+      if (!response.ok) {
+        throw new Error(payload.error || payload.message || `code execution failed: ${response.status}`);
+      }
+      return payload;
+    },
+    codeExecutionKey(course, blockIndex) {
+      // Build a stable key for one rendered runnable code block.
+      // 为单个可运行代码块构建稳定键值。
+      return `${course?.id || 'course'}:${this.app?.locale || 'zh-CN'}:${blockIndex}`;
+    },
+    executionStateForBlock(course, blockIndex) {
+      // Look up the current execution state for one rendered code block.
+      // 读取单个渲染代码块的当前执行状态。
+      return this.codeExecutionStates[this.codeExecutionKey(course, blockIndex)] || null;
+    },
+    clearExecutionState(course, blockIndex) {
+      // Remove one rendered code block execution state from the local cache.
+      // 清除单个渲染代码块的执行状态缓存。
+      const key = this.codeExecutionKey(course, blockIndex);
+      const nextState = {
+        ...this.codeExecutionStates,
+      };
+      delete nextState[key];
+      this.codeExecutionStates = nextState;
+    },
+    updateExecutionState(course, blockIndex, patch) {
+      // Update one code block execution state reactively.
+      // 以响应式方式更新单个代码块的执行状态。
+      const key = this.codeExecutionKey(course, blockIndex);
+      this.codeExecutionStates = {
+        ...this.codeExecutionStates,
+        [key]: {
+          ...(this.codeExecutionStates[key] || {}),
+          ...patch,
+        },
+      };
+    },
+    async copyCodeBlock(blockIndex) {
+      // Copy the selected runnable Go block into the clipboard and surface a lightweight confirmation.
+      // 将选中的 Go 代码块复制到剪贴板，并显示轻量确认文案。
+      if (!this.activeCourse) {
+        return;
+      }
+      const blocks = parseLearningMarkdownBlocks(this.activeCourseMarkdown);
+      const block = blocks[blockIndex];
+      if (!block || block.type !== 'code') {
+        return;
+      }
+      try {
+        await copyLearningText(block.text || '');
+        this.clipboardMessage = this.learningText({
+          'zh-CN': '代码已复制到剪贴板。',
+          'en-US': 'Code copied to clipboard.',
+          'zh-TW': '程式碼已複製到剪貼簿。',
+        });
+      } catch (_error) {
+        this.clipboardMessage = this.learningText({
+          'zh-CN': '复制失败，请手动复制。',
+          'en-US': 'Copy failed. Please copy it manually.',
+          'zh-TW': '複製失敗，請手動複製。',
+        });
+      }
+      window.clearTimeout?.(this._clipboardTimer);
+      this._clipboardTimer = window.setTimeout(() => {
+        this.clipboardMessage = '';
+      }, 2200);
+    },
+    async runCodeBlock(blockIndex) {
+      // Execute the selected runnable fence and keep its output inline beneath the code block.
+      // 执行所选可运行代码块，并将输出内嵌展示在代码块下方。
+      if (!this.activeCourse) {
+        return;
+      }
+      const blocks = parseLearningMarkdownBlocks(this.activeCourseMarkdown);
+      const block = blocks[blockIndex];
+      const normalizedLanguage = this.normalizeRunnableLanguage(block?.info || '');
+      if (!block || block.type !== 'code' || !normalizedLanguage) {
+        return;
+      }
+
+      this.updateExecutionState(this.activeCourse, blockIndex, {
+        running: true,
+        error: '',
+        stdout: '',
+        stderr: '',
+        meta: this.learningText({
+          'zh-CN': '正在运行...',
+          'en-US': 'Running...',
+          'zh-TW': '執行中...',
+        }),
+      });
+
+      try {
+        const payload = await this.executeCodeSnippet(normalizedLanguage, block.text || '');
+        const timedOut = Boolean(payload.timed_out);
+        const durationMs = Number(payload.duration_ms || 0);
+        const exitCode = Number(payload.exit_code ?? 0);
+        this.updateExecutionState(this.activeCourse, blockIndex, {
+          running: false,
+          error: '',
+          stdout: String(payload.stdout || ''),
+          stderr: String(payload.stderr || ''),
+          meta: timedOut
+            ? this.learningText({
+              'zh-CN': `已超时 · ${durationMs} ms`,
+              'en-US': `Timed out · ${durationMs} ms`,
+              'zh-TW': `已逾時 · ${durationMs} ms`,
+            })
+            : this.learningText({
+              'zh-CN': `退出码 ${exitCode} · ${durationMs} ms`,
+              'en-US': `Exit ${exitCode} · ${durationMs} ms`,
+              'zh-TW': `退出碼 ${exitCode} · ${durationMs} ms`,
+            }),
+        });
+      } catch (error) {
+        this.updateExecutionState(this.activeCourse, blockIndex, {
+          running: false,
+          error: String(error?.message || error || ''),
+          stdout: '',
+          stderr: '',
+          meta: this.learningText({
+            'zh-CN': '请求失败',
+            'en-US': 'Request failed',
+            'zh-TW': '請求失敗',
+          }),
+        });
+      }
     },
     async loadActiveCourseMarkdown() {
       // Prefer backend markdown content, then gracefully fall back to the local built-in course body.
@@ -1174,7 +1458,83 @@ window.LearningService = {
     renderCourseMarkdown(course) {
       // Render the selected course body into safe HTML.
       // 将当前课程正文渲染为安全 HTML。
-      return renderLearningMarkdownContent(this.activeCourseMarkdown);
+      return renderLearningMarkdownContent(this.activeCourseMarkdown, {
+        isRunnableCode: (block) => {
+          return Boolean(this.normalizeRunnableLanguage(block?.info || ''));
+        },
+        executionState: (_block, blockIndex) => this.executionStateForBlock(course, blockIndex),
+        labels: {
+          run: this.learningText({
+            'zh-CN': '运行代码',
+            'en-US': 'Run code',
+            'zh-TW': '執行程式碼',
+          }),
+          running: this.learningText({
+            'zh-CN': '运行中...',
+            'en-US': 'Running...',
+            'zh-TW': '執行中...',
+          }),
+          copy: this.learningText({
+            'zh-CN': '复制代码',
+            'en-US': 'Copy code',
+            'zh-TW': '複製程式碼',
+          }),
+          reset: this.learningText({
+            'zh-CN': '重置输出',
+            'en-US': 'Reset output',
+            'zh-TW': '重設輸出',
+          }),
+          output: this.learningText({
+            'zh-CN': '输出结果',
+            'en-US': 'Output',
+            'zh-TW': '輸出結果',
+          }),
+          stderr: this.learningText({
+            'zh-CN': '错误输出',
+            'en-US': 'stderr',
+            'zh-TW': '錯誤輸出',
+          }),
+          error: this.learningText({
+            'zh-CN': '请求错误',
+            'en-US': 'Request error',
+            'zh-TW': '請求錯誤',
+          }),
+          empty: this.learningText({
+            'zh-CN': '本次运行没有标准输出。',
+            'en-US': 'This run produced no stdout output.',
+            'zh-TW': '本次執行沒有標準輸出。',
+          }),
+        },
+      });
+    },
+    handleLearningBodyClick(event) {
+      // Delegate clicks from runnable code blocks rendered through v-html.
+      // 代理处理通过 v-html 渲染出的可运行代码块点击事件。
+      const button = event?.target?.closest?.('[data-learning-run="code"]');
+      if (button) {
+        const blockIndex = Number(button.getAttribute('data-learning-block-index'));
+        if (Number.isFinite(blockIndex) && blockIndex >= 0) {
+          this.runCodeBlock(blockIndex);
+        }
+        return;
+      }
+      const copyButton = event?.target?.closest?.('[data-learning-copy-code="true"]');
+      if (copyButton) {
+        const blockIndex = Number(copyButton.getAttribute('data-learning-block-index'));
+        if (Number.isFinite(blockIndex) && blockIndex >= 0) {
+          this.copyCodeBlock(blockIndex);
+        }
+        return;
+      }
+      const resetButton = event?.target?.closest?.('[data-learning-reset-output="true"]');
+      if (!resetButton) {
+        return;
+      }
+      const blockIndex = Number(resetButton.getAttribute('data-learning-block-index'));
+      if (!Number.isFinite(blockIndex) || blockIndex < 0 || !this.activeCourse) {
+        return;
+      }
+      this.clearExecutionState(this.activeCourse, blockIndex);
     },
     scheduleMermaidRender() {
       // Wait for the DOM patch, then render newly mounted Mermaid nodes.
@@ -1263,6 +1623,7 @@ window.LearningService = {
           </div>
           <p v-if="markdownLoading" class="learning-status-note">Loading course markdown...</p>
           <p v-else-if="markdownError" class="learning-status-note">{{ markdownError }}</p>
+          <p v-if="clipboardMessage" class="learning-status-note">{{ clipboardMessage }}</p>
           <div class="post-content--markdown learning-markdown-body" v-html="renderCourseMarkdown(activeCourse)"></div>
         </article>
       </div>

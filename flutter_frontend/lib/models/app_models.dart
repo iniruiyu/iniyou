@@ -35,6 +35,32 @@ class MarkdownFileDocument {
   }
 }
 
+class GoExecutionResult {
+  GoExecutionResult({
+    required this.stdout,
+    required this.stderr,
+    required this.exitCode,
+    required this.durationMs,
+    required this.timedOut,
+  });
+
+  final String stdout;
+  final String stderr;
+  final int exitCode;
+  final int durationMs;
+  final bool timedOut;
+
+  factory GoExecutionResult.fromJson(Map<String, dynamic> json) {
+    return GoExecutionResult(
+      stdout: (json['stdout'] ?? '').toString(),
+      stderr: (json['stderr'] ?? '').toString(),
+      exitCode: toInt(json['exit_code']),
+      durationMs: toInt(json['duration_ms']),
+      timedOut: json['timed_out'] == true,
+    );
+  }
+}
+
 class CurrentUser {
   CurrentUser({
     required this.id,

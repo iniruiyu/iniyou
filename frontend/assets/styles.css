@@ -1688,6 +1688,14 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.learning-code-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .learning-code-badge,
@@ -1717,6 +1725,96 @@ body {
 .learning-mermaid-shell {
   display: grid;
   gap: 10px;
+}
+
+.learning-run-button {
+  min-width: 110px;
+}
+
+.learning-copy-button,
+.learning-reset-button {
+  min-width: 96px;
+}
+
+.learning-run-result {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(110, 231, 255, 0.14);
+  background: linear-gradient(180deg, rgba(7, 12, 18, 0.88), rgba(12, 18, 28, 0.94));
+}
+
+.learning-run-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.learning-run-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.learning-run-result-head--stderr {
+  margin-top: 2px;
+}
+
+.learning-run-result-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(110, 231, 255, 0.18);
+  background: rgba(110, 231, 255, 0.08);
+  color: var(--primary);
+}
+
+.learning-run-result-badge--stderr {
+  border-color: rgba(255, 184, 107, 0.18);
+  background: rgba(255, 184, 107, 0.08);
+  color: #ffb86b;
+}
+
+.learning-run-result-meta {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.learning-run-result-body {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(4, 8, 15, 0.9);
+  overflow-x: auto;
+}
+
+.learning-run-result-body--error {
+  border-color: rgba(255, 184, 107, 0.2);
+  background: rgba(45, 22, 14, 0.48);
+}
+
+.learning-run-result-body code {
+  color: #f4f8fb;
+}
+
+.learning-run-result-empty {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .learning-task-chip {

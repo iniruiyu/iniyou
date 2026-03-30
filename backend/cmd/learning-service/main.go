@@ -33,6 +33,7 @@ func main() {
 	}
 
 	markdownHandler := &handler.MarkdownHandler{}
+	codeExecutionHandler := &handler.CodeExecutionHandler{}
 
 	// HTTP router.
 	// HTTP 路由。
@@ -42,7 +43,7 @@ func main() {
 		// 为本地 SPA 开发提供基础 CORS 支持。
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
@@ -65,6 +66,7 @@ func main() {
 	api.GET("/markdown-files", markdownHandler.ListMarkdownFiles)
 	api.GET("/markdown-files/*path", markdownHandler.GetMarkdownFile)
 	api.PUT("/markdown-files/*path", markdownHandler.PutMarkdownFile)
+	api.POST("/code-executions/:language", codeExecutionHandler.ExecuteCodeSnippet)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)

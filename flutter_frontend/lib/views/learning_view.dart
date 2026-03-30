@@ -84,6 +84,52 @@ class _LearningViewState extends State<LearningView> {
         course.markdownText(widget.languageCode);
   }
 
+  Future<CodeExecutionRunState> _runCodeSnippet(
+    String language,
+    String source,
+  ) async {
+    // Execute one runnable snippet through learning-service and map the result into UI text.
+    // 通过 learning-service 执行一段可运行代码，并映射成界面展示文案。
+    try {
+      final result = await widget.apiClient.executeLearningCodeSnippet(
+        language,
+        source,
+      );
+      final meta = result.timedOut
+          ? localizedText(
+              widget.languageCode,
+              '已超时 · ${result.durationMs} ms',
+              'Timed out · ${result.durationMs} ms',
+              '已逾時 · ${result.durationMs} ms',
+            )
+          : localizedText(
+              widget.languageCode,
+              '退出码 ${result.exitCode} · ${result.durationMs} ms',
+              'Exit ${result.exitCode} · ${result.durationMs} ms',
+              '退出碼 ${result.exitCode} · ${result.durationMs} ms',
+            );
+      return CodeExecutionRunState(
+        stdout: result.stdout,
+        stderr: result.stderr,
+        meta: meta,
+        error: '',
+      );
+    } catch (error) {
+      final message = error is ApiException ? error.message : error.toString();
+      return CodeExecutionRunState(
+        stdout: '',
+        stderr: '',
+        meta: localizedText(
+          widget.languageCode,
+          '请求失败',
+          'Request failed',
+          '請求失敗',
+        ),
+        error: message,
+      );
+    }
+  }
+
   Future<void> _loadActiveCourseMarkdown() async {
     // Prefer backend markdown content and keep the built-in markdown as a stable fallback.
     // 优先读取后端 Markdown 内容，并把内建 Markdown 保留为稳定兜底。
@@ -292,6 +338,7 @@ class _LearningViewState extends State<LearningView> {
                       markdownContent: _resolvedCourseMarkdown(activeCourse),
                       loading: _markdownLoading,
                       statusText: _markdownError,
+                      onRunGoSnippet: _runCodeSnippet,
                     ),
                   ),
                 ],
@@ -305,6 +352,7 @@ class _LearningViewState extends State<LearningView> {
                 markdownContent: _resolvedCourseMarkdown(activeCourse),
                 loading: _markdownLoading,
                 statusText: _markdownError,
+                onRunGoSnippet: _runCodeSnippet,
               ),
             ],
           ],
@@ -469,6 +517,7 @@ class _LearningDetailCard extends StatelessWidget {
     required this.markdownContent,
     required this.loading,
     required this.statusText,
+    required this.onRunGoSnippet,
   });
 
   final _LearningCourse course;
@@ -476,6 +525,7 @@ class _LearningDetailCard extends StatelessWidget {
   final String markdownContent;
   final bool loading;
   final String? statusText;
+  final CodeSnippetRunner onRunGoSnippet;
 
   @override
   Widget build(BuildContext context) {
@@ -548,7 +598,60 @@ class _LearningDetailCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
           ],
-          PostMarkdownBody(content: markdownContent),
+          PostMarkdownBody(
+            content: markdownContent,
+            codeSnippetRunner: onRunGoSnippet,
+            runCodeLabel: localizedText(
+              languageCode,
+              '运行代码',
+              'Run code',
+              '執行程式碼',
+            ),
+            runningGoLabel: localizedText(
+              languageCode,
+              '运行中...',
+              'Running...',
+              '執行中...',
+            ),
+            outputLabel: localizedText(languageCode, '输出结果', 'Output', '輸出結果'),
+            stderrLabel: localizedText(languageCode, '错误输出', 'stderr', '錯誤輸出'),
+            requestErrorLabel: localizedText(
+              languageCode,
+              '请求错误',
+              'Request error',
+              '請求錯誤',
+            ),
+            noStdoutLabel: localizedText(
+              languageCode,
+              '本次运行没有标准输出。',
+              'This run produced no stdout output.',
+              '本次執行沒有標準輸出。',
+            ),
+            codeCopiedLabel: localizedText(
+              languageCode,
+              '代码已复制到剪贴板。',
+              'Code copied to clipboard.',
+              '程式碼已複製到剪貼簿。',
+            ),
+            copyFailedLabel: localizedText(
+              languageCode,
+              '复制失败，请手动复制。',
+              'Copy failed. Please copy it manually.',
+              '複製失敗，請手動複製。',
+            ),
+            copyCodeLabel: localizedText(
+              languageCode,
+              '复制代码',
+              'Copy code',
+              '複製程式碼',
+            ),
+            resetOutputLabel: localizedText(
+              languageCode,
+              '重置输出',
+              'Reset output',
+              '重設輸出',
+            ),
+          ),
         ],
       ),
     );

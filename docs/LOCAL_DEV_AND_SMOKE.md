@@ -31,6 +31,8 @@ createdb account_service
 
 如需只执行某个服务的迁移，可使用 `make migrate MIGRATE_SERVICE=account|space|message` / To run one service only, use `make migrate MIGRATE_SERVICE=account|space|message`.
 
+说明：`learning-service` 当前不依赖数据库迁移；它使用数据库仅用于鉴权用户校验，课程正文文件通过 `MARKDOWN_STORAGE_DIR` 落盘保存 / `learning-service` currently does not require database migrations; it only uses the database for auth-user validation, while course Markdown bodies are persisted through `MARKDOWN_STORAGE_DIR`.
+
 命令支持以下目标 / The command supports the following targets:
 
 - `all`
@@ -88,11 +90,34 @@ make run-message
 
 ### 4.4 打开前端页面
 
+### 4.4 启动学习服务（教育微服务）
+
+```bash
+make run-learning
+```
+
+默认地址：
+
+- `http://localhost:8083`
+
+可选环境变量：
+
+- `MARKDOWN_STORAGE_DIR`：学习服务 Markdown 课程文件目录，默认 `D:/codeX/iniyou/uploads/learning-service/markdown-files`
+
+也可以直接启动 Go 入口：
+
+```bash
+cd backend
+SERVICE_PORT=8083 go run ./cmd/learning-service
+```
+
+### 4.5 打开前端页面
+
 直接打开：
 
 - [`frontend/index.html`](../frontend/index.html)
 
-### 4.5 容器化启动
+### 4.6 容器化启动
 
 如果本地已经安装 Docker 和 Docker Compose，可以直接使用容器化部署栈 / If Docker and Docker Compose are installed locally, you can use the containerized deployment stack directly.
 
@@ -106,7 +131,7 @@ make deploy
 - `make deploy-logs`
 - `make deploy-down`
 
-`make deploy` 会先构建镜像、启动数据库、运行版本化迁移，再启动账号、空间、通讯和 Legacy Web 服务 / `make deploy` builds the images first, starts the database, runs the versioned migration, and then brings up the account, space, message, and Legacy Web services.
+`make deploy` 会先构建镜像、启动数据库、运行版本化迁移，再启动账号、空间、通讯、学习和 Legacy Web 服务 / `make deploy` builds the images first, starts the database, runs the versioned migration, and then brings up the account, space, message, learning, and Legacy Web services.
 
 ## 5. 手工联调步骤
 
@@ -118,8 +143,10 @@ make deploy
 4. 搜索用户并建立好友关系
 5. 进入聊天页发送消息
 6. 进入空间并发布公共文章
-7. 打开作者主页与文章详情
-8. 绑定一个链上账号并检查主页摘要是否更新
+7. 调用学习服务保存或读取一个 Markdown 课程文件
+8. 在学习页点击一个 `go` 代码块的“运行 Go”按钮，并确认页面内返回执行输出
+9. 打开作者主页与文章详情
+10. 绑定一个链上账号并检查主页摘要是否更新
 
 ## 6. 自动冒烟脚本
 
@@ -140,6 +167,8 @@ make smoke
 - 建立好友关系
 - 发送一条消息
 - 拉取会话摘要
+- 保存并读取一个学习服务 Markdown 文件
+- 学习页内的 Go 代码块点击执行（手工验证）
 
 ## 7. 当前限制
 

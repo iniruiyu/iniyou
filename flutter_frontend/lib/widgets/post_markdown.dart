@@ -1,11 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'mermaid_diagram.dart';
 
+typedef CodeSnippetRunner =
+    Future<CodeExecutionRunState> Function(String language, String source);
+
 class PostMarkdownBody extends StatelessWidget {
-  const PostMarkdownBody({super.key, required this.content});
+  const PostMarkdownBody({
+    super.key,
+    required this.content,
+    this.codeSnippetRunner,
+    this.runCodeLabel = 'Run code',
+    this.runningGoLabel = 'Running...',
+    this.outputLabel = 'Output',
+    this.stderrLabel = 'stderr',
+    this.requestErrorLabel = 'Request error',
+    this.noStdoutLabel = 'This run produced no stdout output.',
+    this.codeCopiedLabel = 'Code copied to clipboard.',
+    this.copyFailedLabel = 'Copy failed. Please copy it manually.',
+    this.copyCodeLabel = 'Copy code',
+    this.resetOutputLabel = 'Reset output',
+  });
 
   final String content;
+  final CodeSnippetRunner? codeSnippetRunner;
+  final String runCodeLabel;
+  final String runningGoLabel;
+  final String outputLabel;
+  final String stderrLabel;
+  final String requestErrorLabel;
+  final String noStdoutLabel;
+  final String codeCopiedLabel;
+  final String copyFailedLabel;
+  final String copyCodeLabel;
+  final String resetOutputLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +75,7 @@ class PostMarkdownBody extends StatelessWidget {
         _buildBlock(
           context: context,
           block: blocks[index],
+          blockIndex: index,
           baseStyle: baseStyle,
           codeStyle: codeStyle,
           linkStyle: linkStyle,
@@ -64,6 +94,7 @@ class PostMarkdownBody extends StatelessWidget {
   Widget _buildBlock({
     required BuildContext context,
     required _MarkdownBlock block,
+    required int blockIndex,
     required TextStyle baseStyle,
     required TextStyle codeStyle,
     required TextStyle linkStyle,
@@ -107,44 +138,26 @@ class PostMarkdownBody extends StatelessWidget {
           ),
         );
       case _MarkdownBlockType.code:
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (block.info.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    block.info,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              SelectableText(
-                block.text,
-                style: codeStyle.copyWith(height: 1.5),
-              ),
-            ],
-          ),
+        final normalizedInfo = block.info.toLowerCase();
+        final runnable =
+            codeSnippetRunner != null &&
+            _normalizeRunnableLanguage(normalizedInfo).isNotEmpty;
+        return _MarkdownCodeBlock(
+          block: block,
+          blockIndex: blockIndex,
+          codeStyle: codeStyle,
+          codeSnippetRunner: codeSnippetRunner,
+          runCodeLabel: runCodeLabel,
+          runningGoLabel: runningGoLabel,
+          outputLabel: outputLabel,
+          stderrLabel: stderrLabel,
+          requestErrorLabel: requestErrorLabel,
+          noStdoutLabel: noStdoutLabel,
+          codeCopiedLabel: codeCopiedLabel,
+          copyFailedLabel: copyFailedLabel,
+          copyCodeLabel: copyCodeLabel,
+          resetOutputLabel: resetOutputLabel,
+          runnable: runnable,
         );
       case _MarkdownBlockType.mermaid:
         return MermaidDiagramBlock(code: block.text);
@@ -478,6 +491,25 @@ bool _isTableSeparator(String line) {
     return false;
   }
   return cells.every((cell) => RegExp(r'^:?-{3,}:?$').hasMatch(cell));
+}
+
+String _normalizeRunnableLanguage(String language) {
+  // Normalize one markdown fence info string into a backend execution language token.
+  // 将 Markdown 代码块语言标记规范化为后端执行语言标记。
+  switch (language.trim().toLowerCase()) {
+    case 'go':
+    case 'golang':
+      return 'go';
+    case 'js':
+    case 'javascript':
+    case 'node':
+      return 'javascript';
+    case 'py':
+    case 'python':
+      return 'python';
+    default:
+      return '';
+  }
 }
 
 List<InlineSpan> _buildInlineSpans(
@@ -892,6 +924,336 @@ class _MarkdownTable extends StatelessWidget {
             children: effectiveRows,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class CodeExecutionRunState {
+  const CodeExecutionRunState({
+    required this.stdout,
+    required this.stderr,
+    required this.meta,
+    required this.error,
+  });
+
+  final String stdout;
+  final String stderr;
+  final String meta;
+  final String error;
+}
+
+class _MarkdownCodeBlock extends StatefulWidget {
+  const _MarkdownCodeBlock({
+    required this.block,
+    required this.blockIndex,
+    required this.codeStyle,
+    required this.codeSnippetRunner,
+    required this.runCodeLabel,
+    required this.runningGoLabel,
+    required this.outputLabel,
+    required this.stderrLabel,
+    required this.requestErrorLabel,
+    required this.noStdoutLabel,
+    required this.codeCopiedLabel,
+    required this.copyFailedLabel,
+    required this.copyCodeLabel,
+    required this.resetOutputLabel,
+    required this.runnable,
+  });
+
+  final _MarkdownBlock block;
+  final int blockIndex;
+  final TextStyle codeStyle;
+  final CodeSnippetRunner? codeSnippetRunner;
+  final String runCodeLabel;
+  final String runningGoLabel;
+  final String outputLabel;
+  final String stderrLabel;
+  final String requestErrorLabel;
+  final String noStdoutLabel;
+  final String codeCopiedLabel;
+  final String copyFailedLabel;
+  final String copyCodeLabel;
+  final String resetOutputLabel;
+  final bool runnable;
+
+  @override
+  State<_MarkdownCodeBlock> createState() => _MarkdownCodeBlockState();
+}
+
+class _MarkdownCodeBlockState extends State<_MarkdownCodeBlock> {
+  bool _running = false;
+  CodeExecutionRunState? _state;
+
+  Future<void> _copySnippet() async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    try {
+      await Clipboard.setData(ClipboardData(text: widget.block.text));
+      if (!mounted) {
+        return;
+      }
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(widget.codeCopiedLabel),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(widget.copyFailedLabel),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _resetOutput() {
+    setState(() {
+      _state = null;
+    });
+  }
+
+  Future<void> _runSnippet() async {
+    final runner = widget.codeSnippetRunner;
+    if (runner == null || _running) {
+      return;
+    }
+    final language = _normalizeRunnableLanguage(widget.block.info);
+    if (language.isEmpty) {
+      return;
+    }
+    setState(() {
+      _running = true;
+      _state = CodeExecutionRunState(
+        stdout: '',
+        stderr: '',
+        meta: widget.runningGoLabel,
+        error: '',
+      );
+    });
+    try {
+      final nextState = await runner(language, widget.block.text);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _running = false;
+        _state = nextState;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _running = false;
+        _state = CodeExecutionRunState(
+          stdout: '',
+          stderr: '',
+          meta: widget.requestErrorLabel,
+          error: error.toString(),
+        );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final state = _state;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.block.info.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    widget.block.info,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              if (widget.runnable)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton(
+                      onPressed: _copySnippet,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        textStyle: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: Text(widget.copyCodeLabel),
+                    ),
+                    FilledButton.tonal(
+                      onPressed: _running ? null : _runSnippet,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        textStyle: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: Text(
+                        _running ? widget.runningGoLabel : widget.runCodeLabel,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          if (widget.block.info.isNotEmpty || widget.runnable)
+            const SizedBox(height: 12),
+          SelectableText(
+            widget.block.text,
+            style: widget.codeStyle.copyWith(height: 1.5),
+          ),
+          if (state != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.12,
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          state.error.isNotEmpty
+                              ? widget.requestErrorLabel
+                              : widget.outputLabel,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        state.meta,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (!_running)
+                        OutlinedButton(
+                          onPressed: _resetOutput,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            textStyle: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(widget.resetOutputLabel),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (state.error.isNotEmpty)
+                    SelectableText(
+                      state.error,
+                      style: widget.codeStyle.copyWith(
+                        height: 1.5,
+                        color: theme.colorScheme.error,
+                      ),
+                    )
+                  else ...[
+                    if (state.stdout.isNotEmpty)
+                      SelectableText(
+                        state.stdout,
+                        style: widget.codeStyle.copyWith(height: 1.5),
+                      )
+                    else
+                      Text(
+                        widget.noStdoutLabel,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    if (state.stderr.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        widget.stderrLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.error,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      SelectableText(
+                        state.stderr,
+                        style: widget.codeStyle.copyWith(
+                          height: 1.5,
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
