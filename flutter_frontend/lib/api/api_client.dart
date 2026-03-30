@@ -82,6 +82,11 @@ class ApiClient {
 
   Future<bool> isLearningServiceHealthy() => serviceHealthy(learningBase);
 
+  Future<List<MarkdownFileSummary>> listLearningMarkdownFiles() async => _list(
+    await _get(learningBase, '/markdown-files'),
+    MarkdownFileSummary.fromJson,
+  );
+
   Future<MarkdownFileDocument> fetchLearningMarkdownFile(
     String relativePath,
   ) async {
@@ -90,6 +95,30 @@ class ApiClient {
         learningBase,
         '/markdown-files/${_encodeRelativePath(relativePath)}',
       ),
+    );
+  }
+
+  Future<MarkdownFileDocument> saveLearningMarkdownFile(
+    String relativePath,
+    String content,
+  ) async {
+    // Persist one learning markdown file through the learning-service write endpoint.
+    // 通过 learning-service 写入接口持久化单个学习 Markdown 文件。
+    return MarkdownFileDocument.fromJson(
+      await _put(
+        learningBase,
+        '/markdown-files/${_encodeRelativePath(relativePath)}',
+        {'content': content},
+      ),
+    );
+  }
+
+  Future<void> deleteLearningMarkdownFile(String relativePath) async {
+    // Delete one learning markdown file through the administrator-only write endpoint.
+    // 通过仅管理员可用的写接口删除单个学习 Markdown 文件。
+    await _delete(
+      learningBase,
+      '/markdown-files/${_encodeRelativePath(relativePath)}',
     );
   }
 

@@ -76,6 +76,7 @@ Widget buildServicesView({
 Widget buildLearningCourseView({
   required String languageCode,
   required String activeCourseId,
+  required bool isAdmin,
   required ApiClient apiClient,
   required ValueChanged<String> onSelectCourse,
   required VoidCallback onBackToServices,
@@ -83,6 +84,7 @@ Widget buildLearningCourseView({
   return buildLearningView(
     languageCode: languageCode,
     activeCourseId: activeCourseId,
+    isAdmin: isAdmin,
     apiClient: apiClient,
     onSelectCourse: onSelectCourse,
     onBackToServices: onBackToServices,

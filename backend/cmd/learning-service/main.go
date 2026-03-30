@@ -65,8 +65,11 @@ func main() {
 	}))
 	api.GET("/markdown-files", markdownHandler.ListMarkdownFiles)
 	api.GET("/markdown-files/*path", markdownHandler.GetMarkdownFile)
-	api.PUT("/markdown-files/*path", markdownHandler.PutMarkdownFile)
 	api.POST("/code-executions/:language", codeExecutionHandler.ExecuteCodeSnippet)
+	admin := api.Group("")
+	admin.Use(middleware.RequireAdminMiddleware())
+	admin.PUT("/markdown-files/*path", markdownHandler.PutMarkdownFile)
+	admin.DELETE("/markdown-files/*path", markdownHandler.DeleteMarkdownFile)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)

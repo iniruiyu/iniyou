@@ -1678,6 +1678,49 @@ body {
   font-size: 0.92rem;
 }
 
+.learning-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.learning-editor-shell {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.learning-editor-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.learning-editor-textarea {
+  min-height: 420px;
+  resize: vertical;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 12, 18, 0.92);
+  color: var(--text);
+  padding: 16px 18px;
+  font: inherit;
+  line-height: 1.6;
+}
+
+.learning-editor-textarea:focus {
+  outline: none;
+  border-color: rgba(110, 231, 255, 0.34);
+  box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.08);
+}
+
 .learning-code-shell {
   display: grid;
   gap: 10px;

@@ -140,3 +140,25 @@ func TestEnsureDefaultLearningMarkdownFilesSeedsDefaults(t *testing.T) {
 		t.Fatalf("unexpected seeded markdown content: %q", document.Content)
 	}
 }
+
+func TestDeleteMarkdownFileRemovesDocument(t *testing.T) {
+	// Delete one markdown document and surface a stable not-found result afterwards.
+	// 删除单个 Markdown 文档，并在后续读取时返回稳定的 not-found 结果。
+	oldDir := markdownStorageDir
+	t.Cleanup(func() {
+		markdownStorageDir = oldDir
+	})
+
+	tempDir := t.TempDir()
+	SetMarkdownStorageDir(tempDir)
+
+	if _, _, err := SaveMarkdownFile("courses/delete-me.zh-CN.md", "# Delete me"); err != nil {
+		t.Fatalf("seed markdown file: %v", err)
+	}
+	if err := DeleteMarkdownFile("courses/delete-me.zh-CN.md"); err != nil {
+		t.Fatalf("delete markdown file: %v", err)
+	}
+	if _, err := GetMarkdownFile("courses/delete-me.zh-CN.md"); !errors.Is(err, ErrMarkdownFileNotFound) {
+		t.Fatalf("expected not found after delete, got %v", err)
+	}
+}

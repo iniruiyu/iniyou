@@ -175,6 +175,22 @@ func SaveMarkdownFile(relativePath string, content string) (MarkdownFileDocument
 	return document, created, nil
 }
 
+func DeleteMarkdownFile(relativePath string) error {
+	// Delete one markdown file beneath the configured storage root and ignore duplicate deletes.
+	// 删除配置存储根目录下的单个 Markdown 文件，并对重复删除保持幂等。
+	_, absolutePath, err := markdownFileAbsolutePath(relativePath)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(absolutePath); err != nil {
+		if os.IsNotExist(err) {
+			return ErrMarkdownFileNotFound
+		}
+		return err
+	}
+	return nil
+}
+
 func markdownFileAbsolutePath(relativePath string) (string, string, error) {
 	// Normalize the relative path and join it to the storage root safely.
 	// 规范化相对路径，并安全地拼接到存储根目录。

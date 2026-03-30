@@ -114,12 +114,15 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `GET /api/v1/markdown-files`
 - `GET /api/v1/markdown-files/{path}`
 - `PUT /api/v1/markdown-files/{path}`
+- `DELETE /api/v1/markdown-files/{path}`
 
 说明：
 
 - 学习课程文件接口由独立 `learning-service` 提供，默认监听 `http://localhost:8083/api/v1`
 - 仅允许访问与写入 `.md` 文件，`{path}` 为相对存储根目录的多级路径
 - 文件内容通过 JSON `content` 字段传输，响应中返回规范化相对路径、内容、大小和更新时间
+- `PUT /api/v1/markdown-files/{path}` 当前仅管理员可调用，管理员判断基于 `users.level = admin`
+- `DELETE /api/v1/markdown-files/{path}` 当前仅管理员可调用，用于下架某个课程语言版本文件
 - 另提供 `POST /api/v1/code-executions/{language}`，用于执行受限示例代码并返回 `stdout`、`stderr`、`exit_code`、`duration_ms` 与 `timed_out`
 
 ### 5.5 聊天

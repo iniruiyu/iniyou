@@ -71,3 +71,21 @@ func (h *MarkdownHandler) PutMarkdownFile(c *gin.Context) {
 	}
 	respondOK(c, item)
 }
+
+func (h *MarkdownHandler) DeleteMarkdownFile(c *gin.Context) {
+	// Delete one markdown file beneath the configured storage root.
+	// 删除配置存储根目录下的单个 Markdown 文件。
+	err := service.DeleteMarkdownFile(c.Param("path"))
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidMarkdownPath):
+			respondError(c, http.StatusBadRequest, err.Error())
+		case errors.Is(err, service.ErrMarkdownFileNotFound):
+			respondError(c, http.StatusNotFound, err.Error())
+		default:
+			respondError(c, http.StatusInternalServerError, "markdown delete error")
+		}
+		return
+	}
+	respondDeleted(c)
+}

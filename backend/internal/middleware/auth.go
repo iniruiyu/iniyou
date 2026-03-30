@@ -50,6 +50,7 @@ func AuthMiddleware(secret string, loadUserByID func(string) (models.User, error
 			return
 		}
 		c.Set("user_id", user.ID)
+		c.Set("user_level", user.Level)
 		c.Next()
 	}
 }

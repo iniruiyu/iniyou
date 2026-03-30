@@ -1035,6 +1035,102 @@ async function renderLearningMermaid(rootElement) {
   }
 }
 
+function parseLearningCourseFileDescriptor(path) {
+  // Accept backend lesson files that match `courses/{courseId}.{locale}.md`.
+  // 接受匹配 `courses/{courseId}.{locale}.md` 的后端课程文件。
+  const normalized = String(path || '').trim();
+  if (!normalized.startsWith('courses/') || !normalized.endsWith('.md')) {
+    return null;
+  }
+  const fileName = normalized.slice('courses/'.length);
+  const lastDot = fileName.lastIndexOf('.');
+  if (lastDot <= 0) {
+    return null;
+  }
+  const localeDot = fileName.lastIndexOf('.', lastDot - 1);
+  if (localeDot <= 0) {
+    return null;
+  }
+  const courseId = fileName.slice(0, localeDot);
+  const languageCode = fileName.slice(localeDot + 1, lastDot);
+  if (!courseId || !languageCode) {
+    return null;
+  }
+  return { courseId, languageCode };
+}
+
+function humanizeLearningCourseId(courseId) {
+  // Turn one slug-like course id into a readable fallback title.
+  // 将 slug 风格课程 ID 转换为可读兜底标题。
+  return String(courseId || '')
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ') || String(courseId || '');
+}
+
+function buildBackendLearningCatalog(items) {
+  // Convert backend markdown summaries into learning course cards for the legacy web frontend.
+  // 将后端 Markdown 摘要转换为 Legacy Web 前端可用的课程卡片。
+  const grouped = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    const descriptor = parseLearningCourseFileDescriptor(item?.path);
+    if (!descriptor) {
+      continue;
+    }
+    if (!grouped.has(descriptor.courseId)) {
+      grouped.set(descriptor.courseId, []);
+    }
+    grouped.get(descriptor.courseId).push({
+      path: String(item.path || ''),
+      updatedAt: item.updated_at || item.updatedAt || '',
+      languageCode: descriptor.languageCode,
+    });
+  }
+
+  const accents = ['aurora', 'ember', 'cyan'];
+  return Array.from(grouped.entries())
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([courseId, entries], index) => {
+      const localeCodes = Array.from(new Set(entries.map((entry) => entry.languageCode))).sort();
+      const latestUpdatedAt = entries
+        .map((entry) => new Date(entry.updatedAt))
+        .filter((value) => !Number.isNaN(value.getTime()))
+        .sort((left, right) => right.getTime() - left.getTime())[0];
+      const updateLabel = latestUpdatedAt
+        ? `${latestUpdatedAt.getFullYear()}-${String(latestUpdatedAt.getMonth() + 1).padStart(2, '0')}-${String(latestUpdatedAt.getDate()).padStart(2, '0')}`
+        : 'Backend';
+      const fallbackTitle = humanizeLearningCourseId(courseId);
+      return {
+        id: courseId,
+        category: 'all',
+        accent: accents[index % accents.length],
+        icon: courseId.length >= 3 ? courseId.slice(0, 3).toUpperCase() : courseId.toUpperCase(),
+        title: {
+          'zh-CN': fallbackTitle,
+          'en-US': fallbackTitle,
+          'zh-TW': fallbackTitle,
+        },
+        subtitle: {
+          'zh-CN': '来自 learning-service 的动态课程文件，可随内容仓库持续扩展。',
+          'en-US': 'A backend-driven lesson discovered from learning-service and ready to grow with the content repository.',
+          'zh-TW': '來自 learning-service 的動態課程檔案，可隨內容倉庫持續擴展。',
+        },
+        meta: {
+          'zh-CN': `${localeCodes.length} 个语言版本 · 更新 ${updateLabel}`,
+          'en-US': `${localeCodes.length} locale variants · Updated ${updateLabel}`,
+          'zh-TW': `${localeCodes.length} 個語言版本 · 更新 ${updateLabel}`,
+        },
+        tags: {
+          'zh-CN': ['后端同步', ...localeCodes],
+          'en-US': ['Backend sync', ...localeCodes],
+          'zh-TW': ['後端同步', ...localeCodes],
+        },
+        markdown: {},
+      };
+    });
+}
+
 window.LearningService = {
   props: {
     app: {
@@ -1047,9 +1143,24 @@ window.LearningService = {
     return {
       activeCategory: 'all',
       activeCourseId: catalog[0]?.id || '',
+      backendCourses: [],
+      catalogLoading: false,
+      catalogError: '',
       markdownCache: {},
       markdownLoading: false,
       markdownError: '',
+      editorMode: false,
+      markdownSaving: false,
+      saveStatus: '',
+      markdownDraft: '',
+      markdownDraftBaseline: '',
+      createLessonOpen: false,
+      createLessonError: '',
+      createLessonDraft: {
+        courseId: '',
+        locale: 'zh-CN',
+        content: '# New Lesson\n\nWrite your course content here.',
+      },
       codeExecutionStates: {},
       clipboardMessage: '',
     };
@@ -1092,7 +1203,14 @@ window.LearningService = {
       ];
     },
     courses() {
-      return getLearningCourseCatalog();
+      const merged = new Map();
+      for (const course of getLearningCourseCatalog()) {
+        merged.set(course.id, course);
+      }
+      for (const course of this.backendCourses) {
+        merged.set(course.id, course);
+      }
+      return Array.from(merged.values());
     },
     visibleCourses() {
       if (this.activeCategory === 'all') {
@@ -1137,9 +1255,20 @@ window.LearningService = {
         || this.markdownCache[fallbackPath]?.content
         || this.courseFallbackMarkdown(this.activeCourse, this.app?.locale);
     },
+    hasUnsavedEditorChanges() {
+      return this.markdownDraft !== this.markdownDraftBaseline;
+    },
+    isAdmin() {
+      // Resolve whether the current signed-in account can manage lesson publishing.
+      // 判断当前登录账号是否具备课程上架管理权限。
+      return String(this.app?.user?.level || '').toLowerCase() === 'admin';
+    },
   },
   watch: {
     activeCourseId() {
+      this.editorMode = false;
+      this.saveStatus = '';
+      this.syncEditorWithActiveCourse(true);
       this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
@@ -1147,15 +1276,22 @@ window.LearningService = {
       if (!this.visibleCourses.find((course) => course.id === this.activeCourseId)) {
         this.activeCourseId = this.visibleCourses[0]?.id || this.courses[0]?.id || '';
       }
+      this.editorMode = false;
+      this.saveStatus = '';
+      this.syncEditorWithActiveCourse(true);
       this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
     'app.locale'() {
+      this.editorMode = false;
+      this.saveStatus = '';
+      this.syncEditorWithActiveCourse(true);
       this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
   },
   mounted() {
+    this.loadCourseCatalog();
     this.loadActiveCourseMarkdown();
     this.scheduleMermaidRender();
     this.$el.addEventListener('click', this.handleLearningBodyClick);
@@ -1210,6 +1346,31 @@ window.LearningService = {
       const normalizedLocale = locale || 'zh-CN';
       return `courses/${course.id}.${normalizedLocale}.md`;
     },
+    activeCourseMarkdownPath() {
+      // Resolve the current course markdown path for the active locale.
+      // 解析当前语言下当前课程对应的 Markdown 路径。
+      return this.courseMarkdownPath(this.activeCourse, this.app?.locale);
+    },
+    normalizeCourseIdInput(value) {
+      // Normalize one course id input into a safe slug that matches backend markdown path rules.
+      // 将课程 ID 输入规范化为匹配后端 Markdown 路径规则的安全 slug。
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-+|-+$/g, '');
+    },
+    syncEditorWithActiveCourse(force = false) {
+      // Align the editor draft with the active course unless the user is editing unsaved content.
+      // 让编辑器草稿与当前课程保持一致，但避免覆盖用户未保存的编辑内容。
+      if (!force && this.editorMode && this.hasUnsavedEditorChanges) {
+        return;
+      }
+      const nextContent = this.activeCourseMarkdown;
+      this.markdownDraft = nextContent;
+      this.markdownDraftBaseline = nextContent;
+    },
     async fetchCourseMarkdown(relativePath) {
       // Load one markdown document from the learning service and unwrap the API envelope.
       // 从学习服务加载单个 Markdown 文档，并解包 API 包装。
@@ -1227,6 +1388,64 @@ window.LearningService = {
         throw new Error(`markdown request failed: ${response.status}`);
       }
       return this.app.readApiPayload(response);
+    },
+    async listCourseMarkdownFiles() {
+      // Load the backend markdown file list so the legacy frontend can discover additional lessons.
+      // 读取后端 Markdown 文件列表，让 Legacy 前端也能发现新增课程。
+      const response = await fetch(`${this.app.learningApiBase}/markdown-files`, {
+        headers: {
+          Authorization: `Bearer ${this.app.token}`,
+        },
+      });
+      const payload = await this.app.readApiPayload(response);
+      if (!response.ok) {
+        throw new Error(payload.error || payload.message || `markdown list failed: ${response.status}`);
+      }
+      return Array.isArray(payload.items) ? payload.items : [];
+    },
+    async saveCourseMarkdown(relativePath, content) {
+      // Persist one course markdown file back to learning-service.
+      // 将单个课程 Markdown 文件保存回 learning-service。
+      const encodedPath = String(relativePath || '')
+        .split('/')
+        .filter(Boolean)
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+      const response = await fetch(`${this.app.learningApiBase}/markdown-files/${encodedPath}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${this.app.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+        }),
+      });
+      const payload = await this.app.readApiPayload(response);
+      if (!response.ok) {
+        throw new Error(payload.error || payload.message || `markdown save failed: ${response.status}`);
+      }
+      return payload;
+    },
+    async deleteCourseMarkdown(relativePath) {
+      // Delete one lesson markdown file through the administrator-only learning endpoint.
+      // 通过仅管理员可用的学习接口删除单个课程 Markdown 文件。
+      const encodedPath = String(relativePath || '')
+        .split('/')
+        .filter(Boolean)
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+      const response = await fetch(`${this.app.learningApiBase}/markdown-files/${encodedPath}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${this.app.token}`,
+        },
+      });
+      const payload = await this.app.readApiPayload(response);
+      if (!response.ok) {
+        throw new Error(payload.error || payload.message || `markdown delete failed: ${response.status}`);
+      }
+      return payload;
     },
     normalizeRunnableLanguage(language) {
       // Normalize one markdown fence info string into a backend execution language token.
@@ -1454,6 +1673,202 @@ window.LearningService = {
         });
       }
       this.markdownLoading = false;
+      this.syncEditorWithActiveCourse();
+    },
+    async loadCourseCatalog() {
+      // Discover backend lessons so the legacy frontend stays aligned with the learning-service content repository.
+      // 发现后端课程，让 Legacy 前端与 learning-service 内容仓库保持同步。
+      if (!this.app?.token || !this.app?.learningApiBase) {
+        return;
+      }
+      this.catalogLoading = true;
+      this.catalogError = '';
+      try {
+        const items = await this.listCourseMarkdownFiles();
+        this.backendCourses = buildBackendLearningCatalog(items);
+      } catch (_error) {
+        this.catalogError = localizedLearningText(this.app, {
+          'zh-CN': '后端课程索引暂不可用，当前继续显示内建课程目录。',
+          'en-US': 'The backend lesson index is unavailable, so the built-in catalog is still shown.',
+          'zh-TW': '後端課程索引暫不可用，目前繼續顯示內建課程目錄。',
+        });
+      }
+      this.catalogLoading = false;
+    },
+    toggleEditorMode() {
+      // Switch between rendered preview and Markdown source editing for the active lesson.
+      // 在当前课程的渲染预览与 Markdown 源码编辑之间切换。
+      if (!this.isAdmin) {
+        return;
+      }
+      if (!this.editorMode) {
+        this.syncEditorWithActiveCourse(true);
+      }
+      this.editorMode = !this.editorMode;
+      this.saveStatus = '';
+    },
+    toggleCreateLessonForm() {
+      // Toggle the lesson-creation form so users can add a new backend markdown file from the UI.
+      // 切换课程创建表单，让用户可以直接从界面新增后端 Markdown 文件。
+      if (!this.isAdmin) {
+        return;
+      }
+      this.createLessonOpen = !this.createLessonOpen;
+      this.createLessonError = '';
+      if (this.createLessonOpen) {
+        this.createLessonDraft = {
+          courseId: '',
+          locale: ['zh-CN', 'en-US', 'zh-TW'].includes(this.app?.locale) ? this.app.locale : 'zh-CN',
+          content: '# New Lesson\n\nWrite your course content here.',
+        };
+      }
+    },
+    resetMarkdownDraft() {
+      // Reset the draft back to the latest loaded markdown snapshot.
+      // 将草稿重置为最近一次已加载的 Markdown 快照。
+      if (!this.isAdmin) {
+        return;
+      }
+      this.markdownDraft = this.activeCourseMarkdown;
+      this.markdownDraftBaseline = this.activeCourseMarkdown;
+      this.saveStatus = localizedLearningText(this.app, {
+        'zh-CN': '已重置为当前已加载内容。',
+        'en-US': 'Reset to the currently loaded lesson content.',
+        'zh-TW': '已重設為目前已載入內容。',
+      });
+    },
+    async reloadActiveCourseMarkdown() {
+      // Drop the active course cache so the next load re-reads markdown from the backend.
+      // 丢弃当前课程缓存，让下一次加载重新从后端读取 Markdown。
+      if (!this.activeCourse) {
+        return;
+      }
+      const activePath = this.activeCourseMarkdownPath();
+      const fallbackPath = this.courseMarkdownPath(this.activeCourse, 'zh-CN');
+      if (activePath) {
+        delete this.markdownCache[activePath];
+      }
+      if (fallbackPath && fallbackPath !== activePath) {
+        delete this.markdownCache[fallbackPath];
+      }
+      this.markdownCache = {
+        ...this.markdownCache,
+      };
+      this.saveStatus = '';
+      await this.loadActiveCourseMarkdown();
+    },
+    async saveActiveCourseMarkdown() {
+      // Save the active editor draft and refresh the preview cache in place.
+      // 保存当前编辑草稿，并就地刷新预览缓存。
+      if (!this.activeCourse || !this.isAdmin) {
+        return;
+      }
+      const relativePath = this.activeCourseMarkdownPath();
+      this.markdownSaving = true;
+      this.saveStatus = '';
+      try {
+        const payload = await this.saveCourseMarkdown(relativePath, this.markdownDraft);
+        this.markdownCache = {
+          ...this.markdownCache,
+          [relativePath]: {
+            content: String(payload.content || ''),
+            updatedAt: payload.updated_at || '',
+          },
+        };
+        this.markdownDraft = String(payload.content || '');
+        this.markdownDraftBaseline = this.markdownDraft;
+        this.markdownError = '';
+        this.saveStatus = localizedLearningText(this.app, {
+          'zh-CN': '课程内容已保存到 learning-service。',
+          'en-US': 'Lesson content saved to learning-service.',
+          'zh-TW': '課程內容已儲存到 learning-service。',
+        });
+        await this.loadCourseCatalog();
+      } catch (error) {
+        this.saveStatus = String(error?.message || error || '');
+      }
+      this.markdownSaving = false;
+    },
+    async deleteActiveLessonFile() {
+      // Delete the active locale lesson file so administrators can take it offline from the console.
+      // 删除当前语言课程文件，让管理员可以直接在后台下架。
+      if (!this.activeCourse || !this.isAdmin) {
+        return;
+      }
+      const confirmed = window.confirm(this.learningText({
+        'zh-CN': '确认删除当前语言版本的课程文件吗？',
+        'en-US': 'Delete the current locale lesson file?',
+        'zh-TW': '確認刪除目前語言版本的課程檔案嗎？',
+      }));
+      if (!confirmed) {
+        return;
+      }
+      const relativePath = this.activeCourseMarkdownPath();
+      this.markdownSaving = true;
+      this.saveStatus = '';
+      try {
+        await this.deleteCourseMarkdown(relativePath);
+        const nextCache = {
+          ...this.markdownCache,
+        };
+        delete nextCache[relativePath];
+        this.markdownCache = nextCache;
+        this.editorMode = false;
+        this.saveStatus = localizedLearningText(this.app, {
+          'zh-CN': '课程文件已删除。',
+          'en-US': 'The lesson file was deleted.',
+          'zh-TW': '課程檔案已刪除。',
+        });
+        await this.loadCourseCatalog();
+        await this.loadActiveCourseMarkdown();
+      } catch (error) {
+        this.saveStatus = String(error?.message || error || '');
+      }
+      this.markdownSaving = false;
+    },
+    async createLessonFile() {
+      // Create a brand-new lesson file and switch the view to that course after it is saved.
+      // 创建全新的课程文件，并在保存后自动切换到该课程。
+      if (!this.isAdmin) {
+        return;
+      }
+      const normalizedCourseId = this.normalizeCourseIdInput(this.createLessonDraft.courseId);
+      if (!normalizedCourseId) {
+        this.createLessonError = localizedLearningText(this.app, {
+          'zh-CN': '请先填写有效的课程 ID。',
+          'en-US': 'Enter a valid course ID first.',
+          'zh-TW': '請先填寫有效的課程 ID。',
+        });
+        return;
+      }
+      this.markdownSaving = true;
+      this.createLessonError = '';
+      const locale = this.createLessonDraft.locale || 'zh-CN';
+      const relativePath = `courses/${normalizedCourseId}.${locale}.md`;
+      try {
+        const payload = await this.saveCourseMarkdown(
+          relativePath,
+          this.createLessonDraft.content,
+        );
+        this.markdownCache = {
+          ...this.markdownCache,
+          [relativePath]: {
+            content: String(payload.content || ''),
+            updatedAt: payload.updated_at || '',
+          },
+        };
+        this.createLessonOpen = false;
+        this.saveStatus = localizedLearningText(this.app, {
+          'zh-CN': '新课程文件已创建并保存。',
+          'en-US': 'The new lesson file was created and saved.',
+          'zh-TW': '新課程檔案已建立並儲存。',
+        });
+        await this.loadCourseCatalog();
+        this.activeCourseId = normalizedCourseId;
+      } catch (error) {
+        this.createLessonError = String(error?.message || error || '');
+      }
+      this.markdownSaving = false;
     },
     renderCourseMarkdown(course) {
       // Render the selected course body into safe HTML.
@@ -1575,6 +1990,13 @@ window.LearningService = {
             <div class="service-card-title">{{ app.t('learning.catalogTitle') }}</div>
             <div class="service-card-sub">{{ app.t('learning.catalogSub') }}</div>
           </div>
+          <p v-if="catalogLoading || catalogError" class="learning-status-note">
+            {{ catalogLoading ? learningText({
+              'zh-CN': '正在同步后端课程目录...',
+              'en-US': 'Syncing backend lesson catalog...',
+              'zh-TW': '正在同步後端課程目錄...',
+            }) : catalogError }}
+          </p>
           <div class="learning-category-row">
             <button
               v-for="category in categoryOptions"
@@ -1621,10 +2043,205 @@ window.LearningService = {
           <div class="learning-course-tags learning-course-tags--detail">
             <span v-for="tag in courseTags(activeCourse)" :key="activeCourse.id + '-detail-' + tag" class="service-chip">{{ tag }}</span>
           </div>
+          <div v-if="isAdmin" class="learning-editor-toolbar">
+            <bilingual-action-button
+              :variant="editorMode ? 'primary' : 'tonal'"
+              compact
+              type="button"
+              :primary-label="editorMode ? learningText({
+                'zh-CN': '切换到预览',
+                'en-US': 'Back to preview',
+                'zh-TW': '切換到預覽',
+              }) : learningText({
+                'zh-CN': '编辑 Markdown',
+                'en-US': 'Edit markdown',
+                'zh-TW': '編輯 Markdown',
+              })"
+              secondary-label=""
+              @click="toggleEditorMode"
+            ></bilingual-action-button>
+            <bilingual-action-button
+              variant="tonal"
+              compact
+              type="button"
+              :primary-label="learningText({
+                'zh-CN': createLessonOpen ? '收起新建' : '新建课程',
+                'en-US': createLessonOpen ? 'Hide new lesson' : 'New lesson',
+                'zh-TW': createLessonOpen ? '收起新建' : '新建課程',
+              })"
+              secondary-label=""
+              @click="toggleCreateLessonForm"
+            ></bilingual-action-button>
+            <bilingual-action-button
+              variant="ghost"
+              compact
+              type="button"
+              :primary-label="learningText({
+                'zh-CN': '重新加载',
+                'en-US': 'Reload',
+                'zh-TW': '重新載入',
+              })"
+              secondary-label=""
+              @click="reloadActiveCourseMarkdown"
+            ></bilingual-action-button>
+            <bilingual-action-button
+              variant="ghost"
+              compact
+              type="button"
+              :primary-label="learningText({
+                'zh-CN': '删除当前版本',
+                'en-US': 'Delete locale file',
+                'zh-TW': '刪除目前版本',
+              })"
+              secondary-label=""
+              :disabled="markdownSaving"
+              @click="deleteActiveLessonFile"
+            ></bilingual-action-button>
+            <template v-if="editorMode">
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="learningText({
+                  'zh-CN': '重置草稿',
+                  'en-US': 'Reset draft',
+                  'zh-TW': '重設草稿',
+                })"
+                secondary-label=""
+                :disabled="markdownSaving"
+                @click="resetMarkdownDraft"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="primary"
+                compact
+                type="button"
+                :primary-label="markdownSaving ? learningText({
+                  'zh-CN': '保存中...',
+                  'en-US': 'Saving...',
+                  'zh-TW': '儲存中...',
+                }) : learningText({
+                  'zh-CN': '保存到服务',
+                  'en-US': 'Save to service',
+                  'zh-TW': '儲存到服務',
+                })"
+                secondary-label=""
+                :disabled="markdownSaving || !hasUnsavedEditorChanges"
+                @click="saveActiveCourseMarkdown"
+              ></bilingual-action-button>
+            </template>
+          </div>
+          <p v-else class="learning-status-note">
+            {{ learningText({
+              'zh-CN': '课程上架与内容维护需管理员权限。',
+              'en-US': 'Publishing and course maintenance require administrator access.',
+              'zh-TW': '課程上架與內容維護需管理員權限。',
+            }) }}
+          </p>
           <p v-if="markdownLoading" class="learning-status-note">Loading course markdown...</p>
           <p v-else-if="markdownError" class="learning-status-note">{{ markdownError }}</p>
+          <p v-if="saveStatus" class="learning-status-note">{{ saveStatus }}</p>
           <p v-if="clipboardMessage" class="learning-status-note">{{ clipboardMessage }}</p>
-          <div class="post-content--markdown learning-markdown-body" v-html="renderCourseMarkdown(activeCourse)"></div>
+          <div v-if="createLessonOpen" class="learning-editor-shell">
+            <p class="learning-editor-help">
+              {{ learningText({
+                'zh-CN': '创建后会在 learning-service 中生成 courses/{courseId}.{locale}.md 文件。',
+                'en-US': 'This creates a courses/{courseId}.{locale}.md file inside learning-service.',
+                'zh-TW': '建立後會在 learning-service 中生成 courses/{courseId}.{locale}.md 檔案。',
+              }) }}
+            </p>
+            <div class="learning-create-grid">
+              <label class="identity-field">
+                <span class="identity-label">
+                  <span class="identity-label-main">{{ learningText({
+                    'zh-CN': '课程 ID',
+                    'en-US': 'Course ID',
+                    'zh-TW': '課程 ID',
+                  }) }}</span>
+                </span>
+                <input v-model="createLessonDraft.courseId" type="text" placeholder="my-new-course" />
+                <div class="form-hint">{{ learningText({
+                  'zh-CN': '仅支持小写字母、数字、-、_。',
+                  'en-US': 'Use lowercase letters, numbers, hyphens, and underscores.',
+                  'zh-TW': '僅支援小寫字母、數字、-、_。',
+                }) }}</div>
+              </label>
+              <label class="identity-field">
+                <span class="identity-label">
+                  <span class="identity-label-main">{{ learningText({
+                    'zh-CN': '语言版本',
+                    'en-US': 'Locale',
+                    'zh-TW': '語言版本',
+                  }) }}</span>
+                </span>
+                <select v-model="createLessonDraft.locale">
+                  <option value="zh-CN">zh-CN</option>
+                  <option value="en-US">en-US</option>
+                  <option value="zh-TW">zh-TW</option>
+                </select>
+              </label>
+            </div>
+            <textarea
+              class="learning-editor-textarea"
+              v-model="createLessonDraft.content"
+              :placeholder="learningText({
+                'zh-CN': '支持标题、表格、代码块和 Mermaid 语法。',
+                'en-US': 'Supports headings, tables, code fences, and Mermaid syntax.',
+                'zh-TW': '支援標題、表格、程式碼塊與 Mermaid 語法。',
+              })"
+            ></textarea>
+            <p v-if="createLessonError" class="learning-status-note">{{ createLessonError }}</p>
+            <div class="learning-editor-toolbar">
+              <bilingual-action-button
+                variant="ghost"
+                compact
+                type="button"
+                :primary-label="learningText({
+                  'zh-CN': '取消',
+                  'en-US': 'Cancel',
+                  'zh-TW': '取消',
+                })"
+                secondary-label=""
+                :disabled="markdownSaving"
+                @click="toggleCreateLessonForm"
+              ></bilingual-action-button>
+              <bilingual-action-button
+                variant="primary"
+                compact
+                type="button"
+                :primary-label="markdownSaving ? learningText({
+                  'zh-CN': '创建中...',
+                  'en-US': 'Creating...',
+                  'zh-TW': '建立中...',
+                }) : learningText({
+                  'zh-CN': '创建课程文件',
+                  'en-US': 'Create lesson file',
+                  'zh-TW': '建立課程檔案',
+                })"
+                secondary-label=""
+                :disabled="markdownSaving"
+                @click="createLessonFile"
+              ></bilingual-action-button>
+            </div>
+          </div>
+          <div v-if="editorMode" class="learning-editor-shell">
+            <p class="learning-editor-help">
+              {{ learningText({
+                'zh-CN': '在这里直接编辑课程 Markdown，保存后会写回 learning-service。',
+                'en-US': 'Edit the lesson markdown here and save it back to learning-service.',
+                'zh-TW': '在這裡直接編輯課程 Markdown，儲存後會寫回 learning-service。',
+              }) }}
+            </p>
+            <textarea
+              class="learning-editor-textarea"
+              v-model="markdownDraft"
+              :placeholder="learningText({
+                'zh-CN': '支持标题、表格、代码块和 Mermaid 语法。',
+                'en-US': 'Supports headings, tables, code fences, and Mermaid syntax.',
+                'zh-TW': '支援標題、表格、程式碼塊與 Mermaid 語法。',
+              })"
+            ></textarea>
+          </div>
+          <div v-else class="post-content--markdown learning-markdown-body" v-html="renderCourseMarkdown(activeCourse)"></div>
         </article>
       </div>
     </section>

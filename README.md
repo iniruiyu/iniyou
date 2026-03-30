@@ -45,6 +45,9 @@ cp .env.example .env
 - `SERVICE_PORT`: 可选；账号服务默认 `8080`，空间服务默认 `8082`，通讯服务默认 `8081`，学习服务默认 `8083`
 - `MARKDOWN_STORAGE_DIR`: 可选；学习服务 Markdown 课程文件落盘目录，默认 `D:/codeX/iniyou/uploads/learning-service/markdown-files`
 - `learning-service` 现支持在学习页内运行受限 `go`、`javascript`、`python` 代码块；运行环境要求服务所在机器可用对应运行时（Go/Node.js/Python），当前限制为 32 KB 代码、Go 8 秒超时、JavaScript/Python 5 秒超时、16 KB 输出上限，并对高风险模块与导入做基础拦截
+- Flutter 学习页会优先从 `learning-service /api/v1/markdown-files` 同步课程目录，并自动发现 `courses/{courseId}.{locale}.md` 形式的新课程文件
+- 课程内容维护当前已收敛到管理员权限，只有 `users.level = admin` 的账号才会看到双前端中的课程新建与保存入口，并可调用 `learning-service /api/v1/markdown-files/*path`
+- 管理员当前还可删除某个课程语言版本文件，用于快速下架课程内容；完整草稿/审核/上架流转仍待独立管理员后台继续落地
 
 ## 本地启动
 

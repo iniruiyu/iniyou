@@ -35,6 +35,26 @@ class MarkdownFileDocument {
   }
 }
 
+class MarkdownFileSummary {
+  MarkdownFileSummary({
+    required this.path,
+    required this.size,
+    required this.updatedAt,
+  });
+
+  final String path;
+  final int size;
+  final DateTime? updatedAt;
+
+  factory MarkdownFileSummary.fromJson(Map<String, dynamic> json) {
+    return MarkdownFileSummary(
+      path: (json['path'] ?? '').toString(),
+      size: toInt(json['size']),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+    );
+  }
+}
+
 class GoExecutionResult {
   GoExecutionResult({
     required this.stdout,

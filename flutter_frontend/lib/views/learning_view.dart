@@ -7,10 +7,16 @@ import '../widgets/post_markdown.dart';
 import 'view_state_helpers.dart';
 
 const defaultLearningCourseId = 'english-storytelling';
+const List<String> learningCourseLocaleOptions = <String>[
+  'zh-CN',
+  'en-US',
+  'zh-TW',
+];
 
 Widget buildLearningView({
   required String languageCode,
   required String activeCourseId,
+  required bool isAdmin,
   required ApiClient apiClient,
   required ValueChanged<String> onSelectCourse,
   required VoidCallback onBackToServices,
@@ -18,6 +24,7 @@ Widget buildLearningView({
   return LearningView(
     languageCode: languageCode,
     activeCourseId: activeCourseId,
+    isAdmin: isAdmin,
     apiClient: apiClient,
     onSelectCourse: onSelectCourse,
     onBackToServices: onBackToServices,
@@ -29,6 +36,7 @@ class LearningView extends StatefulWidget {
     super.key,
     required this.languageCode,
     required this.activeCourseId,
+    required this.isAdmin,
     required this.apiClient,
     required this.onSelectCourse,
     required this.onBackToServices,
@@ -36,6 +44,7 @@ class LearningView extends StatefulWidget {
 
   final String languageCode;
   final String activeCourseId;
+  final bool isAdmin;
   final ApiClient apiClient;
   final ValueChanged<String> onSelectCourse;
   final VoidCallback onBackToServices;
@@ -46,14 +55,33 @@ class LearningView extends StatefulWidget {
 
 class _LearningViewState extends State<LearningView> {
   final Map<String, MarkdownFileDocument> _markdownCache = {};
+  final TextEditingController _markdownEditorController =
+      TextEditingController();
+  List<_LearningCourse> _backendCourseCatalog = const [];
+  bool _catalogLoading = false;
+  String? _catalogError;
   bool _markdownLoading = false;
   String? _markdownError;
+  bool _editorMode = false;
+  bool _markdownSaving = false;
+  String? _saveStatus;
+  String _editorBaseline = '';
   int _loadVersion = 0;
+  int _catalogLoadVersion = 0;
 
   @override
   void initState() {
     super.initState();
+    _markdownEditorController.addListener(_handleMarkdownEditorChanged);
+    _loadCourseCatalog();
     _loadActiveCourseMarkdown();
+  }
+
+  @override
+  void dispose() {
+    _markdownEditorController.removeListener(_handleMarkdownEditorChanged);
+    _markdownEditorController.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,13 +89,29 @@ class _LearningViewState extends State<LearningView> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.activeCourseId != widget.activeCourseId ||
         oldWidget.languageCode != widget.languageCode) {
+      _editorMode = false;
+      _saveStatus = null;
+      _syncEditorWithActiveCourse(force: true);
       _loadActiveCourseMarkdown();
     }
   }
 
-  _LearningCourse get _activeCourse => learningCourseCatalog.firstWhere(
+  List<_LearningCourse> get _courseCatalog {
+    final merged = <String, _LearningCourse>{};
+    for (final course in learningCourseCatalog) {
+      merged[course.id] = course;
+    }
+    for (final course in _backendCourseCatalog) {
+      merged[course.id] = course;
+    }
+    return merged.values.toList();
+  }
+
+  _LearningCourse get _activeCourse => _courseCatalog.firstWhere(
     (course) => course.id == widget.activeCourseId,
-    orElse: () => learningCourseCatalog.first,
+    orElse: () => _courseCatalog.isNotEmpty
+        ? _courseCatalog.first
+        : learningCourseCatalog.first,
   );
 
   String _courseMarkdownPath(_LearningCourse course, String languageCode) {
@@ -82,6 +126,21 @@ class _LearningViewState extends State<LearningView> {
     return _markdownCache[localePath]?.content ??
         _markdownCache[fallbackPath]?.content ??
         course.markdownText(widget.languageCode);
+  }
+
+  String get _activeCourseMarkdownPath =>
+      _courseMarkdownPath(_activeCourse, widget.languageCode);
+
+  bool get _hasUnsavedEditorChanges =>
+      _markdownEditorController.text != _editorBaseline;
+
+  void _handleMarkdownEditorChanged() {
+    // Rebuild editor actions when the draft changes so save/reset availability stays current.
+    // 当草稿发生变化时重建编辑器操作区，保持保存/重置按钮状态及时更新。
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
   }
 
   Future<CodeExecutionRunState> _runCodeSnippet(
@@ -176,6 +235,443 @@ class _LearningViewState extends State<LearningView> {
               '後端課程檔案暫未返回，目前顯示內建示例內容。',
             );
     });
+    _syncEditorWithActiveCourse();
+  }
+
+  Future<void> _loadCourseCatalog() async {
+    // Discover backend lesson files so the learning page can surface new courses without a frontend release.
+    // 发现后端课程文件，让学习页无需等待前端发版也能展示新课程。
+    final currentVersion = ++_catalogLoadVersion;
+    if (mounted) {
+      setState(() {
+        _catalogLoading = true;
+        _catalogError = null;
+      });
+    }
+    try {
+      final items = await widget.apiClient.listLearningMarkdownFiles();
+      final backendCourses = _buildBackendCourseCatalog(items);
+      if (!mounted || currentVersion != _catalogLoadVersion) {
+        return;
+      }
+      setState(() {
+        _backendCourseCatalog = backendCourses;
+        _catalogLoading = false;
+        _catalogError = null;
+      });
+      await _loadActiveCourseMarkdown();
+    } catch (_) {
+      if (!mounted || currentVersion != _catalogLoadVersion) {
+        return;
+      }
+      setState(() {
+        _catalogLoading = false;
+        _catalogError = localizedText(
+          widget.languageCode,
+          '后端课程索引暂不可用，当前继续显示内建课程目录。',
+          'The backend lesson index is unavailable, so the built-in catalog is still shown.',
+          '後端課程索引暫不可用，目前繼續顯示內建課程目錄。',
+        );
+      });
+    }
+  }
+
+  void _syncEditorWithActiveCourse({bool force = false}) {
+    // Keep the markdown editor aligned with the active course unless the user is mid-edit.
+    // 让 Markdown 编辑器与当前课程保持一致，但避免覆盖用户正在编辑的内容。
+    if (!force && _editorMode && _hasUnsavedEditorChanges) {
+      return;
+    }
+    final nextContent = _resolvedCourseMarkdown(_activeCourse);
+    _markdownEditorController.value = TextEditingValue(
+      text: nextContent,
+      selection: TextSelection.collapsed(offset: nextContent.length),
+    );
+    _editorBaseline = nextContent;
+  }
+
+  void _toggleEditorMode() {
+    // Switch between lesson preview and source editing while preserving unsaved text.
+    // 在课程预览和源码编辑之间切换，同时保留未保存的草稿。
+    setState(() {
+      if (!_editorMode) {
+        _syncEditorWithActiveCourse(force: true);
+      }
+      _editorMode = !_editorMode;
+      _saveStatus = null;
+    });
+  }
+
+  void _resetMarkdownDraft() {
+    // Reset the editor back to the latest loaded markdown snapshot for the active course.
+    // 将编辑器重置为当前课程最近一次加载到的 Markdown 快照。
+    final nextContent = _resolvedCourseMarkdown(_activeCourse);
+    setState(() {
+      _markdownEditorController.value = TextEditingValue(
+        text: nextContent,
+        selection: TextSelection.collapsed(offset: nextContent.length),
+      );
+      _editorBaseline = nextContent;
+      _saveStatus = localizedText(
+        widget.languageCode,
+        '已重置为当前已加载内容。',
+        'Reset to the currently loaded lesson content.',
+        '已重設為目前已載入內容。',
+      );
+    });
+  }
+
+  Future<void> _reloadActiveCourseMarkdown() async {
+    // Drop the cached active locale file so the next load re-reads it from the backend.
+    // 丢弃当前语言课程缓存，让下一次加载重新从后端读取。
+    final activePath = _activeCourseMarkdownPath;
+    final fallbackPath = _courseMarkdownPath(_activeCourse, 'zh-CN');
+    setState(() {
+      _markdownCache.remove(activePath);
+      if (fallbackPath != activePath) {
+        _markdownCache.remove(fallbackPath);
+      }
+      _saveStatus = null;
+    });
+    await _loadActiveCourseMarkdown();
+  }
+
+  Future<void> _saveActiveCourseMarkdown() async {
+    // Save the active lesson markdown through learning-service and refresh the local preview cache.
+    // 通过 learning-service 保存当前课程 Markdown，并刷新本地预览缓存。
+    final relativePath = _activeCourseMarkdownPath;
+    final nextContent = _markdownEditorController.text;
+    setState(() {
+      _markdownSaving = true;
+      _saveStatus = null;
+    });
+    try {
+      final document = await widget.apiClient.saveLearningMarkdownFile(
+        relativePath,
+        nextContent,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _markdownCache[relativePath] = document;
+        _editorBaseline = document.content;
+        _markdownEditorController.value = TextEditingValue(
+          text: document.content,
+          selection: TextSelection.collapsed(offset: document.content.length),
+        );
+        _markdownSaving = false;
+        _markdownError = null;
+        _saveStatus = localizedText(
+          widget.languageCode,
+          '课程内容已保存到 learning-service。',
+          'Lesson content saved to learning-service.',
+          '課程內容已儲存到 learning-service。',
+        );
+      });
+      await _loadCourseCatalog();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _markdownSaving = false;
+        _saveStatus = error is ApiException ? error.message : error.toString();
+      });
+    }
+  }
+
+  String _normalizeCourseIdInput(String value) {
+    // Normalize one course id input into a safe slug that matches backend path rules.
+    // 将课程 ID 输入规范化为匹配后端路径规则的安全 slug。
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_-]+'), '-')
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+  }
+
+  Future<void> _showCreateLessonDialog() async {
+    // Create one new backend lesson file from the learning page so users can start a course without manual filesystem edits.
+    // 在学习页内创建新的后端课程文件，避免用户还要手动改文件系统。
+    final idController = TextEditingController();
+    final contentController = TextEditingController(
+      text: '# New Lesson\n\nWrite your course content here.',
+    );
+    var locale = widget.languageCode;
+    if (!learningCourseLocaleOptions.contains(locale)) {
+      locale = 'zh-CN';
+    }
+    var inlineError = '';
+
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: theme.colorScheme.surface,
+              title: Text(
+                localizedText(
+                  widget.languageCode,
+                  '新建课程文件',
+                  'Create lesson file',
+                  '新建課程檔案',
+                ),
+              ),
+              content: SizedBox(
+                width: 560,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: idController,
+                        decoration: InputDecoration(
+                          labelText: localizedText(
+                            widget.languageCode,
+                            '课程 ID',
+                            'Course ID',
+                            '課程 ID',
+                          ),
+                          hintText: 'my-new-course',
+                          helperText: localizedText(
+                            widget.languageCode,
+                            '仅支持小写字母、数字、-、_。',
+                            'Use lowercase letters, numbers, hyphens, and underscores.',
+                            '僅支援小寫字母、數字、-、_。',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: locale,
+                        items: learningCourseLocaleOptions
+                            .map(
+                              (value) => DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setDialogState(() => locale = value);
+                        },
+                        decoration: InputDecoration(
+                          labelText: localizedText(
+                            widget.languageCode,
+                            '语言版本',
+                            'Locale',
+                            '語言版本',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: contentController,
+                        minLines: 12,
+                        maxLines: 18,
+                        decoration: InputDecoration(
+                          alignLabelWithHint: true,
+                          labelText: localizedText(
+                            widget.languageCode,
+                            'Markdown 内容',
+                            'Markdown content',
+                            'Markdown 內容',
+                          ),
+                        ),
+                      ),
+                      if (inlineError.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          inlineError,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    localizedText(
+                      widget.languageCode,
+                      '取消',
+                      'Cancel',
+                      '取消',
+                    ),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final normalizedCourseId = _normalizeCourseIdInput(
+                      idController.text,
+                    );
+                    if (normalizedCourseId.isEmpty) {
+                      setDialogState(() {
+                        inlineError = localizedText(
+                          widget.languageCode,
+                          '请先填写有效的课程 ID。',
+                          'Enter a valid course ID first.',
+                          '請先填寫有效的課程 ID。',
+                        );
+                      });
+                      return;
+                    }
+                    final relativePath =
+                        'courses/$normalizedCourseId.$locale.md';
+                    try {
+                      await widget.apiClient.saveLearningMarkdownFile(
+                        relativePath,
+                        contentController.text,
+                      );
+                      if (!context.mounted) {
+                        return;
+                      }
+                      Navigator.of(context).pop(true);
+                      setState(() {
+                        _markdownCache[relativePath] = MarkdownFileDocument(
+                          path: relativePath,
+                          content: contentController.text,
+                          size: contentController.text.length,
+                          updatedAt: DateTime.now(),
+                        );
+                        _saveStatus = localizedText(
+                          widget.languageCode,
+                          '新课程文件已创建并保存。',
+                          'The new lesson file was created and saved.',
+                          '新課程檔案已建立並儲存。',
+                        );
+                      });
+                      await _loadCourseCatalog();
+                      widget.onSelectCourse(normalizedCourseId);
+                    } catch (error) {
+                      setDialogState(() {
+                        inlineError = error is ApiException
+                            ? error.message
+                            : error.toString();
+                      });
+                    }
+                  },
+                  child: Text(
+                    localizedText(
+                      widget.languageCode,
+                      '创建',
+                      'Create',
+                      '建立',
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    idController.dispose();
+    contentController.dispose();
+    if (created == true && mounted) {
+      setState(() {
+        _editorMode = false;
+      });
+    }
+  }
+
+  Future<void> _deleteActiveLessonFile() async {
+    // Delete the active locale lesson file so administrators can take a course variant offline quickly.
+    // 删除当前语言课程文件，让管理员可以快速下架某个课程版本。
+    final relativePath = _activeCourseMarkdownPath;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            localizedText(
+              widget.languageCode,
+              '删除课程文件',
+              'Delete lesson file',
+              '刪除課程檔案',
+            ),
+          ),
+          content: Text(
+            localizedText(
+              widget.languageCode,
+              '确认删除当前语言版本的课程文件吗？此操作会立即让该文件从管理员后台与课程目录中移除。',
+              'Delete the current locale lesson file? This removes it from the admin console and lesson catalog immediately.',
+              '確認刪除目前語言版本的課程檔案嗎？此操作會立即讓該檔案從管理員後台與課程目錄中移除。',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                localizedText(
+                  widget.languageCode,
+                  '取消',
+                  'Cancel',
+                  '取消',
+                ),
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                localizedText(
+                  widget.languageCode,
+                  '删除',
+                  'Delete',
+                  '刪除',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+    setState(() {
+      _markdownSaving = true;
+      _saveStatus = null;
+    });
+    try {
+      await widget.apiClient.deleteLearningMarkdownFile(relativePath);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _markdownCache.remove(relativePath);
+        _markdownSaving = false;
+        _editorMode = false;
+        _saveStatus = localizedText(
+          widget.languageCode,
+          '课程文件已删除。',
+          'The lesson file was deleted.',
+          '課程檔案已刪除。',
+        );
+      });
+      await _loadCourseCatalog();
+      await _loadActiveCourseMarkdown();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _markdownSaving = false;
+        _saveStatus = error is ApiException ? error.message : error.toString();
+      });
+    }
   }
 
   @override
@@ -186,7 +682,7 @@ class _LearningViewState extends State<LearningView> {
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 980;
         final cards = <Widget>[
-          for (final course in learningCourseCatalog)
+          for (final course in _courseCatalog)
             _LearningCourseCard(
               course: course,
               languageCode: widget.languageCode,
@@ -287,6 +783,22 @@ class _LearningViewState extends State<LearningView> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  if (_catalogLoading || (_catalogError ?? '').isNotEmpty) ...[
+                    Text(
+                      _catalogLoading
+                          ? localizedText(
+                              widget.languageCode,
+                              '正在同步后端课程目录...',
+                              'Syncing backend lesson catalog...',
+                              '正在同步後端課程目錄...',
+                            )
+                          : (_catalogError ?? ''),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
@@ -338,6 +850,18 @@ class _LearningViewState extends State<LearningView> {
                       markdownContent: _resolvedCourseMarkdown(activeCourse),
                       loading: _markdownLoading,
                       statusText: _markdownError,
+                      editorMode: _editorMode,
+                      markdownSaving: _markdownSaving,
+                      saveStatus: _saveStatus,
+                      markdownEditorController: _markdownEditorController,
+                      hasUnsavedChanges: _hasUnsavedEditorChanges,
+                      isAdmin: widget.isAdmin,
+                      onToggleEditorMode: _toggleEditorMode,
+                      onResetDraft: _resetMarkdownDraft,
+                      onReloadMarkdown: _reloadActiveCourseMarkdown,
+                      onSaveMarkdown: _saveActiveCourseMarkdown,
+                      onCreateLesson: _showCreateLessonDialog,
+                      onDeleteLesson: _deleteActiveLessonFile,
                       onRunGoSnippet: _runCodeSnippet,
                     ),
                   ),
@@ -352,6 +876,18 @@ class _LearningViewState extends State<LearningView> {
                 markdownContent: _resolvedCourseMarkdown(activeCourse),
                 loading: _markdownLoading,
                 statusText: _markdownError,
+                editorMode: _editorMode,
+                markdownSaving: _markdownSaving,
+                saveStatus: _saveStatus,
+                markdownEditorController: _markdownEditorController,
+                hasUnsavedChanges: _hasUnsavedEditorChanges,
+                isAdmin: widget.isAdmin,
+                onToggleEditorMode: _toggleEditorMode,
+                onResetDraft: _resetMarkdownDraft,
+                onReloadMarkdown: _reloadActiveCourseMarkdown,
+                onSaveMarkdown: _saveActiveCourseMarkdown,
+                onCreateLesson: _showCreateLessonDialog,
+                onDeleteLesson: _deleteActiveLessonFile,
                 onRunGoSnippet: _runCodeSnippet,
               ),
             ],
@@ -517,6 +1053,18 @@ class _LearningDetailCard extends StatelessWidget {
     required this.markdownContent,
     required this.loading,
     required this.statusText,
+    required this.editorMode,
+    required this.markdownSaving,
+    required this.saveStatus,
+    required this.markdownEditorController,
+    required this.hasUnsavedChanges,
+    required this.isAdmin,
+    required this.onToggleEditorMode,
+    required this.onResetDraft,
+    required this.onReloadMarkdown,
+    required this.onSaveMarkdown,
+    required this.onCreateLesson,
+    required this.onDeleteLesson,
     required this.onRunGoSnippet,
   });
 
@@ -525,6 +1073,18 @@ class _LearningDetailCard extends StatelessWidget {
   final String markdownContent;
   final bool loading;
   final String? statusText;
+  final bool editorMode;
+  final bool markdownSaving;
+  final String? saveStatus;
+  final TextEditingController markdownEditorController;
+  final bool hasUnsavedChanges;
+  final bool isAdmin;
+  final VoidCallback onToggleEditorMode;
+  final VoidCallback onResetDraft;
+  final Future<void> Function() onReloadMarkdown;
+  final Future<void> Function() onSaveMarkdown;
+  final Future<void> Function() onCreateLesson;
+  final Future<void> Function() onDeleteLesson;
   final CodeSnippetRunner onRunGoSnippet;
 
   @override
@@ -589,6 +1149,115 @@ class _LearningDetailCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
+          if (isAdmin) ...[
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                BilingualActionButton(
+                  variant: editorMode
+                      ? BilingualButtonVariant.filled
+                      : BilingualButtonVariant.tonal,
+                  compact: true,
+                  onPressed: onToggleEditorMode,
+                  primaryLabel: localizedText(
+                    languageCode,
+                    editorMode ? '切换到预览' : '编辑 Markdown',
+                    editorMode ? 'Back to preview' : 'Edit markdown',
+                    editorMode ? '切換到預覽' : '編輯 Markdown',
+                  ),
+                  secondaryLabel: '',
+                ),
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.tonal,
+                  compact: true,
+                  onPressed: () => onCreateLesson(),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '新建课程',
+                    'New lesson',
+                    '新建課程',
+                  ),
+                  secondaryLabel: '',
+                ),
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.outlined,
+                  compact: true,
+                  onPressed: loading ? null : () => onReloadMarkdown(),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '重新加载',
+                    'Reload',
+                    '重新載入',
+                  ),
+                  secondaryLabel: '',
+                ),
+                BilingualActionButton(
+                  variant: BilingualButtonVariant.outlined,
+                  compact: true,
+                  onPressed: markdownSaving ? null : () => onDeleteLesson(),
+                  primaryLabel: localizedText(
+                    languageCode,
+                    '删除当前版本',
+                    'Delete locale file',
+                    '刪除目前版本',
+                  ),
+                  secondaryLabel: '',
+                ),
+                if (editorMode) ...[
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.outlined,
+                    compact: true,
+                    onPressed: markdownSaving ? null : onResetDraft,
+                    primaryLabel: localizedText(
+                      languageCode,
+                      '重置草稿',
+                      'Reset draft',
+                      '重設草稿',
+                    ),
+                    secondaryLabel: '',
+                  ),
+                  BilingualActionButton(
+                    variant: BilingualButtonVariant.filled,
+                    compact: true,
+                    onPressed: markdownSaving || !hasUnsavedChanges
+                        ? null
+                        : () => onSaveMarkdown(),
+                    primaryLabel: localizedText(
+                      languageCode,
+                      markdownSaving ? '保存中...' : '保存到服务',
+                      markdownSaving ? 'Saving...' : 'Save to service',
+                      markdownSaving ? '儲存中...' : '儲存到服務',
+                    ),
+                    secondaryLabel: '',
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 14),
+          ] else ...[
+            Text(
+              localizedText(
+                languageCode,
+                '课程上架与内容维护需管理员权限。',
+                'Publishing and course maintenance require administrator access.',
+                '課程上架與內容維護需管理員權限。',
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+          if ((saveStatus ?? '').isNotEmpty) ...[
+            Text(
+              saveStatus ?? '',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           if (loading || (statusText ?? '').isNotEmpty) ...[
             Text(
               loading ? 'Loading course markdown...' : (statusText ?? ''),
@@ -598,58 +1267,141 @@ class _LearningDetailCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
           ],
-          PostMarkdownBody(
-            content: markdownContent,
-            codeSnippetRunner: onRunGoSnippet,
-            runCodeLabel: localizedText(
-              languageCode,
-              '运行代码',
-              'Run code',
-              '執行程式碼',
+          if (editorMode)
+            _LearningMarkdownEditor(
+              languageCode: languageCode,
+              controller: markdownEditorController,
+            )
+          else
+            PostMarkdownBody(
+              content: markdownContent,
+              codeSnippetRunner: onRunGoSnippet,
+              runCodeLabel: localizedText(
+                languageCode,
+                '运行代码',
+                'Run code',
+                '執行程式碼',
+              ),
+              runningGoLabel: localizedText(
+                languageCode,
+                '运行中...',
+                'Running...',
+                '執行中...',
+              ),
+              outputLabel: localizedText(
+                languageCode,
+                '输出结果',
+                'Output',
+                '輸出結果',
+              ),
+              stderrLabel: localizedText(
+                languageCode,
+                '错误输出',
+                'stderr',
+                '錯誤輸出',
+              ),
+              requestErrorLabel: localizedText(
+                languageCode,
+                '请求错误',
+                'Request error',
+                '請求錯誤',
+              ),
+              noStdoutLabel: localizedText(
+                languageCode,
+                '本次运行没有标准输出。',
+                'This run produced no stdout output.',
+                '本次執行沒有標準輸出。',
+              ),
+              codeCopiedLabel: localizedText(
+                languageCode,
+                '代码已复制到剪贴板。',
+                'Code copied to clipboard.',
+                '程式碼已複製到剪貼簿。',
+              ),
+              copyFailedLabel: localizedText(
+                languageCode,
+                '复制失败，请手动复制。',
+                'Copy failed. Please copy it manually.',
+                '複製失敗，請手動複製。',
+              ),
+              copyCodeLabel: localizedText(
+                languageCode,
+                '复制代码',
+                'Copy code',
+                '複製程式碼',
+              ),
+              resetOutputLabel: localizedText(
+                languageCode,
+                '重置输出',
+                'Reset output',
+                '重設輸出',
+              ),
             ),
-            runningGoLabel: localizedText(
+        ],
+      ),
+    );
+  }
+}
+
+class _LearningMarkdownEditor extends StatelessWidget {
+  const _LearningMarkdownEditor({
+    required this.languageCode,
+    required this.controller,
+  });
+
+  final String languageCode;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            localizedText(
               languageCode,
-              '运行中...',
-              'Running...',
-              '執行中...',
+              '在这里直接编辑课程 Markdown，保存后会写回 learning-service。',
+              'Edit the lesson markdown here and save it back to learning-service.',
+              '在這裡直接編輯課程 Markdown，儲存後會寫回 learning-service。',
             ),
-            outputLabel: localizedText(languageCode, '输出结果', 'Output', '輸出結果'),
-            stderrLabel: localizedText(languageCode, '错误输出', 'stderr', '錯誤輸出'),
-            requestErrorLabel: localizedText(
-              languageCode,
-              '请求错误',
-              'Request error',
-              '請求錯誤',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
             ),
-            noStdoutLabel: localizedText(
-              languageCode,
-              '本次运行没有标准输出。',
-              'This run produced no stdout output.',
-              '本次執行沒有標準輸出。',
-            ),
-            codeCopiedLabel: localizedText(
-              languageCode,
-              '代码已复制到剪贴板。',
-              'Code copied to clipboard.',
-              '程式碼已複製到剪貼簿。',
-            ),
-            copyFailedLabel: localizedText(
-              languageCode,
-              '复制失败，请手动复制。',
-              'Copy failed. Please copy it manually.',
-              '複製失敗，請手動複製。',
-            ),
-            copyCodeLabel: localizedText(
-              languageCode,
-              '复制代码',
-              'Copy code',
-              '複製程式碼',
-            ),
-            resetOutputLabel: localizedText(
-              languageCode,
-              '重置输出',
-              'Reset output',
-              '重設輸出',
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            minLines: 20,
+            maxLines: 28,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+            decoration: InputDecoration(
+              alignLabelWithHint: true,
+              labelText: localizedText(
+                languageCode,
+                'Markdown 源码',
+                'Markdown source',
+                'Markdown 原始碼',
+              ),
+              hintText: localizedText(
+                languageCode,
+                '支持标题、表格、代码块和 Mermaid 语法。',
+                'Supports headings, tables, code fences, and Mermaid syntax.',
+                '支援標題、表格、程式碼塊與 Mermaid 語法。',
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
             ),
           ),
         ],
@@ -693,6 +1445,162 @@ class _LearningCourse {
 
   String markdownText(String languageCode) =>
       markdown[languageCode] ?? markdown['zh-CN'] ?? '';
+}
+
+List<_LearningCourse> _buildBackendCourseCatalog(
+  List<MarkdownFileSummary> items,
+) {
+  // Group backend markdown files by course id so one course card can represent multiple locale variants.
+  // 按课程 ID 聚合后端 Markdown 文件，让一张课程卡片可以表示多个语言版本。
+  final grouped = <String, List<MarkdownFileSummary>>{};
+  for (final item in items) {
+    final descriptor = _tryParseLearningCourseFile(item.path);
+    if (descriptor == null) {
+      continue;
+    }
+    grouped
+        .putIfAbsent(descriptor.courseId, () => <MarkdownFileSummary>[])
+        .add(item);
+  }
+
+  final courses = <_LearningCourse>[];
+  for (final entry in grouped.entries) {
+    final sortedItems = List<MarkdownFileSummary>.from(entry.value)
+      ..sort((left, right) => left.path.compareTo(right.path));
+    courses.add(_buildBackendCourse(entry.key, sortedItems));
+  }
+  courses.sort((left, right) => left.id.compareTo(right.id));
+  return courses;
+}
+
+_LearningCourse _buildBackendCourse(
+  String courseId,
+  List<MarkdownFileSummary> items,
+) {
+  // Convert one discovered backend course into a UI card while keeping frontend fallback text lightweight.
+  // 将发现到的单个后端课程转换成界面卡片，同时保持前端兜底文案足够轻量。
+  final languageCodes =
+      items
+          .map(
+            (item) =>
+                _tryParseLearningCourseFile(item.path)?.languageCode ?? '',
+          )
+          .where((languageCode) => languageCode.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+  final latestUpdatedAt = items
+      .map((item) => item.updatedAt)
+      .whereType<DateTime>()
+      .fold<DateTime?>(null, (latest, current) {
+        if (latest == null || current.isAfter(latest)) {
+          return current;
+        }
+        return latest;
+      });
+  final accent = _learningCourseAccentColor(courseId);
+  final fallbackTitle = _humanizeCourseId(courseId);
+  final updateLabel = latestUpdatedAt == null
+      ? 'Backend'
+      : '${latestUpdatedAt.year}-${latestUpdatedAt.month.toString().padLeft(2, '0')}-${latestUpdatedAt.day.toString().padLeft(2, '0')}';
+
+  return _LearningCourse(
+    id: courseId,
+    icon: courseId.length >= 3
+        ? courseId.substring(0, 3).toUpperCase()
+        : courseId.toUpperCase(),
+    colors: [
+      accent.withValues(alpha: 0.92),
+      Color.alphaBlend(accent.withValues(alpha: 0.18), const Color(0xFF0F1720)),
+    ],
+    title: {
+      'zh-CN': fallbackTitle,
+      'en-US': fallbackTitle,
+      'zh-TW': fallbackTitle,
+    },
+    subtitle: {
+      'zh-CN': '来自 learning-service 的动态课程文件，可随内容仓库持续扩展。',
+      'en-US':
+          'A backend-driven lesson discovered from learning-service and ready to grow with the content repository.',
+      'zh-TW': '來自 learning-service 的動態課程檔案，可隨內容倉庫持續擴展。',
+    },
+    meta: {
+      'zh-CN': '${languageCodes.length} 个语言版本 · 更新 $updateLabel',
+      'en-US': '${languageCodes.length} locale variants · Updated $updateLabel',
+      'zh-TW': '${languageCodes.length} 個語言版本 · 更新 $updateLabel',
+    },
+    tagMap: {
+      'zh-CN': ['后端同步', ...languageCodes],
+      'en-US': ['Backend sync', ...languageCodes],
+      'zh-TW': ['後端同步', ...languageCodes],
+    },
+    markdown: const {},
+  );
+}
+
+_LearningCourseFileDescriptor? _tryParseLearningCourseFile(String path) {
+  // Accept only backend lesson files under `courses/` that follow the `{courseId}.{locale}.md` naming convention.
+  // 仅接受 `courses/` 目录下遵循 `{courseId}.{locale}.md` 命名规则的后端课程文件。
+  final normalized = path.trim();
+  if (!normalized.startsWith('courses/') || !normalized.endsWith('.md')) {
+    return null;
+  }
+  final fileName = normalized.substring('courses/'.length);
+  final lastDot = fileName.lastIndexOf('.');
+  if (lastDot <= 0) {
+    return null;
+  }
+  final localeDot = fileName.lastIndexOf('.', lastDot - 1);
+  if (localeDot <= 0) {
+    return null;
+  }
+  final courseId = fileName.substring(0, localeDot);
+  final languageCode = fileName.substring(localeDot + 1, lastDot);
+  if (courseId.isEmpty || languageCode.isEmpty) {
+    return null;
+  }
+  return _LearningCourseFileDescriptor(
+    courseId: courseId,
+    languageCode: languageCode,
+  );
+}
+
+String _humanizeCourseId(String courseId) {
+  // Turn one slug-like course id into a readable fallback title for backend-discovered lessons.
+  // 将 slug 风格课程 ID 转成可读的后端课程兜底标题。
+  final words = courseId
+      .split(RegExp(r'[-_]+'))
+      .where((word) => word.trim().isNotEmpty)
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+      .toList();
+  if (words.isEmpty) {
+    return courseId;
+  }
+  return words.join(' ');
+}
+
+Color _learningCourseAccentColor(String courseId) {
+  // Keep backend-generated course cards visually distinct yet deterministic for the same id.
+  // 让后端生成的课程卡片既有区分度，又能对同一 ID 保持稳定配色。
+  final palette = <Color>[
+    const Color(0xFF2F5D7C),
+    const Color(0xFF6A3F2A),
+    const Color(0xFF1D5B4F),
+    const Color(0xFF5F3B73),
+    const Color(0xFF7A5C1B),
+  ];
+  final hash = courseId.codeUnits.fold<int>(0, (value, code) => value + code);
+  return palette[hash % palette.length];
+}
+
+class _LearningCourseFileDescriptor {
+  const _LearningCourseFileDescriptor({
+    required this.courseId,
+    required this.languageCode,
+  });
+
+  final String courseId;
+  final String languageCode;
 }
 
 const learningCourseCatalog = <_LearningCourse>[
