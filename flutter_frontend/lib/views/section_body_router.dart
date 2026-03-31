@@ -6,6 +6,7 @@ Widget sectionBodyForView(
   AppView view, {
   required Widget dashboard,
   required Widget services,
+  required Widget adminPanel,
   required Widget learning,
   required Widget learningAdmin,
   required Widget space,
@@ -23,6 +24,8 @@ Widget sectionBodyForView(
       return profile;
     case AppView.services:
       return services;
+    case AppView.adminPanel:
+      return adminPanel;
     case AppView.learning:
       return learning;
     case AppView.learningAdmin:

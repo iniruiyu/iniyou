@@ -1433,6 +1433,12 @@ body {
   border: 1px solid rgba(110, 231, 255, 0.22);
 }
 
+.service-status-badge-offline {
+  color: #ffb86b;
+  background: rgba(255, 184, 107, 0.12);
+  border-color: rgba(255, 184, 107, 0.22);
+}
+
 .service-chip-list {
   display: flex;
   flex-wrap: wrap;
@@ -1451,6 +1457,56 @@ body {
 .service-card-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.site-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.site-admin-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.site-admin-stat {
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(110, 231, 255, 0.12);
+  background: linear-gradient(180deg, rgba(20, 28, 40, 0.92), rgba(12, 17, 25, 0.96));
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.14);
+}
+
+.site-admin-stat-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.site-admin-stat-value {
+  margin-top: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.site-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.site-admin-card {
+  min-height: 220px;
+}
+
+.site-admin-meta {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .learning-page {

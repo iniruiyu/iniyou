@@ -17,6 +17,22 @@ function buildServiceSections(app) {
         app.t('profile.blockchain.title'),
       ],
     },
+    ...(String(app?.user?.level || '').toLowerCase() === 'admin'
+      ? [{
+          key: 'admin-panel',
+          online: app.isServiceOnline('admin'),
+          title: app.t('services.adminPanelTitle'),
+          sub: app.t('services.adminPanelSub'),
+          actionKey: 'admin-panel',
+          actionLabel: app.t('services.open'),
+          modules: [
+            app.t('adminPanel.featureOverview'),
+            app.t('adminPanel.featureHealth'),
+            app.t('adminPanel.featureRouting'),
+            app.t('adminPanel.featureWorkspace'),
+          ],
+        }]
+      : []),
     {
       key: 'space',
       online: app.isServiceOnline('space'),

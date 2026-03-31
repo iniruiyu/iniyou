@@ -5,6 +5,7 @@
 - 管理员后台用于创建、编辑、审核与上架学习课程。 / The admin console is used to create, edit, review, and publish learning courses.
 - 普通登录用户只可浏览已上架课程，不可直接修改课程文件。 / Regular signed-in users can only browse published lessons and cannot modify lesson files directly.
 - 双前端共享同一套管理员能力边界。 / Both frontends share the same administrator capability boundary.
+- 学习课程后台属于网站总管理面板下的专题工作区，而不是孤立入口。 / The learning course console belongs to the site-wide admin panel as a focused workspace instead of a standalone isolated entry.
 
 ## 2. 权限模型 / Permission Model
 
@@ -67,11 +68,12 @@
 
 - 普通学习页默认只展示 `published` 课程。 / The regular learning page should display only `published` lessons by default.
 - 管理员登录后显示“新建课程”“编辑 Markdown”“保存到服务”等后台动作。 / After an administrator signs in, show management actions such as “New lesson”, “Edit markdown”, and “Save to service”.
-- 后续应拆出独立管理员后台页，避免把全部管理动作都堆在公开学习页内。 / Later, split a dedicated admin console page so the public learning page does not carry every management action.
+- 课程后台应作为“网站管理面板”中的子工作区，由总控页统一承接服务状态、快捷入口与跨微服务跳转。 / The course console should become a child workspace inside the site admin panel, with the site-wide panel owning service status, quick actions, and cross-microservice routing.
 
 ## 8. 当前落地状态 / Current Applied State
 
 - 后端课程写入已切到管理员权限。 / Backend lesson writes now require administrator permission.
 - Flutter 与 Legacy Web 已根据用户等级隐藏课程管理入口。 / Flutter and Legacy Web now hide lesson management entry points based on user level.
+- 双前端已新增独立课程后台入口，并继续拆分为网站总管理面板下的专题管理区。 / Both frontends now expose a dedicated course console entry and continue splitting it into a focused workspace under the site-wide admin panel.
 - 当前“上架”仍等同于管理员直接写入课程文件。 / “Publishing” currently still equals an administrator writing lesson files directly.
-- 下一步应补课程状态表与独立管理员工作台。 / The next step should add a lesson status table and a dedicated admin workspace.
+- 下一步应补课程状态表、审核动作与批量发布能力。 / The next step should add a lesson status table, review actions, and bulk publishing support.

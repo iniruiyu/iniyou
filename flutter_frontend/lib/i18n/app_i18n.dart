@@ -118,6 +118,7 @@ class AppI18n {
       'sidebar.friends': '好友',
       'sidebar.chat': '聊天',
       'sidebar.services': '服务导航',
+      'sidebar.adminPanel': '网站管理',
       'sidebar.learningAdmin': '课程后台',
       'sidebar.level': '等级',
       'sidebar.plan': '计划',
@@ -154,6 +155,7 @@ class AppI18n {
       'page.friends': '好友关系',
       'page.chat': '实时聊天',
       'page.services': '服务导航',
+      'page.adminPanel': '网站管理面板',
       'page.learning': '学习课程',
       'page.learningAdmin': '课程后台',
       'subtitle.dashboard': '汇总账号、空间、好友与实时互动状态。',
@@ -165,6 +167,7 @@ class AppI18n {
       'subtitle.friends': '搜索用户、发起好友请求并处理待接受关系。',
       'subtitle.chat': '查看会话摘要并发送实时消息。',
       'subtitle.services': '只显示当前在线的微服务入口，离线模块会自动隐藏。',
+      'subtitle.adminPanel': '管理员在这里总览站点服务状态，并进入各管理工作区。',
       'subtitle.learning': '查看英语、编程、AI 等课程，并完整预览 Markdown 与 Mermaid 内容。',
       'subtitle.learningAdmin': '管理员在这里维护课程文件、语言版本与发布状态。',
     },
@@ -271,6 +274,7 @@ class AppI18n {
       'sidebar.friends': 'Friends',
       'sidebar.chat': 'Chat',
       'sidebar.services': 'Services',
+      'sidebar.adminPanel': 'Site Admin',
       'sidebar.learningAdmin': 'Course Console',
       'sidebar.level': 'Level',
       'sidebar.plan': 'Plan',
@@ -308,6 +312,7 @@ class AppI18n {
       'page.friends': 'Friend Relations',
       'page.chat': 'Live Chat',
       'page.services': 'Service Navigation',
+      'page.adminPanel': 'Site Admin Panel',
       'page.learning': 'Learning Courses',
       'page.learningAdmin': 'Course Console',
       'subtitle.dashboard':
@@ -327,6 +332,8 @@ class AppI18n {
           'See conversation summaries and send real-time messages.',
       'subtitle.services':
           'Only online microservice entry points are shown here; offline modules hide automatically.',
+      'subtitle.adminPanel':
+          'Administrators review site-wide service health and enter each management workspace here.',
       'subtitle.learning':
           'Browse English, programming, and AI lessons with full Markdown and Mermaid previews.',
       'subtitle.learningAdmin':
@@ -423,6 +430,7 @@ class AppI18n {
       'sidebar.friends': '好友',
       'sidebar.chat': '聊天',
       'sidebar.services': '服務導航',
+      'sidebar.adminPanel': '網站管理',
       'sidebar.learningAdmin': '課程後台',
       'sidebar.level': '等級',
       'sidebar.plan': '方案',
@@ -459,6 +467,7 @@ class AppI18n {
       'page.friends': '好友關係',
       'page.chat': '即時聊天',
       'page.services': '服務導航',
+      'page.adminPanel': '網站管理面板',
       'page.learning': '學習課程',
       'page.learningAdmin': '課程後台',
       'subtitle.dashboard': '彙總帳號、空間、好友與即時互動狀態。',
@@ -470,6 +479,7 @@ class AppI18n {
       'subtitle.friends': '搜尋用戶、發起好友請求並處理待接受關係。',
       'subtitle.chat': '查看會話摘要並發送即時訊息。',
       'subtitle.services': '只顯示目前在線的微服務入口，離線模組會自動隱藏。',
+      'subtitle.adminPanel': '管理員在這裡總覽站點服務狀態，並進入各管理工作區。',
       'subtitle.learning': '查看英語、程式、AI 等課程，並完整預覽 Markdown 與 Mermaid 內容。',
       'subtitle.learningAdmin': '管理員在這裡維護課程檔案、語言版本與發布狀態。',
     },

@@ -52,8 +52,10 @@ Widget buildDashboardView({
 Widget buildServicesView({
   required bool spaceOnline,
   required bool messageOnline,
+  required bool adminOnline,
   required bool learningOnline,
   required bool isAdmin,
+  required VoidCallback onOpenAdminPanel,
   required VoidCallback onOpenProfile,
   required VoidCallback onOpenSpace,
   required VoidCallback onOpenChat,
@@ -65,8 +67,40 @@ Widget buildServicesView({
   return ServicesView(
     spaceOnline: spaceOnline,
     messageOnline: messageOnline,
+    adminOnline: adminOnline,
     learningOnline: learningOnline,
     isAdmin: isAdmin,
+    onOpenAdminPanel: onOpenAdminPanel,
+    onOpenProfile: onOpenProfile,
+    onOpenSpace: onOpenSpace,
+    onOpenChat: onOpenChat,
+    onOpenLearning: onOpenLearning,
+    onOpenLearningAdmin: onOpenLearningAdmin,
+    onRefresh: onRefresh,
+    languageCode: languageCode,
+  );
+}
+
+Widget buildAdminPanelView({
+  required bool spaceOnline,
+  required bool messageOnline,
+  required bool adminOnline,
+  required bool learningOnline,
+  required VoidCallback onOpenServices,
+  required VoidCallback onOpenProfile,
+  required VoidCallback onOpenSpace,
+  required VoidCallback onOpenChat,
+  required VoidCallback onOpenLearning,
+  required VoidCallback onOpenLearningAdmin,
+  required VoidCallback onRefresh,
+  required String languageCode,
+}) {
+  return SiteAdminPanelView(
+    spaceOnline: spaceOnline,
+    messageOnline: messageOnline,
+    adminOnline: adminOnline,
+    learningOnline: learningOnline,
+    onOpenServices: onOpenServices,
     onOpenProfile: onOpenProfile,
     onOpenSpace: onOpenSpace,
     onOpenChat: onOpenChat,
@@ -975,8 +1009,10 @@ class ServicesView extends StatelessWidget {
     super.key,
     required this.spaceOnline,
     required this.messageOnline,
+    required this.adminOnline,
     required this.learningOnline,
     required this.isAdmin,
+    required this.onOpenAdminPanel,
     required this.onOpenProfile,
     required this.onOpenSpace,
     required this.onOpenChat,
@@ -988,8 +1024,10 @@ class ServicesView extends StatelessWidget {
 
   final bool spaceOnline;
   final bool messageOnline;
+  final bool adminOnline;
   final bool learningOnline;
   final bool isAdmin;
+  final VoidCallback onOpenAdminPanel;
   final VoidCallback onOpenProfile;
   final VoidCallback onOpenSpace;
   final VoidCallback onOpenChat;
@@ -1035,6 +1073,40 @@ class ServicesView extends StatelessWidget {
         ),
         onOpen: onOpenProfile,
       ),
+      if (isAdmin)
+        _MicroserviceCard(
+          title: localizedText(
+            languageCode,
+            '管理员微服务',
+            'Admin service',
+            '管理員微服務',
+          ),
+          subtitle: localizedText(
+            languageCode,
+            '集中查看站点服务状态、管理员工作区和跨微服务入口。',
+            'Review site-wide service health, administrator workspaces, and cross-service entries in one place.',
+            '集中查看站點服務狀態、管理員工作區與跨微服務入口。',
+          ),
+          statusLabel: localizedText(
+            languageCode,
+            adminOnline ? '在线' : '离线',
+            adminOnline ? 'Online' : 'Offline',
+            adminOnline ? '線上' : '離線',
+          ),
+          modules: [
+            localizedText(languageCode, '服务总览', 'Service overview', '服務總覽'),
+            localizedText(languageCode, '管理员入口', 'Admin entries', '管理員入口'),
+            localizedText(languageCode, '健康状态', 'Health status', '健康狀態'),
+            localizedText(languageCode, '统一跳转', 'Unified routing', '統一路由'),
+          ],
+          actionLabel: localizedText(
+            languageCode,
+            '打开管理面板',
+            'Open admin panel',
+            '打開管理面板',
+          ),
+          onOpen: adminOnline ? onOpenAdminPanel : onRefresh,
+        ),
       if (spaceOnline)
         _MicroserviceCard(
           title: localizedText(
@@ -1207,6 +1279,294 @@ class ServicesView extends StatelessWidget {
   }
 }
 
+class SiteAdminPanelView extends StatelessWidget {
+  const SiteAdminPanelView({
+    super.key,
+    required this.spaceOnline,
+    required this.messageOnline,
+    required this.adminOnline,
+    required this.learningOnline,
+    required this.onOpenServices,
+    required this.onOpenProfile,
+    required this.onOpenSpace,
+    required this.onOpenChat,
+    required this.onOpenLearning,
+    required this.onOpenLearningAdmin,
+    required this.onRefresh,
+    required this.languageCode,
+  });
+
+  final bool spaceOnline;
+  final bool messageOnline;
+  final bool adminOnline;
+  final bool learningOnline;
+  final VoidCallback onOpenServices;
+  final VoidCallback onOpenProfile;
+  final VoidCallback onOpenSpace;
+  final VoidCallback onOpenChat;
+  final VoidCallback onOpenLearning;
+  final VoidCallback onOpenLearningAdmin;
+  final VoidCallback onRefresh;
+  final String languageCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalServices = 5;
+    final onlineServices =
+        1 +
+        (adminOnline ? 1 : 0) +
+        (spaceOnline ? 1 : 0) +
+        (messageOnline ? 1 : 0) +
+        (learningOnline ? 1 : 0);
+    final offlineServices = totalServices - onlineServices;
+    final adminWorkspaces = 1 + (learningOnline ? 1 : 0);
+    final serviceCards = <Widget>[
+      _AdminServiceStatusCard(
+        title: localizedText(languageCode, '管理员微服务', 'Admin service', '管理員微服務'),
+        subtitle: localizedText(
+          languageCode,
+          '承接网站总管理面板与站点级管理员总览。',
+          'Back the site-wide admin panel and administrator overview.',
+          '承接網站總管理面板與站點級管理員總覽。',
+        ),
+        online: adminOnline,
+        actionLabel: localizedText(
+          languageCode,
+          '刷新管理面板',
+          'Refresh admin panel',
+          '重新整理管理面板',
+        ),
+        onOpen: adminOnline ? onRefresh : null,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: localizedText(
+          languageCode,
+          '账号微服务',
+          'Account microservice',
+          '帳號微服務',
+        ),
+        subtitle: localizedText(
+          languageCode,
+          '身份、资料、会员与权限基线。',
+          'Identity, profile, membership, and permission baseline.',
+          '身份、資料、會員與權限基線。',
+        ),
+        online: true,
+        actionLabel: localizedText(
+          languageCode,
+          '进入个人主页',
+          'Open profile',
+          '進入個人主頁',
+        ),
+        onOpen: onOpenProfile,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: localizedText(
+          languageCode,
+          '空间微服务',
+          'Space microservice',
+          '空間微服務',
+        ),
+        subtitle: localizedText(
+          languageCode,
+          '空间、帖子与内容上下文。',
+          'Spaces, posts, and content context.',
+          '空間、貼文與內容上下文。',
+        ),
+        online: spaceOnline,
+        actionLabel: localizedText(languageCode, '打开空间', 'Open space', '打開空間'),
+        onOpen: spaceOnline ? onOpenSpace : null,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: localizedText(
+          languageCode,
+          '消息微服务',
+          'Message microservice',
+          '訊息微服務',
+        ),
+        subtitle: localizedText(
+          languageCode,
+          '好友关系、会话和即时消息。',
+          'Friend relations, conversations, and live messaging.',
+          '好友關係、會話與即時訊息。',
+        ),
+        online: messageOnline,
+        actionLabel: localizedText(languageCode, '打开聊天', 'Open chat', '打開聊天'),
+        onOpen: messageOnline ? onOpenChat : null,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: localizedText(languageCode, '学习服务', 'Learning service', '學習服務'),
+        subtitle: localizedText(
+          languageCode,
+          '课程浏览、课程后台与内容发布。',
+          'Lesson browsing, course console, and content publishing.',
+          '課程瀏覽、課程後台與內容發布。',
+        ),
+        online: learningOnline,
+        actionLabel: localizedText(
+          languageCode,
+          '打开课程',
+          'Open learning',
+          '打開課程',
+        ),
+        secondaryActionLabel: localizedText(
+          languageCode,
+          '课程后台',
+          'Course console',
+          '課程後台',
+        ),
+        onOpen: learningOnline ? onOpenLearning : null,
+        onSecondaryOpen: learningOnline ? onOpenLearningAdmin : null,
+        languageCode: languageCode,
+      ),
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              localizedText(
+                                languageCode,
+                                '网站总管理面板',
+                                'Site-wide admin panel',
+                                '網站總管理面板',
+                              ),
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              localizedText(
+                                languageCode,
+                                '这里集中查看站点服务健康状态，并进入课程后台、空间与消息工作区。',
+                                'Review site service health here and jump into learning, space, and messaging workspaces.',
+                                '這裡集中查看站點服務健康狀態，並進入課程後台、空間與訊息工作區。',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            compact: true,
+                            onPressed: onOpenServices,
+                            primaryLabel: localizedText(
+                              languageCode,
+                              '服务导航',
+                              'Service navigation',
+                              '服務導航',
+                            ),
+                            secondaryLabel: 'Service navigation',
+                          ),
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.filled,
+                            compact: true,
+                            onPressed: onRefresh,
+                            primaryLabel: localizedText(
+                              languageCode,
+                              '刷新状态',
+                              'Refresh status',
+                              '重新整理狀態',
+                            ),
+                            secondaryLabel: 'Refresh status',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _AdminKpiCard(
+                        label: localizedText(
+                          languageCode,
+                          '总服务数',
+                          'Total services',
+                          '總服務數',
+                        ),
+                        value: '$totalServices',
+                      ),
+                      _AdminKpiCard(
+                        label: localizedText(
+                          languageCode,
+                          '在线服务',
+                          'Online services',
+                          '在線服務',
+                        ),
+                        value: '$onlineServices',
+                      ),
+                      _AdminKpiCard(
+                        label: localizedText(
+                          languageCode,
+                          '离线服务',
+                          'Offline services',
+                          '離線服務',
+                        ),
+                        value: '$offlineServices',
+                      ),
+                      _AdminKpiCard(
+                        label: localizedText(
+                          languageCode,
+                          '管理工作区',
+                          'Admin workspaces',
+                          '管理工作區',
+                        ),
+                        value: '$adminWorkspaces',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              for (final card in serviceCards)
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width > 960
+                      ? (MediaQuery.sizeOf(context).width - 64) / 2
+                      : double.infinity,
+                  child: card,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MicroserviceCard extends StatelessWidget {
   const _MicroserviceCard({
     required this.title,
@@ -1281,6 +1641,133 @@ class _MicroserviceCard extends StatelessWidget {
                     ),
                   BilingualActionButton(
                     variant: BilingualButtonVariant.filled,
+                    compact: true,
+                    onPressed: onOpen,
+                    primaryLabel: actionLabel,
+                    secondaryLabel: actionLabel,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminKpiCard extends StatelessWidget {
+  const _AdminKpiCard({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 180,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+        border: Border.all(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminServiceStatusCard extends StatelessWidget {
+  const _AdminServiceStatusCard({
+    required this.title,
+    required this.subtitle,
+    required this.online,
+    required this.actionLabel,
+    required this.languageCode,
+    this.secondaryActionLabel,
+    this.onOpen,
+    this.onSecondaryOpen,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool online;
+  final String actionLabel;
+  final String languageCode;
+  final String? secondaryActionLabel;
+  final VoidCallback? onOpen;
+  final VoidCallback? onSecondaryOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Chip(
+                  label: Text(
+                    online
+                        ? localizedText(languageCode, '在线', 'Online', '線上')
+                        : localizedText(languageCode, '离线', 'Offline', '離線'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(subtitle),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                children: [
+                  if ((secondaryActionLabel ?? '').isNotEmpty &&
+                      onSecondaryOpen != null)
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.tonal,
+                      compact: true,
+                      onPressed: onSecondaryOpen,
+                      primaryLabel: secondaryActionLabel!,
+                      secondaryLabel: secondaryActionLabel!,
+                    ),
+                  BilingualActionButton(
+                    variant: online
+                        ? BilingualButtonVariant.filled
+                        : BilingualButtonVariant.tonal,
                     compact: true,
                     onPressed: onOpen,
                     primaryLabel: actionLabel,

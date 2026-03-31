@@ -24,6 +24,9 @@ List<ShellSidebarItem> buildShellSidebarItems(
   String Function(String key) t, {
   required bool spaceOnline,
   required bool messageOnline,
+  required bool adminPanelVisible,
+  required bool learningOnline,
+  required bool learningAdminVisible,
 }) {
   return [
     ShellSidebarItem(
@@ -32,6 +35,20 @@ List<ShellSidebarItem> buildShellSidebarItems(
       icon: Icons.api_outlined,
       activeIcon: Icons.api,
     ),
+    if (adminPanelVisible)
+      ShellSidebarItem(
+        viewKey: 'admin-panel',
+        label: t('sidebar.adminPanel'),
+        icon: Icons.admin_panel_settings_outlined,
+        activeIcon: Icons.admin_panel_settings,
+      ),
+    if (learningAdminVisible && learningOnline)
+      ShellSidebarItem(
+        viewKey: 'learning-admin',
+        label: t('sidebar.learningAdmin'),
+        icon: Icons.menu_book_outlined,
+        activeIcon: Icons.menu_book,
+      ),
     if (spaceOnline)
       ShellSidebarItem(
         viewKey: 'space',

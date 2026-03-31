@@ -155,6 +155,7 @@ ThemeData _buildAppTheme({
 enum AppView {
   dashboard,
   services,
+  adminPanel,
   learning,
   learningAdmin,
   space,
@@ -246,6 +247,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _spaceServiceOnline = false;
   bool _messageServiceOnline = false;
   bool _learningServiceOnline = false;
+  bool _adminServiceOnline = false;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -1745,6 +1747,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _api.isSpaceServiceHealthy(),
       _api.isMessageServiceHealthy(),
       _api.isLearningServiceHealthy(),
+      _api.isAdminServiceHealthy(),
     ]);
     if (!mounted) {
       return;
@@ -1753,6 +1756,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       _spaceServiceOnline = results[0];
       _messageServiceOnline = results[1];
       _learningServiceOnline = results[2];
+      _adminServiceOnline = results[3];
       if (!_spaceServiceOnline) {
         _spaces = const [];
         _spacePosts = const [];
@@ -1772,6 +1776,13 @@ class _IniyouHomeState extends State<IniyouHome> {
         _socketSubscription = null;
         _channel?.sink.close();
         _channel = null;
+      }
+      if (!_adminServiceOnline && _view == AppView.adminPanel) {
+        _view = AppView.services;
+      }
+      if (!_learningServiceOnline &&
+          (_view == AppView.learning || _view == AppView.learningAdmin)) {
+        _view = AppView.services;
       }
     });
   }
@@ -1995,6 +2006,22 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (view == AppView.profile && _user != null) {
       _openProfile(_user!.id);
       return;
+    }
+    if (view == AppView.adminPanel &&
+        ((_user?.level ?? '').toLowerCase() != 'admin' ||
+            !_adminServiceOnline)) {
+      return;
+    }
+    if (view == AppView.learning && !_learningServiceOnline) {
+      return;
+    }
+    if (view == AppView.learningAdmin) {
+      if (!_learningServiceOnline) {
+        return;
+      }
+      if ((_user?.level ?? '').toLowerCase() != 'admin') {
+        return;
+      }
     }
     if (mounted) {
       setState(() {
@@ -3025,6 +3052,10 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Widget _buildSidebar() {
+    final adminPanelVisible =
+        _adminServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
+    final learningAdminVisible =
+        _learningServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
     return ShellSidebar(
       user: _user!,
       conversations: _conversations,
@@ -3035,6 +3066,9 @@ class _IniyouHomeState extends State<IniyouHome> {
         _t,
         spaceOnline: _spaceServiceOnline,
         messageOnline: _messageServiceOnline,
+        adminPanelVisible: adminPanelVisible,
+        learningOnline: _learningServiceOnline,
+        learningAdminVisible: learningAdminVisible,
       ),
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
       onRefresh: () => _runBusy(_refreshAll),
@@ -3053,6 +3087,10 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 顶部导航用于快速切换视图。
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final adminPanelVisible =
+        _adminServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
+    final learningAdminVisible =
+        _learningServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
     final items =
         <
           ({
@@ -3070,6 +3108,22 @@ class _IniyouHomeState extends State<IniyouHome> {
             activeIcon: Icons.api,
             badgeCount: 0,
           ),
+          if (adminPanelVisible)
+            (
+              view: AppView.adminPanel,
+              label: _t('sidebar.adminPanel'),
+              icon: Icons.admin_panel_settings_outlined,
+              activeIcon: Icons.admin_panel_settings,
+              badgeCount: 0,
+            ),
+          if (learningAdminVisible)
+            (
+              view: AppView.learningAdmin,
+              label: _t('sidebar.learningAdmin'),
+              icon: Icons.menu_book_outlined,
+              activeIcon: Icons.menu_book,
+              badgeCount: 0,
+            ),
           if (_spaceServiceOnline)
             (
               view: AppView.space,
@@ -3452,8 +3506,28 @@ class _IniyouHomeState extends State<IniyouHome> {
       services: buildServicesView(
         spaceOnline: _spaceServiceOnline,
         messageOnline: _messageServiceOnline,
+        adminOnline: _adminServiceOnline,
         learningOnline: _learningServiceOnline,
         isAdmin: (_user?.level ?? '').toLowerCase() == 'admin',
+        onOpenAdminPanel: () => _navigateTo(AppView.adminPanel),
+        onOpenProfile: () {
+          _openProfile(_user!.id);
+        },
+        onOpenSpace: () => _navigateTo(AppView.space),
+        onOpenChat: () => _navigateTo(AppView.chat),
+        onOpenLearning: () => _navigateTo(AppView.learning),
+        onOpenLearningAdmin: () => _navigateTo(AppView.learningAdmin),
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
+        languageCode: _languageCode,
+      ),
+      adminPanel: buildAdminPanelView(
+        spaceOnline: _spaceServiceOnline,
+        messageOnline: _messageServiceOnline,
+        adminOnline: _adminServiceOnline,
+        learningOnline: _learningServiceOnline,
+        onOpenServices: () => _navigateTo(AppView.services),
         onOpenProfile: () {
           _openProfile(_user!.id);
         },

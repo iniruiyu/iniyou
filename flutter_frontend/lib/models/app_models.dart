@@ -61,6 +61,64 @@ class MarkdownFileSummary {
   }
 }
 
+class AdminOverview {
+  AdminOverview({
+    required this.totalServices,
+    required this.onlineServices,
+    required this.offlineServices,
+    required this.adminWorkspaces,
+    required this.services,
+  });
+
+  final int totalServices;
+  final int onlineServices;
+  final int offlineServices;
+  final int adminWorkspaces;
+  final List<AdminServiceStatus> services;
+
+  factory AdminOverview.fromJson(Map<String, dynamic> json) {
+    final servicesJson = json['services'];
+    return AdminOverview(
+      totalServices: toInt(json['total_services']),
+      onlineServices: toInt(json['online_services']),
+      offlineServices: toInt(json['offline_services']),
+      adminWorkspaces: toInt(json['admin_workspaces']),
+      services: servicesJson is List
+          ? servicesJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminServiceStatus.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class AdminServiceStatus {
+  AdminServiceStatus({
+    required this.key,
+    required this.title,
+    required this.baseUrl,
+    required this.online,
+    required this.required,
+  });
+
+  final String key;
+  final String title;
+  final String baseUrl;
+  final bool online;
+  final bool required;
+
+  factory AdminServiceStatus.fromJson(Map<String, dynamic> json) {
+    return AdminServiceStatus(
+      key: (json['key'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      baseUrl: (json['base_url'] ?? '').toString(),
+      online: json['online'] == true,
+      required: json['required'] == true,
+    );
+  }
+}
+
 class GoExecutionResult {
   GoExecutionResult({
     required this.stdout,

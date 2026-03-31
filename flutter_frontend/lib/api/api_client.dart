@@ -34,13 +34,20 @@ class ApiClient {
     'LEARNING_API_BASE',
     defaultValue: 'http://localhost:8083/api/v1',
   );
+  static const String adminBase = String.fromEnvironment(
+    'ADMIN_API_BASE',
+    defaultValue: 'http://localhost:8084/api/v1',
+  );
 
   String? token;
 
   bool _isOptionalServiceBase(String base) {
     // Only non-account microservices are optional; account service stays on the main login path.
     // 只有非账号微服务是可选项，账号服务仍然保留在主登录链路上。
-    return base == spaceBase || base == messageBase || base == learningBase;
+    return base == spaceBase ||
+        base == messageBase ||
+        base == learningBase ||
+        base == adminBase;
   }
 
   Future<http.Response> _send(String base, Future<http.Response> request) {
@@ -81,6 +88,11 @@ class ApiClient {
   Future<bool> isMessageServiceHealthy() => serviceHealthy(messageBase);
 
   Future<bool> isLearningServiceHealthy() => serviceHealthy(learningBase);
+
+  Future<bool> isAdminServiceHealthy() => serviceHealthy(adminBase);
+
+  Future<AdminOverview> fetchAdminOverview() async =>
+      AdminOverview.fromJson(await _get(adminBase, '/overview'));
 
   Future<List<MarkdownFileSummary>> listLearningMarkdownFiles() async => _list(
     await _get(learningBase, '/markdown-files'),

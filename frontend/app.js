@@ -350,9 +350,13 @@ const app = createApp({
       // Learning service API base URL.
       // 学习服务接口基础地址。
       learningApiBase: 'http://localhost:8083/api/v1',
+      // Admin service API base URL.
+      // 管理员服务接口基础地址。
+      adminApiBase: 'http://localhost:8084/api/v1',
       // Online state for optional microservice entry points.
       // 可选微服务入口的在线状态。
       serviceStatus: {
+        admin: false,
         space: false,
         message: false,
         learning: false,
@@ -465,6 +469,8 @@ const app = createApp({
             sub: '只展示当前在线的微服务入口，离线服务会自动隐藏。',
             accountTitle: '账号微服务',
             accountSub: '登录、资料、会员与链上扩展。',
+            adminPanelTitle: '网站管理面板',
+            adminPanelSub: '集中查看站点服务状态、管理员工作区与跨微服务入口。',
             spaceTitle: '空间微服务',
             spaceSub: '空间、帖子、媒体与上下文。',
             messageTitle: '消息微服务',
@@ -500,6 +506,31 @@ const app = createApp({
             featureArchived: '归档下架',
             featureLocales: '语言版本',
             featureOps: '文件维护',
+          },
+          adminPanel: {
+            title: '网站总管理面板',
+            sub: '这里集中查看站点服务健康状态，并进入课程后台、空间与消息工作区。',
+            accessTitle: '管理员权限',
+            accessSub: '只有管理员账号可以进入网站总管理面板。',
+            totalServices: '总服务数',
+            onlineServices: '在线服务',
+            offlineServices: '离线服务',
+            adminWorkspaces: '管理工作区',
+            featureOverview: '服务总览',
+            featureHealth: '健康状态',
+            featureRouting: '统一跳转',
+            featureWorkspace: '管理员入口',
+            adminSub: '承接网站总管理面板与站点级管理员总览。',
+            accountSub: '身份、资料、会员与权限基线。',
+            spaceSub: '空间、帖子与内容上下文。',
+            messageSub: '好友关系、会话与即时消息。',
+            learningSub: '课程浏览、课程后台与内容发布。',
+            openProfile: '进入个人主页',
+            openSpace: '打开空间',
+            openChat: '打开聊天',
+            openLearning: '打开课程',
+            statusHealthy: '服务在线，可直接进入工作区。',
+            statusOffline: '服务离线，当前仅保留状态展示。',
           },
           profile: {
             identity: {
@@ -606,6 +637,7 @@ const app = createApp({
           nav: {
             auth: '登录注册',
             dashboard: '账号主页',
+            'admin-panel': '网站管理',
             space: '空间',
             profile: '个人主页',
             services: '服务导航',
@@ -625,6 +657,7 @@ const app = createApp({
           pageTitle: {
             auth: '登录注册',
             dashboard: '账号主页',
+            'admin-panel': '网站管理面板',
             space: '空间',
             private: '空间',
             public: '空间',
@@ -641,6 +674,7 @@ const app = createApp({
           pageSub: {
             auth: '快速进入你的身份卡与空间',
             dashboard: '账户摘要、会员等级与空间信息',
+            'admin-panel': '管理员在这里总览站点服务状态，并进入各管理工作区。',
             space: '查看可见空间并发布内容',
             private: '查看可见空间并发布内容',
             public: '浏览可见空间与内容',
@@ -954,6 +988,8 @@ const app = createApp({
             sub: 'Only the online microservice entry points are shown; offline services are hidden automatically.',
             accountTitle: 'Account microservice',
             accountSub: 'Sign in, profile, membership, and chain extensions.',
+            adminPanelTitle: 'Site admin panel',
+            adminPanelSub: 'Review site-wide service health, admin workspaces, and cross-service entries in one place.',
             spaceTitle: 'Space microservice',
             spaceSub: 'Spaces, posts, media, and context.',
             messageTitle: 'Message microservice',
@@ -989,6 +1025,31 @@ const app = createApp({
             featureArchived: 'Archiving',
             featureLocales: 'Locale variants',
             featureOps: 'File operations',
+          },
+          adminPanel: {
+            title: 'Site-wide Admin Panel',
+            sub: 'Review site service health here and jump into learning, space, and messaging workspaces.',
+            accessTitle: 'Administrator Access',
+            accessSub: 'Only administrator accounts can enter the site-wide admin panel.',
+            totalServices: 'Total services',
+            onlineServices: 'Online services',
+            offlineServices: 'Offline services',
+            adminWorkspaces: 'Admin workspaces',
+            featureOverview: 'Service overview',
+            featureHealth: 'Health status',
+            featureRouting: 'Unified routing',
+            featureWorkspace: 'Admin entries',
+            adminSub: 'Back the site-wide admin panel and administrator overview.',
+            accountSub: 'Identity, profile, membership, and permission baseline.',
+            spaceSub: 'Spaces, posts, and content context.',
+            messageSub: 'Friend relations, conversations, and live messaging.',
+            learningSub: 'Lesson browsing, course console, and content publishing.',
+            openProfile: 'Open profile',
+            openSpace: 'Open space',
+            openChat: 'Open chat',
+            openLearning: 'Open learning',
+            statusHealthy: 'The service is online and ready for entry.',
+            statusOffline: 'The service is offline; only status visibility remains.',
           },
           profile: {
             identity: {
@@ -1095,6 +1156,7 @@ const app = createApp({
           nav: {
             auth: 'Sign In',
             dashboard: 'Dashboard',
+            'admin-panel': 'Site Admin',
             space: 'Space',
             private: 'Space',
             public: 'Space',
@@ -1116,6 +1178,7 @@ const app = createApp({
           pageTitle: {
             auth: 'Sign In',
             dashboard: 'Dashboard',
+            'admin-panel': 'Site Admin Panel',
             space: 'Space',
             private: 'Space',
             public: 'Space',
@@ -1132,6 +1195,7 @@ const app = createApp({
           pageSub: {
             auth: 'Enter your identity card and space quickly',
             dashboard: 'Account summary, membership, and space insights',
+            'admin-panel': 'Administrators review site-wide service health and enter each management workspace here.',
             space: 'Browse visible spaces and publish content',
             private: 'Browse visible spaces and publish content',
             public: 'Browse visible spaces and content',
@@ -1987,14 +2051,19 @@ const app = createApp({
     async refreshServiceStatus() {
       // Refresh the optional microservice flags so navigation can hide offline entries.
       // 刷新可选微服务状态，方便导航隐藏离线入口。
-      const [spaceOnline, messageOnline, learningOnline] = await Promise.all([
+      const [adminOnline, spaceOnline, messageOnline, learningOnline] = await Promise.all([
+        this.checkServiceOnline(this.adminApiBase),
         this.checkServiceOnline(this.spaceApiBase),
         this.checkServiceOnline(this.messageApiBase),
         this.checkServiceOnline(this.learningApiBase),
       ]);
+      this.setServiceStatus('admin', adminOnline);
       this.setServiceStatus('space', spaceOnline);
       this.setServiceStatus('message', messageOnline);
       this.setServiceStatus('learning', learningOnline);
+      if (!adminOnline && this.view === 'admin-panel') {
+        this.view = 'services';
+      }
       if (!spaceOnline) {
         this.spaces = [];
         this.posts = [];
@@ -2024,6 +2093,9 @@ const app = createApp({
         }
       }
       if (!learningOnline && (this.view === 'learning' || this.view === 'learning-admin')) {
+        this.view = 'services';
+      }
+      if (String(this.user?.level || '').toLowerCase() !== 'admin' && (this.view === 'learning-admin' || this.view === 'admin-panel')) {
         this.view = 'services';
       }
     },
@@ -2104,6 +2176,15 @@ const app = createApp({
           return;
         }
         this.view = 'learning-admin';
+        return;
+      }
+      if (serviceKey === 'admin-panel') {
+        // Open the site-wide administrator panel only for administrator accounts.
+        // 仅管理员账号可以进入站点总管理面板。
+        if (!this.isServiceOnline('admin') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+          return;
+        }
+        this.view = 'admin-panel';
         return;
       }
       if (serviceKey === 'levels') {
@@ -2830,7 +2911,9 @@ const app = createApp({
               public: '公共空間',
               profile: '個人主頁',
               services: '服務導航',
+              'admin-panel': '網站管理',
               learning: '學習課程',
+              'learning-admin': '課程後台',
               levels: '會員等級',
               blockchain: '鏈上帳號',
               friends: '好友',
@@ -2839,10 +2922,24 @@ const app = createApp({
               expand: '展開導航',
             },
           services: {
+            title: '服務導航',
+            sub: '只展示目前在線的微服務入口，離線服務會自動隱藏。',
+            accountTitle: '帳號微服務',
+            accountSub: '登入、資料、會員與鏈上擴充。',
+            adminPanelTitle: '網站管理面板',
+            adminPanelSub: '集中查看站點服務狀態、管理員工作區與跨微服務入口。',
+            spaceTitle: '空間微服務',
+            spaceSub: '空間、貼文、媒體與上下文。',
+            messageTitle: '訊息微服務',
+            messageSub: '聊天、會話與即時提醒。',
             learningTitle: '學習服務',
             learningSub: '英語、程式、AI 等課程統一在這裡查看。',
             learningAdminTitle: '課程後台',
             learningAdminSub: '管理員在這裡維護課程檔案、語言版本與發布狀態。',
+            online: '在線',
+            offline: '離線',
+            open: '進入',
+            refresh: '重新整理狀態',
           },
           learning: {
             kicker: '學習服務',
@@ -2866,6 +2963,31 @@ const app = createApp({
             featureArchived: '歸檔下架',
             featureLocales: '語言版本',
             featureOps: '檔案維護',
+          },
+          adminPanel: {
+            title: '網站總管理面板',
+            sub: '這裡集中查看站點服務健康狀態，並進入課程後台、空間與訊息工作區。',
+            accessTitle: '管理員權限',
+            accessSub: '只有管理員帳號可以進入網站總管理面板。',
+            totalServices: '總服務數',
+            onlineServices: '在線服務',
+            offlineServices: '離線服務',
+            adminWorkspaces: '管理工作區',
+            featureOverview: '服務總覽',
+            featureHealth: '健康狀態',
+            featureRouting: '統一跳轉',
+            featureWorkspace: '管理員入口',
+            adminSub: '承接網站總管理面板與站點級管理員總覽。',
+            accountSub: '身份、資料、會員與權限基線。',
+            spaceSub: '空間、貼文與內容上下文。',
+            messageSub: '好友關係、會話與即時訊息。',
+            learningSub: '課程瀏覽、課程後台與內容發布。',
+            openProfile: '進入個人主頁',
+            openSpace: '打開空間',
+            openChat: '打開聊天',
+            openLearning: '打開課程',
+            statusHealthy: '服務在線，可直接進入工作區。',
+            statusOffline: '服務離線，目前僅保留狀態展示。',
           },
           profile: {
             identity: {
@@ -2954,6 +3076,7 @@ const app = createApp({
           pageTitle: {
             auth: '登入註冊',
             dashboard: '帳號主頁',
+              'admin-panel': '網站管理面板',
               space: '空間',
               private: '空間',
               public: '空間',
@@ -2969,6 +3092,7 @@ const app = createApp({
             pageSub: {
             auth: '快速進入你的身份卡與空間',
               dashboard: '帳戶摘要、會員等級與空間資訊',
+              'admin-panel': '管理員在這裡總覽站點服務狀態，並進入各管理工作區。',
               space: '查看可見空間並發布內容',
               private: '查看可見空間並發布內容',
               public: '瀏覽可見空間與內容',
@@ -5975,6 +6099,7 @@ app.component('settings-menu', window.SettingsMenu);
 app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
 app.component('service-navigation', window.ServiceNavigation);
+app.component('site-admin-panel', window.SiteAdminPanel);
 app.component('learning-service', window.LearningService);
 app.component('profile-page', window.ProfilePage);
 app.component('profile-identity-editor', window.ProfileIdentityEditor);

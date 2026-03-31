@@ -42,6 +42,28 @@
           <span class="nav-icon">SV</span>
           <span class="nav-label">{{ t('nav.services') }}</span>
         </button>
+        <button
+          v-if="isServiceOnline('admin') && String(user.level || '').toLowerCase() === 'admin'"
+          class="nav-item"
+          data-icon="AD"
+          :class="{active: view === 'admin-panel'}"
+          :disabled="!isLoggedIn"
+          @click="openServiceSection('admin-panel')"
+        >
+          <span class="nav-icon">AD</span>
+          <span class="nav-label">{{ t('nav.admin-panel') }}</span>
+        </button>
+        <button
+          v-if="isServiceOnline('learning') && String(user.level || '').toLowerCase() === 'admin'"
+          class="nav-item"
+          data-icon="LA"
+          :class="{active: view === 'learning-admin'}"
+          :disabled="!isLoggedIn"
+          @click="openServiceSection('learning-admin')"
+        >
+          <span class="nav-icon">LA</span>
+          <span class="nav-label">{{ t('nav.learning-admin') }}</span>
+        </button>
         <button v-if="isServiceOnline('space')" class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
           <span class="nav-icon">SP</span>
           <span class="nav-label">{{ t('nav.space') }}</span>
@@ -103,6 +125,28 @@
           <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="view = 'services'">
             <span class="nav-icon">SV</span>
             <span class="nav-label">{{ t('nav.services') }}</span>
+          </button>
+          <button
+            v-if="isServiceOnline('admin') && String(user.level || '').toLowerCase() === 'admin'"
+            class="nav-item topnav-item"
+            data-icon="AD"
+            :class="{active: view === 'admin-panel'}"
+            :disabled="!isLoggedIn"
+            @click="openServiceSection('admin-panel')"
+          >
+            <span class="nav-icon">AD</span>
+            <span class="nav-label">{{ t('nav.admin-panel') }}</span>
+          </button>
+          <button
+            v-if="isServiceOnline('learning') && String(user.level || '').toLowerCase() === 'admin'"
+            class="nav-item topnav-item"
+            data-icon="LA"
+            :class="{active: view === 'learning-admin'}"
+            :disabled="!isLoggedIn"
+            @click="openServiceSection('learning-admin')"
+          >
+            <span class="nav-icon">LA</span>
+            <span class="nav-label">{{ t('nav.learning-admin') }}</span>
           </button>
           <button v-if="isServiceOnline('space')" class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
             <span class="nav-icon">SP</span>
@@ -205,6 +249,7 @@
 
       <!-- Service navigation / 服务导航：抽成独立组件，避免根模板继续膨胀。 -->
       <service-navigation v-if="view === 'services'" :app="appContext"></service-navigation>
+      <site-admin-panel v-if="view === 'admin-panel'" :app="appContext"></site-admin-panel>
       <learning-service v-if="view === 'learning'" :app="appContext"></learning-service>
       <learning-service v-if="view === 'learning-admin'" :app="appContext" :admin-workspace-only="true"></learning-service>
 
@@ -2225,6 +2270,7 @@
   <script src="components/auth-panel.js"></script>
   <script src="components/landing-page.js"></script>
   <script src="components/service-navigation.js"></script>
+  <script src="components/site-admin-panel.js"></script>
   <script src="components/learning-service.js"></script>
   <script src="components/profile-page.js"></script>
   <script src="components/profile-identity-editor.js"></script>
