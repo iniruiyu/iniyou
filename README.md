@@ -48,6 +48,7 @@ cp .env.example .env
 - Flutter 学习页会优先从 `learning-service /api/v1/markdown-files` 同步课程目录，并自动发现 `courses/{courseId}.{locale}.md` 形式的新课程文件
 - 课程内容维护当前已收敛到管理员权限，只有 `users.level = admin` 的账号才会看到双前端中的课程新建与保存入口，并可调用 `learning-service /api/v1/markdown-files/*path`
 - 管理员当前还可删除某个课程语言版本文件，用于快速下架课程内容；完整草稿/审核/上架流转仍待独立管理员后台继续落地
+- 如需设置管理员，可使用 `backend/cmd/admin-tool` 直接修改账号等级，例如：`cd backend && go run ./cmd/admin-tool --email your@email.com --level admin`
 
 ## 本地启动
 

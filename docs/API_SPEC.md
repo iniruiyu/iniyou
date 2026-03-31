@@ -151,6 +151,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 
 - `GET /api/v1/health`
 - 说明：账号、空间、学习与消息服务均公开该探针，前端服务导航和登录后的服务状态刷新会用它判断入口是否可见 / The account, space, learning, and message services all expose this public probe, and the frontend service navigator plus the post-login refresh flow use it to decide whether an entry should be visible.
+- 运维补充：管理员等级设置当前通过本地命令行工具 `backend/cmd/admin-tool` 完成，不暴露公开 REST 接口 / Operations note: administrator level assignment is currently handled by the local CLI tool `backend/cmd/admin-tool` rather than a public REST endpoint.
 
 ## 6. 关键接口说明
 
