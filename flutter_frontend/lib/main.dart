@@ -3054,8 +3054,6 @@ class _IniyouHomeState extends State<IniyouHome> {
   Widget _buildSidebar() {
     final adminPanelVisible =
         _adminServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
-    final learningAdminVisible =
-        _learningServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
     return ShellSidebar(
       user: _user!,
       conversations: _conversations,
@@ -3068,7 +3066,6 @@ class _IniyouHomeState extends State<IniyouHome> {
         messageOnline: _messageServiceOnline,
         adminPanelVisible: adminPanelVisible,
         learningOnline: _learningServiceOnline,
-        learningAdminVisible: learningAdminVisible,
       ),
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
       onRefresh: () => _runBusy(_refreshAll),
@@ -3089,8 +3086,6 @@ class _IniyouHomeState extends State<IniyouHome> {
     final scheme = theme.colorScheme;
     final adminPanelVisible =
         _adminServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
-    final learningAdminVisible =
-        _learningServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
     final items =
         <
           ({
@@ -3114,14 +3109,6 @@ class _IniyouHomeState extends State<IniyouHome> {
               label: _t('sidebar.adminPanel'),
               icon: Icons.admin_panel_settings_outlined,
               activeIcon: Icons.admin_panel_settings,
-              badgeCount: 0,
-            ),
-          if (learningAdminVisible)
-            (
-              view: AppView.learningAdmin,
-              label: _t('sidebar.learningAdmin'),
-              icon: Icons.menu_book_outlined,
-              activeIcon: Icons.menu_book,
               badgeCount: 0,
             ),
           if (_spaceServiceOnline)
@@ -3516,17 +3503,13 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenSpace: () => _navigateTo(AppView.space),
         onOpenChat: () => _navigateTo(AppView.chat),
         onOpenLearning: () => _navigateTo(AppView.learning),
-        onOpenLearningAdmin: () => _navigateTo(AppView.learningAdmin),
         onRefresh: () {
           _runBusy(_refreshAll);
         },
         languageCode: _languageCode,
       ),
       adminPanel: buildAdminPanelView(
-        spaceOnline: _spaceServiceOnline,
-        messageOnline: _messageServiceOnline,
-        adminOnline: _adminServiceOnline,
-        learningOnline: _learningServiceOnline,
+        apiClient: _api,
         onOpenServices: () => _navigateTo(AppView.services),
         onOpenProfile: () {
           _openProfile(_user!.id);
@@ -3534,7 +3517,6 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenSpace: () => _navigateTo(AppView.space),
         onOpenChat: () => _navigateTo(AppView.chat),
         onOpenLearning: () => _navigateTo(AppView.learning),
-        onOpenLearningAdmin: () => _navigateTo(AppView.learningAdmin),
         onRefresh: () {
           _runBusy(_refreshAll);
         },

@@ -437,7 +437,13 @@ function getLearningCourseCatalog() {
   return [
     {
       id: 'english-storytelling',
-      category: 'english',
+      seriesKey: 'english-speaking',
+      seriesTitle: {
+        'zh-CN': '英语表达系列',
+        'en-US': 'English Speaking Series',
+        'zh-TW': '英語表達系列',
+      },
+      lessonOrder: 1,
       accent: 'aurora',
       icon: 'EN',
       title: {
@@ -618,7 +624,13 @@ mindmap
     },
     {
       id: 'programming-systems',
-      category: 'programming',
+      seriesKey: 'programming-practice',
+      seriesTitle: {
+        'zh-CN': '编程实战系列',
+        'en-US': 'Programming Practice Series',
+        'zh-TW': '程式實戰系列',
+      },
+      lessonOrder: 1,
       accent: 'ember',
       icon: 'DEV',
       title: {
@@ -805,7 +817,13 @@ flowchart LR
     },
     {
       id: 'ai-workflows',
-      category: 'ai',
+      seriesKey: 'ai-delivery',
+      seriesTitle: {
+        'zh-CN': 'AI 交付系列',
+        'en-US': 'AI Delivery Series',
+        'zh-TW': 'AI 交付系列',
+      },
+      lessonOrder: 1,
       accent: 'cyan',
       icon: 'AI',
       title: {
@@ -1069,6 +1087,58 @@ function humanizeLearningCourseId(courseId) {
     .join(' ') || String(courseId || '');
 }
 
+function describeBackendLearningCourse(courseId) {
+  // Derive series, lesson order, and a readable title from one backend course id.
+  // 从后端课程 ID 推导系列、序号和可读标题。
+  const tokens = String(courseId || '')
+    .split(/[-_]+/)
+    .filter(Boolean);
+  if (!tokens.length) {
+    return {
+      seriesKey: 'general',
+      seriesTitle: {
+        'zh-CN': '通用系列',
+        'en-US': 'General series',
+        'zh-TW': '通用系列',
+      },
+      title: 'General Course',
+      lessonOrder: 999,
+    };
+  }
+  const orderIndex = tokens.findIndex((token) => /^\d+$/.test(token));
+  const lessonOrder = orderIndex >= 0 ? Number(tokens[orderIndex]) : 999;
+  const seriesTokens = orderIndex > 0 ? tokens.slice(0, orderIndex) : [tokens[0]];
+  const titleTokens = orderIndex >= 0
+    ? tokens.slice(orderIndex + 1)
+    : (tokens.length > 1 ? tokens.slice(1) : tokens);
+  const seriesKey = seriesTokens.join('-') || 'general';
+  const seriesLabel = humanizeLearningCourseId(seriesKey);
+  return {
+    seriesKey,
+    seriesTitle: {
+      'zh-CN': seriesLabel ? `${seriesLabel} 系列` : '通用系列',
+      'en-US': seriesLabel ? `${seriesLabel} Series` : 'General series',
+      'zh-TW': seriesLabel ? `${seriesLabel} 系列` : '通用系列',
+    },
+    title: humanizeLearningCourseId((titleTokens.length ? titleTokens.join('-') : courseId) || courseId),
+    lessonOrder,
+  };
+}
+
+function compareLearningCourses(left, right) {
+  // Keep course ordering stable by series, then lesson order, then id.
+  // 按系列、序号、课程 ID 保持课程排序稳定。
+  const seriesCompare = String(left?.seriesKey || '').localeCompare(String(right?.seriesKey || ''));
+  if (seriesCompare !== 0) {
+    return seriesCompare;
+  }
+  const orderCompare = Number(left?.lessonOrder || 999) - Number(right?.lessonOrder || 999);
+  if (orderCompare !== 0) {
+    return orderCompare;
+  }
+  return String(left?.id || '').localeCompare(String(right?.id || ''));
+}
+
 function buildBackendLearningCatalog(items) {
   // Convert backend markdown summaries into learning course cards for the legacy web frontend.
   // 将后端 Markdown 摘要转换为 Legacy Web 前端可用的课程卡片。
@@ -1101,15 +1171,18 @@ function buildBackendLearningCatalog(items) {
         ? `${latestUpdatedAt.getFullYear()}-${String(latestUpdatedAt.getMonth() + 1).padStart(2, '0')}-${String(latestUpdatedAt.getDate()).padStart(2, '0')}`
         : 'Backend';
       const fallbackTitle = humanizeLearningCourseId(courseId);
+      const descriptor = describeBackendLearningCourse(courseId);
       return {
         id: courseId,
-        category: 'all',
+        seriesKey: descriptor.seriesKey,
+        seriesTitle: descriptor.seriesTitle,
+        lessonOrder: descriptor.lessonOrder,
         accent: accents[index % accents.length],
         icon: courseId.length >= 3 ? courseId.slice(0, 3).toUpperCase() : courseId.toUpperCase(),
         title: {
-          'zh-CN': fallbackTitle,
-          'en-US': fallbackTitle,
-          'zh-TW': fallbackTitle,
+          'zh-CN': descriptor.title,
+          'en-US': descriptor.title,
+          'zh-TW': descriptor.title,
         },
         subtitle: {
           'zh-CN': '来自 learning-service 的动态课程文件，可随内容仓库持续扩展。',
@@ -1145,7 +1218,7 @@ window.LearningService = {
   data() {
     const catalog = getLearningCourseCatalog();
     return {
-      activeCategory: 'all',
+      activeSeries: 'all',
       activeCourseId: catalog[0]?.id || '',
       catalogItems: [],
       backendCourses: [],
@@ -1173,41 +1246,22 @@ window.LearningService = {
     };
   },
   computed: {
-    categoryOptions() {
-      return [
-        {
-          key: 'all',
-          label: localizedLearningText(this.app, {
-            'zh-CN': '全部课程',
-            'en-US': 'All courses',
-            'zh-TW': '全部課程',
-          }),
-        },
-        {
-          key: 'english',
-          label: localizedLearningText(this.app, {
-            'zh-CN': '英语',
-            'en-US': 'English',
-            'zh-TW': '英語',
-          }),
-        },
-        {
-          key: 'programming',
-          label: localizedLearningText(this.app, {
-            'zh-CN': '编程',
-            'en-US': 'Programming',
-            'zh-TW': '程式',
-          }),
-        },
-        {
-          key: 'ai',
-          label: localizedLearningText(this.app, {
-            'zh-CN': 'AI',
-            'en-US': 'AI',
-            'zh-TW': 'AI',
-          }),
-        },
-      ];
+    seriesOptions() {
+      const options = [{
+        key: 'all',
+        label: localizedLearningText(this.app, {
+          'zh-CN': '全部系列',
+          'en-US': 'All series',
+          'zh-TW': '全部系列',
+        }),
+      }];
+      for (const group of this.groupedCourses) {
+        options.push({
+          key: group.seriesKey,
+          label: localizedLearningText(this.app, group.seriesTitle),
+        });
+      }
+      return options;
     },
     courses() {
       const merged = new Map();
@@ -1217,16 +1271,35 @@ window.LearningService = {
       for (const course of this.backendCourses) {
         merged.set(course.id, course);
       }
-      return Array.from(merged.values());
+      return Array.from(merged.values()).sort(compareLearningCourses);
     },
-    visibleCourses() {
-      if (this.activeCategory === 'all') {
+    filteredCourses() {
+      if (this.activeSeries === 'all') {
         return this.courses;
       }
-      return this.courses.filter((course) => course.category === this.activeCategory);
+      return this.courses.filter((course) => course.seriesKey === this.activeSeries);
+    },
+    groupedCourses() {
+      const groups = new Map();
+      this.filteredCourses.forEach((course) => {
+        if (!groups.has(course.seriesKey)) {
+          groups.set(course.seriesKey, {
+            seriesKey: course.seriesKey,
+            seriesTitle: course.seriesTitle,
+            courses: [],
+          });
+        }
+        groups.get(course.seriesKey).courses.push(course);
+      });
+      return Array.from(groups.values())
+        .map((group) => ({
+          ...group,
+          courses: group.courses.sort(compareLearningCourses),
+        }))
+        .sort((left, right) => compareLearningCourses(left.courses[0], right.courses[0]));
     },
     activeCourse() {
-      return this.courses.find((course) => course.id === this.activeCourseId) || this.visibleCourses[0] || this.courses[0] || null;
+      return this.courses.find((course) => course.id === this.activeCourseId) || this.filteredCourses[0] || this.courses[0] || null;
     },
     featureChips() {
       return [
@@ -1390,9 +1463,9 @@ window.LearningService = {
       this.loadActiveCourseMarkdown();
       this.scheduleMermaidRender();
     },
-    activeCategory() {
-      if (!this.visibleCourses.find((course) => course.id === this.activeCourseId)) {
-        this.activeCourseId = this.visibleCourses[0]?.id || this.courses[0]?.id || '';
+    activeSeries() {
+      if (!this.filteredCourses.find((course) => course.id === this.activeCourseId)) {
+        this.activeCourseId = this.filteredCourses[0]?.id || this.courses[0]?.id || '';
       }
       this.editorMode = false;
       this.adminConsoleMode = this.adminWorkspaceOnly;
@@ -1439,10 +1512,10 @@ window.LearningService = {
       // 为当前课程视图解析一条本地化文案。
       return localizedLearningText(this.app, values);
     },
-    setCategory(categoryKey) {
-      // Switch the course category and keep the selected course aligned.
-      // 切换课程分类，并保持当前课程选择同步。
-      this.activeCategory = categoryKey;
+    setSeries(seriesKey) {
+      // Switch the active course series and keep the selected course aligned.
+      // 切换当前课程系列，并保持当前课程选择同步。
+      this.activeSeries = seriesKey;
     },
     openCourse(courseId) {
       // Open one course in the preview panel.
@@ -1457,9 +1530,15 @@ window.LearningService = {
     courseText(course, field) {
       return localizedLearningText(this.app, course?.[field]);
     },
+    courseSeriesText(course) {
+      return localizedLearningText(this.app, course?.seriesTitle);
+    },
     courseTags(course) {
       const tags = localizedLearningText(this.app, course?.tags);
       return Array.isArray(tags) ? tags : [];
+    },
+    courseSequenceLabel(course) {
+      return String(Number(course?.lessonOrder || 999)).padStart(2, '0');
     },
     courseFallbackMarkdown(course, locale) {
       // Keep the existing built-in markdown as a resilient fallback.
@@ -2252,35 +2331,53 @@ window.LearningService = {
           </p>
           <div class="learning-category-row">
             <button
-              v-for="category in categoryOptions"
-              :key="category.key"
+              v-for="series in seriesOptions"
+              :key="series.key"
               type="button"
               class="learning-category-chip"
-              :class="{ active: activeCategory === category.key }"
-              @click="setCategory(category.key)"
+              :class="{ active: activeSeries === series.key }"
+              @click="setSeries(series.key)"
             >
-              {{ category.label }}
+              {{ series.label }}
             </button>
           </div>
           <div class="learning-course-list">
-            <button
-              v-for="course in visibleCourses"
-              :key="course.id"
-              type="button"
-              class="learning-course-card"
-              :class="['learning-course-card--' + course.accent, { active: activeCourse && activeCourse.id === course.id }]"
-              @click="openCourse(course.id)"
+            <section
+              v-for="group in groupedCourses"
+              :key="group.seriesKey"
+              class="learning-series-group"
             >
-              <div class="learning-course-card-head">
-                <span class="learning-course-icon">{{ course.icon }}</span>
-                <span class="learning-course-meta">{{ courseText(course, 'meta') }}</span>
+              <div class="learning-series-head">
+                <div class="learning-series-title">{{ localizedLearningText(app, group.seriesTitle) }}</div>
+                <div class="learning-series-count">{{ group.courses.length }} {{ learningText({
+                  'zh-CN': '门课程',
+                  'en-US': 'courses',
+                  'zh-TW': '門課程',
+                }) }}</div>
               </div>
-              <div class="learning-course-title">{{ courseText(course, 'title') }}</div>
-              <div class="learning-course-sub">{{ courseText(course, 'subtitle') }}</div>
-              <div class="learning-course-tags">
-                <span v-for="tag in courseTags(course)" :key="course.id + '-' + tag" class="service-chip">{{ tag }}</span>
-              </div>
-            </button>
+              <button
+                v-for="course in group.courses"
+                :key="course.id"
+                type="button"
+                class="learning-course-card"
+                :class="['learning-course-card--' + course.accent, { active: activeCourse && activeCourse.id === course.id }]"
+                @click="openCourse(course.id)"
+              >
+                <div class="learning-course-card-head">
+                  <div class="learning-course-head-tags">
+                    <span class="learning-course-icon">{{ course.icon }}</span>
+                    <span class="learning-course-seq">{{ courseSequenceLabel(course) }}</span>
+                  </div>
+                  <span class="learning-course-meta">{{ courseText(course, 'meta') }}</span>
+                </div>
+                <div class="learning-course-title">{{ courseText(course, 'title') }}</div>
+                <div class="learning-course-series">{{ courseSeriesText(course) }}</div>
+                <div class="learning-course-sub">{{ courseText(course, 'subtitle') }}</div>
+                <div class="learning-course-tags">
+                  <span v-for="tag in courseTags(course)" :key="course.id + '-' + tag" class="service-chip">{{ tag }}</span>
+                </div>
+              </button>
+            </section>
           </div>
         </aside>
 

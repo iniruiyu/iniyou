@@ -1,21 +1,56 @@
 package handler
 
 import (
+	"errors"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"account-service/internal/service"
 )
 
-type AdminHandler struct{}
+type AdminHandler struct {
+	DB        *gorm.DB
+	StartedAt time.Time
+}
+
+type updateAdminUserRequest struct {
+	Level  string `json:"level"`
+	Status string `json:"status"`
+}
 
 func (h *AdminHandler) Overview(c *gin.Context) {
 	// Return the site-wide administrator overview payload.
 	// 返回站点级管理员总览载荷。
-	respondOK(c, buildAdminOverviewPayload())
+	overview, err := service.BuildAdminOverview(h.DB, h.StartedAt)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "overview build failed")
+		return
+	}
+	respondOK(c, overview)
 }
 
-func buildAdminOverviewPayload() any {
-	// Keep the overview payload behind one helper so the envelope stays stable.
-	// 使用单独辅助函数生成总览载荷，保证响应包装结构稳定。
-	return service.BuildAdminOverview()
+func (h *AdminHandler) UpdateUser(c *gin.Context) {
+	// Update one user from the site administrator panel.
+	// 通过站点管理员面板更新单个用户。
+	var req updateAdminUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "invalid request")
+		return
+	}
+	item, err := service.UpdateAdminUser(h.DB, c.Param("id"), req.Level, req.Status)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			respondError(c, http.StatusNotFound, "user not found")
+		case errors.Is(err, gorm.ErrInvalidData):
+			respondError(c, http.StatusBadRequest, "level or status required")
+		default:
+			respondError(c, http.StatusBadRequest, err.Error())
+		}
+		return
+	}
+	respondOK(c, item)
 }

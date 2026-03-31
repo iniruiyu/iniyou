@@ -117,7 +117,37 @@ class _LearningViewState extends State<LearningView> {
     for (final course in _backendCourseCatalog) {
       merged[course.id] = course;
     }
-    return merged.values.toList();
+    final courses = merged.values.toList();
+    courses.sort(_compareLearningCourses);
+    return courses;
+  }
+
+  List<_LearningCourseSeriesGroup> get _groupedCourseCatalog {
+    final grouped = <String, List<_LearningCourse>>{};
+    for (final course in _courseCatalog) {
+      grouped.putIfAbsent(course.seriesKey, () => <_LearningCourse>[]).add(course);
+    }
+    final groups = grouped.entries
+        .map(
+          (entry) => _LearningCourseSeriesGroup(
+            seriesKey: entry.key,
+            title: entry.value.first.seriesTitle,
+            courses: List<_LearningCourse>.from(entry.value)..sort(_compareLearningCourses),
+          ),
+        )
+        .toList();
+    groups.sort((left, right) {
+      final orderCompare = left.courses.first.lessonOrder.compareTo(
+        right.courses.first.lessonOrder,
+      );
+      if (orderCompare != 0) {
+        return orderCompare;
+      }
+      return left.titleText(widget.languageCode).compareTo(
+        right.titleText(widget.languageCode),
+      );
+    });
+    return groups;
   }
 
   _LearningCourse get _activeCourse => _courseCatalog.firstWhere(
@@ -840,13 +870,20 @@ class _LearningViewState extends State<LearningView> {
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 980;
         final cards = <Widget>[
-          for (final course in _courseCatalog)
-            _LearningCourseCard(
-              course: course,
+          for (final group in _groupedCourseCatalog) ...[
+            _LearningCourseSeriesHeader(
+              title: group.titleText(widget.languageCode),
+              count: group.courses.length,
               languageCode: widget.languageCode,
-              active: course.id == activeCourse.id,
-              onTap: () => widget.onSelectCourse(course.id),
             ),
+            for (final course in group.courses)
+              _LearningCourseCard(
+                course: course,
+                languageCode: widget.languageCode,
+                active: course.id == activeCourse.id,
+                onTap: () => widget.onSelectCourse(course.id),
+              ),
+          ],
         ];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1186,6 +1223,24 @@ class _LearningCourseCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                    child: Text(
+                      course.sequenceLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
                   const Spacer(),
                   Text(
                     course.metaText(languageCode),
@@ -1200,6 +1255,14 @@ class _LearningCourseCard extends StatelessWidget {
                 course.titleText(languageCode),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                course.seriesTitleText(languageCode),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1237,6 +1300,51 @@ class _LearningCourseCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LearningCourseSeriesHeader extends StatelessWidget {
+  const _LearningCourseSeriesHeader({
+    required this.title,
+    required this.count,
+    required this.languageCode,
+  });
+
+  final String title;
+  final int count;
+  final String languageCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final countLabel = localizedText(
+      languageCode,
+      '$count 门课程',
+      '$count courses',
+      '$count 門課程',
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Text(
+            countLabel,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2315,6 +2423,9 @@ _LearningCourseFileDescriptor? _parseLearningCourseFilePath(String path) {
 class _LearningCourse {
   const _LearningCourse({
     required this.id,
+    required this.seriesKey,
+    required this.seriesTitle,
+    required this.lessonOrder,
     required this.icon,
     required this.colors,
     required this.title,
@@ -2325,6 +2436,9 @@ class _LearningCourse {
   });
 
   final String id;
+  final String seriesKey;
+  final Map<String, String> seriesTitle;
+  final int lessonOrder;
   final String icon;
   final List<Color> colors;
   final Map<String, String> title;
@@ -2332,6 +2446,9 @@ class _LearningCourse {
   final Map<String, String> meta;
   final Map<String, List<String>> tagMap;
   final Map<String, String> markdown;
+
+  String seriesTitleText(String languageCode) =>
+      seriesTitle[languageCode] ?? seriesTitle['zh-CN'] ?? '';
 
   String titleText(String languageCode) =>
       title[languageCode] ?? title['zh-CN'] ?? '';
@@ -2347,6 +2464,23 @@ class _LearningCourse {
 
   String markdownText(String languageCode) =>
       markdown[languageCode] ?? markdown['zh-CN'] ?? '';
+
+  String get sequenceLabel => lessonOrder.toString().padLeft(2, '0');
+}
+
+class _LearningCourseSeriesGroup {
+  const _LearningCourseSeriesGroup({
+    required this.seriesKey,
+    required this.title,
+    required this.courses,
+  });
+
+  final String seriesKey;
+  final Map<String, String> title;
+  final List<_LearningCourse> courses;
+
+  String titleText(String languageCode) =>
+      title[languageCode] ?? title['zh-CN'] ?? seriesKey;
 }
 
 List<_LearningCourse> _buildBackendCourseCatalog(
@@ -2401,13 +2535,16 @@ _LearningCourse _buildBackendCourse(
         return latest;
       });
   final accent = _learningCourseAccentColor(courseId);
-  final fallbackTitle = _humanizeCourseId(courseId);
+  final descriptor = _describeBackendCourseId(courseId);
   final updateLabel = latestUpdatedAt == null
       ? 'Backend'
       : '${latestUpdatedAt.year}-${latestUpdatedAt.month.toString().padLeft(2, '0')}-${latestUpdatedAt.day.toString().padLeft(2, '0')}';
 
   return _LearningCourse(
     id: courseId,
+    seriesKey: descriptor.seriesKey,
+    seriesTitle: descriptor.seriesTitle,
+    lessonOrder: descriptor.lessonOrder,
     icon: courseId.length >= 3
         ? courseId.substring(0, 3).toUpperCase()
         : courseId.toUpperCase(),
@@ -2416,9 +2553,9 @@ _LearningCourse _buildBackendCourse(
       Color.alphaBlend(accent.withValues(alpha: 0.18), const Color(0xFF0F1720)),
     ],
     title: {
-      'zh-CN': fallbackTitle,
-      'en-US': fallbackTitle,
-      'zh-TW': fallbackTitle,
+      'zh-CN': descriptor.title,
+      'en-US': descriptor.title,
+      'zh-TW': descriptor.title,
     },
     subtitle: {
       'zh-CN': '来自 learning-service 的动态课程文件，可随内容仓库持续扩展。',
@@ -2481,6 +2618,75 @@ String _humanizeCourseId(String courseId) {
   return words.join(' ');
 }
 
+class _BackendCourseDescriptor {
+  const _BackendCourseDescriptor({
+    required this.seriesKey,
+    required this.seriesTitle,
+    required this.title,
+    required this.lessonOrder,
+  });
+
+  final String seriesKey;
+  final Map<String, String> seriesTitle;
+  final String title;
+  final int lessonOrder;
+}
+
+_BackendCourseDescriptor _describeBackendCourseId(String courseId) {
+  final tokens = courseId
+      .split(RegExp(r'[-_]+'))
+      .where((token) => token.trim().isNotEmpty)
+      .toList();
+  if (tokens.isEmpty) {
+    return const _BackendCourseDescriptor(
+      seriesKey: 'general',
+      seriesTitle: {
+        'zh-CN': '通用系列',
+        'en-US': 'General series',
+        'zh-TW': '通用系列',
+      },
+      title: 'General Course',
+      lessonOrder: 999,
+    );
+  }
+
+  final orderIndex = tokens.indexWhere((token) => int.tryParse(token) != null);
+  final order = orderIndex >= 0 ? int.parse(tokens[orderIndex]) : 999;
+  final seriesTokens = orderIndex > 0
+      ? tokens.take(orderIndex).toList()
+      : <String>[tokens.first];
+  final titleTokens = orderIndex >= 0
+      ? tokens.skip(orderIndex + 1).toList()
+      : (tokens.length > 1 ? tokens.skip(1).toList() : tokens);
+  final seriesKey = seriesTokens.join('-');
+  final seriesLabel = _humanizeCourseId(seriesKey);
+  final fallbackTitle = _humanizeCourseId(
+    titleTokens.isEmpty ? courseId : titleTokens.join('-'),
+  );
+  return _BackendCourseDescriptor(
+    seriesKey: seriesKey.isEmpty ? 'general' : seriesKey,
+    seriesTitle: {
+      'zh-CN': seriesLabel.isEmpty ? '通用系列' : '$seriesLabel 系列',
+      'en-US': seriesLabel.isEmpty ? 'General series' : '$seriesLabel Series',
+      'zh-TW': seriesLabel.isEmpty ? '通用系列' : '$seriesLabel 系列',
+    },
+    title: fallbackTitle,
+    lessonOrder: order,
+  );
+}
+
+int _compareLearningCourses(_LearningCourse left, _LearningCourse right) {
+  final seriesCompare = left.seriesKey.compareTo(right.seriesKey);
+  if (seriesCompare != 0) {
+    return seriesCompare;
+  }
+  final orderCompare = left.lessonOrder.compareTo(right.lessonOrder);
+  if (orderCompare != 0) {
+    return orderCompare;
+  }
+  return left.id.compareTo(right.id);
+}
+
 Color _learningCourseAccentColor(String courseId) {
   // Keep backend-generated course cards visually distinct yet deterministic for the same id.
   // 让后端生成的课程卡片既有区分度，又能对同一 ID 保持稳定配色。
@@ -2498,6 +2704,13 @@ Color _learningCourseAccentColor(String courseId) {
 const learningCourseCatalog = <_LearningCourse>[
   _LearningCourse(
     id: 'english-storytelling',
+    seriesKey: 'english-speaking',
+    seriesTitle: {
+      'zh-CN': '英语表达系列',
+      'en-US': 'English Speaking Series',
+      'zh-TW': '英語表達系列',
+    },
+    lessonOrder: 1,
     icon: 'EN',
     colors: [Color(0xFF1D3144), Color(0xFF101925)],
     title: {
@@ -2679,6 +2892,13 @@ mindmap
   ),
   _LearningCourse(
     id: 'programming-systems',
+    seriesKey: 'programming-practice',
+    seriesTitle: {
+      'zh-CN': '编程实战系列',
+      'en-US': 'Programming Practice Series',
+      'zh-TW': '程式實戰系列',
+    },
+    lessonOrder: 1,
     icon: 'DEV',
     colors: [Color(0xFF3C261A), Color(0xFF141015)],
     title: {
@@ -2866,6 +3086,13 @@ flowchart LR
   ),
   _LearningCourse(
     id: 'ai-workflows',
+    seriesKey: 'ai-delivery',
+    seriesTitle: {
+      'zh-CN': 'AI 交付系列',
+      'en-US': 'AI Delivery Series',
+      'zh-TW': 'AI 交付系列',
+    },
+    lessonOrder: 1,
     icon: 'AI',
     colors: [Color(0xFF123246), Color(0xFF0E1520)],
     title: {

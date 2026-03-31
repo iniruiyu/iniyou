@@ -4,10 +4,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
+	"time"
 )
 
-func TestBuildAdminOverviewCountsOnlineAndOfflineServices(t *testing.T) {
+func TestBuildAdminOverviewSummaryCountsServices(t *testing.T) {
 	// Count online and offline services from independent health endpoints.
 	// 根据独立健康检查接口统计在线与离线服务数量。
 	accountServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -32,18 +34,30 @@ func TestBuildAdminOverviewCountsOnlineAndOfflineServices(t *testing.T) {
 	t.Setenv("LEARNING_SERVICE_BASE", learningServer.URL+"/api/v1")
 	t.Setenv("ADMIN_SERVICE_BASE", "http://localhost:8084/api/v1")
 
-	overview := BuildAdminOverview()
-	if overview.TotalServices != 5 {
-		t.Fatalf("total services = %d, want 5", overview.TotalServices)
+	overview, err := BuildAdminOverview(nil, time.Now().Add(-5*time.Minute))
+	if err != nil {
+		t.Fatalf("build overview: %v", err)
 	}
-	if overview.OnlineServices != 3 {
-		t.Fatalf("online services = %d, want 3", overview.OnlineServices)
+	if overview.Summary.TotalServices != 5 {
+		t.Fatalf("total services = %d, want 5", overview.Summary.TotalServices)
 	}
-	if overview.OfflineServices != 2 {
-		t.Fatalf("offline services = %d, want 2", overview.OfflineServices)
+	if overview.Summary.OnlineServices != 3 {
+		t.Fatalf("online services = %d, want 3", overview.Summary.OnlineServices)
 	}
-	if overview.AdminWorkspaces != 2 {
-		t.Fatalf("admin workspaces = %d, want 2", overview.AdminWorkspaces)
+	if overview.Summary.OfflineServices != 2 {
+		t.Fatalf("offline services = %d, want 2", overview.Summary.OfflineServices)
+	}
+}
+
+func TestBuildAdminDatabaseSummaryRedactsPassword(t *testing.T) {
+	// Redact password fields before exposing the administrator DSN summary.
+	// 在管理员 DSN 摘要中隐藏密码字段。
+	summary := buildAdminDatabaseSummary(nil, "host=localhost port=5432 user=postgres password=secret dbname=account_service sslmode=disable")
+	if summary.Database != "account_service" {
+		t.Fatalf("database = %q", summary.Database)
+	}
+	if !strings.Contains(summary.MaskedDSN, "password=***") {
+		t.Fatalf("masked dsn = %q", summary.MaskedDSN)
 	}
 }
 

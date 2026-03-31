@@ -53,17 +53,6 @@
           <span class="nav-icon">AD</span>
           <span class="nav-label">{{ t('nav.admin-panel') }}</span>
         </button>
-        <button
-          v-if="isServiceOnline('learning') && String(user.level || '').toLowerCase() === 'admin'"
-          class="nav-item"
-          data-icon="LA"
-          :class="{active: view === 'learning-admin'}"
-          :disabled="!isLoggedIn"
-          @click="openServiceSection('learning-admin')"
-        >
-          <span class="nav-icon">LA</span>
-          <span class="nav-label">{{ t('nav.learning-admin') }}</span>
-        </button>
         <button v-if="isServiceOnline('space')" class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
           <span class="nav-icon">SP</span>
           <span class="nav-label">{{ t('nav.space') }}</span>
@@ -136,17 +125,6 @@
           >
             <span class="nav-icon">AD</span>
             <span class="nav-label">{{ t('nav.admin-panel') }}</span>
-          </button>
-          <button
-            v-if="isServiceOnline('learning') && String(user.level || '').toLowerCase() === 'admin'"
-            class="nav-item topnav-item"
-            data-icon="LA"
-            :class="{active: view === 'learning-admin'}"
-            :disabled="!isLoggedIn"
-            @click="openServiceSection('learning-admin')"
-          >
-            <span class="nav-icon">LA</span>
-            <span class="nav-label">{{ t('nav.learning-admin') }}</span>
           </button>
           <button v-if="isServiceOnline('space')" class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
             <span class="nav-icon">SP</span>

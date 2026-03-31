@@ -8,6 +8,7 @@ import 'content_sections.dart';
 import 'learning_view.dart';
 import 'settings_views.dart';
 import 'chat_view.dart';
+import 'site_admin_panel_view.dart';
 import 'social_views.dart' hide ChatView;
 import 'view_state_helpers.dart';
 import '../widgets/app_cards.dart';
@@ -60,7 +61,6 @@ Widget buildServicesView({
   required VoidCallback onOpenSpace,
   required VoidCallback onOpenChat,
   required VoidCallback onOpenLearning,
-  required VoidCallback onOpenLearningAdmin,
   required VoidCallback onRefresh,
   required String languageCode,
 }) {
@@ -75,37 +75,28 @@ Widget buildServicesView({
     onOpenSpace: onOpenSpace,
     onOpenChat: onOpenChat,
     onOpenLearning: onOpenLearning,
-    onOpenLearningAdmin: onOpenLearningAdmin,
     onRefresh: onRefresh,
     languageCode: languageCode,
   );
 }
 
 Widget buildAdminPanelView({
-  required bool spaceOnline,
-  required bool messageOnline,
-  required bool adminOnline,
-  required bool learningOnline,
+  required ApiClient apiClient,
   required VoidCallback onOpenServices,
   required VoidCallback onOpenProfile,
   required VoidCallback onOpenSpace,
   required VoidCallback onOpenChat,
   required VoidCallback onOpenLearning,
-  required VoidCallback onOpenLearningAdmin,
   required VoidCallback onRefresh,
   required String languageCode,
 }) {
-  return SiteAdminPanelView(
-    spaceOnline: spaceOnline,
-    messageOnline: messageOnline,
-    adminOnline: adminOnline,
-    learningOnline: learningOnline,
+  return SiteAdminWorkspaceView(
+    apiClient: apiClient,
     onOpenServices: onOpenServices,
     onOpenProfile: onOpenProfile,
     onOpenSpace: onOpenSpace,
     onOpenChat: onOpenChat,
     onOpenLearning: onOpenLearning,
-    onOpenLearningAdmin: onOpenLearningAdmin,
     onRefresh: onRefresh,
     languageCode: languageCode,
   );
@@ -1017,7 +1008,6 @@ class ServicesView extends StatelessWidget {
     required this.onOpenSpace,
     required this.onOpenChat,
     required this.onOpenLearning,
-    required this.onOpenLearningAdmin,
     required this.onRefresh,
     required this.languageCode,
   });
@@ -1032,7 +1022,6 @@ class ServicesView extends StatelessWidget {
   final VoidCallback onOpenSpace;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenLearning;
-  final VoidCallback onOpenLearningAdmin;
   final VoidCallback onRefresh;
   final String languageCode;
 
@@ -1200,10 +1189,6 @@ class ServicesView extends StatelessWidget {
             '打開課程',
           ),
           onOpen: onOpenLearning,
-          secondaryActionLabel: isAdmin
-              ? localizedText(languageCode, '课程后台', 'Course console', '課程後台')
-              : null,
-          onSecondaryOpen: isAdmin ? onOpenLearningAdmin : null,
         ),
     ];
 
@@ -1291,7 +1276,6 @@ class SiteAdminPanelView extends StatelessWidget {
     required this.onOpenSpace,
     required this.onOpenChat,
     required this.onOpenLearning,
-    required this.onOpenLearningAdmin,
     required this.onRefresh,
     required this.languageCode,
   });
@@ -1305,7 +1289,6 @@ class SiteAdminPanelView extends StatelessWidget {
   final VoidCallback onOpenSpace;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenLearning;
-  final VoidCallback onOpenLearningAdmin;
   final VoidCallback onRefresh;
   final String languageCode;
 
@@ -1402,9 +1385,9 @@ class SiteAdminPanelView extends StatelessWidget {
         title: localizedText(languageCode, '学习服务', 'Learning service', '學習服務'),
         subtitle: localizedText(
           languageCode,
-          '课程浏览、课程后台与内容发布。',
-          'Lesson browsing, course console, and content publishing.',
-          '課程瀏覽、課程後台與內容發布。',
+          '课程浏览、系列管理与内容发布。',
+          'Lesson browsing, series management, and content publishing.',
+          '課程瀏覽、系列管理與內容發布。',
         ),
         online: learningOnline,
         actionLabel: localizedText(
@@ -1413,14 +1396,7 @@ class SiteAdminPanelView extends StatelessWidget {
           'Open learning',
           '打開課程',
         ),
-        secondaryActionLabel: localizedText(
-          languageCode,
-          '课程后台',
-          'Course console',
-          '課程後台',
-        ),
         onOpen: learningOnline ? onOpenLearning : null,
-        onSecondaryOpen: learningOnline ? onOpenLearningAdmin : null,
         languageCode: languageCode,
       ),
     ];
@@ -1460,9 +1436,9 @@ class SiteAdminPanelView extends StatelessWidget {
                             Text(
                               localizedText(
                                 languageCode,
-                                '这里集中查看站点服务健康状态，并进入课程后台、空间与消息工作区。',
+                                '这里集中查看站点服务健康状态，并进入学习、空间与消息工作区。',
                                 'Review site service health here and jump into learning, space, and messaging workspaces.',
-                                '這裡集中查看站點服務健康狀態，並進入課程後台、空間與訊息工作區。',
+                                '這裡集中查看站點服務健康狀態，並進入學習、空間與訊息工作區。',
                               ),
                             ),
                           ],
@@ -1575,8 +1551,6 @@ class _MicroserviceCard extends StatelessWidget {
     required this.modules,
     required this.actionLabel,
     required this.onOpen,
-    this.secondaryActionLabel,
-    this.onSecondaryOpen,
   });
 
   final String title;
@@ -1585,8 +1559,6 @@ class _MicroserviceCard extends StatelessWidget {
   final List<String> modules;
   final String actionLabel;
   final VoidCallback onOpen;
-  final String? secondaryActionLabel;
-  final VoidCallback? onSecondaryOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -1630,15 +1602,6 @@ class _MicroserviceCard extends StatelessWidget {
                 runSpacing: 8,
                 alignment: WrapAlignment.end,
                 children: [
-                  if ((secondaryActionLabel ?? '').isNotEmpty &&
-                      onSecondaryOpen != null)
-                    BilingualActionButton(
-                      variant: BilingualButtonVariant.tonal,
-                      compact: true,
-                      onPressed: onSecondaryOpen,
-                      primaryLabel: secondaryActionLabel!,
-                      secondaryLabel: secondaryActionLabel!,
-                    ),
                   BilingualActionButton(
                     variant: BilingualButtonVariant.filled,
                     compact: true,
@@ -1702,9 +1665,7 @@ class _AdminServiceStatusCard extends StatelessWidget {
     required this.online,
     required this.actionLabel,
     required this.languageCode,
-    this.secondaryActionLabel,
     this.onOpen,
-    this.onSecondaryOpen,
   });
 
   final String title;
@@ -1712,9 +1673,7 @@ class _AdminServiceStatusCard extends StatelessWidget {
   final bool online;
   final String actionLabel;
   final String languageCode;
-  final String? secondaryActionLabel;
   final VoidCallback? onOpen;
-  final VoidCallback? onSecondaryOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -1755,15 +1714,6 @@ class _AdminServiceStatusCard extends StatelessWidget {
                 runSpacing: 8,
                 alignment: WrapAlignment.end,
                 children: [
-                  if ((secondaryActionLabel ?? '').isNotEmpty &&
-                      onSecondaryOpen != null)
-                    BilingualActionButton(
-                      variant: BilingualButtonVariant.tonal,
-                      compact: true,
-                      onPressed: onSecondaryOpen,
-                      primaryLabel: secondaryActionLabel!,
-                      secondaryLabel: secondaryActionLabel!,
-                    ),
                   BilingualActionButton(
                     variant: online
                         ? BilingualButtonVariant.filled

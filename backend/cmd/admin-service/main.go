@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -24,7 +25,8 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	adminHandler := &handler.AdminHandler{}
+	startedAt := time.Now()
+	adminHandler := &handler.AdminHandler{DB: database, StartedAt: startedAt}
 
 	// HTTP router.
 	// HTTP 路由。
@@ -34,7 +36,7 @@ func main() {
 		// 为本地 SPA 开发提供基础 CORS 支持。
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, PATCH, OPTIONS")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
@@ -57,6 +59,7 @@ func main() {
 	admin := api.Group("")
 	admin.Use(middleware.RequireAdminMiddleware())
 	admin.GET("/overview", adminHandler.Overview)
+	admin.PATCH("/users/:id", adminHandler.UpdateUser)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)

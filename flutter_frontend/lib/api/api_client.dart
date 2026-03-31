@@ -94,6 +94,19 @@ class ApiClient {
   Future<AdminOverview> fetchAdminOverview() async =>
       AdminOverview.fromJson(await _get(adminBase, '/overview'));
 
+  Future<AdminUserItem> updateAdminUser({
+    required String userId,
+    String level = '',
+    String status = '',
+  }) async {
+    return AdminUserItem.fromJson(
+      await _patch(adminBase, '/users/${Uri.encodeComponent(userId)}', {
+        if (level.trim().isNotEmpty) 'level': level.trim(),
+        if (status.trim().isNotEmpty) 'status': status.trim(),
+      }),
+    );
+  }
+
   Future<List<MarkdownFileSummary>> listLearningMarkdownFiles() async => _list(
     await _get(learningBase, '/markdown-files'),
     MarkdownFileSummary.fromJson,

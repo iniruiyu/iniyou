@@ -63,32 +63,75 @@ class MarkdownFileSummary {
 
 class AdminOverview {
   AdminOverview({
-    required this.totalServices,
-    required this.onlineServices,
-    required this.offlineServices,
-    required this.adminWorkspaces,
+    required this.generatedAt,
+    required this.summary,
     required this.services,
+    required this.database,
+    required this.runtime,
+    required this.users,
   });
 
-  final int totalServices;
-  final int onlineServices;
-  final int offlineServices;
-  final int adminWorkspaces;
+  final DateTime? generatedAt;
+  final AdminSummary summary;
   final List<AdminServiceStatus> services;
+  final AdminDatabaseSummary database;
+  final AdminRuntimeSummary runtime;
+  final AdminUserSummary users;
 
   factory AdminOverview.fromJson(Map<String, dynamic> json) {
     final servicesJson = json['services'];
     return AdminOverview(
-      totalServices: toInt(json['total_services']),
-      onlineServices: toInt(json['online_services']),
-      offlineServices: toInt(json['offline_services']),
-      adminWorkspaces: toInt(json['admin_workspaces']),
+      generatedAt: DateTime.tryParse((json['generated_at'] ?? '').toString()),
+      summary: AdminSummary.fromJson(
+        (json['summary'] as Map<String, dynamic>?) ?? const {},
+      ),
       services: servicesJson is List
           ? servicesJson
                 .whereType<Map<String, dynamic>>()
                 .map(AdminServiceStatus.fromJson)
                 .toList()
           : const [],
+      database: AdminDatabaseSummary.fromJson(
+        (json['database'] as Map<String, dynamic>?) ?? const {},
+      ),
+      runtime: AdminRuntimeSummary.fromJson(
+        (json['runtime'] as Map<String, dynamic>?) ?? const {},
+      ),
+      users: AdminUserSummary.fromJson(
+        (json['users'] as Map<String, dynamic>?) ?? const {},
+      ),
+    );
+  }
+}
+
+class AdminSummary {
+  AdminSummary({
+    required this.totalServices,
+    required this.onlineServices,
+    required this.offlineServices,
+    required this.totalUsers,
+    required this.adminUsers,
+    required this.activeUsers,
+    required this.disabledUsers,
+  });
+
+  final int totalServices;
+  final int onlineServices;
+  final int offlineServices;
+  final int totalUsers;
+  final int adminUsers;
+  final int activeUsers;
+  final int disabledUsers;
+
+  factory AdminSummary.fromJson(Map<String, dynamic> json) {
+    return AdminSummary(
+      totalServices: toInt(json['total_services']),
+      onlineServices: toInt(json['online_services']),
+      offlineServices: toInt(json['offline_services']),
+      totalUsers: toInt(json['total_users']),
+      adminUsers: toInt(json['admin_users']),
+      activeUsers: toInt(json['active_users']),
+      disabledUsers: toInt(json['disabled_users']),
     );
   }
 }
@@ -100,6 +143,8 @@ class AdminServiceStatus {
     required this.baseUrl,
     required this.online,
     required this.required,
+    required this.responseTimeMs,
+    required this.configItems,
   });
 
   final String key;
@@ -107,6 +152,8 @@ class AdminServiceStatus {
   final String baseUrl;
   final bool online;
   final bool required;
+  final int responseTimeMs;
+  final List<AdminConfigItem> configItems;
 
   factory AdminServiceStatus.fromJson(Map<String, dynamic> json) {
     return AdminServiceStatus(
@@ -115,6 +162,185 @@ class AdminServiceStatus {
       baseUrl: (json['base_url'] ?? '').toString(),
       online: json['online'] == true,
       required: json['required'] == true,
+      responseTimeMs: toInt(json['response_time_ms']),
+      configItems: (json['config_items'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(AdminConfigItem.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class AdminConfigItem {
+  AdminConfigItem({required this.key, required this.value});
+
+  final String key;
+  final String value;
+
+  factory AdminConfigItem.fromJson(Map<String, dynamic> json) {
+    return AdminConfigItem(
+      key: (json['key'] ?? '').toString(),
+      value: (json['value'] ?? '').toString(),
+    );
+  }
+}
+
+class AdminDatabaseSummary {
+  AdminDatabaseSummary({
+    required this.driver,
+    required this.host,
+    required this.port,
+    required this.database,
+    required this.user,
+    required this.sslMode,
+    required this.maskedDsn,
+    required this.openConnections,
+    required this.inUseConnections,
+    required this.idleConnections,
+    required this.maxOpenConnections,
+  });
+
+  final String driver;
+  final String host;
+  final String port;
+  final String database;
+  final String user;
+  final String sslMode;
+  final String maskedDsn;
+  final int openConnections;
+  final int inUseConnections;
+  final int idleConnections;
+  final int maxOpenConnections;
+
+  factory AdminDatabaseSummary.fromJson(Map<String, dynamic> json) {
+    return AdminDatabaseSummary(
+      driver: (json['driver'] ?? '').toString(),
+      host: (json['host'] ?? '').toString(),
+      port: (json['port'] ?? '').toString(),
+      database: (json['database'] ?? '').toString(),
+      user: (json['user'] ?? '').toString(),
+      sslMode: (json['ssl_mode'] ?? '').toString(),
+      maskedDsn: (json['masked_dsn'] ?? '').toString(),
+      openConnections: toInt(json['open_connections']),
+      inUseConnections: toInt(json['in_use_connections']),
+      idleConnections: toInt(json['idle_connections']),
+      maxOpenConnections: toInt(json['max_open_connections']),
+    );
+  }
+}
+
+class AdminRuntimeSummary {
+  AdminRuntimeSummary({
+    required this.goVersion,
+    required this.goOs,
+    required this.goArch,
+    required this.goroutines,
+    required this.memoryAllocMb,
+    required this.memorySysMb,
+    required this.heapObjects,
+    required this.gcCount,
+    required this.uptimeSec,
+  });
+
+  final String goVersion;
+  final String goOs;
+  final String goArch;
+  final int goroutines;
+  final int memoryAllocMb;
+  final int memorySysMb;
+  final int heapObjects;
+  final int gcCount;
+  final int uptimeSec;
+
+  factory AdminRuntimeSummary.fromJson(Map<String, dynamic> json) {
+    return AdminRuntimeSummary(
+      goVersion: (json['go_version'] ?? '').toString(),
+      goOs: (json['go_os'] ?? '').toString(),
+      goArch: (json['go_arch'] ?? '').toString(),
+      goroutines: toInt(json['goroutines']),
+      memoryAllocMb: toInt(json['memory_alloc_mb']),
+      memorySysMb: toInt(json['memory_sys_mb']),
+      heapObjects: toInt(json['heap_objects']),
+      gcCount: toInt(json['gc_count']),
+      uptimeSec: toInt(json['uptime_sec']),
+    );
+  }
+}
+
+class AdminUserSummary {
+  AdminUserSummary({
+    required this.totalUsers,
+    required this.adminUsers,
+    required this.activeUsers,
+    required this.inactiveUsers,
+    required this.items,
+  });
+
+  final int totalUsers;
+  final int adminUsers;
+  final int activeUsers;
+  final int inactiveUsers;
+  final List<AdminUserItem> items;
+
+  factory AdminUserSummary.fromJson(Map<String, dynamic> json) {
+    return AdminUserSummary(
+      totalUsers: toInt(json['total_users']),
+      adminUsers: toInt(json['admin_users']),
+      activeUsers: toInt(json['active_users']),
+      inactiveUsers: toInt(json['inactive_users']),
+      items: (json['items'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(AdminUserItem.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class AdminUserItem {
+  AdminUserItem({
+    required this.id,
+    required this.displayName,
+    required this.email,
+    required this.username,
+    required this.domain,
+    required this.level,
+    required this.status,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String displayName;
+  final String email;
+  final String username;
+  final String domain;
+  final String level;
+  final String status;
+  final DateTime? createdAt;
+
+  String get secondary {
+    final parts = <String>[];
+    if (domain.isNotEmpty) {
+      parts.add('@$domain');
+    }
+    if (username.isNotEmpty) {
+      parts.add('@$username');
+    }
+    if (email.isNotEmpty) {
+      parts.add(email);
+    }
+    return parts.join(' · ');
+  }
+
+  factory AdminUserItem.fromJson(Map<String, dynamic> json) {
+    return AdminUserItem(
+      id: (json['id'] ?? '').toString(),
+      displayName: (json['display_name'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      username: (json['username'] ?? '').toString(),
+      domain: (json['domain'] ?? '').toString(),
+      level: (json['level'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
     );
   }
 }
