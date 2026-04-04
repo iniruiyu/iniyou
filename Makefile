@@ -3,7 +3,7 @@ SHELL := /bin/bash
 BACKEND_DIR := backend
 FRONTEND_DIR := frontend
 FLUTTER_FRONTEND_DIR := flutter_frontend
-FLUTTER_BIN := /root/flutter-sdk/bin/flutter
+FLUTTER_BIN ?= flutter
 MIGRATE_SERVICE ?= all
 COMPOSE_FILE ?= docker-compose.yml
 
