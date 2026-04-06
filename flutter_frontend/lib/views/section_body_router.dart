@@ -7,6 +7,9 @@ Widget sectionBodyForView(
   required Widget dashboard,
   required Widget services,
   required Widget adminPanel,
+  required Widget accountAdmin,
+  required Widget spaceAdmin,
+  required Widget messageAdmin,
   required Widget learning,
   required Widget learningAdmin,
   required Widget space,
@@ -26,6 +29,12 @@ Widget sectionBodyForView(
       return services;
     case AppView.adminPanel:
       return adminPanel;
+    case AppView.accountAdmin:
+      return accountAdmin;
+    case AppView.spaceAdmin:
+      return spaceAdmin;
+    case AppView.messageAdmin:
+      return messageAdmin;
     case AppView.learning:
       return learning;
     case AppView.learningAdmin:

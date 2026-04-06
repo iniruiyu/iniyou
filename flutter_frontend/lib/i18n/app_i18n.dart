@@ -156,6 +156,9 @@ class AppI18n {
       'page.chat': '实时聊天',
       'page.services': '服务导航',
       'page.adminPanel': '网站管理面板',
+      'page.accountAdmin': '账号服务管理',
+      'page.spaceAdmin': '空间服务管理',
+      'page.messageAdmin': '消息服务管理',
       'page.learning': '学习课程',
       'page.learningAdmin': '课程后台',
       'subtitle.dashboard': '汇总账号、空间、好友与实时互动状态。',
@@ -168,6 +171,9 @@ class AppI18n {
       'subtitle.chat': '查看会话摘要并发送实时消息。',
       'subtitle.services': '只显示当前在线的微服务入口，离线模块会自动隐藏。',
       'subtitle.adminPanel': '管理员在这里总览站点服务状态，并进入各管理工作区。',
+      'subtitle.accountAdmin': '集中查看账号微服务的统一后台管理入口。',
+      'subtitle.spaceAdmin': '集中查看空间微服务的统一后台管理入口。',
+      'subtitle.messageAdmin': '集中查看消息微服务的统一后台管理入口。',
       'subtitle.learning': '查看英语、编程、AI 等课程，并完整预览 Markdown 与 Mermaid 内容。',
       'subtitle.learningAdmin': '管理员在这里维护课程文件、语言版本与发布状态。',
     },
@@ -313,6 +319,9 @@ class AppI18n {
       'page.chat': 'Live Chat',
       'page.services': 'Service Navigation',
       'page.adminPanel': 'Site Admin Panel',
+      'page.accountAdmin': 'Account Admin',
+      'page.spaceAdmin': 'Space Admin',
+      'page.messageAdmin': 'Message Admin',
       'page.learning': 'Learning Courses',
       'page.learningAdmin': 'Course Console',
       'subtitle.dashboard':
@@ -334,6 +343,12 @@ class AppI18n {
           'Only online microservice entry points are shown here; offline modules hide automatically.',
       'subtitle.adminPanel':
           'Administrators review site-wide service health and enter each management workspace here.',
+      'subtitle.accountAdmin':
+          'Review the unified administrator entry points for the account microservice here.',
+      'subtitle.spaceAdmin':
+          'Review the unified administrator entry points for the space microservice here.',
+      'subtitle.messageAdmin':
+          'Review the unified administrator entry points for the message microservice here.',
       'subtitle.learning':
           'Browse English, programming, and AI lessons with full Markdown and Mermaid previews.',
       'subtitle.learningAdmin':
@@ -468,6 +483,9 @@ class AppI18n {
       'page.chat': '即時聊天',
       'page.services': '服務導航',
       'page.adminPanel': '網站管理面板',
+      'page.accountAdmin': '帳號服務管理',
+      'page.spaceAdmin': '空間服務管理',
+      'page.messageAdmin': '訊息服務管理',
       'page.learning': '學習課程',
       'page.learningAdmin': '課程後台',
       'subtitle.dashboard': '彙總帳號、空間、好友與即時互動狀態。',
@@ -480,6 +498,9 @@ class AppI18n {
       'subtitle.chat': '查看會話摘要並發送即時訊息。',
       'subtitle.services': '只顯示目前在線的微服務入口，離線模組會自動隱藏。',
       'subtitle.adminPanel': '管理員在這裡總覽站點服務狀態，並進入各管理工作區。',
+      'subtitle.accountAdmin': '集中查看帳號微服務的統一後台管理入口。',
+      'subtitle.spaceAdmin': '集中查看空間微服務的統一後台管理入口。',
+      'subtitle.messageAdmin': '集中查看訊息微服務的統一後台管理入口。',
       'subtitle.learning': '查看英語、程式、AI 等課程，並完整預覽 Markdown 與 Mermaid 內容。',
       'subtitle.learningAdmin': '管理員在這裡維護課程檔案、語言版本與發布狀態。',
     },

@@ -67,26 +67,41 @@ class AdminOverview {
     required this.onlineServices,
     required this.offlineServices,
     required this.adminWorkspaces,
+    required this.degraded,
+    required this.checkedAt,
     required this.services,
+    required this.workspaces,
   });
 
   final int totalServices;
   final int onlineServices;
   final int offlineServices;
   final int adminWorkspaces;
+  final bool degraded;
+  final DateTime? checkedAt;
   final List<AdminServiceStatus> services;
+  final List<AdminWorkspaceStatus> workspaces;
 
   factory AdminOverview.fromJson(Map<String, dynamic> json) {
     final servicesJson = json['services'];
+    final workspacesJson = json['workspaces'];
     return AdminOverview(
       totalServices: toInt(json['total_services']),
       onlineServices: toInt(json['online_services']),
       offlineServices: toInt(json['offline_services']),
       adminWorkspaces: toInt(json['admin_workspaces']),
+      degraded: json['degraded'] == true,
+      checkedAt: DateTime.tryParse((json['checked_at'] ?? '').toString()),
       services: servicesJson is List
           ? servicesJson
                 .whereType<Map<String, dynamic>>()
                 .map(AdminServiceStatus.fromJson)
+                .toList()
+          : const [],
+      workspaces: workspacesJson is List
+          ? workspacesJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminWorkspaceStatus.fromJson)
                 .toList()
           : const [],
     );
@@ -98,23 +113,55 @@ class AdminServiceStatus {
     required this.key,
     required this.title,
     required this.baseUrl,
+    required this.healthUrl,
     required this.online,
     required this.required,
+    required this.latencyMs,
+    required this.workspaceKey,
   });
 
   final String key;
   final String title;
   final String baseUrl;
+  final String healthUrl;
   final bool online;
   final bool required;
+  final int latencyMs;
+  final String workspaceKey;
 
   factory AdminServiceStatus.fromJson(Map<String, dynamic> json) {
     return AdminServiceStatus(
       key: (json['key'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       baseUrl: (json['base_url'] ?? '').toString(),
+      healthUrl: (json['health_url'] ?? '').toString(),
       online: json['online'] == true,
       required: json['required'] == true,
+      latencyMs: toInt(json['latency_ms']),
+      workspaceKey: (json['workspace_key'] ?? '').toString(),
+    );
+  }
+}
+
+class AdminWorkspaceStatus {
+  AdminWorkspaceStatus({
+    required this.key,
+    required this.title,
+    required this.serviceKey,
+    required this.available,
+  });
+
+  final String key;
+  final String title;
+  final String serviceKey;
+  final bool available;
+
+  factory AdminWorkspaceStatus.fromJson(Map<String, dynamic> json) {
+    return AdminWorkspaceStatus(
+      key: (json['key'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      serviceKey: (json['service_key'] ?? '').toString(),
+      available: json['available'] == true,
     );
   }
 }

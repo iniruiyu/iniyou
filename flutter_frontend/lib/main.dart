@@ -156,6 +156,9 @@ enum AppView {
   dashboard,
   services,
   adminPanel,
+  accountAdmin,
+  spaceAdmin,
+  messageAdmin,
   learning,
   learningAdmin,
   space,
@@ -248,6 +251,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _messageServiceOnline = false;
   bool _learningServiceOnline = false;
   bool _adminServiceOnline = false;
+  AdminOverview? _adminOverview;
+  String? _adminOverviewError;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -1780,11 +1785,64 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (!_adminServiceOnline && _view == AppView.adminPanel) {
         _view = AppView.services;
       }
+      if ((_user?.level ?? '').toLowerCase() != 'admin' &&
+          (_view == AppView.accountAdmin ||
+              _view == AppView.spaceAdmin ||
+              _view == AppView.messageAdmin)) {
+        _view = AppView.services;
+      }
+      if (!_spaceServiceOnline && _view == AppView.spaceAdmin) {
+        _view = AppView.adminPanel;
+      }
+      if (!_messageServiceOnline && _view == AppView.messageAdmin) {
+        _view = AppView.adminPanel;
+      }
       if (!_learningServiceOnline &&
           (_view == AppView.learning || _view == AppView.learningAdmin)) {
         _view = AppView.services;
       }
     });
+    await _refreshAdminOverview();
+  }
+
+  Future<void> _refreshAdminOverview() async {
+    final isAdmin = (_user?.level ?? '').toLowerCase() == 'admin';
+    if (!_adminServiceOnline || !isAdmin) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = null;
+        _adminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = overview;
+        _adminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = null;
+        _adminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = null;
+        _adminOverviewError = error.toString();
+      });
+    }
   }
 
   Future<void> _refreshAll() async {
@@ -1911,6 +1969,8 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
     setState(() {
       _user = null;
+      _adminOverview = null;
+      _adminOverviewError = null;
       _profileUser = null;
       _currentPost = null;
       _spaces = const [];
@@ -2011,6 +2071,21 @@ class _IniyouHomeState extends State<IniyouHome> {
         ((_user?.level ?? '').toLowerCase() != 'admin' ||
             !_adminServiceOnline)) {
       return;
+    }
+    if (view == AppView.accountAdmin &&
+        (_user?.level ?? '').toLowerCase() != 'admin') {
+      return;
+    }
+    if (view == AppView.spaceAdmin) {
+      if ((_user?.level ?? '').toLowerCase() != 'admin' || !_spaceServiceOnline) {
+        return;
+      }
+    }
+    if (view == AppView.messageAdmin) {
+      if ((_user?.level ?? '').toLowerCase() != 'admin' ||
+          !_messageServiceOnline) {
+        return;
+      }
     }
     if (view == AppView.learning && !_learningServiceOnline) {
       return;
@@ -3523,10 +3598,15 @@ class _IniyouHomeState extends State<IniyouHome> {
         languageCode: _languageCode,
       ),
       adminPanel: buildAdminPanelView(
+        overview: _adminOverview,
+        overviewError: _adminOverviewError,
         spaceOnline: _spaceServiceOnline,
         messageOnline: _messageServiceOnline,
         adminOnline: _adminServiceOnline,
         learningOnline: _learningServiceOnline,
+        onOpenAccountAdmin: () => _navigateTo(AppView.accountAdmin),
+        onOpenSpaceAdmin: () => _navigateTo(AppView.spaceAdmin),
+        onOpenMessageAdmin: () => _navigateTo(AppView.messageAdmin),
         onOpenServices: () => _navigateTo(AppView.services),
         onOpenProfile: () {
           _openProfile(_user!.id);
@@ -3535,6 +3615,77 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenChat: () => _navigateTo(AppView.chat),
         onOpenLearning: () => _navigateTo(AppView.learning),
         onOpenLearningAdmin: () => _navigateTo(AppView.learningAdmin),
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
+        languageCode: _languageCode,
+      ),
+      accountAdmin: buildServiceAdminConsoleView(
+        overview: _adminOverview,
+        serviceKey: 'account',
+        title: _l('账号服务管理控制页', 'Account service admin console', '帳號服務管理控制頁'),
+        subtitle: _l(
+          '集中查看身份资料、隐私字段、会员等级与链上绑定的管理入口。',
+          'Review the shared management entry points for identity data, privacy fields, membership, and chain bindings.',
+          '集中查看身份資料、隱私欄位、會員等級與鏈上綁定的管理入口。',
+        ),
+        modules: [
+          _l('身份资料', 'Identity profile', '身份資料'),
+          _l('联系信息', 'Contact details', '聯絡資訊'),
+          _l('隐私可见性', 'Privacy visibility', '隱私可見性'),
+          _l('会员等级', 'Membership levels', '會員等級'),
+          _l('链上绑定', 'Chain bindings', '鏈上綁定'),
+        ],
+        onBackToAdmin: () => _navigateTo(AppView.adminPanel),
+        onOpenService: () {
+          _openProfile(_user!.id);
+        },
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
+        languageCode: _languageCode,
+      ),
+      spaceAdmin: buildServiceAdminConsoleView(
+        overview: _adminOverview,
+        serviceKey: 'space',
+        title: _l('空间服务管理控制页', 'Space service admin console', '空間服務管理控制頁'),
+        subtitle: _l(
+          '统一进入空间工作台、内容发布链路和帖子上下文的运维入口。',
+          'Open the shared operations entry for the workspace, publishing flow, and post context.',
+          '統一進入空間工作台、內容發布鏈路與貼文上下文的運維入口。',
+        ),
+        modules: [
+          _l('空间工作台', 'Workspace', '空間工作台'),
+          _l('空间列表', 'Space list', '空間列表'),
+          _l('帖子发布', 'Post publishing', '貼文發布'),
+          _l('帖子详情', 'Post detail', '貼文詳情'),
+          _l('媒体内容', 'Media content', '媒體內容'),
+        ],
+        onBackToAdmin: () => _navigateTo(AppView.adminPanel),
+        onOpenService: () => _navigateTo(AppView.space),
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
+        languageCode: _languageCode,
+      ),
+      messageAdmin: buildServiceAdminConsoleView(
+        overview: _adminOverview,
+        serviceKey: 'message',
+        title: _l('消息服务管理控制页', 'Message service admin console', '訊息服務管理控制頁'),
+        subtitle: _l(
+          '集中查看好友关系、会话摘要、未读消息和实时通信入口。',
+          'Review the management entry points for friendships, conversation summaries, unread status, and realtime messaging.',
+          '集中查看好友關係、會話摘要、未讀訊息與即時通信入口。',
+        ),
+        modules: [
+          _l('好友关系', 'Friendships', '好友關係'),
+          _l('会话摘要', 'Conversation summaries', '會話摘要'),
+          _l('未读计数', 'Unread counts', '未讀計數'),
+          _l('聊天面板', 'Chat panel', '聊天面板'),
+          _l('实时连接', 'Realtime connection', '即時連線'),
+        ],
+        onBackToAdmin: () => _navigateTo(AppView.adminPanel),
+        onOpenService: () => _navigateTo(AppView.chat),
         onRefresh: () {
           _runBusy(_refreshAll);
         },

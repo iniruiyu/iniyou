@@ -250,6 +250,9 @@
       <!-- Service navigation / 服务导航：抽成独立组件，避免根模板继续膨胀。 -->
       <service-navigation v-if="view === 'services'" :app="appContext"></service-navigation>
       <site-admin-panel v-if="view === 'admin-panel'" :app="appContext"></site-admin-panel>
+      <microservice-admin-console v-if="view === 'account-admin'" :app="appContext" workspace-key="account-admin"></microservice-admin-console>
+      <microservice-admin-console v-if="view === 'space-admin'" :app="appContext" workspace-key="space-admin"></microservice-admin-console>
+      <microservice-admin-console v-if="view === 'message-admin'" :app="appContext" workspace-key="message-admin"></microservice-admin-console>
       <learning-service v-if="view === 'learning'" :app="appContext"></learning-service>
       <learning-service v-if="view === 'learning-admin'" :app="appContext" :admin-workspace-only="true"></learning-service>
 
@@ -2271,6 +2274,7 @@
   <script src="components/landing-page.js"></script>
   <script src="components/service-navigation.js"></script>
   <script src="components/site-admin-panel.js"></script>
+  <script src="components/microservice-admin-console.js"></script>
   <script src="components/learning-service.js"></script>
   <script src="components/profile-page.js"></script>
   <script src="components/profile-identity-editor.js"></script>
