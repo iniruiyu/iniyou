@@ -132,11 +132,13 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `GET /api/v1/messages`
 - `POST /api/v1/messages`
 - `GET /api/v1/unread`
+- `GET /api/v1/admin/overview`
 - `GET /ws`
 
 说明：
 
 - 当前聊天实现基于 `messages` 单表聚合对话摘要，没有独立 `chat_conversations`、`chat_participants`、`message_reads` 表 / Chat currently derives conversation summaries directly from the `messages` table instead of separate conversation, participant, and read tables.
+- `message-service` 额外提供管理员专属 `GET /api/v1/admin/overview`，用于消息后台总览；该接口要求管理员登录态并由微服务内部自行负责鉴权与数据聚合 / `message-service` additionally exposes an administrator-only `GET /api/v1/admin/overview` for the message admin console; the microservice itself owns both authorization and data aggregation for this route.
 - 聊天消息支持 `text`、`image`、`video`、`audio` 四种消息类型
 - 媒体消息在发送前由前端压缩后再提交，服务端保存压缩后的 payload
 - 过期消息会由服务端自动清理，前端无需额外调用删除接口

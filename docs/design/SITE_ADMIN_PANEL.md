@@ -24,7 +24,7 @@
 - `account-service` 始终视为在线基础服务。 / `account-service` is treated as the always-online base service.
 - `space-service`、`message-service`、`learning-service` 继续复用已有 `GET /api/v1/health` 探测。 / `space-service`, `message-service`, and `learning-service` continue reusing the existing `GET /api/v1/health` probes.
 - 独立 `admin-service` 公开 `GET /api/v1/health` 与管理员专属 `GET /api/v1/overview`，仅负责总控聚合与入口目录。 / The dedicated `admin-service` exposes public `GET /api/v1/health` and admin-only `GET /api/v1/overview`, and is responsible only for cross-service aggregation plus the entry directory.
-- 具体微服务后台明细应逐步下沉到微服务内部的 `/api/v1/admin/...`。当前 `space-service` 已内建 `GET /api/v1/admin/overview`，供 `space-admin` 直接读取。 / Concrete per-service admin details should progressively move into each microservice's own `/api/v1/admin/...` surface. `space-service` now exposes `GET /api/v1/admin/overview` and `space-admin` reads it directly.
+- 具体微服务后台明细应逐步下沉到微服务内部的 `/api/v1/admin/...`。当前 `space-service` 与 `message-service` 已内建 `GET /api/v1/admin/overview`，分别供 `space-admin` 与 `message-admin` 直接读取。 / Concrete per-service admin details should progressively move into each microservice's own `/api/v1/admin/...` surface. `space-service` and `message-service` now expose `GET /api/v1/admin/overview`, and `space-admin` plus `message-admin` read them directly.
 
 ## 5. 双前端落点 / Dual-Frontend Placement
 
@@ -43,7 +43,7 @@
 
 - 已落地独立 `admin-service`，并作为第五个微服务纳入双前端健康探测。 / A dedicated `admin-service` is now implemented and included as the fifth microservice in dual-frontend health probing.
 - 管理员总览页可显示服务健康状态和已有管理员入口。 / The administrator overview page can show service health and existing admin entries.
-- `space-admin` 已开始迁回 `space-service` 内部，使用该微服务自己的管理员总览接口而不是继续堆叠在 `admin-service`。 / `space-admin` has started moving back into `space-service` and now uses that microservice's own admin overview instead of continuing to accumulate inside `admin-service`.
+- `space-admin` 与 `message-admin` 已开始迁回各自微服务内部，使用各自的管理员总览接口而不是继续堆叠在 `admin-service`。 / `space-admin` and `message-admin` have started moving back into their own microservices and now use service-owned admin overviews instead of continuing to accumulate inside `admin-service`.
 - 课程后台继续承担学习内容创建、编辑、发布、归档等具体动作。 / The course console continues handling concrete learning content creation, editing, publishing, and archiving actions.
 
 ## 8. 下一阶段 / Next Phase

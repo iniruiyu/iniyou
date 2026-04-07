@@ -125,6 +125,8 @@ Widget buildServiceAdminConsoleView({
   required AdminOverview? overview,
   AdminSpaceOverview? spaceOverview,
   String? spaceOverviewError,
+  AdminMessageOverview? messageOverview,
+  String? messageOverviewError,
   required String serviceKey,
   required String title,
   required String subtitle,
@@ -138,6 +140,8 @@ Widget buildServiceAdminConsoleView({
     overview: overview,
     spaceOverview: spaceOverview,
     spaceOverviewError: spaceOverviewError,
+    messageOverview: messageOverview,
+    messageOverviewError: messageOverviewError,
     serviceKey: serviceKey,
     title: title,
     subtitle: subtitle,
@@ -1758,6 +1762,8 @@ class ServiceAdminConsoleView extends StatelessWidget {
     required this.overview,
     this.spaceOverview,
     this.spaceOverviewError,
+    this.messageOverview,
+    this.messageOverviewError,
     required this.serviceKey,
     required this.title,
     required this.subtitle,
@@ -1771,6 +1777,8 @@ class ServiceAdminConsoleView extends StatelessWidget {
   final AdminOverview? overview;
   final AdminSpaceOverview? spaceOverview;
   final String? spaceOverviewError;
+  final AdminMessageOverview? messageOverview;
+  final String? messageOverviewError;
   final String serviceKey;
   final String title;
   final String subtitle;
@@ -1902,6 +1910,30 @@ class ServiceAdminConsoleView extends StatelessWidget {
                       ),
                     ),
                   ],
+                  if (serviceKey == 'message' &&
+                      (messageOverviewError != null || messageOverview != null)) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.38),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        messageOverviewError ??
+                            [
+                              'Messages ${messageOverview?.totalMessages ?? 0}',
+                              'Unread ${messageOverview?.unreadMessages ?? 0}',
+                              'Conversations ${messageOverview?.activeConversations ?? 0}',
+                              'Friends ${messageOverview?.connectedFriends ?? 0}',
+                            ].join(' · '),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -2014,6 +2046,68 @@ class ServiceAdminConsoleView extends StatelessWidget {
                         ),
                         child: Text(
                           '${item.title.isEmpty ? localizedText(languageCode, "（未命名）", "(untitled)", "（未命名）") : item.title}\n${item.authorName} · ${item.spaceName.isEmpty ? localizedText(languageCode, "未绑定空间", "No space", "未綁定空間") : item.spaceName} · ${item.visibility} · ${item.status}',
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (serviceKey == 'message' && messageOverview != null) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近会话',
+                        'Recent conversations',
+                        '最近會話',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...messageOverview!.recentConversations.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.participantAName} · ${item.participantBName}\n${item.lastPreview} · ${item.lastMessageType} · ${item.messageCount} messages · ${item.unreadCount} unread',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近消息',
+                        'Recent messages',
+                        '最近訊息',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...messageOverview!.recentMessages.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.senderName} → ${item.receiverName}\n${item.preview} · ${item.messageType}${item.readAt == null ? ' · unread' : ''}${item.expiresAt != null ? ' · expires' : ''}',
                         ),
                       ),
                     ),

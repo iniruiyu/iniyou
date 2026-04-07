@@ -369,6 +369,9 @@ const app = createApp({
       spaceAdminOverview: null,
       spaceAdminOverviewLoading: false,
       spaceAdminOverviewError: '',
+      messageAdminOverview: null,
+      messageAdminOverviewLoading: false,
+      messageAdminOverviewError: '',
       // Visible auth mode on the guest landing page.
       // 未登录首页当前显示的认证模式。
       authMode: 'login',
@@ -2055,6 +2058,9 @@ const app = createApp({
       this.spaceAdminOverview = null;
       this.spaceAdminOverviewLoading = false;
       this.spaceAdminOverviewError = '';
+      this.messageAdminOverview = null;
+      this.messageAdminOverviewLoading = false;
+      this.messageAdminOverviewError = '';
     },
     async syncAdminOverview() {
       // Load the aggregated admin overview once the admin service and permission are both available.
@@ -2112,6 +2118,34 @@ const app = createApp({
         return null;
       } finally {
         this.spaceAdminOverviewLoading = false;
+      }
+    },
+    async syncMessageAdminOverview() {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('message')) {
+        this.messageAdminOverview = null;
+        this.messageAdminOverviewLoading = false;
+        this.messageAdminOverviewError = '';
+        return null;
+      }
+      this.messageAdminOverviewLoading = true;
+      this.messageAdminOverviewError = '';
+      try {
+        const res = await fetchWithTimeout(`${this.messageApiBase}/admin/overview`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+        const data = await this.readApiPayload(res);
+        if (!res.ok) {
+          throw new Error(data?.error || data?.message || 'Failed to load message admin overview.');
+        }
+        this.messageAdminOverview = data && typeof data === 'object' ? data : null;
+        return this.messageAdminOverview;
+      } catch (error) {
+        this.messageAdminOverview = null;
+        this.messageAdminOverviewError = error?.message || 'Failed to load message admin overview.';
+        return null;
+      } finally {
+        this.messageAdminOverviewLoading = false;
       }
     },
     async checkServiceOnline(baseUrl) {
@@ -2176,6 +2210,9 @@ const app = createApp({
         this.unreadCount = 0;
         this.activeChat = null;
         this.chatFriendProfile = null;
+        this.messageAdminOverview = null;
+        this.messageAdminOverviewLoading = false;
+        this.messageAdminOverviewError = '';
         if (this.view === 'chat') {
           this.view = 'services';
         }
@@ -2188,6 +2225,7 @@ const app = createApp({
       }
       await this.syncAdminOverview();
       await this.syncSpaceAdminOverview();
+      await this.syncMessageAdminOverview();
     },
     async refreshAuthenticatedWorkspace() {
       // Load every logged-in section, but keep optional services isolated from each other.
@@ -2287,6 +2325,7 @@ const app = createApp({
         if (!this.isServiceOnline('message') || String(this.user?.level || '').toLowerCase() !== 'admin') {
           return;
         }
+        await this.syncMessageAdminOverview();
         this.view = 'message-admin';
         return;
       }

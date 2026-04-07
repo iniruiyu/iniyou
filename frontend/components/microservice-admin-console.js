@@ -129,6 +129,14 @@ window.MicroserviceAdminConsole = {
         ? this.app.spaceAdminOverview
         : null;
     },
+    messageOverview() {
+      if (this.workspaceKey !== 'message-admin') {
+        return null;
+      }
+      return this.app?.messageAdminOverview && typeof this.app.messageAdminOverview === 'object'
+        ? this.app.messageAdminOverview
+        : null;
+    },
     online() {
       return this.serviceStatus?.online === true || this.app.isServiceOnline(this.metadata?.serviceKey);
     },
@@ -259,6 +267,63 @@ window.MicroserviceAdminConsole = {
                 <div class="learning-admin-file-copy">
                   <div class="learning-admin-file-path">{{ item.title || '(untitled)' }}</div>
                   <div class="learning-admin-file-meta">{{ item.author_name }} · {{ item.space_name || 'No space' }} · {{ item.visibility }} · {{ item.status }}</div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </template>
+
+      <template v-if="messageOverview">
+        <div class="site-admin-summary">
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Messages</div>
+            <div class="site-admin-stat-value">{{ messageOverview.total_messages || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Unread</div>
+            <div class="site-admin-stat-value">{{ messageOverview.unread_messages || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Conversations</div>
+            <div class="site-admin-stat-value">{{ messageOverview.active_conversations || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Friends</div>
+            <div class="site-admin-stat-value">{{ messageOverview.connected_friends || 0 }}</div>
+          </article>
+        </div>
+
+        <div class="site-admin-grid">
+          <article class="service-card site-admin-card">
+            <div class="service-card-head">
+              <div>
+                <div class="service-card-title">Recent conversations</div>
+                <div class="service-card-sub">Latest active chat pairs in the shared message service.</div>
+              </div>
+            </div>
+            <div class="learning-admin-file-list">
+              <div v-for="item in (messageOverview.recent_conversations || [])" :key="item.participant_a_id + ':' + item.participant_b_id" class="learning-admin-file-row">
+                <div class="learning-admin-file-copy">
+                  <div class="learning-admin-file-path">{{ item.participant_a_name }} · {{ item.participant_b_name }}</div>
+                  <div class="learning-admin-file-meta">{{ item.last_preview }} · {{ item.last_message_type }} · {{ item.message_count }} messages · {{ item.unread_count }} unread</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="service-card site-admin-card">
+            <div class="service-card-head">
+              <div>
+                <div class="service-card-title">Recent messages</div>
+                <div class="service-card-sub">Latest delivered messages in the shared message service.</div>
+              </div>
+            </div>
+            <div class="learning-admin-file-list">
+              <div v-for="item in (messageOverview.recent_messages || [])" :key="item.id" class="learning-admin-file-row">
+                <div class="learning-admin-file-copy">
+                  <div class="learning-admin-file-path">{{ item.sender_name }} → {{ item.receiver_name }}</div>
+                  <div class="learning-admin-file-meta">{{ item.preview }} · {{ item.message_type }}<span v-if="!item.read_at"> · unread</span><span v-if="item.expires_at"> · expires</span></div>
                 </div>
               </div>
             </div>

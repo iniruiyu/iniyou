@@ -255,6 +255,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   String? _adminOverviewError;
   AdminSpaceOverview? _spaceAdminOverview;
   String? _spaceAdminOverviewError;
+  AdminMessageOverview? _messageAdminOverview;
+  String? _messageAdminOverviewError;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -1818,6 +1820,8 @@ class _IniyouHomeState extends State<IniyouHome> {
         _adminOverviewError = null;
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = null;
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = null;
       });
       return;
     }
@@ -1831,6 +1835,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         _adminOverviewError = null;
       });
       await _refreshSpaceAdminOverview();
+      await _refreshMessageAdminOverview();
     } on ApiException catch (error) {
       if (!mounted) {
         return;
@@ -1840,6 +1845,8 @@ class _IniyouHomeState extends State<IniyouHome> {
         _adminOverviewError = error.message;
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = null;
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = null;
       });
     } catch (error) {
       if (!mounted) {
@@ -1850,6 +1857,8 @@ class _IniyouHomeState extends State<IniyouHome> {
         _adminOverviewError = error.toString();
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = null;
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = null;
       });
     }
   }
@@ -1890,6 +1899,46 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = error.toString();
+      });
+    }
+  }
+
+  Future<void> _refreshMessageAdminOverview() async {
+    final isAdmin = (_user?.level ?? '').toLowerCase() == 'admin';
+    if (!_adminServiceOnline || !_messageServiceOnline || !isAdmin) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminMessageOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = overview;
+        _messageAdminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = error.toString();
       });
     }
   }
@@ -2022,6 +2071,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _adminOverviewError = null;
       _spaceAdminOverview = null;
       _spaceAdminOverviewError = null;
+      _messageAdminOverview = null;
+      _messageAdminOverviewError = null;
       _profileUser = null;
       _currentPost = null;
       _spaces = const [];
@@ -3723,6 +3774,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       ),
       messageAdmin: buildServiceAdminConsoleView(
         overview: _adminOverview,
+        messageOverview: _messageAdminOverview,
+        messageOverviewError: _messageAdminOverviewError,
         serviceKey: 'message',
         title: _l('消息服务管理控制页', 'Message service admin console', '訊息服務管理控制頁'),
         subtitle: _l(

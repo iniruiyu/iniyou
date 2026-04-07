@@ -219,6 +219,132 @@ class AdminSpaceOverview {
   }
 }
 
+class AdminMessageOverview {
+  AdminMessageOverview({
+    required this.totalMessages,
+    required this.unreadMessages,
+    required this.activeConversations,
+    required this.connectedFriends,
+    required this.mediaMessages,
+    required this.ephemeralMessages,
+    required this.recentMessages,
+    required this.recentConversations,
+  });
+
+  final int totalMessages;
+  final int unreadMessages;
+  final int activeConversations;
+  final int connectedFriends;
+  final int mediaMessages;
+  final int ephemeralMessages;
+  final List<AdminMessageSummary> recentMessages;
+  final List<AdminConversationSummary> recentConversations;
+
+  factory AdminMessageOverview.fromJson(Map<String, dynamic> json) {
+    final recentMessagesJson = json['recent_messages'];
+    final recentConversationsJson = json['recent_conversations'];
+    return AdminMessageOverview(
+      totalMessages: toInt(json['total_messages']),
+      unreadMessages: toInt(json['unread_messages']),
+      activeConversations: toInt(json['active_conversations']),
+      connectedFriends: toInt(json['connected_friends']),
+      mediaMessages: toInt(json['media_messages']),
+      ephemeralMessages: toInt(json['ephemeral_messages']),
+      recentMessages: recentMessagesJson is List
+          ? recentMessagesJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminMessageSummary.fromJson)
+                .toList()
+          : const [],
+      recentConversations: recentConversationsJson is List
+          ? recentConversationsJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminConversationSummary.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class AdminMessageSummary {
+  AdminMessageSummary({
+    required this.id,
+    required this.senderId,
+    required this.senderName,
+    required this.receiverId,
+    required this.receiverName,
+    required this.messageType,
+    required this.preview,
+    required this.readAt,
+    required this.expiresAt,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String senderId;
+  final String senderName;
+  final String receiverId;
+  final String receiverName;
+  final String messageType;
+  final String preview;
+  final DateTime? readAt;
+  final DateTime? expiresAt;
+  final DateTime? createdAt;
+
+  factory AdminMessageSummary.fromJson(Map<String, dynamic> json) {
+    return AdminMessageSummary(
+      id: (json['id'] ?? '').toString(),
+      senderId: (json['sender_id'] ?? '').toString(),
+      senderName: (json['sender_name'] ?? '').toString(),
+      receiverId: (json['receiver_id'] ?? '').toString(),
+      receiverName: (json['receiver_name'] ?? '').toString(),
+      messageType: (json['message_type'] ?? '').toString(),
+      preview: (json['preview'] ?? '').toString(),
+      readAt: DateTime.tryParse((json['read_at'] ?? '').toString()),
+      expiresAt: DateTime.tryParse((json['expires_at'] ?? '').toString()),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminConversationSummary {
+  AdminConversationSummary({
+    required this.participantAId,
+    required this.participantAName,
+    required this.participantBId,
+    required this.participantBName,
+    required this.lastMessageType,
+    required this.lastPreview,
+    required this.lastAt,
+    required this.messageCount,
+    required this.unreadCount,
+  });
+
+  final String participantAId;
+  final String participantAName;
+  final String participantBId;
+  final String participantBName;
+  final String lastMessageType;
+  final String lastPreview;
+  final DateTime? lastAt;
+  final int messageCount;
+  final int unreadCount;
+
+  factory AdminConversationSummary.fromJson(Map<String, dynamic> json) {
+    return AdminConversationSummary(
+      participantAId: (json['participant_a_id'] ?? '').toString(),
+      participantAName: (json['participant_a_name'] ?? '').toString(),
+      participantBId: (json['participant_b_id'] ?? '').toString(),
+      participantBName: (json['participant_b_name'] ?? '').toString(),
+      lastMessageType: (json['last_message_type'] ?? '').toString(),
+      lastPreview: (json['last_preview'] ?? '').toString(),
+      lastAt: DateTime.tryParse((json['last_at'] ?? '').toString()),
+      messageCount: toInt(json['message_count']),
+      unreadCount: toInt(json['unread_count']),
+    );
+  }
+}
+
 class AdminSpaceSummary {
   AdminSpaceSummary({
     required this.id,
