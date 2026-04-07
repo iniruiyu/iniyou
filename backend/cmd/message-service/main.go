@@ -83,6 +83,9 @@ func main() {
 	api.GET("/messages", h.ListMessages)
 	api.POST("/messages", h.CreateMessage)
 	api.GET("/unread", h.UnreadCount)
+	admin := api.Group("/admin")
+	admin.Use(middleware.RequireAdminMiddleware())
+	admin.GET("/overview", h.AdminOverview)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)

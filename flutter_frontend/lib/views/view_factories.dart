@@ -8,7 +8,6 @@ import 'content_sections.dart';
 import 'learning_view.dart';
 import 'settings_views.dart';
 import 'chat_view.dart';
-import 'site_admin_panel_view.dart';
 import 'social_views.dart' hide ChatView;
 import 'view_state_helpers.dart';
 import '../widgets/app_cards.dart';
@@ -61,6 +60,7 @@ Widget buildServicesView({
   required VoidCallback onOpenSpace,
   required VoidCallback onOpenChat,
   required VoidCallback onOpenLearning,
+  required VoidCallback onOpenLearningAdmin,
   required VoidCallback onRefresh,
   required String languageCode,
 }) {
@@ -75,28 +75,88 @@ Widget buildServicesView({
     onOpenSpace: onOpenSpace,
     onOpenChat: onOpenChat,
     onOpenLearning: onOpenLearning,
+    onOpenLearningAdmin: onOpenLearningAdmin,
     onRefresh: onRefresh,
     languageCode: languageCode,
   );
 }
 
 Widget buildAdminPanelView({
-  required ApiClient apiClient,
+  required AdminOverview? overview,
+  required String? overviewError,
+  required bool spaceOnline,
+  required bool messageOnline,
+  required bool adminOnline,
+  required bool learningOnline,
+  required VoidCallback onOpenAccountAdmin,
+  required VoidCallback onOpenSpaceAdmin,
+  required VoidCallback onOpenMessageAdmin,
   required VoidCallback onOpenServices,
   required VoidCallback onOpenProfile,
   required VoidCallback onOpenSpace,
   required VoidCallback onOpenChat,
   required VoidCallback onOpenLearning,
+  required VoidCallback onOpenLearningAdmin,
   required VoidCallback onRefresh,
   required String languageCode,
 }) {
-  return SiteAdminWorkspaceView(
-    apiClient: apiClient,
+  return SiteAdminPanelView(
+    overview: overview,
+    overviewError: overviewError,
+    spaceOnline: spaceOnline,
+    messageOnline: messageOnline,
+    adminOnline: adminOnline,
+    learningOnline: learningOnline,
+    onOpenAccountAdmin: onOpenAccountAdmin,
+    onOpenSpaceAdmin: onOpenSpaceAdmin,
+    onOpenMessageAdmin: onOpenMessageAdmin,
     onOpenServices: onOpenServices,
     onOpenProfile: onOpenProfile,
     onOpenSpace: onOpenSpace,
     onOpenChat: onOpenChat,
     onOpenLearning: onOpenLearning,
+    onOpenLearningAdmin: onOpenLearningAdmin,
+    onRefresh: onRefresh,
+    languageCode: languageCode,
+  );
+}
+
+Widget buildServiceAdminConsoleView({
+  required AdminOverview? overview,
+  AdminAccountOverview? accountOverview,
+  String? accountOverviewError,
+  String? currentUserId,
+  Future<void> Function(String userId, {String? level, String? status})?
+  onUpdateAccountUser,
+  AdminSpaceOverview? spaceOverview,
+  String? spaceOverviewError,
+  AdminMessageOverview? messageOverview,
+  String? messageOverviewError,
+  required String serviceKey,
+  required String title,
+  required String subtitle,
+  required List<String> modules,
+  required VoidCallback onBackToAdmin,
+  required VoidCallback onOpenService,
+  required VoidCallback onRefresh,
+  required String languageCode,
+}) {
+  return ServiceAdminConsoleView(
+    overview: overview,
+    accountOverview: accountOverview,
+    accountOverviewError: accountOverviewError,
+    currentUserId: currentUserId,
+    onUpdateAccountUser: onUpdateAccountUser,
+    spaceOverview: spaceOverview,
+    spaceOverviewError: spaceOverviewError,
+    messageOverview: messageOverview,
+    messageOverviewError: messageOverviewError,
+    serviceKey: serviceKey,
+    title: title,
+    subtitle: subtitle,
+    modules: modules,
+    onBackToAdmin: onBackToAdmin,
+    onOpenService: onOpenService,
     onRefresh: onRefresh,
     languageCode: languageCode,
   );
@@ -1008,6 +1068,7 @@ class ServicesView extends StatelessWidget {
     required this.onOpenSpace,
     required this.onOpenChat,
     required this.onOpenLearning,
+    required this.onOpenLearningAdmin,
     required this.onRefresh,
     required this.languageCode,
   });
@@ -1022,6 +1083,7 @@ class ServicesView extends StatelessWidget {
   final VoidCallback onOpenSpace;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenLearning;
+  final VoidCallback onOpenLearningAdmin;
   final VoidCallback onRefresh;
   final String languageCode;
 
@@ -1189,6 +1251,10 @@ class ServicesView extends StatelessWidget {
             '打開課程',
           ),
           onOpen: onOpenLearning,
+          secondaryActionLabel: isAdmin
+              ? localizedText(languageCode, '课程后台', 'Course console', '課程後台')
+              : null,
+          onSecondaryOpen: isAdmin ? onOpenLearningAdmin : null,
         ),
     ];
 
@@ -1267,52 +1333,81 @@ class ServicesView extends StatelessWidget {
 class SiteAdminPanelView extends StatelessWidget {
   const SiteAdminPanelView({
     super.key,
+    required this.overview,
+    required this.overviewError,
     required this.spaceOnline,
     required this.messageOnline,
     required this.adminOnline,
     required this.learningOnline,
+    required this.onOpenAccountAdmin,
+    required this.onOpenSpaceAdmin,
+    required this.onOpenMessageAdmin,
     required this.onOpenServices,
     required this.onOpenProfile,
     required this.onOpenSpace,
     required this.onOpenChat,
     required this.onOpenLearning,
+    required this.onOpenLearningAdmin,
     required this.onRefresh,
     required this.languageCode,
   });
 
+  final AdminOverview? overview;
+  final String? overviewError;
   final bool spaceOnline;
   final bool messageOnline;
   final bool adminOnline;
   final bool learningOnline;
+  final VoidCallback onOpenAccountAdmin;
+  final VoidCallback onOpenSpaceAdmin;
+  final VoidCallback onOpenMessageAdmin;
   final VoidCallback onOpenServices;
   final VoidCallback onOpenProfile;
   final VoidCallback onOpenSpace;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenLearning;
+  final VoidCallback onOpenLearningAdmin;
   final VoidCallback onRefresh;
   final String languageCode;
 
   @override
   Widget build(BuildContext context) {
-    final totalServices = 5;
+    final totalServices = overview?.totalServices ?? 5;
     final onlineServices =
-        1 +
-        (adminOnline ? 1 : 0) +
-        (spaceOnline ? 1 : 0) +
-        (messageOnline ? 1 : 0) +
-        (learningOnline ? 1 : 0);
-    final offlineServices = totalServices - onlineServices;
-    final adminWorkspaces = 1 + (learningOnline ? 1 : 0);
-    final serviceCards = <Widget>[
-      _AdminServiceStatusCard(
-        title: localizedText(languageCode, '管理员微服务', 'Admin service', '管理員微服務'),
+        overview?.onlineServices ??
+        (1 +
+            (adminOnline ? 1 : 0) +
+            (spaceOnline ? 1 : 0) +
+            (messageOnline ? 1 : 0) +
+            (learningOnline ? 1 : 0));
+    final offlineServices =
+        overview?.offlineServices ?? (totalServices - onlineServices);
+    final adminWorkspaces =
+        overview?.adminWorkspaces ?? (1 + (learningOnline ? 1 : 0));
+    final checkedAt = overview?.checkedAt?.toLocal();
+    final hasLiveOverview =
+        overview != null && overview!.services.isNotEmpty;
+    final serviceMeta = <String, ({
+      String title,
+      String subtitle,
+      String actionLabel,
+      VoidCallback? onOpen,
+      VoidCallback? onSecondaryOpen,
+      String? secondaryActionLabel,
+    })>{
+      'admin': (
+        title: localizedText(
+          languageCode,
+          '管理员微服务',
+          'Admin service',
+          '管理員微服務',
+        ),
         subtitle: localizedText(
           languageCode,
           '承接网站总管理面板与站点级管理员总览。',
           'Back the site-wide admin panel and administrator overview.',
           '承接網站總管理面板與站點級管理員總覽。',
         ),
-        online: adminOnline,
         actionLabel: localizedText(
           languageCode,
           '刷新管理面板',
@@ -1320,9 +1415,10 @@ class SiteAdminPanelView extends StatelessWidget {
           '重新整理管理面板',
         ),
         onOpen: adminOnline ? onRefresh : null,
-        languageCode: languageCode,
+        onSecondaryOpen: null,
+        secondaryActionLabel: null,
       ),
-      _AdminServiceStatusCard(
+      'account': (
         title: localizedText(
           languageCode,
           '账号微服务',
@@ -1335,7 +1431,6 @@ class SiteAdminPanelView extends StatelessWidget {
           'Identity, profile, membership, and permission baseline.',
           '身份、資料、會員與權限基線。',
         ),
-        online: true,
         actionLabel: localizedText(
           languageCode,
           '进入个人主页',
@@ -1343,9 +1438,15 @@ class SiteAdminPanelView extends StatelessWidget {
           '進入個人主頁',
         ),
         onOpen: onOpenProfile,
-        languageCode: languageCode,
+        onSecondaryOpen: onOpenAccountAdmin,
+        secondaryActionLabel: localizedText(
+          languageCode,
+          '管理控制页',
+          'Admin console',
+          '管理控制頁',
+        ),
       ),
-      _AdminServiceStatusCard(
+      'space': (
         title: localizedText(
           languageCode,
           '空间微服务',
@@ -1358,12 +1459,17 @@ class SiteAdminPanelView extends StatelessWidget {
           'Spaces, posts, and content context.',
           '空間、貼文與內容上下文。',
         ),
-        online: spaceOnline,
         actionLabel: localizedText(languageCode, '打开空间', 'Open space', '打開空間'),
         onOpen: spaceOnline ? onOpenSpace : null,
-        languageCode: languageCode,
+        onSecondaryOpen: spaceOnline ? onOpenSpaceAdmin : null,
+        secondaryActionLabel: localizedText(
+          languageCode,
+          '管理控制页',
+          'Admin console',
+          '管理控制頁',
+        ),
       ),
-      _AdminServiceStatusCard(
+      'message': (
         title: localizedText(
           languageCode,
           '消息微服务',
@@ -1376,20 +1482,24 @@ class SiteAdminPanelView extends StatelessWidget {
           'Friend relations, conversations, and live messaging.',
           '好友關係、會話與即時訊息。',
         ),
-        online: messageOnline,
         actionLabel: localizedText(languageCode, '打开聊天', 'Open chat', '打開聊天'),
         onOpen: messageOnline ? onOpenChat : null,
-        languageCode: languageCode,
+        onSecondaryOpen: messageOnline ? onOpenMessageAdmin : null,
+        secondaryActionLabel: localizedText(
+          languageCode,
+          '管理控制页',
+          'Admin console',
+          '管理控制頁',
+        ),
       ),
-      _AdminServiceStatusCard(
+      'learning': (
         title: localizedText(languageCode, '学习服务', 'Learning service', '學習服務'),
         subtitle: localizedText(
           languageCode,
-          '课程浏览、系列管理与内容发布。',
-          'Lesson browsing, series management, and content publishing.',
-          '課程瀏覽、系列管理與內容發布。',
+          '课程浏览、课程后台与内容发布。',
+          'Lesson browsing, course console, and content publishing.',
+          '課程瀏覽、課程後台與內容發布。',
         ),
-        online: learningOnline,
         actionLabel: localizedText(
           languageCode,
           '打开课程',
@@ -1397,9 +1507,90 @@ class SiteAdminPanelView extends StatelessWidget {
           '打開課程',
         ),
         onOpen: learningOnline ? onOpenLearning : null,
+        onSecondaryOpen: learningOnline ? onOpenLearningAdmin : null,
+        secondaryActionLabel: localizedText(
+          languageCode,
+          '课程后台',
+          'Course console',
+          '課程後台',
+        ),
+      ),
+    };
+    final liveServiceCards = hasLiveOverview
+        ? overview!.services.map((service) {
+            final meta = serviceMeta[service.key];
+            final extraParts = <String>[
+              localizedText(
+                languageCode,
+                service.online ? '健康' : '离线',
+                service.online ? 'Healthy' : 'Offline',
+                service.online ? '健康' : '離線',
+              ),
+              if (service.required)
+                localizedText(languageCode, '必需', 'Required', '必需'),
+              if (service.latencyMs > 0) '${service.latencyMs} ms',
+              if (service.baseUrl.isNotEmpty) service.baseUrl,
+            ];
+            return _AdminServiceStatusCard(
+              title: meta?.title ?? service.title,
+              subtitle: meta?.subtitle ?? service.title,
+              online: service.online,
+              actionLabel:
+                  meta?.actionLabel ??
+                  localizedText(languageCode, '打开', 'Open', '打開'),
+              onOpen: meta?.onOpen,
+              onSecondaryOpen: meta?.onSecondaryOpen,
+              secondaryActionLabel: meta?.secondaryActionLabel,
+              languageCode: languageCode,
+              metaText: extraParts.join(' · '),
+            );
+          }).toList()
+        : <Widget>[];
+    final fallbackServiceCards = <Widget>[
+      _AdminServiceStatusCard(
+        title: serviceMeta['admin']!.title,
+        subtitle: serviceMeta['admin']!.subtitle,
+        online: adminOnline,
+        actionLabel: serviceMeta['admin']!.actionLabel,
+        onOpen: serviceMeta['admin']!.onOpen,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: serviceMeta['account']!.title,
+        subtitle: serviceMeta['account']!.subtitle,
+        online: true,
+        actionLabel: serviceMeta['account']!.actionLabel,
+        onOpen: serviceMeta['account']!.onOpen,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: serviceMeta['space']!.title,
+        subtitle: serviceMeta['space']!.subtitle,
+        online: spaceOnline,
+        actionLabel: serviceMeta['space']!.actionLabel,
+        onOpen: serviceMeta['space']!.onOpen,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: serviceMeta['message']!.title,
+        subtitle: serviceMeta['message']!.subtitle,
+        online: messageOnline,
+        actionLabel: serviceMeta['message']!.actionLabel,
+        onOpen: serviceMeta['message']!.onOpen,
+        languageCode: languageCode,
+      ),
+      _AdminServiceStatusCard(
+        title: serviceMeta['learning']!.title,
+        subtitle: serviceMeta['learning']!.subtitle,
+        online: learningOnline,
+        actionLabel: serviceMeta['learning']!.actionLabel,
+        secondaryActionLabel: serviceMeta['learning']!.secondaryActionLabel,
+        onOpen: serviceMeta['learning']!.onOpen,
+        onSecondaryOpen: serviceMeta['learning']!.onSecondaryOpen,
         languageCode: languageCode,
       ),
     ];
+    final serviceCards = hasLiveOverview ? liveServiceCards : fallbackServiceCards;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -1436,9 +1627,9 @@ class SiteAdminPanelView extends StatelessWidget {
                             Text(
                               localizedText(
                                 languageCode,
-                                '这里集中查看站点服务健康状态，并进入学习、空间与消息工作区。',
+                                '这里集中查看站点服务健康状态，并进入课程后台、空间与消息工作区。',
                                 'Review site service health here and jump into learning, space, and messaging workspaces.',
-                                '這裡集中查看站點服務健康狀態，並進入學習、空間與訊息工作區。',
+                                '這裡集中查看站點服務健康狀態，並進入課程後台、空間與訊息工作區。',
                               ),
                             ),
                           ],
@@ -1477,6 +1668,37 @@ class SiteAdminPanelView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
+                  if (overviewError != null || checkedAt != null) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 18),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        overviewError ??
+                            [
+                              '${checkedAt!.year.toString().padLeft(4, '0')}-${checkedAt.month.toString().padLeft(2, '0')}-${checkedAt.day.toString().padLeft(2, '0')}',
+                              '${checkedAt.hour.toString().padLeft(2, '0')}:${checkedAt.minute.toString().padLeft(2, '0')}:${checkedAt.second.toString().padLeft(2, '0')}',
+                              if (overview?.degraded == true)
+                                localizedText(
+                                  languageCode,
+                                  '站点当前处于降级状态',
+                                  'The site is currently degraded.',
+                                  '站點目前處於降級狀態',
+                                ),
+                            ].join(' · '),
+                      ),
+                    ),
+                  ],
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
@@ -1543,6 +1765,533 @@ class SiteAdminPanelView extends StatelessWidget {
   }
 }
 
+class ServiceAdminConsoleView extends StatelessWidget {
+  const ServiceAdminConsoleView({
+    super.key,
+    required this.overview,
+    this.accountOverview,
+    this.accountOverviewError,
+    this.currentUserId,
+    this.onUpdateAccountUser,
+    this.spaceOverview,
+    this.spaceOverviewError,
+    this.messageOverview,
+    this.messageOverviewError,
+    required this.serviceKey,
+    required this.title,
+    required this.subtitle,
+    required this.modules,
+    required this.onBackToAdmin,
+    required this.onOpenService,
+    required this.onRefresh,
+    required this.languageCode,
+  });
+
+  final AdminOverview? overview;
+  final AdminAccountOverview? accountOverview;
+  final String? accountOverviewError;
+  final String? currentUserId;
+  final Future<void> Function(String userId, {String? level, String? status})?
+  onUpdateAccountUser;
+  final AdminSpaceOverview? spaceOverview;
+  final String? spaceOverviewError;
+  final AdminMessageOverview? messageOverview;
+  final String? messageOverviewError;
+  final String serviceKey;
+  final String title;
+  final String subtitle;
+  final List<String> modules;
+  final VoidCallback onBackToAdmin;
+  final VoidCallback onOpenService;
+  final VoidCallback onRefresh;
+  final String languageCode;
+
+  @override
+  Widget build(BuildContext context) {
+    AdminServiceStatus? service;
+    for (final item in overview?.services ?? const <AdminServiceStatus>[]) {
+      if (item.key == serviceKey) {
+        service = item;
+        break;
+      }
+    }
+    final online = service?.online ?? false;
+    final details = <String>[
+      localizedText(
+        languageCode,
+        online ? '在线' : '离线',
+        online ? 'Online' : 'Offline',
+        online ? '線上' : '離線',
+      ),
+      if (service?.required == true)
+        localizedText(languageCode, '必需服务', 'Required service', '必需服務'),
+      if ((service?.latencyMs ?? 0) > 0) '${service!.latencyMs} ms',
+      if ((service?.baseUrl ?? '').isNotEmpty) service!.baseUrl,
+    ];
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(subtitle),
+                          ],
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.tonal,
+                            compact: true,
+                            onPressed: onBackToAdmin,
+                            primaryLabel: localizedText(
+                              languageCode,
+                              '返回总控',
+                              'Back to admin',
+                              '返回總控',
+                            ),
+                            secondaryLabel: 'Back',
+                          ),
+                          BilingualActionButton(
+                            variant: BilingualButtonVariant.filled,
+                            compact: true,
+                            onPressed: online ? onOpenService : null,
+                            primaryLabel: localizedText(
+                              languageCode,
+                              '打开服务页',
+                              'Open service',
+                              '打開服務頁',
+                            ),
+                            secondaryLabel: 'Open service',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Text(details.join(' · ')),
+                  ),
+                  if (serviceKey == 'account' &&
+                      (accountOverviewError != null || accountOverview != null)) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.38),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        accountOverviewError ??
+                            [
+                              'Users ${accountOverview?.totalUsers ?? 0}',
+                              'Admins ${accountOverview?.adminUsers ?? 0}',
+                              'Active ${accountOverview?.activeUsers ?? 0}',
+                              'Bindings ${accountOverview?.boundExternalAccounts ?? 0}',
+                            ].join(' · '),
+                      ),
+                    ),
+                  ],
+                  if (serviceKey == 'space' &&
+                      (spaceOverviewError != null || spaceOverview != null)) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.38),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        spaceOverviewError ??
+                            [
+                              'Spaces ${spaceOverview?.totalSpaces ?? 0}',
+                              'Active ${spaceOverview?.activeSpaces ?? 0}',
+                              'Posts ${spaceOverview?.totalPosts ?? 0}',
+                              'Draft ${spaceOverview?.draftPosts ?? 0}',
+                            ].join(' · '),
+                      ),
+                    ),
+                  ],
+                  if (serviceKey == 'message' &&
+                      (messageOverviewError != null || messageOverview != null)) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.38),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        messageOverviewError ??
+                            [
+                              'Messages ${messageOverview?.totalMessages ?? 0}',
+                              'Unread ${messageOverview?.unreadMessages ?? 0}',
+                              'Conversations ${messageOverview?.activeConversations ?? 0}',
+                              'Friends ${messageOverview?.connectedFriends ?? 0}',
+                            ].join(' · '),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          localizedText(
+                            languageCode,
+                            '管理控制项',
+                            'Management modules',
+                            '管理控制項',
+                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: onRefresh,
+                        primaryLabel: localizedText(
+                          languageCode,
+                          '刷新状态',
+                          'Refresh status',
+                          '重新整理狀態',
+                        ),
+                        secondaryLabel: 'Refresh',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: modules
+                        .map(
+                          (item) => Chip(
+                            label: Text(item),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  if (serviceKey == 'account' && accountOverview != null) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近用户',
+                        'Recent users',
+                        '最近用戶',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...accountOverview!.recentUsers.map(
+                      (item) {
+                        final isSelf =
+                            item.id == (currentUserId ?? '').trim();
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.32),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${item.displayName.isEmpty ? (item.username.isEmpty ? item.id : item.username) : item.displayName}\n@${item.username.isEmpty ? 'anonymous' : item.username} · ${item.domain.isEmpty ? 'no-domain' : item.domain} · ${item.level.isEmpty ? 'basic' : item.level} · ${item.status.isEmpty ? 'active' : item.status}',
+                              ),
+                              if (onUpdateAccountUser != null) ...[
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.tonal,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                status: 'active',
+                                              ),
+                                      primaryLabel: '激活',
+                                      secondaryLabel: 'Activate',
+                                    ),
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.tonal,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                status: 'suspended',
+                                              ),
+                                      primaryLabel: '停用',
+                                      secondaryLabel: 'Suspend',
+                                    ),
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.tonal,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                level: 'basic',
+                                              ),
+                                      primaryLabel: '基础',
+                                      secondaryLabel: 'Basic',
+                                    ),
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.filled,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                level: 'admin',
+                                              ),
+                                      primaryLabel: '管理员',
+                                      secondaryLabel: 'Admin',
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近绑定',
+                        'Recent bindings',
+                        '最近綁定',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...accountOverview!.recentBindings.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.userName} · ${item.provider}\n${item.chain} · ${item.accountAddress} · ${item.bindingStatus}',
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (serviceKey == 'space' && spaceOverview != null) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近空间',
+                        'Recent spaces',
+                        '最近空間',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...spaceOverview!.recentSpaces.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.name} · @${item.subdomain}\n${item.ownerName} · ${item.type} · ${item.visibility} · ${item.status} · ${item.postsCount} posts',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近帖子',
+                        'Recent posts',
+                        '最近貼文',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...spaceOverview!.recentPosts.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.title.isEmpty ? localizedText(languageCode, "（未命名）", "(untitled)", "（未命名）") : item.title}\n${item.authorName} · ${item.spaceName.isEmpty ? localizedText(languageCode, "未绑定空间", "No space", "未綁定空間") : item.spaceName} · ${item.visibility} · ${item.status}',
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (serviceKey == 'message' && messageOverview != null) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近会话',
+                        'Recent conversations',
+                        '最近會話',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...messageOverview!.recentConversations.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.participantAName} · ${item.participantBName}\n${item.lastPreview} · ${item.lastMessageType} · ${item.messageCount} messages · ${item.unreadCount} unread',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近消息',
+                        'Recent messages',
+                        '最近訊息',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...messageOverview!.recentMessages.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.senderName} → ${item.receiverName}\n${item.preview} · ${item.messageType}${item.readAt == null ? ' · unread' : ''}${item.expiresAt != null ? ' · expires' : ''}',
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MicroserviceCard extends StatelessWidget {
   const _MicroserviceCard({
     required this.title,
@@ -1551,6 +2300,8 @@ class _MicroserviceCard extends StatelessWidget {
     required this.modules,
     required this.actionLabel,
     required this.onOpen,
+    this.secondaryActionLabel,
+    this.onSecondaryOpen,
   });
 
   final String title;
@@ -1559,6 +2310,8 @@ class _MicroserviceCard extends StatelessWidget {
   final List<String> modules;
   final String actionLabel;
   final VoidCallback onOpen;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -1602,6 +2355,15 @@ class _MicroserviceCard extends StatelessWidget {
                 runSpacing: 8,
                 alignment: WrapAlignment.end,
                 children: [
+                  if ((secondaryActionLabel ?? '').isNotEmpty &&
+                      onSecondaryOpen != null)
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.tonal,
+                      compact: true,
+                      onPressed: onSecondaryOpen,
+                      primaryLabel: secondaryActionLabel!,
+                      secondaryLabel: secondaryActionLabel!,
+                    ),
                   BilingualActionButton(
                     variant: BilingualButtonVariant.filled,
                     compact: true,
@@ -1665,7 +2427,10 @@ class _AdminServiceStatusCard extends StatelessWidget {
     required this.online,
     required this.actionLabel,
     required this.languageCode,
+    this.metaText,
+    this.secondaryActionLabel,
     this.onOpen,
+    this.onSecondaryOpen,
   });
 
   final String title;
@@ -1673,7 +2438,10 @@ class _AdminServiceStatusCard extends StatelessWidget {
   final bool online;
   final String actionLabel;
   final String languageCode;
+  final String? metaText;
+  final String? secondaryActionLabel;
   final VoidCallback? onOpen;
+  final VoidCallback? onSecondaryOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -1706,6 +2474,15 @@ class _AdminServiceStatusCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(subtitle),
+            if ((metaText ?? '').isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                metaText!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerRight,
@@ -1714,6 +2491,15 @@ class _AdminServiceStatusCard extends StatelessWidget {
                 runSpacing: 8,
                 alignment: WrapAlignment.end,
                 children: [
+                  if ((secondaryActionLabel ?? '').isNotEmpty &&
+                      onSecondaryOpen != null)
+                    BilingualActionButton(
+                      variant: BilingualButtonVariant.tonal,
+                      compact: true,
+                      onPressed: onSecondaryOpen,
+                      primaryLabel: secondaryActionLabel!,
+                      secondaryLabel: secondaryActionLabel!,
+                    ),
                   BilingualActionButton(
                     variant: online
                         ? BilingualButtonVariant.filled

@@ -22,10 +22,11 @@
 
 ## 4. 信息来源 / Data Sources
 
-- `admin-service` 负责统一聚合总管理面板所需的数据。 / `admin-service` is the aggregation layer for the site admin panel.
-- `GET /api/v1/overview` 负责返回总览载荷，包含 `summary`、`services`、`database`、`runtime`、`users`。 / `GET /api/v1/overview` returns the overview payload, including `summary`, `services`, `database`, `runtime`, and `users`.
+- `admin-service` 负责统一聚合总管理面板所需的数据，并公开 `GET /api/v1/health` 与管理员专属 `GET /api/v1/overview`。 / `admin-service` aggregates the site admin panel data and exposes public `GET /api/v1/health` plus administrator-only `GET /api/v1/overview`.
+- `GET /api/v1/overview` 当前返回 `summary`、`services`、`database`、`runtime`、`users`，供总控面板统一展示。 / `GET /api/v1/overview` currently returns `summary`, `services`, `database`, `runtime`, and `users` for the global control panel.
 - `PATCH /api/v1/users/:id` 负责管理员用户调整操作。 / `PATCH /api/v1/users/:id` handles administrator user updates.
-- 各微服务在线状态仍通过它们现有的 `GET /api/v1/health` 接口探测。 / Each microservice online state is still probed through its existing `GET /api/v1/health` endpoint.
+- `account-service`、`space-service`、`message-service` 与 `learning-service` 继续复用各自现有的 `GET /api/v1/health` 作为在线探测来源。 / `account-service`, `space-service`, `message-service`, and `learning-service` continue reusing their existing `GET /api/v1/health` endpoints for online probing.
+- 具体微服务后台明细逐步下沉到各自的 `/api/v1/admin/...`。当前 `account-service`、`space-service` 与 `message-service` 已提供 `GET /api/v1/admin/overview`，分别供 `account-admin`、`space-admin` 与 `message-admin` 直接读取。 / Detailed per-service admin data is progressively moving into each service's own `/api/v1/admin/...` surface. `account-service`, `space-service`, and `message-service` now provide `GET /api/v1/admin/overview` for `account-admin`, `space-admin`, and `message-admin`.
 
 ## 5. 双前端落点 / Dual-Frontend Placement
 
@@ -42,14 +43,16 @@
 
 ## 7. 当前落地范围 / Current Applied Scope
 
-- `admin-service` 已独立运行，并提供公开健康检查与管理员聚合接口。 / `admin-service` now runs independently and exposes public health plus administrator aggregation endpoints.
-- 双前端的网站总管理面板已从“健康状态卡片页”替换为真实后台工作台。 / The site admin panel in both frontends has been replaced from a health-card page into a real administrator workspace.
-- 面板当前已覆盖四块核心内容：微服务配置、数据库配置、用户管理、运行性能。 / The panel currently covers four core areas: microservice configuration, database configuration, user management, and runtime performance.
-- 面板已增加“待处理提醒”和用户筛选，优先暴露离线服务与停用用户。 / The panel now includes an “attention queue” and user filtering to surface offline services and disabled users first.
-- 学习课程后台继续作为二级专题入口保留在面板中。 / The learning course console continues to exist as a secondary focused entry inside the panel.
+- `admin-service` 已独立运行，并作为第五个微服务纳入双前端健康探测与总控聚合。 / `admin-service` now runs independently and acts as the fifth microservice in dual-frontend health probing plus global aggregation.
+- 双前端的网站总管理面板已从“健康状态卡片页”升级为真实后台工作台。 / The site admin panel in both frontends has been upgraded from a health-card page into a real administrator workspace.
+- 面板当前已覆盖微服务配置、数据库配置、用户管理、运行性能，并保留学习课程后台入口。 / The panel currently covers microservice configuration, database configuration, user management, runtime performance, and keeps the learning course console entry.
+- 面板已增加“待处理提醒”和用户筛选，优先暴露离线服务与停用用户。 / The panel now includes an attention queue and user filtering to surface offline services and disabled users first.
+- `account-admin`、`space-admin` 与 `message-admin` 已开始迁回各自微服务内部，使用各自的管理员总览接口，而不是继续堆叠在 `admin-service`。 / `account-admin`, `space-admin`, and `message-admin` have started moving back into their own microservices and use service-owned admin overviews instead of continuing to accumulate inside `admin-service`.
 
 ## 8. 下一阶段 / Next Phase
 
+- 继续把总管理面板从健康探测页升级为真实运营工作台，但保持 `admin-service` 只做总控聚合，不吞并各微服务自己的后台明细。 / Continue upgrading the site admin panel from a health view into a real operations workspace while keeping `admin-service` focused on global aggregation instead of swallowing each microservice's detailed admin consoles.
 - 增加平台级待办，例如“待发布课程”“离线服务提醒”“最近管理员动作”。 / Add platform-level queues such as “lessons pending publish”, “offline service alerts”, and “recent administrator actions”.
 - 将空间治理、消息治理进一步做成独立管理员子面板，而不是只保留跳转按钮。 / Expand space governance and message governance into dedicated administrator subpanels instead of only keeping jump actions.
 - 在 `admin-service` 内继续扩展更多配置源，例如对象存储、邮件、第三方 OAuth、链上服务等。 / Continue extending `admin-service` with more configuration sources such as object storage, email, third-party OAuth, and blockchain integrations.
+- 继续把各微服务管理员入口从“总览页”推进到更细粒度的可执行后台动作，例如账号状态调整、订阅运营和外部绑定审计。 / Continue evolving each per-service admin entry from an overview surface into finer-grained executable admin actions such as account-status changes, subscription operations, and external-binding audits.

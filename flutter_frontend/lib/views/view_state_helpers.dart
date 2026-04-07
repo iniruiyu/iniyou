@@ -136,6 +136,12 @@ String pageTitleForView(
       return t('page.services');
     case AppView.adminPanel:
       return t('page.adminPanel');
+    case AppView.accountAdmin:
+      return t('page.accountAdmin');
+    case AppView.spaceAdmin:
+      return t('page.spaceAdmin');
+    case AppView.messageAdmin:
+      return t('page.messageAdmin');
     case AppView.learning:
       return t('page.learning');
     case AppView.learningAdmin:
@@ -196,6 +202,12 @@ String pageSubtitleForView(
       return t('subtitle.services');
     case AppView.adminPanel:
       return t('subtitle.adminPanel');
+    case AppView.accountAdmin:
+      return t('subtitle.accountAdmin');
+    case AppView.spaceAdmin:
+      return t('subtitle.spaceAdmin');
+    case AppView.messageAdmin:
+      return t('subtitle.messageAdmin');
     case AppView.learning:
       return t('subtitle.learning');
     case AppView.learningAdmin:
@@ -230,6 +242,9 @@ String sidebarViewKey(AppView view) {
     case AppView.services:
       return 'services';
     case AppView.adminPanel:
+    case AppView.accountAdmin:
+    case AppView.spaceAdmin:
+    case AppView.messageAdmin:
       return 'admin-panel';
     case AppView.learning:
       return 'services';
@@ -276,6 +291,12 @@ AppView appViewFromKey(String key) {
       return AppView.services;
     case 'admin-panel':
       return AppView.adminPanel;
+    case 'account-admin':
+      return AppView.accountAdmin;
+    case 'space-admin':
+      return AppView.spaceAdmin;
+    case 'message-admin':
+      return AppView.messageAdmin;
     case 'learning':
       return AppView.learning;
     case 'learning-admin':

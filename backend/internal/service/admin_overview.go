@@ -370,34 +370,6 @@ func mapAdminUserItem(user models.User) AdminUserItem {
 	}
 }
 
-func normalizeAdminManagedLevel(level string) string {
-	// Limit level mutations to the known administrator panel values.
-	// 将等级变更限制在管理员面板认可的取值范围内。
-	switch strings.ToLower(strings.TrimSpace(level)) {
-	case "basic":
-		return "basic"
-	case "vip":
-		return "vip"
-	case "admin":
-		return "admin"
-	default:
-		return ""
-	}
-}
-
-func normalizeAdminManagedStatus(status string) string {
-	// Limit status mutations to the known account status values.
-	// 将状态变更限制在已知账号状态范围内。
-	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "active":
-		return "active"
-	case "disabled":
-		return "disabled"
-	default:
-		return ""
-	}
-}
-
 func serviceBaseURL(envKey string, fallback string) string {
 	// Resolve one service base URL from the environment with a local default.
 	// 从环境变量解析服务基础地址，并提供本地默认值。

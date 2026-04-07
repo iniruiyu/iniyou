@@ -65,7 +65,14 @@ class AdminOverview {
   AdminOverview({
     required this.generatedAt,
     required this.summary,
+    required this.totalServices,
+    required this.onlineServices,
+    required this.offlineServices,
+    required this.adminWorkspaces,
+    required this.degraded,
+    required this.checkedAt,
     required this.services,
+    required this.workspaces,
     required this.database,
     required this.runtime,
     required this.users,
@@ -73,22 +80,51 @@ class AdminOverview {
 
   final DateTime? generatedAt;
   final AdminSummary summary;
+  final int totalServices;
+  final int onlineServices;
+  final int offlineServices;
+  final int adminWorkspaces;
+  final bool degraded;
+  final DateTime? checkedAt;
   final List<AdminServiceStatus> services;
+  final List<AdminWorkspaceStatus> workspaces;
   final AdminDatabaseSummary database;
   final AdminRuntimeSummary runtime;
   final AdminUserSummary users;
 
   factory AdminOverview.fromJson(Map<String, dynamic> json) {
     final servicesJson = json['services'];
+    final summaryJson =
+        (json['summary'] as Map<String, dynamic>?) ?? const {};
+    final workspacesJson = json['workspaces'];
+    final summary = AdminSummary.fromJson(summaryJson);
     return AdminOverview(
       generatedAt: DateTime.tryParse((json['generated_at'] ?? '').toString()),
-      summary: AdminSummary.fromJson(
-        (json['summary'] as Map<String, dynamic>?) ?? const {},
+      summary: summary,
+      totalServices: toInt(json['total_services']) > 0
+          ? toInt(json['total_services'])
+          : summary.totalServices,
+      onlineServices: toInt(json['online_services']) > 0
+          ? toInt(json['online_services'])
+          : summary.onlineServices,
+      offlineServices: toInt(json['offline_services']) > 0
+          ? toInt(json['offline_services'])
+          : summary.offlineServices,
+      adminWorkspaces: toInt(json['admin_workspaces']),
+      degraded: json['degraded'] == true,
+      checkedAt: DateTime.tryParse(
+        ((json['checked_at'] ?? json['generated_at']) ?? '').toString(),
       ),
       services: servicesJson is List
           ? servicesJson
                 .whereType<Map<String, dynamic>>()
                 .map(AdminServiceStatus.fromJson)
+                .toList()
+          : const [],
+      workspaces: workspacesJson is List
+          ? workspacesJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminWorkspaceStatus.fromJson)
                 .toList()
           : const [],
       database: AdminDatabaseSummary.fromJson(
@@ -141,8 +177,11 @@ class AdminServiceStatus {
     required this.key,
     required this.title,
     required this.baseUrl,
+    required this.healthUrl,
     required this.online,
     required this.required,
+    required this.latencyMs,
+    required this.workspaceKey,
     required this.responseTimeMs,
     required this.configItems,
   });
@@ -150,8 +189,11 @@ class AdminServiceStatus {
   final String key;
   final String title;
   final String baseUrl;
+  final String healthUrl;
   final bool online;
   final bool required;
+  final int latencyMs;
+  final String workspaceKey;
   final int responseTimeMs;
   final List<AdminConfigItem> configItems;
 
@@ -160,9 +202,16 @@ class AdminServiceStatus {
       key: (json['key'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       baseUrl: (json['base_url'] ?? '').toString(),
+      healthUrl: (json['health_url'] ?? '').toString(),
       online: json['online'] == true,
       required: json['required'] == true,
-      responseTimeMs: toInt(json['response_time_ms']),
+      latencyMs: toInt(json['latency_ms']) > 0
+          ? toInt(json['latency_ms'])
+          : toInt(json['response_time_ms']),
+      workspaceKey: (json['workspace_key'] ?? '').toString(),
+      responseTimeMs: toInt(json['response_time_ms']) > 0
+          ? toInt(json['response_time_ms'])
+          : toInt(json['latency_ms']),
       configItems: (json['config_items'] as List<dynamic>? ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(AdminConfigItem.fromJson)
@@ -181,6 +230,29 @@ class AdminConfigItem {
     return AdminConfigItem(
       key: (json['key'] ?? '').toString(),
       value: (json['value'] ?? '').toString(),
+    );
+  }
+}
+
+class AdminWorkspaceStatus {
+  AdminWorkspaceStatus({
+    required this.key,
+    required this.title,
+    required this.serviceKey,
+    required this.available,
+  });
+
+  final String key;
+  final String title;
+  final String serviceKey;
+  final bool available;
+
+  factory AdminWorkspaceStatus.fromJson(Map<String, dynamic> json) {
+    return AdminWorkspaceStatus(
+      key: (json['key'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      serviceKey: (json['service_key'] ?? '').toString(),
+      available: json['available'] == true,
     );
   }
 }
@@ -341,6 +413,384 @@ class AdminUserItem {
       level: (json['level'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminAccountOverview {
+  AdminAccountOverview({
+    required this.totalUsers,
+    required this.adminUsers,
+    required this.activeUsers,
+    required this.inactiveUsers,
+    required this.activeSubscriptions,
+    required this.boundExternalAccounts,
+    required this.recentUsers,
+    required this.recentBindings,
+  });
+
+  final int totalUsers;
+  final int adminUsers;
+  final int activeUsers;
+  final int inactiveUsers;
+  final int activeSubscriptions;
+  final int boundExternalAccounts;
+  final List<AdminAccountUserSummary> recentUsers;
+  final List<AdminExternalAccountSummary> recentBindings;
+
+  factory AdminAccountOverview.fromJson(Map<String, dynamic> json) {
+    final recentUsersJson = json['recent_users'];
+    final recentBindingsJson = json['recent_bindings'];
+    return AdminAccountOverview(
+      totalUsers: toInt(json['total_users']),
+      adminUsers: toInt(json['admin_users']),
+      activeUsers: toInt(json['active_users']),
+      inactiveUsers: toInt(json['inactive_users']),
+      activeSubscriptions: toInt(json['active_subscriptions']),
+      boundExternalAccounts: toInt(json['bound_external_accounts']),
+      recentUsers: recentUsersJson is List
+          ? recentUsersJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminAccountUserSummary.fromJson)
+                .toList()
+          : const [],
+      recentBindings: recentBindingsJson is List
+          ? recentBindingsJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminExternalAccountSummary.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class AdminAccountUserSummary {
+  AdminAccountUserSummary({
+    required this.id,
+    required this.displayName,
+    required this.username,
+    required this.domain,
+    required this.level,
+    required this.status,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String displayName;
+  final String username;
+  final String domain;
+  final String level;
+  final String status;
+  final DateTime? createdAt;
+
+  factory AdminAccountUserSummary.fromJson(Map<String, dynamic> json) {
+    return AdminAccountUserSummary(
+      id: (json['id'] ?? '').toString(),
+      displayName: (json['display_name'] ?? '').toString(),
+      username: (json['username'] ?? '').toString(),
+      domain: (json['domain'] ?? '').toString(),
+      level: (json['level'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminExternalAccountSummary {
+  AdminExternalAccountSummary({
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.provider,
+    required this.chain,
+    required this.accountAddress,
+    required this.bindingStatus,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String userId;
+  final String userName;
+  final String provider;
+  final String chain;
+  final String accountAddress;
+  final String bindingStatus;
+  final DateTime? createdAt;
+
+  factory AdminExternalAccountSummary.fromJson(Map<String, dynamic> json) {
+    return AdminExternalAccountSummary(
+      id: (json['id'] ?? '').toString(),
+      userId: (json['user_id'] ?? '').toString(),
+      userName: (json['user_name'] ?? '').toString(),
+      provider: (json['provider'] ?? '').toString(),
+      chain: (json['chain'] ?? '').toString(),
+      accountAddress: (json['account_address'] ?? '').toString(),
+      bindingStatus: (json['binding_status'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminSpaceOverview {
+  AdminSpaceOverview({
+    required this.totalSpaces,
+    required this.activeSpaces,
+    required this.privateSpaces,
+    required this.publicSpaces,
+    required this.totalPosts,
+    required this.draftPosts,
+    required this.publishedPosts,
+    required this.archivedPosts,
+    required this.recentSpaces,
+    required this.recentPosts,
+  });
+
+  final int totalSpaces;
+  final int activeSpaces;
+  final int privateSpaces;
+  final int publicSpaces;
+  final int totalPosts;
+  final int draftPosts;
+  final int publishedPosts;
+  final int archivedPosts;
+  final List<AdminSpaceSummary> recentSpaces;
+  final List<AdminPostSummary> recentPosts;
+
+  factory AdminSpaceOverview.fromJson(Map<String, dynamic> json) {
+    final recentSpacesJson = json['recent_spaces'];
+    final recentPostsJson = json['recent_posts'];
+    return AdminSpaceOverview(
+      totalSpaces: toInt(json['total_spaces']),
+      activeSpaces: toInt(json['active_spaces']),
+      privateSpaces: toInt(json['private_spaces']),
+      publicSpaces: toInt(json['public_spaces']),
+      totalPosts: toInt(json['total_posts']),
+      draftPosts: toInt(json['draft_posts']),
+      publishedPosts: toInt(json['published_posts']),
+      archivedPosts: toInt(json['archived_posts']),
+      recentSpaces: recentSpacesJson is List
+          ? recentSpacesJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminSpaceSummary.fromJson)
+                .toList()
+          : const [],
+      recentPosts: recentPostsJson is List
+          ? recentPostsJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminPostSummary.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class AdminMessageOverview {
+  AdminMessageOverview({
+    required this.totalMessages,
+    required this.unreadMessages,
+    required this.activeConversations,
+    required this.connectedFriends,
+    required this.mediaMessages,
+    required this.ephemeralMessages,
+    required this.recentMessages,
+    required this.recentConversations,
+  });
+
+  final int totalMessages;
+  final int unreadMessages;
+  final int activeConversations;
+  final int connectedFriends;
+  final int mediaMessages;
+  final int ephemeralMessages;
+  final List<AdminMessageSummary> recentMessages;
+  final List<AdminConversationSummary> recentConversations;
+
+  factory AdminMessageOverview.fromJson(Map<String, dynamic> json) {
+    final recentMessagesJson = json['recent_messages'];
+    final recentConversationsJson = json['recent_conversations'];
+    return AdminMessageOverview(
+      totalMessages: toInt(json['total_messages']),
+      unreadMessages: toInt(json['unread_messages']),
+      activeConversations: toInt(json['active_conversations']),
+      connectedFriends: toInt(json['connected_friends']),
+      mediaMessages: toInt(json['media_messages']),
+      ephemeralMessages: toInt(json['ephemeral_messages']),
+      recentMessages: recentMessagesJson is List
+          ? recentMessagesJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminMessageSummary.fromJson)
+                .toList()
+          : const [],
+      recentConversations: recentConversationsJson is List
+          ? recentConversationsJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminConversationSummary.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class AdminMessageSummary {
+  AdminMessageSummary({
+    required this.id,
+    required this.senderId,
+    required this.senderName,
+    required this.receiverId,
+    required this.receiverName,
+    required this.messageType,
+    required this.preview,
+    required this.readAt,
+    required this.expiresAt,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String senderId;
+  final String senderName;
+  final String receiverId;
+  final String receiverName;
+  final String messageType;
+  final String preview;
+  final DateTime? readAt;
+  final DateTime? expiresAt;
+  final DateTime? createdAt;
+
+  factory AdminMessageSummary.fromJson(Map<String, dynamic> json) {
+    return AdminMessageSummary(
+      id: (json['id'] ?? '').toString(),
+      senderId: (json['sender_id'] ?? '').toString(),
+      senderName: (json['sender_name'] ?? '').toString(),
+      receiverId: (json['receiver_id'] ?? '').toString(),
+      receiverName: (json['receiver_name'] ?? '').toString(),
+      messageType: (json['message_type'] ?? '').toString(),
+      preview: (json['preview'] ?? '').toString(),
+      readAt: DateTime.tryParse((json['read_at'] ?? '').toString()),
+      expiresAt: DateTime.tryParse((json['expires_at'] ?? '').toString()),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminConversationSummary {
+  AdminConversationSummary({
+    required this.participantAId,
+    required this.participantAName,
+    required this.participantBId,
+    required this.participantBName,
+    required this.lastMessageType,
+    required this.lastPreview,
+    required this.lastAt,
+    required this.messageCount,
+    required this.unreadCount,
+  });
+
+  final String participantAId;
+  final String participantAName;
+  final String participantBId;
+  final String participantBName;
+  final String lastMessageType;
+  final String lastPreview;
+  final DateTime? lastAt;
+  final int messageCount;
+  final int unreadCount;
+
+  factory AdminConversationSummary.fromJson(Map<String, dynamic> json) {
+    return AdminConversationSummary(
+      participantAId: (json['participant_a_id'] ?? '').toString(),
+      participantAName: (json['participant_a_name'] ?? '').toString(),
+      participantBId: (json['participant_b_id'] ?? '').toString(),
+      participantBName: (json['participant_b_name'] ?? '').toString(),
+      lastMessageType: (json['last_message_type'] ?? '').toString(),
+      lastPreview: (json['last_preview'] ?? '').toString(),
+      lastAt: DateTime.tryParse((json['last_at'] ?? '').toString()),
+      messageCount: toInt(json['message_count']),
+      unreadCount: toInt(json['unread_count']),
+    );
+  }
+}
+
+class AdminSpaceSummary {
+  AdminSpaceSummary({
+    required this.id,
+    required this.name,
+    required this.subdomain,
+    required this.type,
+    required this.visibility,
+    required this.status,
+    required this.ownerId,
+    required this.ownerName,
+    required this.postsCount,
+    required this.updatedAt,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String name;
+  final String subdomain;
+  final String type;
+  final String visibility;
+  final String status;
+  final String ownerId;
+  final String ownerName;
+  final int postsCount;
+  final DateTime? updatedAt;
+  final DateTime? createdAt;
+
+  factory AdminSpaceSummary.fromJson(Map<String, dynamic> json) {
+    return AdminSpaceSummary(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      subdomain: (json['subdomain'] ?? '').toString(),
+      type: (json['type'] ?? '').toString(),
+      visibility: (json['visibility'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      ownerId: (json['owner_id'] ?? '').toString(),
+      ownerName: (json['owner_name'] ?? '').toString(),
+      postsCount: toInt(json['posts_count']),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminPostSummary {
+  AdminPostSummary({
+    required this.id,
+    required this.title,
+    required this.status,
+    required this.visibility,
+    required this.authorId,
+    required this.authorName,
+    required this.spaceId,
+    required this.spaceName,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String title;
+  final String status;
+  final String visibility;
+  final String authorId;
+  final String authorName;
+  final String spaceId;
+  final String spaceName;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  factory AdminPostSummary.fromJson(Map<String, dynamic> json) {
+    return AdminPostSummary(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      visibility: (json['visibility'] ?? '').toString(),
+      authorId: (json['author_id'] ?? '').toString(),
+      authorName: (json['author_name'] ?? '').toString(),
+      spaceId: (json['space_id'] ?? '').toString(),
+      spaceName: (json['space_name'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
     );
   }
 }

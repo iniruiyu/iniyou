@@ -78,6 +78,11 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `GET /api/v1/external-accounts`
 - `POST /api/v1/external-accounts`
 - `DELETE /api/v1/external-accounts/{id}`
+- `GET /api/v1/admin/overview`
+
+说明：
+
+- `account-service` 额外提供管理员专属 `GET /api/v1/admin/overview`，用于账号后台总览；该接口要求管理员登录态并由微服务内部自行负责鉴权与数据聚合 / `account-service` additionally exposes an administrator-only `GET /api/v1/admin/overview` for the account admin console; the microservice itself owns both authorization and data aggregation for this route.
 
 ### 5.2 空间
 
@@ -108,6 +113,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 说明：
 
 - 文章与互动接口由 `space-service` 提供，默认监听 `http://localhost:8082/api/v1`
+- `space-service` 额外提供管理员专属 `GET /api/v1/admin/overview`，用于空间后台总览；该接口要求管理员登录态并由微服务内部自行负责鉴权与数据聚合 / `space-service` additionally exposes an administrator-only `GET /api/v1/admin/overview` for the space admin console; the microservice itself owns both authorization and data aggregation for this route.
 
 ### 5.4 学习课程文件
 
@@ -131,11 +137,13 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `GET /api/v1/messages`
 - `POST /api/v1/messages`
 - `GET /api/v1/unread`
+- `GET /api/v1/admin/overview`
 - `GET /ws`
 
 说明：
 
 - 当前聊天实现基于 `messages` 单表聚合对话摘要，没有独立 `chat_conversations`、`chat_participants`、`message_reads` 表 / Chat currently derives conversation summaries directly from the `messages` table instead of separate conversation, participant, and read tables.
+- `message-service` 额外提供管理员专属 `GET /api/v1/admin/overview`，用于消息后台总览；该接口要求管理员登录态并由微服务内部自行负责鉴权与数据聚合 / `message-service` additionally exposes an administrator-only `GET /api/v1/admin/overview` for the message admin console; the microservice itself owns both authorization and data aggregation for this route.
 - 聊天消息支持 `text`、`image`、`video`、`audio` 四种消息类型
 - 媒体消息在发送前由前端压缩后再提交，服务端保存压缩后的 payload
 - 过期消息会由服务端自动清理，前端无需额外调用删除接口
@@ -151,6 +159,7 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 
 - `GET /api/v1/health`
 - 说明：账号、空间、学习与消息服务均公开该探针，前端服务导航和登录后的服务状态刷新会用它判断入口是否可见 / The account, space, learning, and message services all expose this public probe, and the frontend service navigator plus the post-login refresh flow use it to decide whether an entry should be visible.
+- 管理员总控补充：`admin-service` 继续提供管理员专属 `GET /api/v1/overview` 作为跨微服务总览；具体微服务后台明细应优先由各微服务自己的 `/api/v1/admin/...` 提供，而不是长期堆叠在 `admin-service` 中 / Admin control note: `admin-service` continues exposing admin-only `GET /api/v1/overview` for cross-microservice aggregation, while concrete per-service admin details should preferentially live under each microservice's own `/api/v1/admin/...` routes instead of accumulating inside `admin-service`.
 - 运维补充：管理员等级设置当前通过本地命令行工具 `backend/cmd/admin-tool` 完成，不暴露公开 REST 接口 / Operations note: administrator level assignment is currently handled by the local CLI tool `backend/cmd/admin-tool` rather than a public REST endpoint.
 
 ## 6. 关键接口说明

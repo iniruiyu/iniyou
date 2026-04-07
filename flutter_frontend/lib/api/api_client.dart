@@ -107,6 +107,29 @@ class ApiClient {
     );
   }
 
+  Future<AdminAccountOverview> fetchAdminAccountOverview() async =>
+      AdminAccountOverview.fromJson(await _get(accountBase, '/admin/overview'));
+
+  Future<AdminAccountUserSummary> updateAdminAccountUser(
+    String userId, {
+    String? level,
+    String? status,
+  }) async {
+    return AdminAccountUserSummary.fromJson(
+      ((await _patch(accountBase, '/admin/users/$userId', {
+        if ((level ?? '').trim().isNotEmpty) 'level': level,
+        if ((status ?? '').trim().isNotEmpty) 'status': status,
+      }))['item'] as Map<String, dynamic>? ??
+          const <String, dynamic>{}),
+    );
+  }
+
+  Future<AdminSpaceOverview> fetchAdminSpaceOverview() async =>
+      AdminSpaceOverview.fromJson(await _get(spaceBase, '/admin/overview'));
+
+  Future<AdminMessageOverview> fetchAdminMessageOverview() async =>
+      AdminMessageOverview.fromJson(await _get(messageBase, '/admin/overview'));
+
   Future<List<MarkdownFileSummary>> listLearningMarkdownFiles() async => _list(
     await _get(learningBase, '/markdown-files'),
     MarkdownFileSummary.fromJson,

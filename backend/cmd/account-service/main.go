@@ -90,6 +90,10 @@ func main() {
 	authGroup.GET("/external-accounts", h.ListExternalAccounts)
 	authGroup.POST("/external-accounts", h.BindExternalAccount)
 	authGroup.DELETE("/external-accounts/:id", h.DeleteExternalAccount)
+	adminGroup := authGroup.Group("/admin")
+	adminGroup.Use(middleware.RequireAdminMiddleware())
+	adminGroup.GET("/overview", h.AdminAccountOverview)
+	adminGroup.PATCH("/users/:id", h.AdminUpdateUser)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)

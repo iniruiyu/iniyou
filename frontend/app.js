@@ -361,6 +361,20 @@ const app = createApp({
         message: false,
         learning: false,
       },
+      // Cached administrator overview from the admin-service aggregator.
+      // 来自 admin-service 聚合接口的管理员总览缓存。
+      adminOverview: null,
+      adminOverviewLoading: false,
+      adminOverviewError: '',
+      accountAdminOverview: null,
+      accountAdminOverviewLoading: false,
+      accountAdminOverviewError: '',
+      spaceAdminOverview: null,
+      spaceAdminOverviewLoading: false,
+      spaceAdminOverviewError: '',
+      messageAdminOverview: null,
+      messageAdminOverviewLoading: false,
+      messageAdminOverviewError: '',
       // Visible auth mode on the guest landing page.
       // 未登录首页当前显示的认证模式。
       authMode: 'login',
@@ -2038,6 +2052,166 @@ const app = createApp({
         [serviceKey]: online,
       };
     },
+    clearAdminOverview() {
+      // Drop cached admin overview data when the panel is unavailable or unauthorized.
+      // 当面板不可用或当前用户无权限时，清空管理员总览缓存。
+      this.adminOverview = null;
+      this.adminOverviewLoading = false;
+      this.adminOverviewError = '';
+      this.accountAdminOverview = null;
+      this.accountAdminOverviewLoading = false;
+      this.accountAdminOverviewError = '';
+      this.spaceAdminOverview = null;
+      this.spaceAdminOverviewLoading = false;
+      this.spaceAdminOverviewError = '';
+      this.messageAdminOverview = null;
+      this.messageAdminOverviewLoading = false;
+      this.messageAdminOverviewError = '';
+    },
+    async syncAdminOverview() {
+      // Load the aggregated admin overview once the admin service and permission are both available.
+      // 仅在管理员权限和 admin-service 都可用时拉取聚合总览。
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('admin')) {
+        this.clearAdminOverview();
+        return null;
+      }
+      this.adminOverviewLoading = true;
+      this.adminOverviewError = '';
+      try {
+        const res = await fetchWithTimeout(`${this.adminApiBase}/overview`, {
+          cache: 'no-store',
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        });
+        const data = await this.readApiPayload(res);
+        if (!res.ok) {
+          throw new Error(data?.error || data?.message || 'Failed to load admin overview.');
+        }
+        this.adminOverview = data && typeof data === 'object' ? data : null;
+        return this.adminOverview;
+      } catch (error) {
+        this.adminOverview = null;
+        this.adminOverviewError = error?.message || 'Failed to load admin overview.';
+        return null;
+      } finally {
+        this.adminOverviewLoading = false;
+      }
+    },
+    async syncAccountAdminOverview() {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        this.accountAdminOverview = null;
+        this.accountAdminOverviewLoading = false;
+        this.accountAdminOverviewError = '';
+        return null;
+      }
+      this.accountAdminOverviewLoading = true;
+      this.accountAdminOverviewError = '';
+      try {
+        const res = await fetchWithTimeout(`${this.apiBase}/admin/overview`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+        const data = await this.readApiPayload(res);
+        if (!res.ok) {
+          throw new Error(data?.error || data?.message || 'Failed to load account admin overview.');
+        }
+        this.accountAdminOverview = data && typeof data === 'object' ? data : null;
+        return this.accountAdminOverview;
+      } catch (error) {
+        this.accountAdminOverview = null;
+        this.accountAdminOverviewError = error?.message || 'Failed to load account admin overview.';
+        return null;
+      } finally {
+        this.accountAdminOverviewLoading = false;
+      }
+    },
+    async updateAccountAdminUser(userID, payload = {}) {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        return null;
+      }
+      const targetID = String(userID || '').trim();
+      if (!targetID) {
+        throw new Error('User id required.');
+      }
+      const body = {};
+      if (payload.level) {
+        body.level = payload.level;
+      }
+      if (payload.status) {
+        body.status = payload.status;
+      }
+      const res = await fetchWithTimeout(`${this.apiBase}/admin/users/${encodeURIComponent(targetID)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await this.readApiPayload(res);
+      if (!res.ok) {
+        throw new Error(data?.error || data?.message || 'Failed to update account user.');
+      }
+      await this.syncAccountAdminOverview();
+      return data?.item || null;
+    },
+    async syncSpaceAdminOverview() {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('space')) {
+        this.spaceAdminOverview = null;
+        this.spaceAdminOverviewLoading = false;
+        this.spaceAdminOverviewError = '';
+        return null;
+      }
+      this.spaceAdminOverviewLoading = true;
+      this.spaceAdminOverviewError = '';
+      try {
+        const res = await fetchWithTimeout(`${this.spaceApiBase}/admin/overview`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+        const data = await this.readApiPayload(res);
+        if (!res.ok) {
+          throw new Error(data?.error || data?.message || 'Failed to load space admin overview.');
+        }
+        this.spaceAdminOverview = data && typeof data === 'object' ? data : null;
+        return this.spaceAdminOverview;
+      } catch (error) {
+        this.spaceAdminOverview = null;
+        this.spaceAdminOverviewError = error?.message || 'Failed to load space admin overview.';
+        return null;
+      } finally {
+        this.spaceAdminOverviewLoading = false;
+      }
+    },
+    async syncMessageAdminOverview() {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('message')) {
+        this.messageAdminOverview = null;
+        this.messageAdminOverviewLoading = false;
+        this.messageAdminOverviewError = '';
+        return null;
+      }
+      this.messageAdminOverviewLoading = true;
+      this.messageAdminOverviewError = '';
+      try {
+        const res = await fetchWithTimeout(`${this.messageApiBase}/admin/overview`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+        const data = await this.readApiPayload(res);
+        if (!res.ok) {
+          throw new Error(data?.error || data?.message || 'Failed to load message admin overview.');
+        }
+        this.messageAdminOverview = data && typeof data === 'object' ? data : null;
+        return this.messageAdminOverview;
+      } catch (error) {
+        this.messageAdminOverview = null;
+        this.messageAdminOverviewError = error?.message || 'Failed to load message admin overview.';
+        return null;
+      } finally {
+        this.messageAdminOverviewLoading = false;
+      }
+    },
     async checkServiceOnline(baseUrl) {
       // Probe a microservice health endpoint without blocking the whole login flow.
       // 探测微服务健康接口，但不阻塞整条登录链路。
@@ -2064,6 +2238,18 @@ const app = createApp({
       if (!adminOnline && this.view === 'admin-panel') {
         this.view = 'services';
       }
+      if (String(this.user?.level || '').toLowerCase() !== 'admin' &&
+          (this.view === 'account-admin' ||
+           this.view === 'space-admin' ||
+           this.view === 'message-admin')) {
+        this.view = 'services';
+      }
+      if (!spaceOnline && this.view === 'space-admin') {
+        this.view = 'admin-panel';
+      }
+      if (!messageOnline && this.view === 'message-admin') {
+        this.view = 'admin-panel';
+      }
       if (!spaceOnline) {
         this.spaces = [];
         this.posts = [];
@@ -2088,6 +2274,9 @@ const app = createApp({
         this.unreadCount = 0;
         this.activeChat = null;
         this.chatFriendProfile = null;
+        this.messageAdminOverview = null;
+        this.messageAdminOverviewLoading = false;
+        this.messageAdminOverviewError = '';
         if (this.view === 'chat') {
           this.view = 'services';
         }
@@ -2098,6 +2287,10 @@ const app = createApp({
       if (String(this.user?.level || '').toLowerCase() !== 'admin' && (this.view === 'learning-admin' || this.view === 'admin-panel')) {
         this.view = 'services';
       }
+      await this.syncAdminOverview();
+      await this.syncAccountAdminOverview();
+      await this.syncSpaceAdminOverview();
+      await this.syncMessageAdminOverview();
     },
     async refreshAuthenticatedWorkspace() {
       // Load every logged-in section, but keep optional services isolated from each other.
@@ -2178,12 +2371,37 @@ const app = createApp({
         this.view = 'learning-admin';
         return;
       }
+      if (serviceKey === 'account-admin') {
+        if (String(this.user?.level || '').toLowerCase() !== 'admin') {
+          return;
+        }
+        await this.syncAccountAdminOverview();
+        this.view = 'account-admin';
+        return;
+      }
+      if (serviceKey === 'space-admin') {
+        if (!this.isServiceOnline('space') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+          return;
+        }
+        await this.syncSpaceAdminOverview();
+        this.view = 'space-admin';
+        return;
+      }
+      if (serviceKey === 'message-admin') {
+        if (!this.isServiceOnline('message') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+          return;
+        }
+        await this.syncMessageAdminOverview();
+        this.view = 'message-admin';
+        return;
+      }
       if (serviceKey === 'admin-panel') {
         // Open the site-wide administrator panel only for administrator accounts.
         // 仅管理员账号可以进入站点总管理面板。
         if (!this.isServiceOnline('admin') || String(this.user?.level || '').toLowerCase() !== 'admin') {
           return;
         }
+        await this.syncAdminOverview();
         this.view = 'admin-panel';
         return;
       }
@@ -3356,6 +3574,7 @@ const app = createApp({
       // Reset local session state after logout or auth loss.
       // 在登出或鉴权失效后重置本地会话状态。
       this.token = '';
+      this.clearAdminOverview();
       this.unreadCount = 0;
       this.user = {
         id: 'guest',
@@ -6100,6 +6319,7 @@ app.component('auth-panel', window.AuthPanel);
 app.component('landing-page', window.LandingPage);
 app.component('service-navigation', window.ServiceNavigation);
 app.component('site-admin-panel', window.SiteAdminPanel);
+app.component('microservice-admin-console', window.MicroserviceAdminConsole);
 app.component('learning-service', window.LearningService);
 app.component('profile-page', window.ProfilePage);
 app.component('profile-identity-editor', window.ProfileIdentityEditor);

@@ -156,6 +156,9 @@ enum AppView {
   dashboard,
   services,
   adminPanel,
+  accountAdmin,
+  spaceAdmin,
+  messageAdmin,
   learning,
   learningAdmin,
   space,
@@ -248,6 +251,14 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _messageServiceOnline = false;
   bool _learningServiceOnline = false;
   bool _adminServiceOnline = false;
+  AdminOverview? _adminOverview;
+  String? _adminOverviewError;
+  AdminAccountOverview? _accountAdminOverview;
+  String? _accountAdminOverviewError;
+  AdminSpaceOverview? _spaceAdminOverview;
+  String? _spaceAdminOverviewError;
+  AdminMessageOverview? _messageAdminOverview;
+  String? _messageAdminOverviewError;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -1827,6 +1838,24 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
     });
 
+    if ((_user?.level ?? '').toLowerCase() == 'admin') {
+      await _refreshAdminOverview();
+      await _refreshAccountAdminOverview();
+      await _refreshSpaceAdminOverview();
+      await _refreshMessageAdminOverview();
+    } else if (mounted) {
+      setState(() {
+        _adminOverview = null;
+        _adminOverviewError = null;
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = null;
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = null;
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = null;
+      });
+    }
+
     await _syncActiveSpaces();
     final activeSpace = _resolvedCurrentSpace();
     if (activeSpace != null) {
@@ -1842,6 +1871,196 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (_activeChat != null) {
       await _loadMessages(_activeChat!, quiet: true);
     }
+  }
+
+  Future<void> _refreshAdminOverview() async {
+    if ((_user?.level ?? '').toLowerCase() != 'admin' || !_adminServiceOnline) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = null;
+        _adminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = overview;
+        _adminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = null;
+        _adminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _adminOverview = null;
+        _adminOverviewError = '$error';
+      });
+    }
+  }
+
+  Future<void> _refreshAccountAdminOverview() async {
+    if ((_user?.level ?? '').toLowerCase() != 'admin') {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminAccountOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = overview;
+        _accountAdminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = '$error';
+      });
+    }
+  }
+
+  Future<void> _refreshSpaceAdminOverview() async {
+    if ((_user?.level ?? '').toLowerCase() != 'admin' || !_spaceServiceOnline) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminSpaceOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = overview;
+        _spaceAdminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = '$error';
+      });
+    }
+  }
+
+  Future<void> _refreshMessageAdminOverview() async {
+    if ((_user?.level ?? '').toLowerCase() != 'admin' ||
+        !_messageServiceOnline) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminMessageOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = overview;
+        _messageAdminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messageAdminOverview = null;
+        _messageAdminOverviewError = '$error';
+      });
+    }
+  }
+
+  Future<void> _updateAdminAccountUser(
+    String userId, {
+    String? level,
+    String? status,
+  }) async {
+    final updated = await _api.updateAdminAccountUser(
+      userId,
+      level: level,
+      status: status,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      final current = _accountAdminOverview;
+      if (current == null) {
+        return;
+      }
+      _accountAdminOverview = AdminAccountOverview(
+        totalUsers: current.totalUsers,
+        adminUsers: current.adminUsers,
+        activeUsers: current.activeUsers,
+        inactiveUsers: current.inactiveUsers,
+        activeSubscriptions: current.activeSubscriptions,
+        boundExternalAccounts: current.boundExternalAccounts,
+        recentUsers: current.recentUsers
+            .map((item) => item.id == updated.id ? updated : item)
+            .toList(),
+        recentBindings: current.recentBindings,
+      );
+    });
   }
 
   Future<void> _login() async {
@@ -2012,6 +2231,18 @@ class _IniyouHomeState extends State<IniyouHome> {
             !_adminServiceOnline)) {
       return;
     }
+    if ((view == AppView.accountAdmin ||
+            view == AppView.spaceAdmin ||
+            view == AppView.messageAdmin) &&
+        (_user?.level ?? '').toLowerCase() != 'admin') {
+      return;
+    }
+    if (view == AppView.spaceAdmin && !_spaceServiceOnline) {
+      return;
+    }
+    if (view == AppView.messageAdmin && !_messageServiceOnline) {
+      return;
+    }
     if (view == AppView.learning && !_learningServiceOnline) {
       return;
     }
@@ -2032,6 +2263,22 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (view == AppView.chat && _messageServiceOnline) {
         _connectSocket();
       }
+    }
+    switch (view) {
+      case AppView.adminPanel:
+        unawaited(_refreshAdminOverview());
+        break;
+      case AppView.accountAdmin:
+        unawaited(_refreshAccountAdminOverview());
+        break;
+      case AppView.spaceAdmin:
+        unawaited(_refreshSpaceAdminOverview());
+        break;
+      case AppView.messageAdmin:
+        unawaited(_refreshMessageAdminOverview());
+        break;
+      default:
+        break;
     }
   }
 
@@ -3066,6 +3313,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         messageOnline: _messageServiceOnline,
         adminPanelVisible: adminPanelVisible,
         learningOnline: _learningServiceOnline,
+        learningAdminVisible: adminPanelVisible && _learningServiceOnline,
       ),
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
       onRefresh: () => _runBusy(_refreshAll),
@@ -3503,13 +3751,22 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenSpace: () => _navigateTo(AppView.space),
         onOpenChat: () => _navigateTo(AppView.chat),
         onOpenLearning: () => _navigateTo(AppView.learning),
+        onOpenLearningAdmin: () => _navigateTo(AppView.learningAdmin),
         onRefresh: () {
           _runBusy(_refreshAll);
         },
         languageCode: _languageCode,
       ),
       adminPanel: buildAdminPanelView(
-        apiClient: _api,
+        overview: _adminOverview,
+        overviewError: _adminOverviewError,
+        spaceOnline: _spaceServiceOnline,
+        messageOnline: _messageServiceOnline,
+        adminOnline: _adminServiceOnline,
+        learningOnline: _learningServiceOnline,
+        onOpenAccountAdmin: () => _navigateTo(AppView.accountAdmin),
+        onOpenSpaceAdmin: () => _navigateTo(AppView.spaceAdmin),
+        onOpenMessageAdmin: () => _navigateTo(AppView.messageAdmin),
         onOpenServices: () => _navigateTo(AppView.services),
         onOpenProfile: () {
           _openProfile(_user!.id);
@@ -3517,6 +3774,86 @@ class _IniyouHomeState extends State<IniyouHome> {
         onOpenSpace: () => _navigateTo(AppView.space),
         onOpenChat: () => _navigateTo(AppView.chat),
         onOpenLearning: () => _navigateTo(AppView.learning),
+        onOpenLearningAdmin: () => _navigateTo(AppView.learningAdmin),
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
+        languageCode: _languageCode,
+      ),
+      accountAdmin: buildServiceAdminConsoleView(
+        overview: _adminOverview,
+        accountOverview: _accountAdminOverview,
+        accountOverviewError: _accountAdminOverviewError,
+        currentUserId: _user?.id,
+        onUpdateAccountUser: _updateAdminAccountUser,
+        serviceKey: 'account',
+        title: _l('账号服务管理控制页', 'Account service admin console', '帳號服務管理控制頁'),
+        subtitle: _l(
+          '集中查看身份资料、隐私字段、会员等级与链上绑定的管理入口。',
+          'Review the shared management entry points for identity data, privacy fields, membership, and chain bindings.',
+          '集中查看身份資料、隱私欄位、會員等級與鏈上綁定的管理入口。',
+        ),
+        modules: [
+          _l('身份资料', 'Identity profile', '身份資料'),
+          _l('联系信息', 'Contact details', '聯絡資訊'),
+          _l('隐私可见性', 'Privacy visibility', '隱私可見性'),
+          _l('会员等级', 'Membership levels', '會員等級'),
+          _l('链上绑定', 'Chain bindings', '鏈上綁定'),
+        ],
+        onBackToAdmin: () => _navigateTo(AppView.adminPanel),
+        onOpenService: () {
+          _openProfile(_user!.id);
+        },
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
+        languageCode: _languageCode,
+      ),
+      spaceAdmin: buildServiceAdminConsoleView(
+        overview: _adminOverview,
+        spaceOverview: _spaceAdminOverview,
+        spaceOverviewError: _spaceAdminOverviewError,
+        serviceKey: 'space',
+        title: _l('空间服务管理控制页', 'Space service admin console', '空間服務管理控制頁'),
+        subtitle: _l(
+          '统一进入空间工作台、内容发布链路和帖子上下文的运维入口。',
+          'Open the shared operations entry for the workspace, publishing flow, and post context.',
+          '統一進入空間工作台、內容發布鏈路與貼文上下文的運維入口。',
+        ),
+        modules: [
+          _l('空间工作台', 'Workspace', '空間工作台'),
+          _l('空间列表', 'Space list', '空間列表'),
+          _l('帖子发布', 'Post publishing', '貼文發布'),
+          _l('帖子详情', 'Post detail', '貼文詳情'),
+          _l('媒体内容', 'Media content', '媒體內容'),
+        ],
+        onBackToAdmin: () => _navigateTo(AppView.adminPanel),
+        onOpenService: () => _navigateTo(AppView.space),
+        onRefresh: () {
+          _runBusy(_refreshAll);
+        },
+        languageCode: _languageCode,
+      ),
+      messageAdmin: buildServiceAdminConsoleView(
+        overview: _adminOverview,
+        messageOverview: _messageAdminOverview,
+        messageOverviewError: _messageAdminOverviewError,
+        serviceKey: 'message',
+        title: _l('消息服务管理控制页', 'Message service admin console', '訊息服務管理控制頁'),
+        subtitle: _l(
+          '集中查看好友关系、会话摘要、未读消息和实时通信入口。',
+          'Review the management entry points for friendships, conversation summaries, unread status, and realtime messaging.',
+          '集中查看好友關係、會話摘要、未讀訊息與即時通信入口。',
+        ),
+        modules: [
+          _l('好友关系', 'Friendships', '好友關係'),
+          _l('会话摘要', 'Conversation summaries', '會話摘要'),
+          _l('未读计数', 'Unread counts', '未讀計數'),
+          _l('聊天面板', 'Chat panel', '聊天面板'),
+          _l('实时连接', 'Realtime connection', '即時連線'),
+        ],
+        onBackToAdmin: () => _navigateTo(AppView.adminPanel),
+        onOpenService: () => _navigateTo(AppView.chat),
         onRefresh: () {
           _runBusy(_refreshAll);
         },

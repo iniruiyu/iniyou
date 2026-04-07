@@ -180,6 +180,17 @@ func (h *MessageHandler) UnreadCount(c *gin.Context) {
 	respondOK(c, gin.H{"unread": count})
 }
 
+func (h *MessageHandler) AdminOverview(c *gin.Context) {
+	// Return the administrator-only message-service overview payload.
+	// 返回仅管理员可见的消息服务总览载荷。
+	overview, err := service.BuildAdminMessageOverview(h.DB)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "message admin overview error")
+		return
+	}
+	respondOK(c, overview)
+}
+
 func (h *MessageHandler) CreateMessage(c *gin.Context) {
 	// Create a message with REST to keep conversation refresh consistent.
 	// 通过 REST 创建消息，保证会话刷新链路一致。

@@ -83,6 +83,11 @@ type changePasswordRequest struct {
 	NewPassword     string `json:"new_password"`
 }
 
+type adminUpdateUserRequest struct {
+	Level  string `json:"level"`
+	Status string `json:"status"`
+}
+
 func (h *AccountHandler) Register(c *gin.Context) {
 	// Register endpoint.
 	// 注册接口。
@@ -287,6 +292,49 @@ func (h *AccountHandler) DeleteSpace(c *gin.Context) {
 		return
 	}
 	respondDeleted(c)
+}
+
+func (h *AccountHandler) AdminSpaceOverview(c *gin.Context) {
+	// Return the administrator-only space-service overview payload.
+	// 返回仅管理员可见的空间服务总览载荷。
+	overview, err := service.BuildAdminSpaceOverview(h.DB)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "space admin overview error")
+		return
+	}
+	respondOK(c, overview)
+}
+
+func (h *AccountHandler) AdminAccountOverview(c *gin.Context) {
+	// Return the administrator-only account-service overview payload.
+	// 返回仅管理员可见的账号服务总览载荷。
+	overview, err := service.BuildAdminAccountOverview(h.DB)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "account admin overview error")
+		return
+	}
+	respondOK(c, overview)
+}
+
+func (h *AccountHandler) AdminUpdateUser(c *gin.Context) {
+	// Update one administrator-managed account field set.
+	// 更新一组由管理员控制的账号字段。
+	actorID := c.GetString("user_id")
+	var req adminUpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "invalid request")
+		return
+	}
+	item, err := service.AdminUpdateUser(h.DB, actorID, c.Param("id"), req.Level, req.Status)
+	if err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		}
+		respondError(c, status, err.Error())
+		return
+	}
+	respondOK(c, gin.H{"item": item})
 }
 
 func (h *AccountHandler) ListFriends(c *gin.Context) {
