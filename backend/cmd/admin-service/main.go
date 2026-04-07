@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("db connect error: %v", err)
 	}
 
-	adminHandler := &handler.AdminHandler{}
+	adminHandler := &handler.AdminHandler{DB: database}
 
 	// HTTP router.
 	// HTTP 路由。

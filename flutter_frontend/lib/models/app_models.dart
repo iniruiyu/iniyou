@@ -166,6 +166,144 @@ class AdminWorkspaceStatus {
   }
 }
 
+class AdminSpaceOverview {
+  AdminSpaceOverview({
+    required this.totalSpaces,
+    required this.activeSpaces,
+    required this.privateSpaces,
+    required this.publicSpaces,
+    required this.totalPosts,
+    required this.draftPosts,
+    required this.publishedPosts,
+    required this.archivedPosts,
+    required this.recentSpaces,
+    required this.recentPosts,
+  });
+
+  final int totalSpaces;
+  final int activeSpaces;
+  final int privateSpaces;
+  final int publicSpaces;
+  final int totalPosts;
+  final int draftPosts;
+  final int publishedPosts;
+  final int archivedPosts;
+  final List<AdminSpaceSummary> recentSpaces;
+  final List<AdminPostSummary> recentPosts;
+
+  factory AdminSpaceOverview.fromJson(Map<String, dynamic> json) {
+    final recentSpacesJson = json['recent_spaces'];
+    final recentPostsJson = json['recent_posts'];
+    return AdminSpaceOverview(
+      totalSpaces: toInt(json['total_spaces']),
+      activeSpaces: toInt(json['active_spaces']),
+      privateSpaces: toInt(json['private_spaces']),
+      publicSpaces: toInt(json['public_spaces']),
+      totalPosts: toInt(json['total_posts']),
+      draftPosts: toInt(json['draft_posts']),
+      publishedPosts: toInt(json['published_posts']),
+      archivedPosts: toInt(json['archived_posts']),
+      recentSpaces: recentSpacesJson is List
+          ? recentSpacesJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminSpaceSummary.fromJson)
+                .toList()
+          : const [],
+      recentPosts: recentPostsJson is List
+          ? recentPostsJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminPostSummary.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class AdminSpaceSummary {
+  AdminSpaceSummary({
+    required this.id,
+    required this.name,
+    required this.subdomain,
+    required this.type,
+    required this.visibility,
+    required this.status,
+    required this.ownerId,
+    required this.ownerName,
+    required this.postsCount,
+    required this.updatedAt,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String name;
+  final String subdomain;
+  final String type;
+  final String visibility;
+  final String status;
+  final String ownerId;
+  final String ownerName;
+  final int postsCount;
+  final DateTime? updatedAt;
+  final DateTime? createdAt;
+
+  factory AdminSpaceSummary.fromJson(Map<String, dynamic> json) {
+    return AdminSpaceSummary(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      subdomain: (json['subdomain'] ?? '').toString(),
+      type: (json['type'] ?? '').toString(),
+      visibility: (json['visibility'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      ownerId: (json['owner_id'] ?? '').toString(),
+      ownerName: (json['owner_name'] ?? '').toString(),
+      postsCount: toInt(json['posts_count']),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminPostSummary {
+  AdminPostSummary({
+    required this.id,
+    required this.title,
+    required this.status,
+    required this.visibility,
+    required this.authorId,
+    required this.authorName,
+    required this.spaceId,
+    required this.spaceName,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String title;
+  final String status;
+  final String visibility;
+  final String authorId;
+  final String authorName;
+  final String spaceId;
+  final String spaceName;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  factory AdminPostSummary.fromJson(Map<String, dynamic> json) {
+    return AdminPostSummary(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      visibility: (json['visibility'] ?? '').toString(),
+      authorId: (json['author_id'] ?? '').toString(),
+      authorName: (json['author_name'] ?? '').toString(),
+      spaceId: (json['space_id'] ?? '').toString(),
+      spaceName: (json['space_name'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()),
+    );
+  }
+}
+
 class GoExecutionResult {
   GoExecutionResult({
     required this.stdout,

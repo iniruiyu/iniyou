@@ -289,6 +289,17 @@ func (h *AccountHandler) DeleteSpace(c *gin.Context) {
 	respondDeleted(c)
 }
 
+func (h *AccountHandler) AdminSpaceOverview(c *gin.Context) {
+	// Return the administrator-only space-service overview payload.
+	// 返回仅管理员可见的空间服务总览载荷。
+	overview, err := service.BuildAdminSpaceOverview(h.DB)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "space admin overview error")
+		return
+	}
+	respondOK(c, overview)
+}
+
 func (h *AccountHandler) ListFriends(c *gin.Context) {
 	// List current user's friends.
 	// 列出当前用户好友。

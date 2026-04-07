@@ -2,11 +2,14 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"account-service/internal/service"
 )
 
-type AdminHandler struct{}
+type AdminHandler struct {
+	DB *gorm.DB
+}
 
 func (h *AdminHandler) Overview(c *gin.Context) {
 	// Return the site-wide administrator overview payload.

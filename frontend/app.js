@@ -366,6 +366,9 @@ const app = createApp({
       adminOverview: null,
       adminOverviewLoading: false,
       adminOverviewError: '',
+      spaceAdminOverview: null,
+      spaceAdminOverviewLoading: false,
+      spaceAdminOverviewError: '',
       // Visible auth mode on the guest landing page.
       // 未登录首页当前显示的认证模式。
       authMode: 'login',
@@ -2049,6 +2052,9 @@ const app = createApp({
       this.adminOverview = null;
       this.adminOverviewLoading = false;
       this.adminOverviewError = '';
+      this.spaceAdminOverview = null;
+      this.spaceAdminOverviewLoading = false;
+      this.spaceAdminOverviewError = '';
     },
     async syncAdminOverview() {
       // Load the aggregated admin overview once the admin service and permission are both available.
@@ -2078,6 +2084,34 @@ const app = createApp({
         return null;
       } finally {
         this.adminOverviewLoading = false;
+      }
+    },
+    async syncSpaceAdminOverview() {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('space')) {
+        this.spaceAdminOverview = null;
+        this.spaceAdminOverviewLoading = false;
+        this.spaceAdminOverviewError = '';
+        return null;
+      }
+      this.spaceAdminOverviewLoading = true;
+      this.spaceAdminOverviewError = '';
+      try {
+        const res = await fetchWithTimeout(`${this.spaceApiBase}/admin/overview`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+        const data = await this.readApiPayload(res);
+        if (!res.ok) {
+          throw new Error(data?.error || data?.message || 'Failed to load space admin overview.');
+        }
+        this.spaceAdminOverview = data && typeof data === 'object' ? data : null;
+        return this.spaceAdminOverview;
+      } catch (error) {
+        this.spaceAdminOverview = null;
+        this.spaceAdminOverviewError = error?.message || 'Failed to load space admin overview.';
+        return null;
+      } finally {
+        this.spaceAdminOverviewLoading = false;
       }
     },
     async checkServiceOnline(baseUrl) {
@@ -2153,6 +2187,7 @@ const app = createApp({
         this.view = 'services';
       }
       await this.syncAdminOverview();
+      await this.syncSpaceAdminOverview();
     },
     async refreshAuthenticatedWorkspace() {
       // Load every logged-in section, but keep optional services isolated from each other.
@@ -2244,6 +2279,7 @@ const app = createApp({
         if (!this.isServiceOnline('space') || String(this.user?.level || '').toLowerCase() !== 'admin') {
           return;
         }
+        await this.syncSpaceAdminOverview();
         this.view = 'space-admin';
         return;
       }

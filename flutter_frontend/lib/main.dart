@@ -253,6 +253,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _adminServiceOnline = false;
   AdminOverview? _adminOverview;
   String? _adminOverviewError;
+  AdminSpaceOverview? _spaceAdminOverview;
+  String? _spaceAdminOverviewError;
   String? _error;
   String? _flash;
   String _publicPostStatus = 'published';
@@ -1814,6 +1816,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _adminOverview = null;
         _adminOverviewError = null;
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = null;
       });
       return;
     }
@@ -1826,6 +1830,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         _adminOverview = overview;
         _adminOverviewError = null;
       });
+      await _refreshSpaceAdminOverview();
     } on ApiException catch (error) {
       if (!mounted) {
         return;
@@ -1833,6 +1838,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _adminOverview = null;
         _adminOverviewError = error.message;
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = null;
       });
     } catch (error) {
       if (!mounted) {
@@ -1841,6 +1848,48 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _adminOverview = null;
         _adminOverviewError = error.toString();
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = null;
+      });
+    }
+  }
+
+  Future<void> _refreshSpaceAdminOverview() async {
+    final isAdmin = (_user?.level ?? '').toLowerCase() == 'admin';
+    if (!_adminServiceOnline || !_spaceServiceOnline || !isAdmin) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminSpaceOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = overview;
+        _spaceAdminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spaceAdminOverview = null;
+        _spaceAdminOverviewError = error.toString();
       });
     }
   }
@@ -1971,6 +2020,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _user = null;
       _adminOverview = null;
       _adminOverviewError = null;
+      _spaceAdminOverview = null;
+      _spaceAdminOverviewError = null;
       _profileUser = null;
       _currentPost = null;
       _spaces = const [];
@@ -3647,6 +3698,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       ),
       spaceAdmin: buildServiceAdminConsoleView(
         overview: _adminOverview,
+        spaceOverview: _spaceAdminOverview,
+        spaceOverviewError: _spaceAdminOverviewError,
         serviceKey: 'space',
         title: _l('空间服务管理控制页', 'Space service admin console', '空間服務管理控制頁'),
         subtitle: _l(

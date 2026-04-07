@@ -121,6 +121,14 @@ window.MicroserviceAdminConsole = {
     modules() {
       return this.metadata?.modules?.[this.app.locale] || this.metadata?.modules?.['zh-CN'] || [];
     },
+    spaceOverview() {
+      if (this.workspaceKey !== 'space-admin') {
+        return null;
+      }
+      return this.app?.spaceAdminOverview && typeof this.app.spaceAdminOverview === 'object'
+        ? this.app.spaceAdminOverview
+        : null;
+    },
     online() {
       return this.serviceStatus?.online === true || this.app.isServiceOnline(this.metadata?.serviceKey);
     },
@@ -200,6 +208,63 @@ window.MicroserviceAdminConsole = {
           <span v-for="module in modules" :key="workspaceKey + '-' + module" class="service-chip">{{ module }}</span>
         </div>
       </div>
+
+      <template v-if="spaceOverview">
+        <div class="site-admin-summary">
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Spaces</div>
+            <div class="site-admin-stat-value">{{ spaceOverview.total_spaces || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Active</div>
+            <div class="site-admin-stat-value">{{ spaceOverview.active_spaces || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Posts</div>
+            <div class="site-admin-stat-value">{{ spaceOverview.total_posts || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Draft posts</div>
+            <div class="site-admin-stat-value">{{ spaceOverview.draft_posts || 0 }}</div>
+          </article>
+        </div>
+
+        <div class="site-admin-grid">
+          <article class="service-card site-admin-card">
+            <div class="service-card-head">
+              <div>
+                <div class="service-card-title">Recent spaces</div>
+                <div class="service-card-sub">Latest updated spaces in the shared space service.</div>
+              </div>
+            </div>
+            <div class="learning-admin-file-list">
+              <div v-for="item in (spaceOverview.recent_spaces || [])" :key="item.id" class="learning-admin-file-row">
+                <div class="learning-admin-file-copy">
+                  <div class="learning-admin-file-path">{{ item.name }} · @{{ item.subdomain }}</div>
+                  <div class="learning-admin-file-meta">{{ item.owner_name }} · {{ item.type }} · {{ item.visibility }} · {{ item.status }} · {{ item.posts_count }} posts</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="service-card site-admin-card">
+            <div class="service-card-head">
+              <div>
+                <div class="service-card-title">Recent posts</div>
+                <div class="service-card-sub">Latest updated posts in the shared space service.</div>
+              </div>
+            </div>
+            <div class="learning-admin-file-list">
+              <div v-for="item in (spaceOverview.recent_posts || [])" :key="item.id" class="learning-admin-file-row">
+                <div class="learning-admin-file-copy">
+                  <div class="learning-admin-file-path">{{ item.title || '(untitled)' }}</div>
+                  <div class="learning-admin-file-meta">{{ item.author_name }} · {{ item.space_name || 'No space' }} · {{ item.visibility }} · {{ item.status }}</div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </template>
     </section>
   `,
 };

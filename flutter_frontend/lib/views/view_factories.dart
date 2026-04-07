@@ -123,6 +123,8 @@ Widget buildAdminPanelView({
 
 Widget buildServiceAdminConsoleView({
   required AdminOverview? overview,
+  AdminSpaceOverview? spaceOverview,
+  String? spaceOverviewError,
   required String serviceKey,
   required String title,
   required String subtitle,
@@ -134,6 +136,8 @@ Widget buildServiceAdminConsoleView({
 }) {
   return ServiceAdminConsoleView(
     overview: overview,
+    spaceOverview: spaceOverview,
+    spaceOverviewError: spaceOverviewError,
     serviceKey: serviceKey,
     title: title,
     subtitle: subtitle,
@@ -1752,6 +1756,8 @@ class ServiceAdminConsoleView extends StatelessWidget {
   const ServiceAdminConsoleView({
     super.key,
     required this.overview,
+    this.spaceOverview,
+    this.spaceOverviewError,
     required this.serviceKey,
     required this.title,
     required this.subtitle,
@@ -1763,6 +1769,8 @@ class ServiceAdminConsoleView extends StatelessWidget {
   });
 
   final AdminOverview? overview;
+  final AdminSpaceOverview? spaceOverview;
+  final String? spaceOverviewError;
   final String serviceKey;
   final String title;
   final String subtitle;
@@ -1870,6 +1878,30 @@ class ServiceAdminConsoleView extends StatelessWidget {
                     ),
                     child: Text(details.join(' · ')),
                   ),
+                  if (serviceKey == 'space' &&
+                      (spaceOverviewError != null || spaceOverview != null)) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.38),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        spaceOverviewError ??
+                            [
+                              'Spaces ${spaceOverview?.totalSpaces ?? 0}',
+                              'Active ${spaceOverview?.activeSpaces ?? 0}',
+                              'Posts ${spaceOverview?.totalPosts ?? 0}',
+                              'Draft ${spaceOverview?.draftPosts ?? 0}',
+                            ].join(' · '),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1924,6 +1956,68 @@ class ServiceAdminConsoleView extends StatelessWidget {
                         )
                         .toList(),
                   ),
+                  if (serviceKey == 'space' && spaceOverview != null) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近空间',
+                        'Recent spaces',
+                        '最近空間',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...spaceOverview!.recentSpaces.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.name} · @${item.subdomain}\n${item.ownerName} · ${item.type} · ${item.visibility} · ${item.status} · ${item.postsCount} posts',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近帖子',
+                        'Recent posts',
+                        '最近貼文',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...spaceOverview!.recentPosts.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.title.isEmpty ? localizedText(languageCode, "（未命名）", "(untitled)", "（未命名）") : item.title}\n${item.authorName} · ${item.spaceName.isEmpty ? localizedText(languageCode, "未绑定空间", "No space", "未綁定空間") : item.spaceName} · ${item.visibility} · ${item.status}',
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -87,6 +87,9 @@ func main() {
 	api.POST("/posts/:id/likes", postHandler.ToggleLike)
 	api.POST("/posts/:id/comments", postHandler.AddComment)
 	api.POST("/posts/:id/shares", postHandler.Share)
+	admin := api.Group("/admin")
+	admin.Use(middleware.RequireAdminMiddleware())
+	admin.GET("/overview", spaceHandler.AdminSpaceOverview)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("server error: %v", err)
