@@ -208,6 +208,30 @@ window.SiteAdminPanel = {
           break;
       }
     },
+    serviceSecondaryAction(service) {
+      switch (service.key) {
+        case 'account':
+          this.app.openServiceSection('account-admin');
+          break;
+        case 'space':
+          if (service.online) {
+            this.app.openServiceSection('space-admin');
+          }
+          break;
+        case 'message':
+          if (service.online) {
+            this.app.openServiceSection('message-admin');
+          }
+          break;
+        case 'learning':
+          if (service.online) {
+            this.app.openServiceSection('learning-admin');
+          }
+          break;
+        default:
+          break;
+      }
+    },
     focusDisabledUser(user) {
       this.userFilter = user.display_name || user.email || user.id || '';
       this.flashMessage = this.label('已筛选停用用户: ', 'Filtered disabled user: ', '已篩選停用使用者: ')
@@ -226,6 +250,21 @@ window.SiteAdminPanel = {
         default:
           return this.label('刷新数据', 'Refresh data', '重新整理資料');
       }
+    },
+    serviceSecondaryLabel(service) {
+      switch (service.key) {
+        case 'account':
+        case 'space':
+        case 'message':
+          return this.label('管理控制页', 'Admin console', '管理控制頁');
+        case 'learning':
+          return this.label('课程后台', 'Course console', '課程後台');
+        default:
+          return '';
+      }
+    },
+    showSecondaryAction(service) {
+      return ['account', 'space', 'message', 'learning'].includes(service.key);
     },
     async readPayload(response) {
       const payload = await this.app.readApiPayload(response);
@@ -413,6 +452,16 @@ window.SiteAdminPanel = {
                 </div>
               </div>
               <div class="service-card-actions">
+                <bilingual-action-button
+                  v-if="showSecondaryAction(service)"
+                  variant="tonal"
+                  compact
+                  type="button"
+                  :primary-label="serviceSecondaryLabel(service)"
+                  :secondary-label="serviceSecondaryLabel(service)"
+                  :disabled="service.key !== 'account' && !service.online"
+                  @click="serviceSecondaryAction(service)"
+                ></bilingual-action-button>
                 <bilingual-action-button
                   variant="filled"
                   compact

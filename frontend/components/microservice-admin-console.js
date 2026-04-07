@@ -9,6 +9,9 @@ const MICROserviceAdminConsoleCopy = {
     unavailable: '当前微服务离线，管理控制入口已暂时停用。',
     sectionsTitle: '管理控制项',
     detailsTitle: '服务状态',
+    loading: '正在加载管理数据...',
+    loadFailed: '管理数据加载失败',
+    empty: '当前没有可展示的管理数据。',
   },
   'en-US': {
     back: 'Back to admin',
@@ -20,6 +23,9 @@ const MICROserviceAdminConsoleCopy = {
     unavailable: 'This microservice is currently offline, so its management console is temporarily unavailable.',
     sectionsTitle: 'Management modules',
     detailsTitle: 'Service status',
+    loading: 'Loading admin data...',
+    loadFailed: 'Failed to load admin data',
+    empty: 'No admin data is currently available.',
   },
   'zh-TW': {
     back: '返回總控',
@@ -31,6 +37,9 @@ const MICROserviceAdminConsoleCopy = {
     unavailable: '目前微服務離線，管理控制入口已暫時停用。',
     sectionsTitle: '管理控制項',
     detailsTitle: '服務狀態',
+    loading: '正在載入管理資料...',
+    loadFailed: '管理資料載入失敗',
+    empty: '目前沒有可顯示的管理資料。',
   },
 };
 
@@ -145,6 +154,33 @@ window.MicroserviceAdminConsole = {
         ? this.app.messageAdminOverview
         : null;
     },
+    overviewLoading() {
+      switch (this.workspaceKey) {
+        case 'account-admin':
+          return this.app?.accountAdminOverviewLoading === true;
+        case 'space-admin':
+          return this.app?.spaceAdminOverviewLoading === true;
+        case 'message-admin':
+          return this.app?.messageAdminOverviewLoading === true;
+        default:
+          return false;
+      }
+    },
+    overviewError() {
+      switch (this.workspaceKey) {
+        case 'account-admin':
+          return String(this.app?.accountAdminOverviewError || '').trim();
+        case 'space-admin':
+          return String(this.app?.spaceAdminOverviewError || '').trim();
+        case 'message-admin':
+          return String(this.app?.messageAdminOverviewError || '').trim();
+        default:
+          return '';
+      }
+    },
+    hasOverviewContent() {
+      return Boolean(this.accountOverview || this.spaceOverview || this.messageOverview);
+    },
     online() {
       return this.serviceStatus?.online === true || this.app.isServiceOnline(this.metadata?.serviceKey);
     },
@@ -237,6 +273,21 @@ window.MicroserviceAdminConsole = {
         <div v-else class="service-chip-list">
           <span v-for="module in modules" :key="workspaceKey + '-' + module" class="service-chip">{{ module }}</span>
         </div>
+      </div>
+
+      <div v-if="overviewLoading" class="site-admin-loading">
+        <div class="site-admin-loading-bar"></div>
+      </div>
+
+      <div v-if="overviewError" class="site-admin-banner site-admin-banner-error">
+        {{ text('loadFailed') }}: {{ overviewError }}
+      </div>
+
+      <div
+        v-if="online && !overviewLoading && !overviewError && !hasOverviewContent"
+        class="learning-admin-files"
+      >
+        <div class="service-card-sub">{{ text('empty') }}</div>
       </div>
 
       <template v-if="accountOverview">

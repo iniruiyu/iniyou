@@ -129,7 +129,7 @@ func listRecentAdminExternalBindings(db *gorm.DB, limit int) ([]AdminExternalAcc
 			ea.binding_status,
 			ea.created_at
 		`).
-		Joins("LEFT JOIN users AS u ON u.id = ea.user_id").
+		Joins("LEFT JOIN users AS u ON u.id::text = ea.user_id::text").
 		Where("ea.binding_status <> ?", "revoked").
 		Order("ea.created_at desc").
 		Limit(limit).

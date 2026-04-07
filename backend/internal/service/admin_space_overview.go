@@ -117,13 +117,15 @@ func listRecentAdminSpaces(db *gorm.DB, limit int) ([]AdminSpaceSummary, error) 
 			s.status,
 			s.user_id AS owner_id,
 			COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), NULLIF(u.domain, ''), s.user_id) AS owner_name,
-			COUNT(p.id) AS posts_count,
+			(
+				SELECT COUNT(*)
+				FROM posts AS p
+				WHERE p.space_id::text = s.id::text
+			) AS posts_count,
 			s.updated_at,
 			s.created_at
 		`).
-		Joins("LEFT JOIN users AS u ON u.id = s.user_id").
-		Joins("LEFT JOIN posts AS p ON p.space_id = s.id").
-		Group("s.id, u.display_name, u.username, u.domain").
+		Joins("LEFT JOIN users AS u ON u.id::text = s.user_id::text").
 		Order("s.updated_at desc").
 		Limit(limit).
 		Scan(&rows).Error; err != nil {
@@ -177,8 +179,8 @@ func listRecentAdminPosts(db *gorm.DB, limit int) ([]AdminPostSummary, error) {
 			p.created_at,
 			p.updated_at
 		`).
-		Joins("LEFT JOIN users AS u ON u.id = p.user_id").
-		Joins("LEFT JOIN spaces AS s ON s.id = p.space_id").
+		Joins("LEFT JOIN users AS u ON u.id::text = p.user_id::text").
+		Joins("LEFT JOIN spaces AS s ON s.id::text = p.space_id::text").
 		Order("p.updated_at desc").
 		Limit(limit).
 		Scan(&rows).Error; err != nil {

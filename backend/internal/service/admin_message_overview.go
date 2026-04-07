@@ -126,8 +126,8 @@ func listRecentAdminMessages(db *gorm.DB, limit int, now time.Time) ([]AdminMess
 			m.expires_at,
 			m.created_at
 		`).
-		Joins("LEFT JOIN users AS sender ON sender.id = m.sender_id").
-		Joins("LEFT JOIN users AS receiver ON receiver.id = m.receiver_id").
+		Joins("LEFT JOIN users AS sender ON sender.id::text = m.sender_id::text").
+		Joins("LEFT JOIN users AS receiver ON receiver.id::text = m.receiver_id::text").
 		Where("m.expires_at IS NULL OR m.expires_at > ?", now).
 		Order("m.created_at desc").
 		Limit(limit).
@@ -211,8 +211,8 @@ func listRecentAdminConversations(db *gorm.DB, limit int, now time.Time) ([]Admi
 			ON ranked.participant_a_id = stats.participant_a_id
 			AND ranked.participant_b_id = stats.participant_b_id
 			AND ranked.row_num = 1
-		LEFT JOIN users AS user_a ON user_a.id = stats.participant_a_id
-		LEFT JOIN users AS user_b ON user_b.id = stats.participant_b_id
+		LEFT JOIN users AS user_a ON user_a.id::text = stats.participant_a_id::text
+		LEFT JOIN users AS user_b ON user_b.id::text = stats.participant_b_id::text
 		ORDER BY stats.last_at DESC
 		LIMIT ?
 	`, now, now, limit).Scan(&rows).Error; err != nil {
