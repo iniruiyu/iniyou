@@ -108,6 +108,120 @@ class AdminOverview {
   }
 }
 
+class AdminAccountOverview {
+  AdminAccountOverview({
+    required this.totalUsers,
+    required this.adminUsers,
+    required this.activeUsers,
+    required this.inactiveUsers,
+    required this.activeSubscriptions,
+    required this.boundExternalAccounts,
+    required this.recentUsers,
+    required this.recentBindings,
+  });
+
+  final int totalUsers;
+  final int adminUsers;
+  final int activeUsers;
+  final int inactiveUsers;
+  final int activeSubscriptions;
+  final int boundExternalAccounts;
+  final List<AdminAccountUserSummary> recentUsers;
+  final List<AdminExternalAccountSummary> recentBindings;
+
+  factory AdminAccountOverview.fromJson(Map<String, dynamic> json) {
+    final recentUsersJson = json['recent_users'];
+    final recentBindingsJson = json['recent_bindings'];
+    return AdminAccountOverview(
+      totalUsers: toInt(json['total_users']),
+      adminUsers: toInt(json['admin_users']),
+      activeUsers: toInt(json['active_users']),
+      inactiveUsers: toInt(json['inactive_users']),
+      activeSubscriptions: toInt(json['active_subscriptions']),
+      boundExternalAccounts: toInt(json['bound_external_accounts']),
+      recentUsers: recentUsersJson is List
+          ? recentUsersJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminAccountUserSummary.fromJson)
+                .toList()
+          : const [],
+      recentBindings: recentBindingsJson is List
+          ? recentBindingsJson
+                .whereType<Map<String, dynamic>>()
+                .map(AdminExternalAccountSummary.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+}
+
+class AdminAccountUserSummary {
+  AdminAccountUserSummary({
+    required this.id,
+    required this.displayName,
+    required this.username,
+    required this.domain,
+    required this.level,
+    required this.status,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String displayName;
+  final String username;
+  final String domain;
+  final String level;
+  final String status;
+  final DateTime? createdAt;
+
+  factory AdminAccountUserSummary.fromJson(Map<String, dynamic> json) {
+    return AdminAccountUserSummary(
+      id: (json['id'] ?? '').toString(),
+      displayName: (json['display_name'] ?? '').toString(),
+      username: (json['username'] ?? '').toString(),
+      domain: (json['domain'] ?? '').toString(),
+      level: (json['level'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class AdminExternalAccountSummary {
+  AdminExternalAccountSummary({
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.provider,
+    required this.chain,
+    required this.accountAddress,
+    required this.bindingStatus,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String userId;
+  final String userName;
+  final String provider;
+  final String chain;
+  final String accountAddress;
+  final String bindingStatus;
+  final DateTime? createdAt;
+
+  factory AdminExternalAccountSummary.fromJson(Map<String, dynamic> json) {
+    return AdminExternalAccountSummary(
+      id: (json['id'] ?? '').toString(),
+      userId: (json['user_id'] ?? '').toString(),
+      userName: (json['user_name'] ?? '').toString(),
+      provider: (json['provider'] ?? '').toString(),
+      chain: (json['chain'] ?? '').toString(),
+      accountAddress: (json['account_address'] ?? '').toString(),
+      bindingStatus: (json['binding_status'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
 class AdminServiceStatus {
   AdminServiceStatus({
     required this.key,

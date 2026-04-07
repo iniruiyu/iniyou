@@ -78,6 +78,11 @@ Flutter 前端与 Legacy Web 前端共用同一套后端接口，所有字段和
 - `GET /api/v1/external-accounts`
 - `POST /api/v1/external-accounts`
 - `DELETE /api/v1/external-accounts/{id}`
+- `GET /api/v1/admin/overview`
+
+说明：
+
+- `account-service` 额外提供管理员专属 `GET /api/v1/admin/overview`，用于账号后台总览；该接口要求管理员登录态并由微服务内部自行负责鉴权与数据聚合 / `account-service` additionally exposes an administrator-only `GET /api/v1/admin/overview` for the account admin console; the microservice itself owns both authorization and data aggregation for this route.
 
 ### 5.2 空间
 

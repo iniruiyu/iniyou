@@ -94,6 +94,9 @@ class ApiClient {
   Future<AdminOverview> fetchAdminOverview() async =>
       AdminOverview.fromJson(await _get(adminBase, '/overview'));
 
+  Future<AdminAccountOverview> fetchAdminAccountOverview() async =>
+      AdminAccountOverview.fromJson(await _get(accountBase, '/admin/overview'));
+
   Future<AdminSpaceOverview> fetchAdminSpaceOverview() async =>
       AdminSpaceOverview.fromJson(await _get(spaceBase, '/admin/overview'));
 

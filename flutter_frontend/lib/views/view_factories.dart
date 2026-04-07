@@ -123,6 +123,8 @@ Widget buildAdminPanelView({
 
 Widget buildServiceAdminConsoleView({
   required AdminOverview? overview,
+  AdminAccountOverview? accountOverview,
+  String? accountOverviewError,
   AdminSpaceOverview? spaceOverview,
   String? spaceOverviewError,
   AdminMessageOverview? messageOverview,
@@ -138,6 +140,8 @@ Widget buildServiceAdminConsoleView({
 }) {
   return ServiceAdminConsoleView(
     overview: overview,
+    accountOverview: accountOverview,
+    accountOverviewError: accountOverviewError,
     spaceOverview: spaceOverview,
     spaceOverviewError: spaceOverviewError,
     messageOverview: messageOverview,
@@ -1760,6 +1764,8 @@ class ServiceAdminConsoleView extends StatelessWidget {
   const ServiceAdminConsoleView({
     super.key,
     required this.overview,
+    this.accountOverview,
+    this.accountOverviewError,
     this.spaceOverview,
     this.spaceOverviewError,
     this.messageOverview,
@@ -1775,6 +1781,8 @@ class ServiceAdminConsoleView extends StatelessWidget {
   });
 
   final AdminOverview? overview;
+  final AdminAccountOverview? accountOverview;
+  final String? accountOverviewError;
   final AdminSpaceOverview? spaceOverview;
   final String? spaceOverviewError;
   final AdminMessageOverview? messageOverview;
@@ -1886,6 +1894,30 @@ class ServiceAdminConsoleView extends StatelessWidget {
                     ),
                     child: Text(details.join(' · ')),
                   ),
+                  if (serviceKey == 'account' &&
+                      (accountOverviewError != null || accountOverview != null)) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.38),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        accountOverviewError ??
+                            [
+                              'Users ${accountOverview?.totalUsers ?? 0}',
+                              'Admins ${accountOverview?.adminUsers ?? 0}',
+                              'Active ${accountOverview?.activeUsers ?? 0}',
+                              'Bindings ${accountOverview?.boundExternalAccounts ?? 0}',
+                            ].join(' · '),
+                      ),
+                    ),
+                  ],
                   if (serviceKey == 'space' &&
                       (spaceOverviewError != null || spaceOverview != null)) ...[
                     const SizedBox(height: 14),
@@ -1988,6 +2020,68 @@ class ServiceAdminConsoleView extends StatelessWidget {
                         )
                         .toList(),
                   ),
+                  if (serviceKey == 'account' && accountOverview != null) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近用户',
+                        'Recent users',
+                        '最近用戶',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...accountOverview!.recentUsers.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.displayName.isEmpty ? (item.username.isEmpty ? item.id : item.username) : item.displayName}\n@${item.username.isEmpty ? 'anonymous' : item.username} · ${item.domain.isEmpty ? 'no-domain' : item.domain} · ${item.level.isEmpty ? 'basic' : item.level} · ${item.status.isEmpty ? 'active' : item.status}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      localizedText(
+                        languageCode,
+                        '最近绑定',
+                        'Recent bindings',
+                        '最近綁定',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...accountOverview!.recentBindings.map(
+                      (item) => Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.userName} · ${item.provider}\n${item.chain} · ${item.accountAddress} · ${item.bindingStatus}',
+                        ),
+                      ),
+                    ),
+                  ],
                   if (serviceKey == 'space' && spaceOverview != null) ...[
                     const SizedBox(height: 20),
                     Text(

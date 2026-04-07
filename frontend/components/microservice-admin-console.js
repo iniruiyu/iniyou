@@ -121,6 +121,14 @@ window.MicroserviceAdminConsole = {
     modules() {
       return this.metadata?.modules?.[this.app.locale] || this.metadata?.modules?.['zh-CN'] || [];
     },
+    accountOverview() {
+      if (this.workspaceKey !== 'account-admin') {
+        return null;
+      }
+      return this.app?.accountAdminOverview && typeof this.app.accountAdminOverview === 'object'
+        ? this.app.accountAdminOverview
+        : null;
+    },
     spaceOverview() {
       if (this.workspaceKey !== 'space-admin') {
         return null;
@@ -216,6 +224,63 @@ window.MicroserviceAdminConsole = {
           <span v-for="module in modules" :key="workspaceKey + '-' + module" class="service-chip">{{ module }}</span>
         </div>
       </div>
+
+      <template v-if="accountOverview">
+        <div class="site-admin-summary">
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Users</div>
+            <div class="site-admin-stat-value">{{ accountOverview.total_users || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Admins</div>
+            <div class="site-admin-stat-value">{{ accountOverview.admin_users || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Active</div>
+            <div class="site-admin-stat-value">{{ accountOverview.active_users || 0 }}</div>
+          </article>
+          <article class="site-admin-stat">
+            <div class="site-admin-stat-label">Bindings</div>
+            <div class="site-admin-stat-value">{{ accountOverview.bound_external_accounts || 0 }}</div>
+          </article>
+        </div>
+
+        <div class="site-admin-grid">
+          <article class="service-card site-admin-card">
+            <div class="service-card-head">
+              <div>
+                <div class="service-card-title">Recent users</div>
+                <div class="service-card-sub">Latest registered accounts in the shared account service.</div>
+              </div>
+            </div>
+            <div class="learning-admin-file-list">
+              <div v-for="item in (accountOverview.recent_users || [])" :key="item.id" class="learning-admin-file-row">
+                <div class="learning-admin-file-copy">
+                  <div class="learning-admin-file-path">{{ item.display_name || item.username || item.domain || item.id }}</div>
+                  <div class="learning-admin-file-meta">@{{ item.username || 'anonymous' }} · {{ item.domain || 'no-domain' }} · {{ item.level || 'basic' }} · {{ item.status || 'active' }}</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="service-card site-admin-card">
+            <div class="service-card-head">
+              <div>
+                <div class="service-card-title">Recent bindings</div>
+                <div class="service-card-sub">Latest external accounts bound inside the shared account service.</div>
+              </div>
+            </div>
+            <div class="learning-admin-file-list">
+              <div v-for="item in (accountOverview.recent_bindings || [])" :key="item.id" class="learning-admin-file-row">
+                <div class="learning-admin-file-copy">
+                  <div class="learning-admin-file-path">{{ item.user_name }} · {{ item.provider }}</div>
+                  <div class="learning-admin-file-meta">{{ item.chain }} · {{ item.account_address }} · {{ item.binding_status }}</div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </template>
 
       <template v-if="spaceOverview">
         <div class="site-admin-summary">

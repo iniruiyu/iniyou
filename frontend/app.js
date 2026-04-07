@@ -366,6 +366,9 @@ const app = createApp({
       adminOverview: null,
       adminOverviewLoading: false,
       adminOverviewError: '',
+      accountAdminOverview: null,
+      accountAdminOverviewLoading: false,
+      accountAdminOverviewError: '',
       spaceAdminOverview: null,
       spaceAdminOverviewLoading: false,
       spaceAdminOverviewError: '',
@@ -2055,6 +2058,9 @@ const app = createApp({
       this.adminOverview = null;
       this.adminOverviewLoading = false;
       this.adminOverviewError = '';
+      this.accountAdminOverview = null;
+      this.accountAdminOverviewLoading = false;
+      this.accountAdminOverviewError = '';
       this.spaceAdminOverview = null;
       this.spaceAdminOverviewLoading = false;
       this.spaceAdminOverviewError = '';
@@ -2090,6 +2096,34 @@ const app = createApp({
         return null;
       } finally {
         this.adminOverviewLoading = false;
+      }
+    },
+    async syncAccountAdminOverview() {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        this.accountAdminOverview = null;
+        this.accountAdminOverviewLoading = false;
+        this.accountAdminOverviewError = '';
+        return null;
+      }
+      this.accountAdminOverviewLoading = true;
+      this.accountAdminOverviewError = '';
+      try {
+        const res = await fetchWithTimeout(`${this.apiBase}/admin/overview`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+        const data = await this.readApiPayload(res);
+        if (!res.ok) {
+          throw new Error(data?.error || data?.message || 'Failed to load account admin overview.');
+        }
+        this.accountAdminOverview = data && typeof data === 'object' ? data : null;
+        return this.accountAdminOverview;
+      } catch (error) {
+        this.accountAdminOverview = null;
+        this.accountAdminOverviewError = error?.message || 'Failed to load account admin overview.';
+        return null;
+      } finally {
+        this.accountAdminOverviewLoading = false;
       }
     },
     async syncSpaceAdminOverview() {
@@ -2224,6 +2258,7 @@ const app = createApp({
         this.view = 'services';
       }
       await this.syncAdminOverview();
+      await this.syncAccountAdminOverview();
       await this.syncSpaceAdminOverview();
       await this.syncMessageAdminOverview();
     },
@@ -2310,6 +2345,7 @@ const app = createApp({
         if (String(this.user?.level || '').toLowerCase() !== 'admin') {
           return;
         }
+        await this.syncAccountAdminOverview();
         this.view = 'account-admin';
         return;
       }

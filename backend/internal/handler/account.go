@@ -300,6 +300,17 @@ func (h *AccountHandler) AdminSpaceOverview(c *gin.Context) {
 	respondOK(c, overview)
 }
 
+func (h *AccountHandler) AdminAccountOverview(c *gin.Context) {
+	// Return the administrator-only account-service overview payload.
+	// 返回仅管理员可见的账号服务总览载荷。
+	overview, err := service.BuildAdminAccountOverview(h.DB)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "account admin overview error")
+		return
+	}
+	respondOK(c, overview)
+}
+
 func (h *AccountHandler) ListFriends(c *gin.Context) {
 	// List current user's friends.
 	// 列出当前用户好友。

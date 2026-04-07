@@ -253,6 +253,8 @@ class _IniyouHomeState extends State<IniyouHome> {
   bool _adminServiceOnline = false;
   AdminOverview? _adminOverview;
   String? _adminOverviewError;
+  AdminAccountOverview? _accountAdminOverview;
+  String? _accountAdminOverviewError;
   AdminSpaceOverview? _spaceAdminOverview;
   String? _spaceAdminOverviewError;
   AdminMessageOverview? _messageAdminOverview;
@@ -1818,6 +1820,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _adminOverview = null;
         _adminOverviewError = null;
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = null;
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = null;
         _messageAdminOverview = null;
@@ -1834,6 +1838,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         _adminOverview = overview;
         _adminOverviewError = null;
       });
+      await _refreshAccountAdminOverview();
       await _refreshSpaceAdminOverview();
       await _refreshMessageAdminOverview();
     } on ApiException catch (error) {
@@ -1843,6 +1848,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _adminOverview = null;
         _adminOverviewError = error.message;
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = null;
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = null;
         _messageAdminOverview = null;
@@ -1855,6 +1862,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _adminOverview = null;
         _adminOverviewError = error.toString();
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = null;
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = null;
         _messageAdminOverview = null;
@@ -1899,6 +1908,46 @@ class _IniyouHomeState extends State<IniyouHome> {
       setState(() {
         _spaceAdminOverview = null;
         _spaceAdminOverviewError = error.toString();
+      });
+    }
+  }
+
+  Future<void> _refreshAccountAdminOverview() async {
+    final isAdmin = (_user?.level ?? '').toLowerCase() == 'admin';
+    if (!isAdmin) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = null;
+      });
+      return;
+    }
+    try {
+      final overview = await _api.fetchAdminAccountOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = overview;
+        _accountAdminOverviewError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _accountAdminOverview = null;
+        _accountAdminOverviewError = error.toString();
       });
     }
   }
@@ -2069,6 +2118,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       _user = null;
       _adminOverview = null;
       _adminOverviewError = null;
+      _accountAdminOverview = null;
+      _accountAdminOverviewError = null;
       _spaceAdminOverview = null;
       _spaceAdminOverviewError = null;
       _messageAdminOverview = null;
@@ -3724,6 +3775,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       ),
       accountAdmin: buildServiceAdminConsoleView(
         overview: _adminOverview,
+        accountOverview: _accountAdminOverview,
+        accountOverviewError: _accountAdminOverviewError,
         serviceKey: 'account',
         title: _l('账号服务管理控制页', 'Account service admin console', '帳號服務管理控制頁'),
         subtitle: _l(
