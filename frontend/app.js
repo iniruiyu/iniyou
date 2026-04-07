@@ -2126,6 +2126,36 @@ const app = createApp({
         this.accountAdminOverviewLoading = false;
       }
     },
+    async updateAccountAdminUser(userID, payload = {}) {
+      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        return null;
+      }
+      const targetID = String(userID || '').trim();
+      if (!targetID) {
+        throw new Error('User id required.');
+      }
+      const body = {};
+      if (payload.level) {
+        body.level = payload.level;
+      }
+      if (payload.status) {
+        body.status = payload.status;
+      }
+      const res = await fetchWithTimeout(`${this.apiBase}/admin/users/${encodeURIComponent(targetID)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await this.readApiPayload(res);
+      if (!res.ok) {
+        throw new Error(data?.error || data?.message || 'Failed to update account user.');
+      }
+      await this.syncAccountAdminOverview();
+      return data?.item || null;
+    },
     async syncSpaceAdminOverview() {
       if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('space')) {
         this.spaceAdminOverview = null;

@@ -1952,6 +1952,38 @@ class _IniyouHomeState extends State<IniyouHome> {
     }
   }
 
+  Future<void> _updateAdminAccountUser(
+    String userId, {
+    String? level,
+    String? status,
+  }) async {
+    try {
+      await _api.updateAdminAccountUser(userId, level: level, status: status);
+      await _refreshAccountAdminOverview();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _flash = _l('账号管理已更新', 'Account admin updated', '帳號管理已更新');
+        _error = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error.toString();
+      });
+    }
+  }
+
   Future<void> _refreshMessageAdminOverview() async {
     final isAdmin = (_user?.level ?? '').toLowerCase() == 'admin';
     if (!_adminServiceOnline || !_messageServiceOnline || !isAdmin) {
@@ -3777,6 +3809,8 @@ class _IniyouHomeState extends State<IniyouHome> {
         overview: _adminOverview,
         accountOverview: _accountAdminOverview,
         accountOverviewError: _accountAdminOverviewError,
+        currentUserId: _user?.id,
+        onUpdateAccountUser: _updateAdminAccountUser,
         serviceKey: 'account',
         title: _l('账号服务管理控制页', 'Account service admin console', '帳號服務管理控制頁'),
         subtitle: _l(

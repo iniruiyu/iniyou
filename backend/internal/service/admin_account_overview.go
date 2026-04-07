@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -150,4 +151,79 @@ func listRecentAdminExternalBindings(db *gorm.DB, limit int) ([]AdminExternalAcc
 		})
 	}
 	return items, nil
+}
+
+func AdminUpdateUser(db *gorm.DB, actorUserID string, targetUserID string, level string, status string) (AdminAccountUserSummary, error) {
+	// Update one target account's administrator-managed level or status.
+	// 更新单个目标账号的管理员控制等级或状态。
+	targetUserID = strings.TrimSpace(targetUserID)
+	if targetUserID == "" {
+		return AdminAccountUserSummary{}, errors.New("user id required")
+	}
+	if strings.TrimSpace(actorUserID) == targetUserID {
+		return AdminAccountUserSummary{}, errors.New("cannot modify your own admin account")
+	}
+
+	updates := map[string]any{}
+	if normalizedLevel := normalizeAdminManagedLevel(level); normalizedLevel != "" {
+		updates["level"] = normalizedLevel
+	}
+	if normalizedStatus := normalizeAdminManagedStatus(status); normalizedStatus != "" {
+		updates["status"] = normalizedStatus
+	}
+	if len(updates) == 0 {
+		return AdminAccountUserSummary{}, errors.New("level or status required")
+	}
+
+	var user models.User
+	if err := db.First(&user, "id = ?", targetUserID).Error; err != nil {
+		return AdminAccountUserSummary{}, err
+	}
+	if err := db.Model(&user).Updates(updates).Error; err != nil {
+		return AdminAccountUserSummary{}, err
+	}
+	if err := db.First(&user, "id = ?", targetUserID).Error; err != nil {
+		return AdminAccountUserSummary{}, err
+	}
+	return AdminAccountUserSummary{
+		ID:          user.ID,
+		DisplayName: strings.TrimSpace(user.DisplayName),
+		Username:    stringValue(user.Username),
+		Domain:      stringValue(user.Domain),
+		Level:       strings.TrimSpace(user.Level),
+		Status:      strings.TrimSpace(user.Status),
+		CreatedAt:   user.CreatedAt,
+	}, nil
+}
+
+func normalizeAdminManagedLevel(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return ""
+	case "basic":
+		return "basic"
+	case "premium":
+		return "premium"
+	case "vip":
+		return "vip"
+	case "admin":
+		return "admin"
+	default:
+		return ""
+	}
+}
+
+func normalizeAdminManagedStatus(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return ""
+	case "active":
+		return "active"
+	case "disabled":
+		return "disabled"
+	case "suspended":
+		return "suspended"
+	default:
+		return ""
+	}
 }

@@ -83,6 +83,11 @@ type changePasswordRequest struct {
 	NewPassword     string `json:"new_password"`
 }
 
+type adminUpdateUserRequest struct {
+	Level  string `json:"level"`
+	Status string `json:"status"`
+}
+
 func (h *AccountHandler) Register(c *gin.Context) {
 	// Register endpoint.
 	// 注册接口。
@@ -309,6 +314,27 @@ func (h *AccountHandler) AdminAccountOverview(c *gin.Context) {
 		return
 	}
 	respondOK(c, overview)
+}
+
+func (h *AccountHandler) AdminUpdateUser(c *gin.Context) {
+	// Update one administrator-managed account field set.
+	// 更新一组由管理员控制的账号字段。
+	actorID := c.GetString("user_id")
+	var req adminUpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "invalid request")
+		return
+	}
+	item, err := service.AdminUpdateUser(h.DB, actorID, c.Param("id"), req.Level, req.Status)
+	if err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		}
+		respondError(c, status, err.Error())
+		return
+	}
+	respondOK(c, gin.H{"item": item})
 }
 
 func (h *AccountHandler) ListFriends(c *gin.Context) {

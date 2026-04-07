@@ -177,6 +177,20 @@ window.MicroserviceAdminConsole = {
     backToAdmin() {
       this.app.openServiceSection('admin-panel');
     },
+    isOwnAccount(item) {
+      return String(item?.id || '') === String(this.app?.user?.id || '');
+    },
+    async changeAccountUser(item, patch) {
+      if (!item?.id || this.isOwnAccount(item)) {
+        return;
+      }
+      try {
+        await this.app.updateAccountAdminUser(item.id, patch);
+        this.app.setFlash('账号管理更新已保存');
+      } catch (error) {
+        this.app.setError(error?.message || '账号管理更新失败');
+      }
+    },
   },
   template: `
     <section class="panel services-page site-admin-page" v-if="metadata">
@@ -258,6 +272,12 @@ window.MicroserviceAdminConsole = {
                 <div class="learning-admin-file-copy">
                   <div class="learning-admin-file-path">{{ item.display_name || item.username || item.domain || item.id }}</div>
                   <div class="learning-admin-file-meta">@{{ item.username || 'anonymous' }} · {{ item.domain || 'no-domain' }} · {{ item.level || 'basic' }} · {{ item.status || 'active' }}</div>
+                  <div class="service-chip-list" style="margin-top:10px;">
+                    <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { status: 'active' })">Activate</button>
+                    <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { status: 'suspended' })">Suspend</button>
+                    <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { level: 'basic' })">Basic</button>
+                    <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { level: 'admin' })">Admin</button>
+                  </div>
                 </div>
               </div>
             </div>

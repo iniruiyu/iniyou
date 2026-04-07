@@ -125,6 +125,9 @@ Widget buildServiceAdminConsoleView({
   required AdminOverview? overview,
   AdminAccountOverview? accountOverview,
   String? accountOverviewError,
+  String? currentUserId,
+  Future<void> Function(String userId, {String? level, String? status})?
+  onUpdateAccountUser,
   AdminSpaceOverview? spaceOverview,
   String? spaceOverviewError,
   AdminMessageOverview? messageOverview,
@@ -142,6 +145,8 @@ Widget buildServiceAdminConsoleView({
     overview: overview,
     accountOverview: accountOverview,
     accountOverviewError: accountOverviewError,
+    currentUserId: currentUserId,
+    onUpdateAccountUser: onUpdateAccountUser,
     spaceOverview: spaceOverview,
     spaceOverviewError: spaceOverviewError,
     messageOverview: messageOverview,
@@ -1766,6 +1771,8 @@ class ServiceAdminConsoleView extends StatelessWidget {
     required this.overview,
     this.accountOverview,
     this.accountOverviewError,
+    this.currentUserId,
+    this.onUpdateAccountUser,
     this.spaceOverview,
     this.spaceOverviewError,
     this.messageOverview,
@@ -1783,6 +1790,9 @@ class ServiceAdminConsoleView extends StatelessWidget {
   final AdminOverview? overview;
   final AdminAccountOverview? accountOverview;
   final String? accountOverviewError;
+  final String? currentUserId;
+  final Future<void> Function(String userId, {String? level, String? status})?
+  onUpdateAccountUser;
   final AdminSpaceOverview? spaceOverview;
   final String? spaceOverviewError;
   final AdminMessageOverview? messageOverview;
@@ -2035,21 +2045,87 @@ class ServiceAdminConsoleView extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     ...accountOverview!.recentUsers.map(
-                      (item) => Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.32),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
+                      (item) {
+                        final isSelf =
+                            item.id == (currentUserId ?? '').trim();
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.32),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outlineVariant,
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          '${item.displayName.isEmpty ? (item.username.isEmpty ? item.id : item.username) : item.displayName}\n@${item.username.isEmpty ? 'anonymous' : item.username} · ${item.domain.isEmpty ? 'no-domain' : item.domain} · ${item.level.isEmpty ? 'basic' : item.level} · ${item.status.isEmpty ? 'active' : item.status}',
-                        ),
-                      ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${item.displayName.isEmpty ? (item.username.isEmpty ? item.id : item.username) : item.displayName}\n@${item.username.isEmpty ? 'anonymous' : item.username} · ${item.domain.isEmpty ? 'no-domain' : item.domain} · ${item.level.isEmpty ? 'basic' : item.level} · ${item.status.isEmpty ? 'active' : item.status}',
+                              ),
+                              if (onUpdateAccountUser != null) ...[
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.tonal,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                status: 'active',
+                                              ),
+                                      primaryLabel: '激活',
+                                      secondaryLabel: 'Activate',
+                                    ),
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.tonal,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                status: 'suspended',
+                                              ),
+                                      primaryLabel: '停用',
+                                      secondaryLabel: 'Suspend',
+                                    ),
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.tonal,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                level: 'basic',
+                                              ),
+                                      primaryLabel: '基础',
+                                      secondaryLabel: 'Basic',
+                                    ),
+                                    BilingualActionButton(
+                                      variant: BilingualButtonVariant.filled,
+                                      compact: true,
+                                      onPressed: isSelf
+                                          ? null
+                                          : () => onUpdateAccountUser!(
+                                                item.id,
+                                                level: 'admin',
+                                              ),
+                                      primaryLabel: '管理员',
+                                      secondaryLabel: 'Admin',
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 10),
                     Text(
