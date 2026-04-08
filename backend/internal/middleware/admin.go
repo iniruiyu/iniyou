@@ -9,11 +9,11 @@ import (
 )
 
 func RequireAdminMiddleware() gin.HandlerFunc {
-	// Allow only administrator-level accounts to pass through.
-	// 仅允许管理员等级账号继续访问。
+	// Allow only administrator-role accounts to pass through.
+	// 仅允许管理员角色账号继续访问。
 	return func(c *gin.Context) {
-		userLevel := c.GetString("user_level")
-		if !service.IsAdminLevel(userLevel) {
+		userRole := c.GetString("user_role")
+		if !service.IsAdminRole(userRole) {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin required"})
 			return
 		}

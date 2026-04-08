@@ -187,6 +187,8 @@ type CurrentUserView struct {
 	EmailVisibility  string  `json:"email_visibility"`
 	AgeVisibility    string  `json:"age_visibility"`
 	GenderVisibility string  `json:"gender_visibility"`
+	Role             string  `json:"role"`
+	IsAdmin          bool    `json:"is_admin"`
 	Level            string  `json:"level"`
 	Status           string  `json:"status"`
 }
@@ -344,6 +346,8 @@ func BuildCurrentUserView(user models.User) CurrentUserView {
 		EmailVisibility:  normalizeProfileVisibility(user.EmailVisibility),
 		AgeVisibility:    normalizeProfileVisibility(user.AgeVisibility),
 		GenderVisibility: normalizeProfileVisibility(user.GenderVisibility),
+		Role:             NormalizeUserRole(user.Role),
+		IsAdmin:          IsAdminRole(user.Role),
 		Level:            user.Level,
 		Status:           user.Status,
 	}

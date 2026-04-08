@@ -46,33 +46,35 @@ cp .env.example .env
 - `MARKDOWN_STORAGE_DIR`: 可选；学习服务 Markdown 课程文件落盘目录，默认 `D:/codeX/iniyou/uploads/learning-service/markdown-files`
 - `learning-service` 现支持在学习页内运行受限 `go`、`javascript`、`python` 代码块；运行环境要求服务所在机器可用对应运行时（Go/Node.js/Python），当前限制为 32 KB 代码、Go 8 秒超时、JavaScript/Python 5 秒超时、16 KB 输出上限，并对高风险模块与导入做基础拦截
 - Flutter 学习页会优先从 `learning-service /api/v1/markdown-files` 同步课程目录，并自动发现 `courses/{courseId}.{locale}.md` 形式的新课程文件
-- 课程内容维护当前已收敛到管理员权限，只有 `users.level = admin` 的账号才会看到双前端中的课程新建与保存入口，并可调用 `learning-service /api/v1/markdown-files/*path`
+- 课程内容维护当前已收敛到管理员权限，只有 `users.role = admin` 的账号才会看到双前端中的课程新建与保存入口，并可调用 `learning-service /api/v1/markdown-files/*path`
 - 管理员当前还可删除某个课程语言版本文件，用于快速下架课程内容；完整草稿/审核/上架流转仍待独立管理员后台继续落地
-- 如需设置管理员，可使用 `backend/cmd/admin-tool` 直接修改账号等级，例如：`cd backend && go run ./cmd/admin-tool --email your@email.com --level admin`
+- 如需设置管理员，可使用 `backend/cmd/admin-tool` 直接修改账号角色，例如：`cd backend && go run ./cmd/admin-tool --email your@email.com --role admin`
 
 ## 管理员权限工具 / Admin Tool
 
-`backend/cmd/admin-tool` 用于直接修改账号等级，适合本地开发、联调环境初始化和测试账号提权。`backend/cmd/admin-tool` updates one account level directly and is intended for local development, integration setup, and test-account promotion.
+`backend/cmd/admin-tool` 用于直接修改账号角色或会员等级，适合本地开发、联调环境初始化和测试账号提权。`backend/cmd/admin-tool` updates one account role or membership level directly and is intended for local development, integration setup, and test-account promotion.
 
 使用约束 / Usage rules:
 
 - 该工具要求在 `backend/` 目录下运行，并使用当前环境变量里的 `DB_DSN` 连接数据库。 Run the tool from `backend/` and let it use the current `DB_DSN` database connection.
 - `--user-id`、`--email`、`--username` 三个参数只能传一个，工具会按该标识精确查找用户。 Pass exactly one of `--user-id`, `--email`, or `--username`; the tool resolves one exact user from that identifier.
-- `--level` 默认为 `admin`，常见取值包括 `admin`、`vip`、`basic`。 `--level` defaults to `admin`; common values include `admin`, `vip`, and `basic`.
-- 当前工具只更新 `users.level` 字段，不会改动 `status`、密码或其他资料。 The tool only updates `users.level`; it does not modify `status`, passwords, or other profile fields.
+- `--role` 用于设置权限角色，当前支持 `admin` 和 `member`；`--level` 用于设置会员等级，当前支持 `basic`、`premium`、`vip`。 `--role` sets the permission role and currently supports `admin` and `member`; `--level` sets the membership tier and currently supports `basic`, `premium`, and `vip`.
+- 角色与会员等级已经拆分：`users.role` 控制管理权限，`users.level` 只表示订阅等级。 Roles and membership tiers are now separated: `users.role` controls administration permission, while `users.level` represents subscription tier only.
+- 当前工具只更新 `users.role` 和/或 `users.level` 字段，不会改动 `status`、密码或其他资料。 The tool only updates `users.role` and/or `users.level`; it does not modify `status`, passwords, or other profile fields.
 
 示例命令 / Examples:
 
 ```bash
 cd backend
-go run ./cmd/admin-tool --email your@email.com --level admin
-go run ./cmd/admin-tool --username your_username --level admin
+go run ./cmd/admin-tool --email your@email.com --role admin
+go run ./cmd/admin-tool --username your_username --role admin
 go run ./cmd/admin-tool --user-id your-user-id --level basic
+go run ./cmd/admin-tool --user-id your-user-id --role member --level vip
 ```
 
 执行结果 / Result:
 
-- 成功时会输出用户 ID、邮箱、用户名、旧等级和新等级，便于确认修改是否命中正确账号。 On success, the tool prints the user ID, email, username, old level, and new level so you can verify the exact target account.
+- 成功时会输出用户 ID、邮箱、用户名、旧角色/新角色以及旧等级/新等级，便于确认修改是否命中正确账号。 On success, the tool prints the user ID, email, username, old/new role, and old/new level so you can verify the exact target account.
 - 修改完成后，需要让前端重新登录或刷新当前用户信息，管理员入口才会按新权限显示。 After the update, re-login or refresh the current user state in the frontend so administrator entries reflect the new permission.
 
 ## 本地启动

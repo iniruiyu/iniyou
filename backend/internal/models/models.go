@@ -24,6 +24,7 @@ type User struct {
 	// PasswordVersion invalidates older JWTs after a password change.
 	// PasswordVersion 用于在密码变更后使旧 JWT 失效。
 	PasswordVersion int64  `gorm:"default:1"`
+	Role            string `gorm:"type:varchar(20);default:member"`
 	Level           string `gorm:"type:varchar(20);default:basic"`
 	Status          string `gorm:"type:varchar(20);default:active"`
 	CreatedAt       time.Time

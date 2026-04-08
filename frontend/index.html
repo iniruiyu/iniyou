@@ -43,7 +43,7 @@
           <span class="nav-label">{{ t('nav.services') }}</span>
         </button>
         <button
-          v-if="isServiceOnline('admin') && String(user.level || '').toLowerCase() === 'admin'"
+          v-if="isServiceOnline('admin') && isCurrentUserAdmin()"
           class="nav-item"
           data-icon="AD"
           :class="{active: view === 'admin-panel'}"
@@ -116,7 +116,7 @@
             <span class="nav-label">{{ t('nav.services') }}</span>
           </button>
           <button
-            v-if="isServiceOnline('admin') && String(user.level || '').toLowerCase() === 'admin'"
+            v-if="isServiceOnline('admin') && isCurrentUserAdmin()"
             class="nav-item topnav-item"
             data-icon="AD"
             :class="{active: view === 'admin-panel'}"

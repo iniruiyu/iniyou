@@ -14,13 +14,14 @@ import (
 )
 
 func main() {
-	// Command-line helper for promoting or demoting one account level.
-	// 用于提升或降低单个账号等级的命令行工具。
+	// Command-line helper for updating one account role or membership level.
+	// 用于更新单个账号角色或会员等级的命令行工具。
 	var (
 		userID   = flag.String("user-id", "", "Target user id / 目标用户 ID")
 		email    = flag.String("email", "", "Target email / 目标邮箱")
 		username = flag.String("username", "", "Target username / 目标用户名")
-		level    = flag.String("level", "admin", "Level to set, such as admin/basic/vip / 要设置的等级，例如 admin/basic/vip")
+		role     = flag.String("role", "", "Role to set, such as admin/member / 要设置的角色，例如 admin/member")
+		level    = flag.String("level", "", "Membership level to set, such as basic/premium/vip / 要设置的会员等级，例如 basic/premium/vip")
 	)
 	flag.Parse()
 
@@ -28,9 +29,10 @@ func main() {
 		log.Fatal("exactly one of --user-id, --email, or --username is required / --user-id、--email、--username 必须且只能传一个")
 	}
 
-	targetLevel := strings.TrimSpace(*level)
-	if targetLevel == "" {
-		log.Fatal("level is required / level 必填")
+	targetRole := strings.ToLower(strings.TrimSpace(*role))
+	targetLevel := strings.ToLower(strings.TrimSpace(*level))
+	if targetRole == "" && targetLevel == "" {
+		log.Fatal("role or level is required / role 或 level 必填")
 	}
 
 	cfg := config.Load("account")
@@ -44,20 +46,47 @@ func main() {
 		log.Fatalf("find user error: %v", err)
 	}
 
+	updates := map[string]any{}
+	if targetRole != "" {
+		if targetRole != "admin" && targetRole != "member" {
+			log.Fatal("role must be admin or member / role 只能是 admin 或 member")
+		}
+		updates["role"] = targetRole
+	}
+	if targetLevel != "" {
+		switch targetLevel {
+		case "basic", "premium", "vip":
+			updates["level"] = targetLevel
+		default:
+			log.Fatal("level must be basic, premium, or vip / level 只能是 basic、premium 或 vip")
+		}
+	}
+
 	if err := database.Model(&models.User{}).
 		Where("id = ?", user.ID).
-		Update("level", targetLevel).Error; err != nil {
-		log.Fatalf("update user level error: %v", err)
+		Updates(updates).Error; err != nil {
+		log.Fatalf("update user role or level error: %v", err)
 	}
 
 	fmt.Printf(
-		"user level updated / 用户等级已更新: id=%s email=%s username=%s old=%s new=%s\n",
+		"user account updated / 用户账号已更新: id=%s email=%s username=%s old_role=%s new_role=%s old_level=%s new_level=%s\n",
 		user.ID,
 		derefString(user.Email),
 		derefString(user.Username),
+		user.Role,
+		defaultPrintedValue(targetRole, user.Role),
 		user.Level,
-		targetLevel,
+		defaultPrintedValue(targetLevel, user.Level),
 	)
+}
+
+func defaultPrintedValue(next string, current string) string {
+	// Reuse the current value in output when the operator only changed one dimension.
+	// 当操作者只修改一个维度时，在输出里回填当前值。
+	if strings.TrimSpace(next) != "" {
+		return next
+	}
+	return current
 }
 
 func countNonEmpty(values ...string) int {

@@ -13,13 +13,14 @@ window.SiteAdminPanel = {
       flashMessage: '',
       overview: null,
       userFilter: '',
+      roleDrafts: {},
       levelDrafts: {},
       statusDrafts: {},
     };
   },
   computed: {
     isAdmin() {
-      return String(this.app?.user?.level || '').toLowerCase() === 'admin';
+      return this.app?.isCurrentUserAdmin?.() === true;
     },
     summaryCards() {
       const summary = this.overview?.summary || {};
@@ -171,6 +172,9 @@ window.SiteAdminPanel = {
         ? this.label('在线', 'Online', '線上')
         : this.label('离线', 'Offline', '離線');
     },
+    draftRole(user) {
+      return this.roleDrafts[user.id] || user.role || 'member';
+    },
     draftLevel(user) {
       return this.levelDrafts[user.id] || user.level || 'basic';
     },
@@ -297,9 +301,10 @@ window.SiteAdminPanel = {
       }
     },
     async saveUser(user) {
+      const role = this.draftRole(user);
       const level = this.draftLevel(user);
       const status = this.draftStatus(user);
-      if (level === user.level && status === user.status) {
+      if (role === user.role && level === user.level && status === user.status) {
         this.flashMessage = this.label(
           '当前用户没有需要保存的变更。',
           'No user changes to save.',
@@ -317,12 +322,12 @@ window.SiteAdminPanel = {
             Authorization: `Bearer ${this.app.token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ level, status }),
+          body: JSON.stringify({ role, level, status }),
         });
         const updated = await this.readPayload(response);
         const users = this.managedUsers.map((item) => (item.id === updated.id ? updated : item));
         const summary = { ...(this.overview?.summary || {}) };
-        summary.admin_users = users.filter((item) => item.level === 'admin').length;
+        summary.admin_users = users.filter((item) => item.role === 'admin').length;
         summary.active_users = users.filter((item) => item.status === 'active').length;
         summary.disabled_users = users.filter((item) => item.status !== 'active').length;
         this.overview = {
@@ -541,10 +546,14 @@ window.SiteAdminPanel = {
                 <div class="service-card-sub">{{ userSecondary(user) || user.id }}</div>
               </div>
               <div class="site-admin-user-controls">
+                <select :value="draftRole(user)" @change="roleDrafts[user.id] = $event.target.value">
+                  <option value="member">member</option>
+                  <option value="admin">admin</option>
+                </select>
                 <select :value="draftLevel(user)" @change="levelDrafts[user.id] = $event.target.value">
                   <option value="basic">basic</option>
+                  <option value="premium">premium</option>
                   <option value="vip">vip</option>
-                  <option value="admin">admin</option>
                 </select>
                 <select :value="draftStatus(user)" @change="statusDrafts[user.id] = $event.target.value">
                   <option value="active">active</option>

@@ -26,7 +26,7 @@ type updateMarkdownStatusRequest struct {
 func (h *MarkdownHandler) ListMarkdownFiles(c *gin.Context) {
 	// List all stored markdown files for the learning service.
 	// 列出学习服务当前已存储的 Markdown 文件。
-	items, err := service.ListMarkdownFilesForLevel(c.GetString("user_level"))
+	items, err := service.ListMarkdownFilesForLevel(c.GetString("user_role"))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "markdown list error")
 		return
@@ -37,7 +37,7 @@ func (h *MarkdownHandler) ListMarkdownFiles(c *gin.Context) {
 func (h *MarkdownHandler) GetMarkdownFile(c *gin.Context) {
 	// Return a single markdown file by its normalized relative path.
 	// 按规范化相对路径返回单个 Markdown 文件。
-	item, err := service.GetMarkdownFileForLevel(c.Param("path"), c.GetString("user_level"))
+	item, err := service.GetMarkdownFileForLevel(c.Param("path"), c.GetString("user_role"))
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidMarkdownPath):

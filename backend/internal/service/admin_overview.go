@@ -74,6 +74,7 @@ type AdminUserItem struct {
 	Email       string     `json:"email"`
 	Username    string     `json:"username"`
 	Domain      string     `json:"domain"`
+	Role        string     `json:"role"`
 	Level       string     `json:"level"`
 	Status      string     `json:"status"`
 	CreatedAt   *time.Time `json:"created_at,omitempty"`
@@ -116,14 +117,17 @@ func BuildAdminOverview(database *gorm.DB, startedAt time.Time) (AdminOverview, 
 	}, nil
 }
 
-func UpdateAdminUser(database *gorm.DB, userID string, nextLevel string, nextStatus string) (AdminUserItem, error) {
-	// Update one managed user's level or status from the administrator panel.
-	// 在管理员面板中更新单个用户的等级或状态。
+func UpdateAdminUser(database *gorm.DB, userID string, nextRole string, nextLevel string, nextStatus string) (AdminUserItem, error) {
+	// Update one managed user's role, level, or status from the administrator panel.
+	// 在管理员面板中更新单个用户的角色、等级或状态。
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return AdminUserItem{}, gorm.ErrRecordNotFound
 	}
 	updates := map[string]any{}
+	if role := normalizeAdminManagedRole(nextRole); role != "" {
+		updates["role"] = role
+	}
 	if level := normalizeAdminManagedLevel(nextLevel); level != "" {
 		updates["level"] = level
 	}
@@ -316,7 +320,7 @@ func buildAdminUserSummary(database *gorm.DB) (AdminUserSummary, error) {
 	if err != nil {
 		return AdminUserSummary{}, err
 	}
-	adminUsers, err := countUsers(database, "level = 'admin'")
+	adminUsers, err := countUsers(database, "role = 'admin'")
 	if err != nil {
 		return AdminUserSummary{}, err
 	}
@@ -364,6 +368,7 @@ func mapAdminUserItem(user models.User) AdminUserItem {
 		Email:       derefNullableString(user.Email),
 		Username:    derefNullableString(user.Username),
 		Domain:      derefNullableString(user.Domain),
+		Role:        NormalizeUserRole(user.Role),
 		Level:       user.Level,
 		Status:      user.Status,
 		CreatedAt:   &user.CreatedAt,

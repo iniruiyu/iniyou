@@ -1838,7 +1838,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       }
     });
 
-    if ((_user?.level ?? '').toLowerCase() == 'admin') {
+    if (_isAdmin) {
       await _refreshAdminOverview();
       await _refreshAccountAdminOverview();
       await _refreshSpaceAdminOverview();
@@ -1874,7 +1874,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _refreshAdminOverview() async {
-    if ((_user?.level ?? '').toLowerCase() != 'admin' || !_adminServiceOnline) {
+    if (!_isAdmin || !_adminServiceOnline) {
       if (!mounted) {
         return;
       }
@@ -1913,7 +1913,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _refreshAccountAdminOverview() async {
-    if ((_user?.level ?? '').toLowerCase() != 'admin') {
+    if (!_isAdmin) {
       if (!mounted) {
         return;
       }
@@ -1952,7 +1952,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _refreshSpaceAdminOverview() async {
-    if ((_user?.level ?? '').toLowerCase() != 'admin' || !_spaceServiceOnline) {
+    if (!_isAdmin || !_spaceServiceOnline) {
       if (!mounted) {
         return;
       }
@@ -1991,8 +1991,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Future<void> _refreshMessageAdminOverview() async {
-    if ((_user?.level ?? '').toLowerCase() != 'admin' ||
-        !_messageServiceOnline) {
+    if (!_isAdmin || !_messageServiceOnline) {
       if (!mounted) {
         return;
       }
@@ -2032,11 +2031,13 @@ class _IniyouHomeState extends State<IniyouHome> {
 
   Future<void> _updateAdminAccountUser(
     String userId, {
+    String? role,
     String? level,
     String? status,
   }) async {
     final updated = await _api.updateAdminAccountUser(
       userId,
+      role: role,
       level: level,
       status: status,
     );
@@ -2062,6 +2063,8 @@ class _IniyouHomeState extends State<IniyouHome> {
       );
     });
   }
+
+  bool get _isAdmin => _user?.isAdmin ?? false;
 
   Future<void> _login() async {
     await _runBusy(() async {
@@ -2226,15 +2229,13 @@ class _IniyouHomeState extends State<IniyouHome> {
       _openProfile(_user!.id);
       return;
     }
-    if (view == AppView.adminPanel &&
-        ((_user?.level ?? '').toLowerCase() != 'admin' ||
-            !_adminServiceOnline)) {
+    if (view == AppView.adminPanel && (!_isAdmin || !_adminServiceOnline)) {
       return;
     }
     if ((view == AppView.accountAdmin ||
             view == AppView.spaceAdmin ||
             view == AppView.messageAdmin) &&
-        (_user?.level ?? '').toLowerCase() != 'admin') {
+        !_isAdmin) {
       return;
     }
     if (view == AppView.spaceAdmin && !_spaceServiceOnline) {
@@ -2250,7 +2251,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       if (!_learningServiceOnline) {
         return;
       }
-      if ((_user?.level ?? '').toLowerCase() != 'admin') {
+      if (!_isAdmin) {
         return;
       }
     }
@@ -3299,8 +3300,7 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Widget _buildSidebar() {
-    final adminPanelVisible =
-        _adminServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
+    final adminPanelVisible = _adminServiceOnline && _isAdmin;
     return ShellSidebar(
       user: _user!,
       conversations: _conversations,
@@ -3332,8 +3332,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     // 顶部导航用于快速切换视图。
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final adminPanelVisible =
-        _adminServiceOnline && (_user?.level ?? '').toLowerCase() == 'admin';
+    final adminPanelVisible = _adminServiceOnline && _isAdmin;
     final items =
         <
           ({
@@ -3743,7 +3742,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         messageOnline: _messageServiceOnline,
         adminOnline: _adminServiceOnline,
         learningOnline: _learningServiceOnline,
-        isAdmin: (_user?.level ?? '').toLowerCase() == 'admin',
+        isAdmin: _isAdmin,
         onOpenAdminPanel: () => _navigateTo(AppView.adminPanel),
         onOpenProfile: () {
           _openProfile(_user!.id);
@@ -3862,7 +3861,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       learning: buildLearningCourseView(
         languageCode: _languageCode,
         activeCourseId: _activeLearningCourseId,
-        isAdmin: (_user?.level ?? '').toLowerCase() == 'admin',
+        isAdmin: _isAdmin,
         apiClient: _api,
         onSelectCourse: (courseId) {
           setState(() => _activeLearningCourseId = courseId);
@@ -3872,7 +3871,7 @@ class _IniyouHomeState extends State<IniyouHome> {
       learningAdmin: buildLearningCourseView(
         languageCode: _languageCode,
         activeCourseId: _activeLearningCourseId,
-        isAdmin: (_user?.level ?? '').toLowerCase() == 'admin',
+        isAdmin: _isAdmin,
         adminWorkspaceOnly: true,
         apiClient: _api,
         onSelectCourse: (courseId) {

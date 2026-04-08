@@ -40,6 +40,7 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
   String _error = '';
   String _flash = '';
   String _userFilter = '';
+  final Map<String, String> _roleDrafts = {};
   final Map<String, String> _levelDrafts = {};
   final Map<String, String> _statusDrafts = {};
 
@@ -89,6 +90,8 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
     }
   }
 
+  String _draftRole(AdminUserItem user) => _roleDrafts[user.id] ?? user.role;
+
   String _draftLevel(AdminUserItem user) => _levelDrafts[user.id] ?? user.level;
 
   String _draftStatus(AdminUserItem user) =>
@@ -135,9 +138,12 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
   }
 
   Future<void> _saveUser(AdminUserItem user) async {
+    final nextRole = _draftRole(user);
     final nextLevel = _draftLevel(user);
     final nextStatus = _draftStatus(user);
-    if (nextLevel == user.level && nextStatus == user.status) {
+    if (nextRole == user.role &&
+        nextLevel == user.level &&
+        nextStatus == user.status) {
       setState(() {
         _flash = localizedText(
           widget.languageCode,
@@ -156,6 +162,7 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
     try {
       final updated = await widget.apiClient.updateAdminUser(
         userId: user.id,
+        role: nextRole,
         level: nextLevel,
         status: nextStatus,
       );
@@ -170,7 +177,7 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
           .where((item) => item.status == 'active')
           .length;
       final adminUsers = updatedItems
-          .where((item) => item.level == 'admin')
+          .where((item) => item.role == 'admin')
           .length;
       final users = AdminUserSummary(
         totalUsers: current.users.totalUsers,
@@ -807,8 +814,17 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
                       user: user,
                       saving: _saving,
                       languageCode: widget.languageCode,
+                      roleValue: _draftRole(user),
                       levelValue: _draftLevel(user),
                       statusValue: _draftStatus(user),
+                      onRoleChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        setState(() {
+                          _roleDrafts[user.id] = value;
+                        });
+                      },
                       onLevelChanged: (value) {
                         if (value == null) {
                           return;
@@ -1118,8 +1134,10 @@ class _AdminAttentionAction {
 class _AdminUserTile extends StatelessWidget {
   const _AdminUserTile({
     required this.user,
+    required this.roleValue,
     required this.levelValue,
     required this.statusValue,
+    required this.onRoleChanged,
     required this.onLevelChanged,
     required this.onStatusChanged,
     required this.onSave,
@@ -1128,8 +1146,10 @@ class _AdminUserTile extends StatelessWidget {
   });
 
   final AdminUserItem user;
+  final String roleValue;
   final String levelValue;
   final String statusValue;
+  final ValueChanged<String?> onRoleChanged;
   final ValueChanged<String?> onLevelChanged;
   final ValueChanged<String?> onStatusChanged;
   final VoidCallback onSave;
@@ -1161,14 +1181,28 @@ class _AdminUserTile extends StatelessWidget {
             SizedBox(
               width: 160,
               child: DropdownButtonFormField<String>(
+                initialValue: roleValue,
+                decoration: InputDecoration(
+                  labelText: localizedText(languageCode, '角色', 'Role', '角色'),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'member', child: Text('member')),
+                  DropdownMenuItem(value: 'admin', child: Text('admin')),
+                ],
+                onChanged: onRoleChanged,
+              ),
+            ),
+            SizedBox(
+              width: 160,
+              child: DropdownButtonFormField<String>(
                 initialValue: levelValue,
                 decoration: InputDecoration(
                   labelText: localizedText(languageCode, '等级', 'Level', '等級'),
                 ),
                 items: const [
                   DropdownMenuItem(value: 'basic', child: Text('basic')),
+                  DropdownMenuItem(value: 'premium', child: Text('premium')),
                   DropdownMenuItem(value: 'vip', child: Text('vip')),
-                  DropdownMenuItem(value: 'admin', child: Text('admin')),
                 ],
                 onChanged: onLevelChanged,
               ),

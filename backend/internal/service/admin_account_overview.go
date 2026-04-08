@@ -15,6 +15,7 @@ type AdminAccountUserSummary struct {
 	DisplayName string    `json:"display_name"`
 	Username    string    `json:"username"`
 	Domain      string    `json:"domain"`
+	Role        string    `json:"role"`
 	Level       string    `json:"level"`
 	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -50,7 +51,7 @@ func BuildAdminAccountOverview(db *gorm.DB) (AdminAccountOverview, error) {
 	if err := db.Model(&models.User{}).Count(&overview.TotalUsers).Error; err != nil {
 		return AdminAccountOverview{}, err
 	}
-	if err := db.Model(&models.User{}).Where("LOWER(TRIM(level)) = ?", "admin").Count(&overview.AdminUsers).Error; err != nil {
+	if err := db.Model(&models.User{}).Where("LOWER(TRIM(role)) = ?", "admin").Count(&overview.AdminUsers).Error; err != nil {
 		return AdminAccountOverview{}, err
 	}
 	if err := db.Model(&models.User{}).
@@ -83,7 +84,7 @@ func BuildAdminAccountOverview(db *gorm.DB) (AdminAccountOverview, error) {
 
 func listRecentAdminUsers(db *gorm.DB, limit int) ([]AdminAccountUserSummary, error) {
 	var users []models.User
-	if err := db.Select("id", "display_name", "username", "domain", "level", "status", "created_at").
+	if err := db.Select("id", "display_name", "username", "domain", "role", "level", "status", "created_at").
 		Order("created_at desc").
 		Limit(limit).
 		Find(&users).Error; err != nil {
@@ -97,6 +98,7 @@ func listRecentAdminUsers(db *gorm.DB, limit int) ([]AdminAccountUserSummary, er
 			DisplayName: strings.TrimSpace(user.DisplayName),
 			Username:    stringValue(user.Username),
 			Domain:      stringValue(user.Domain),
+			Role:        NormalizeUserRole(user.Role),
 			Level:       strings.TrimSpace(user.Level),
 			Status:      strings.TrimSpace(user.Status),
 			CreatedAt:   user.CreatedAt,
@@ -153,9 +155,9 @@ func listRecentAdminExternalBindings(db *gorm.DB, limit int) ([]AdminExternalAcc
 	return items, nil
 }
 
-func AdminUpdateUser(db *gorm.DB, actorUserID string, targetUserID string, level string, status string) (AdminAccountUserSummary, error) {
-	// Update one target account's administrator-managed level or status.
-	// 更新单个目标账号的管理员控制等级或状态。
+func AdminUpdateUser(db *gorm.DB, actorUserID string, targetUserID string, role string, level string, status string) (AdminAccountUserSummary, error) {
+	// Update one target account's administrator-managed role, level, or status.
+	// 更新单个目标账号的管理员控制角色、等级或状态。
 	targetUserID = strings.TrimSpace(targetUserID)
 	if targetUserID == "" {
 		return AdminAccountUserSummary{}, errors.New("user id required")
@@ -165,6 +167,9 @@ func AdminUpdateUser(db *gorm.DB, actorUserID string, targetUserID string, level
 	}
 
 	updates := map[string]any{}
+	if normalizedRole := normalizeAdminManagedRole(role); normalizedRole != "" {
+		updates["role"] = normalizedRole
+	}
 	if normalizedLevel := normalizeAdminManagedLevel(level); normalizedLevel != "" {
 		updates["level"] = normalizedLevel
 	}
@@ -172,7 +177,7 @@ func AdminUpdateUser(db *gorm.DB, actorUserID string, targetUserID string, level
 		updates["status"] = normalizedStatus
 	}
 	if len(updates) == 0 {
-		return AdminAccountUserSummary{}, errors.New("level or status required")
+		return AdminAccountUserSummary{}, errors.New("role, level, or status required")
 	}
 
 	var user models.User
@@ -190,10 +195,24 @@ func AdminUpdateUser(db *gorm.DB, actorUserID string, targetUserID string, level
 		DisplayName: strings.TrimSpace(user.DisplayName),
 		Username:    stringValue(user.Username),
 		Domain:      stringValue(user.Domain),
+		Role:        NormalizeUserRole(user.Role),
 		Level:       strings.TrimSpace(user.Level),
 		Status:      strings.TrimSpace(user.Status),
 		CreatedAt:   user.CreatedAt,
 	}, nil
+}
+
+func normalizeAdminManagedRole(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return ""
+	case "member":
+		return "member"
+	case "admin":
+		return "admin"
+	default:
+		return ""
+	}
 }
 
 func normalizeAdminManagedLevel(raw string) string {
@@ -206,8 +225,6 @@ func normalizeAdminManagedLevel(raw string) string {
 		return "premium"
 	case "vip":
 		return "vip"
-	case "admin":
-		return "admin"
 	default:
 		return ""
 	}

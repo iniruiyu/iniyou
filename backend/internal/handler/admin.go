@@ -17,6 +17,7 @@ type AdminHandler struct {
 }
 
 type updateAdminUserRequest struct {
+	Role   string `json:"role"`
 	Level  string `json:"level"`
 	Status string `json:"status"`
 }
@@ -40,13 +41,13 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
-	item, err := service.UpdateAdminUser(h.DB, c.Param("id"), req.Level, req.Status)
+	item, err := service.UpdateAdminUser(h.DB, c.Param("id"), req.Role, req.Level, req.Status)
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			respondError(c, http.StatusNotFound, "user not found")
 		case errors.Is(err, gorm.ErrInvalidData):
-			respondError(c, http.StatusBadRequest, "level or status required")
+			respondError(c, http.StatusBadRequest, "role, level, or status required")
 		default:
 			respondError(c, http.StatusBadRequest, err.Error())
 		}

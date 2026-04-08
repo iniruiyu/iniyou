@@ -322,12 +322,13 @@ window.MicroserviceAdminConsole = {
               <div v-for="item in (accountOverview.recent_users || [])" :key="item.id" class="learning-admin-file-row">
                 <div class="learning-admin-file-copy">
                   <div class="learning-admin-file-path">{{ item.display_name || item.username || item.domain || item.id }}</div>
-                  <div class="learning-admin-file-meta">@{{ item.username || 'anonymous' }} · {{ item.domain || 'no-domain' }} · {{ item.level || 'basic' }} · {{ item.status || 'active' }}</div>
+                  <div class="learning-admin-file-meta">@{{ item.username || 'anonymous' }} · {{ item.domain || 'no-domain' }} · role: {{ item.role || 'member' }} · level: {{ item.level || 'basic' }} · {{ item.status || 'active' }}</div>
                   <div class="service-chip-list" style="margin-top:10px;">
                     <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { status: 'active' })">Activate</button>
                     <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { status: 'suspended' })">Suspend</button>
                     <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { level: 'basic' })">Basic</button>
-                    <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { level: 'admin' })">Admin</button>
+                    <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { role: 'member' })">Member</button>
+                    <button class="ghost compact" type="button" :disabled="isOwnAccount(item)" @click="changeAccountUser(item, { role: 'admin' })">Admin</button>
                   </div>
                 </div>
               </div>

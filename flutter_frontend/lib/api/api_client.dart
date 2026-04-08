@@ -96,11 +96,13 @@ class ApiClient {
 
   Future<AdminUserItem> updateAdminUser({
     required String userId,
+    String role = '',
     String level = '',
     String status = '',
   }) async {
     return AdminUserItem.fromJson(
       await _patch(adminBase, '/users/${Uri.encodeComponent(userId)}', {
+        if (role.trim().isNotEmpty) 'role': role.trim(),
         if (level.trim().isNotEmpty) 'level': level.trim(),
         if (status.trim().isNotEmpty) 'status': status.trim(),
       }),
@@ -112,14 +114,17 @@ class ApiClient {
 
   Future<AdminAccountUserSummary> updateAdminAccountUser(
     String userId, {
+    String? role,
     String? level,
     String? status,
   }) async {
     return AdminAccountUserSummary.fromJson(
       ((await _patch(accountBase, '/admin/users/$userId', {
-        if ((level ?? '').trim().isNotEmpty) 'level': level,
-        if ((status ?? '').trim().isNotEmpty) 'status': status,
-      }))['item'] as Map<String, dynamic>? ??
+                if ((role ?? '').trim().isNotEmpty) 'role': role,
+                if ((level ?? '').trim().isNotEmpty) 'level': level,
+                if ((status ?? '').trim().isNotEmpty) 'status': status,
+              }))['item']
+              as Map<String, dynamic>? ??
           const <String, dynamic>{}),
     );
   }

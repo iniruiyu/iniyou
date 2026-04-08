@@ -1451,7 +1451,7 @@ window.LearningService = {
     isAdmin() {
       // Resolve whether the current signed-in account can manage lesson publishing.
       // 判断当前登录账号是否具备课程上架管理权限。
-      return String(this.app?.user?.level || '').toLowerCase() === 'admin';
+      return this.app?.isCurrentUserAdmin?.() === true;
     },
   },
   watch: {

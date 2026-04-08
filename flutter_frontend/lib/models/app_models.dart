@@ -94,8 +94,7 @@ class AdminOverview {
 
   factory AdminOverview.fromJson(Map<String, dynamic> json) {
     final servicesJson = json['services'];
-    final summaryJson =
-        (json['summary'] as Map<String, dynamic>?) ?? const {};
+    final summaryJson = (json['summary'] as Map<String, dynamic>?) ?? const {};
     final workspacesJson = json['workspaces'];
     final summary = AdminSummary.fromJson(summaryJson);
     return AdminOverview(
@@ -375,6 +374,7 @@ class AdminUserItem {
     required this.email,
     required this.username,
     required this.domain,
+    required this.role,
     required this.level,
     required this.status,
     required this.createdAt,
@@ -385,6 +385,7 @@ class AdminUserItem {
   final String email;
   final String username;
   final String domain;
+  final String role;
   final String level;
   final String status;
   final DateTime? createdAt;
@@ -410,6 +411,7 @@ class AdminUserItem {
       email: (json['email'] ?? '').toString(),
       username: (json['username'] ?? '').toString(),
       domain: (json['domain'] ?? '').toString(),
+      role: (json['role'] ?? 'member').toString(),
       level: (json['level'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
@@ -470,6 +472,7 @@ class AdminAccountUserSummary {
     required this.displayName,
     required this.username,
     required this.domain,
+    required this.role,
     required this.level,
     required this.status,
     required this.createdAt,
@@ -479,6 +482,7 @@ class AdminAccountUserSummary {
   final String displayName;
   final String username;
   final String domain;
+  final String role;
   final String level;
   final String status;
   final DateTime? createdAt;
@@ -489,6 +493,7 @@ class AdminAccountUserSummary {
       displayName: (json['display_name'] ?? '').toString(),
       username: (json['username'] ?? '').toString(),
       domain: (json['domain'] ?? '').toString(),
+      role: (json['role'] ?? 'member').toString(),
       level: (json['level'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
@@ -839,6 +844,8 @@ class CurrentUser {
     required this.emailVisibility,
     required this.ageVisibility,
     required this.genderVisibility,
+    required this.role,
+    required this.isAdmin,
     required this.level,
     required this.status,
   });
@@ -859,6 +866,8 @@ class CurrentUser {
   final String emailVisibility;
   final String ageVisibility;
   final String genderVisibility;
+  final String role;
+  final bool isAdmin;
   final String level;
   final String status;
 
@@ -882,6 +891,8 @@ class CurrentUser {
       emailVisibility: (json['email_visibility'] ?? 'private').toString(),
       ageVisibility: (json['age_visibility'] ?? 'private').toString(),
       genderVisibility: (json['gender_visibility'] ?? 'private').toString(),
+      role: (json['role'] ?? 'member').toString(),
+      isAdmin: json['is_admin'] == true,
       level: (json['level'] ?? 'basic').toString(),
       status: (json['status'] ?? 'active').toString(),
     );

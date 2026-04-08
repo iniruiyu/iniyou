@@ -1509,6 +1509,8 @@ const app = createApp({
         emailVisibility: 'private',
         ageVisibility: 'private',
         genderVisibility: 'private',
+        role: 'member',
+        isAdmin: false,
         level: 'Premium',
         planKey: 'monthly',
       },
@@ -2030,6 +2032,11 @@ const app = createApp({
     },
   },
   methods: {
+    isCurrentUserAdmin() {
+      // Keep administrator checks on the dedicated role field instead of membership level.
+      // 统一改用独立角色字段判断管理员权限，而不是复用会员等级。
+      return this.user?.isAdmin === true || String(this.user?.role || '').toLowerCase() === 'admin';
+    },
     isServiceOnline(serviceKey) {
       // Treat the account service as always available after login and only gate optional services.
       // 账号服务在登录后视为可用，只对可选微服务做在线判断。
@@ -2071,7 +2078,7 @@ const app = createApp({
     async syncAdminOverview() {
       // Load the aggregated admin overview once the admin service and permission are both available.
       // 仅在管理员权限和 admin-service 都可用时拉取聚合总览。
-      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('admin')) {
+      if (!this.token || !this.isCurrentUserAdmin() || !this.isServiceOnline('admin')) {
         this.clearAdminOverview();
         return null;
       }
@@ -2099,7 +2106,7 @@ const app = createApp({
       }
     },
     async syncAccountAdminOverview() {
-      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin') {
+      if (!this.token || !this.isCurrentUserAdmin()) {
         this.accountAdminOverview = null;
         this.accountAdminOverviewLoading = false;
         this.accountAdminOverviewError = '';
@@ -2127,7 +2134,7 @@ const app = createApp({
       }
     },
     async updateAccountAdminUser(userID, payload = {}) {
-      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin') {
+      if (!this.token || !this.isCurrentUserAdmin()) {
         return null;
       }
       const targetID = String(userID || '').trim();
@@ -2135,6 +2142,9 @@ const app = createApp({
         throw new Error('User id required.');
       }
       const body = {};
+      if (payload.role) {
+        body.role = payload.role;
+      }
       if (payload.level) {
         body.level = payload.level;
       }
@@ -2157,7 +2167,7 @@ const app = createApp({
       return data?.item || null;
     },
     async syncSpaceAdminOverview() {
-      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('space')) {
+      if (!this.token || !this.isCurrentUserAdmin() || !this.isServiceOnline('space')) {
         this.spaceAdminOverview = null;
         this.spaceAdminOverviewLoading = false;
         this.spaceAdminOverviewError = '';
@@ -2185,7 +2195,7 @@ const app = createApp({
       }
     },
     async syncMessageAdminOverview() {
-      if (!this.token || String(this.user?.level || '').toLowerCase() !== 'admin' || !this.isServiceOnline('message')) {
+      if (!this.token || !this.isCurrentUserAdmin() || !this.isServiceOnline('message')) {
         this.messageAdminOverview = null;
         this.messageAdminOverviewLoading = false;
         this.messageAdminOverviewError = '';
@@ -2238,7 +2248,7 @@ const app = createApp({
       if (!adminOnline && this.view === 'admin-panel') {
         this.view = 'services';
       }
-      if (String(this.user?.level || '').toLowerCase() !== 'admin' &&
+      if (!this.isCurrentUserAdmin() &&
           (this.view === 'account-admin' ||
            this.view === 'space-admin' ||
            this.view === 'message-admin')) {
@@ -2284,7 +2294,7 @@ const app = createApp({
       if (!learningOnline && (this.view === 'learning' || this.view === 'learning-admin')) {
         this.view = 'services';
       }
-      if (String(this.user?.level || '').toLowerCase() !== 'admin' && (this.view === 'learning-admin' || this.view === 'admin-panel')) {
+      if (!this.isCurrentUserAdmin() && (this.view === 'learning-admin' || this.view === 'admin-panel')) {
         this.view = 'services';
       }
       await this.syncAdminOverview();
@@ -2365,14 +2375,14 @@ const app = createApp({
       if (serviceKey === 'learning-admin') {
         // Open the administrator course console only for admin users while the learning service is online.
         // 仅在学习服务在线且当前用户为管理员时打开课程后台。
-        if (!this.isServiceOnline('learning') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        if (!this.isServiceOnline('learning') || !this.isCurrentUserAdmin()) {
           return;
         }
         this.view = 'learning-admin';
         return;
       }
       if (serviceKey === 'account-admin') {
-        if (String(this.user?.level || '').toLowerCase() !== 'admin') {
+        if (!this.isCurrentUserAdmin()) {
           return;
         }
         await this.syncAccountAdminOverview();
@@ -2380,7 +2390,7 @@ const app = createApp({
         return;
       }
       if (serviceKey === 'space-admin') {
-        if (!this.isServiceOnline('space') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        if (!this.isServiceOnline('space') || !this.isCurrentUserAdmin()) {
           return;
         }
         await this.syncSpaceAdminOverview();
@@ -2388,7 +2398,7 @@ const app = createApp({
         return;
       }
       if (serviceKey === 'message-admin') {
-        if (!this.isServiceOnline('message') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        if (!this.isServiceOnline('message') || !this.isCurrentUserAdmin()) {
           return;
         }
         await this.syncMessageAdminOverview();
@@ -2398,7 +2408,7 @@ const app = createApp({
       if (serviceKey === 'admin-panel') {
         // Open the site-wide administrator panel only for administrator accounts.
         // 仅管理员账号可以进入站点总管理面板。
-        if (!this.isServiceOnline('admin') || String(this.user?.level || '').toLowerCase() !== 'admin') {
+        if (!this.isServiceOnline('admin') || !this.isCurrentUserAdmin()) {
           return;
         }
         await this.syncAdminOverview();
@@ -4899,6 +4909,8 @@ const app = createApp({
       this.user.emailVisibility = data.email_visibility || this.user.emailVisibility || 'private';
       this.user.ageVisibility = data.age_visibility || this.user.ageVisibility || 'private';
       this.user.genderVisibility = data.gender_visibility || this.user.genderVisibility || 'private';
+      this.user.role = data.role || this.user.role || 'member';
+      this.user.isAdmin = data.is_admin === true || String(data.role || '').toLowerCase() === 'admin';
       this.user.level = data.level || this.user.level;
       this.profileDraft.displayName = data.display_name || '';
       this.profileDraft.username = data.username || this.profileDraft.username || '';

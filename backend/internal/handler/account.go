@@ -84,6 +84,7 @@ type changePasswordRequest struct {
 }
 
 type adminUpdateUserRequest struct {
+	Role   string `json:"role"`
 	Level  string `json:"level"`
 	Status string `json:"status"`
 }
@@ -325,7 +326,7 @@ func (h *AccountHandler) AdminUpdateUser(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "invalid request")
 		return
 	}
-	item, err := service.AdminUpdateUser(h.DB, actorID, c.Param("id"), req.Level, req.Status)
+	item, err := service.AdminUpdateUser(h.DB, actorID, c.Param("id"), req.Role, req.Level, req.Status)
 	if err != nil {
 		status := http.StatusBadRequest
 		if errors.Is(err, gorm.ErrRecordNotFound) {

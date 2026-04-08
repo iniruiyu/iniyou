@@ -53,10 +53,10 @@ func learningCourseMetadataFilePath() string {
 	return filepath.Join(currentMarkdownStorageDir(), ".learning-course-metadata.json")
 }
 
-func ListMarkdownFilesForLevel(userLevel string) ([]MarkdownFileSummary, error) {
+func ListMarkdownFilesForLevel(userRole string) ([]MarkdownFileSummary, error) {
 	// Enumerate markdown files and filter non-published lessons for non-admin viewers.
 	// 枚举 Markdown 文件，并为非管理员过滤掉未发布课程。
-	includeAllStatuses := IsAdminLevel(userLevel)
+	includeAllStatuses := IsAdminRole(userRole)
 	items, err := ListMarkdownFiles()
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func ListMarkdownFilesForLevel(userLevel string) ([]MarkdownFileSummary, error) 
 	return filtered, nil
 }
 
-func GetMarkdownFileForLevel(relativePath string, userLevel string) (MarkdownFileDocument, error) {
+func GetMarkdownFileForLevel(relativePath string, userRole string) (MarkdownFileDocument, error) {
 	// Read one markdown file and hide non-published lesson content from non-admin viewers.
 	// 读取单个 Markdown 文件，并对非管理员隐藏未发布课程内容。
 	document, err := GetMarkdownFile(relativePath)
@@ -92,7 +92,7 @@ func GetMarkdownFileForLevel(relativePath string, userLevel string) (MarkdownFil
 	}
 
 	document.Status = learningCourseStatusForPath(metadata, document.Path)
-	if !IsAdminLevel(userLevel) && !canAccessLearningMarkdownPath(document.Path, document.Status) {
+	if !IsAdminRole(userRole) && !canAccessLearningMarkdownPath(document.Path, document.Status) {
 		return MarkdownFileDocument{}, ErrMarkdownFileNotFound
 	}
 	return document, nil

@@ -24,7 +24,7 @@ function buildServiceSections(app) {
       sub: app.t('services.adminPanelSub'),
       actionKey: 'admin-panel',
       actionLabel:
-        String(app?.user?.level || '').toLowerCase() === 'admin'
+        app.isCurrentUserAdmin()
           ? app.t('services.open')
           : (app.locale === 'en-US'
               ? 'Admin only'
@@ -32,7 +32,7 @@ function buildServiceSections(app) {
                 ? '管理員專用'
                 : '管理员专用'),
       disabled:
-        String(app?.user?.level || '').toLowerCase() !== 'admin',
+        !app.isCurrentUserAdmin(),
       modules: [
         app.t('adminPanel.featureOverview'),
         app.t('adminPanel.featureHealth'),
