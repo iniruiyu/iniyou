@@ -1124,7 +1124,7 @@ class ServicesView extends StatelessWidget {
         ),
         onOpen: onOpenProfile,
       ),
-      if (isAdmin)
+      if (adminOnline)
         _MicroserviceCard(
           title: localizedText(
             languageCode,
@@ -1152,11 +1152,11 @@ class ServicesView extends StatelessWidget {
           ],
           actionLabel: localizedText(
             languageCode,
-            '打开管理面板',
-            'Open admin panel',
-            '打開管理面板',
+            isAdmin ? '打开管理面板' : '管理员专用',
+            isAdmin ? 'Open admin panel' : 'Admin only',
+            isAdmin ? '打開管理面板' : '管理員專用',
           ),
-          onOpen: adminOnline ? onOpenAdminPanel : onRefresh,
+          onOpen: isAdmin ? onOpenAdminPanel : null,
         ),
       if (spaceOnline)
         _MicroserviceCard(
@@ -2309,7 +2309,7 @@ class _MicroserviceCard extends StatelessWidget {
   final String statusLabel;
   final List<String> modules;
   final String actionLabel;
-  final VoidCallback onOpen;
+  final VoidCallback? onOpen;
   final String? secondaryActionLabel;
   final VoidCallback? onSecondaryOpen;
 

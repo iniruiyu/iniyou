@@ -50,6 +50,31 @@ cp .env.example .env
 - 管理员当前还可删除某个课程语言版本文件，用于快速下架课程内容；完整草稿/审核/上架流转仍待独立管理员后台继续落地
 - 如需设置管理员，可使用 `backend/cmd/admin-tool` 直接修改账号等级，例如：`cd backend && go run ./cmd/admin-tool --email your@email.com --level admin`
 
+## 管理员权限工具 / Admin Tool
+
+`backend/cmd/admin-tool` 用于直接修改账号等级，适合本地开发、联调环境初始化和测试账号提权。`backend/cmd/admin-tool` updates one account level directly and is intended for local development, integration setup, and test-account promotion.
+
+使用约束 / Usage rules:
+
+- 该工具要求在 `backend/` 目录下运行，并使用当前环境变量里的 `DB_DSN` 连接数据库。 Run the tool from `backend/` and let it use the current `DB_DSN` database connection.
+- `--user-id`、`--email`、`--username` 三个参数只能传一个，工具会按该标识精确查找用户。 Pass exactly one of `--user-id`, `--email`, or `--username`; the tool resolves one exact user from that identifier.
+- `--level` 默认为 `admin`，常见取值包括 `admin`、`vip`、`basic`。 `--level` defaults to `admin`; common values include `admin`, `vip`, and `basic`.
+- 当前工具只更新 `users.level` 字段，不会改动 `status`、密码或其他资料。 The tool only updates `users.level`; it does not modify `status`, passwords, or other profile fields.
+
+示例命令 / Examples:
+
+```bash
+cd backend
+go run ./cmd/admin-tool --email your@email.com --level admin
+go run ./cmd/admin-tool --username your_username --level admin
+go run ./cmd/admin-tool --user-id your-user-id --level basic
+```
+
+执行结果 / Result:
+
+- 成功时会输出用户 ID、邮箱、用户名、旧等级和新等级，便于确认修改是否命中正确账号。 On success, the tool prints the user ID, email, username, old level, and new level so you can verify the exact target account.
+- 修改完成后，需要让前端重新登录或刷新当前用户信息，管理员入口才会按新权限显示。 After the update, re-login or refresh the current user state in the frontend so administrator entries reflect the new permission.
+
 ## 本地启动
 
 1. 启动 PostgreSQL，并确认 `DB_DSN` 可用。

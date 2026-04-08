@@ -42,12 +42,12 @@ List<ShellSidebarItem> buildShellSidebarItems(
         icon: Icons.admin_panel_settings_outlined,
         activeIcon: Icons.admin_panel_settings,
       ),
-    if (learningAdminVisible && learningOnline)
+    if (learningAdminVisible)
       ShellSidebarItem(
         viewKey: 'learning-admin',
         label: t('sidebar.learningAdmin'),
-        icon: Icons.menu_book_outlined,
-        activeIcon: Icons.menu_book,
+        icon: Icons.school_outlined,
+        activeIcon: Icons.school,
       ),
     if (spaceOnline)
       ShellSidebarItem(

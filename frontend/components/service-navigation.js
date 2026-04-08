@@ -17,22 +17,29 @@ function buildServiceSections(app) {
         app.t('profile.blockchain.title'),
       ],
     },
-    ...(String(app?.user?.level || '').toLowerCase() === 'admin'
-      ? [{
-          key: 'admin-panel',
-          online: app.isServiceOnline('admin'),
-          title: app.t('services.adminPanelTitle'),
-          sub: app.t('services.adminPanelSub'),
-          actionKey: 'admin-panel',
-          actionLabel: app.t('services.open'),
-          modules: [
-            app.t('adminPanel.featureOverview'),
-            app.t('adminPanel.featureHealth'),
-            app.t('adminPanel.featureRouting'),
-            app.t('adminPanel.featureWorkspace'),
-          ],
-        }]
-      : []),
+    {
+      key: 'admin-panel',
+      online: app.isServiceOnline('admin'),
+      title: app.t('services.adminPanelTitle'),
+      sub: app.t('services.adminPanelSub'),
+      actionKey: 'admin-panel',
+      actionLabel:
+        String(app?.user?.level || '').toLowerCase() === 'admin'
+          ? app.t('services.open')
+          : (app.locale === 'en-US'
+              ? 'Admin only'
+              : app.locale === 'zh-TW'
+                ? '管理員專用'
+                : '管理员专用'),
+      disabled:
+        String(app?.user?.level || '').toLowerCase() !== 'admin',
+      modules: [
+        app.t('adminPanel.featureOverview'),
+        app.t('adminPanel.featureHealth'),
+        app.t('adminPanel.featureRouting'),
+        app.t('adminPanel.featureWorkspace'),
+      ],
+    },
     {
       key: 'space',
       online: app.isServiceOnline('space'),
@@ -145,6 +152,7 @@ window.ServiceNavigation = {
               type="button"
               :primary-label="service.actionLabel"
               :secondary-label="app.peerLocaleText('services.open')"
+              :disabled="Boolean(service.disabled)"
               @click="openServiceSection(service.actionKey)"
             ></bilingual-action-button>
           </div>
