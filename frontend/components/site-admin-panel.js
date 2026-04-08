@@ -12,6 +12,10 @@ window.SiteAdminPanel = {
       errorMessage: '',
       flashMessage: '',
       overview: null,
+      databaseConfig: null,
+      databaseConfigDraft: '',
+      databaseConfigLoading: false,
+      databaseConfigSaving: false,
       userFilter: '',
       roleDrafts: {},
       levelDrafts: {},
@@ -54,7 +58,7 @@ window.SiteAdminPanel = {
       return this.serviceCards.filter((service) => !service.online);
     },
     databaseCards() {
-      const database = this.overview?.database || {};
+      const database = this.databaseConfig || this.overview?.database || {};
       return [
         { key: 'driver', label: 'Driver', value: database.driver || '-' },
         { key: 'host', label: 'Host', value: database.host || '-' },
@@ -294,10 +298,67 @@ window.SiteAdminPanel = {
           },
         });
         this.overview = await this.readPayload(response);
+        await this.refreshDatabaseConfig();
       } catch (error) {
         this.errorMessage = String(error?.message || error || '');
       } finally {
         this.loading = false;
+      }
+    },
+    async refreshDatabaseConfig() {
+      if (!this.isAdmin) {
+        return;
+      }
+      this.databaseConfigLoading = true;
+      try {
+        const response = await fetch(`${this.app.adminApiBase}/config/database`, {
+          headers: {
+            Authorization: `Bearer ${this.app.token}`,
+          },
+        });
+        const item = await this.readPayload(response);
+        this.databaseConfig = item;
+        this.databaseConfigDraft = item?.dsn || '';
+      } catch (error) {
+        this.errorMessage = String(error?.message || error || '');
+      } finally {
+        this.databaseConfigLoading = false;
+      }
+    },
+    async saveDatabaseConfig() {
+      const dsn = String(this.databaseConfigDraft || '').trim();
+      if (!dsn) {
+        this.errorMessage = this.label(
+          '数据库连接不能为空。',
+          'Database DSN is required.',
+          '資料庫連線不能為空。',
+        );
+        return;
+      }
+      this.databaseConfigSaving = true;
+      this.errorMessage = '';
+      this.flashMessage = '';
+      try {
+        const response = await fetch(`${this.app.adminApiBase}/config/database`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${this.app.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ dsn }),
+        });
+        const item = await this.readPayload(response);
+        this.databaseConfig = item;
+        this.databaseConfigDraft = item?.dsn || dsn;
+        this.flashMessage = this.label(
+          '数据库连接已写入本地配置文件，重启后端服务后生效。',
+          'Database DSN was saved to the local config file. Restart backend services to apply it.',
+          '資料庫連線已寫入本地設定檔，重啟後端服務後生效。',
+        );
+      } catch (error) {
+        this.errorMessage = String(error?.message || error || '');
+      } finally {
+        this.databaseConfigSaving = false;
       }
     },
     async saveUser(user) {
@@ -494,7 +555,42 @@ window.SiteAdminPanel = {
               <div class="site-admin-meta-value">{{ item.value }}</div>
             </div>
           </div>
-          <pre v-if="overview?.database?.masked_dsn" class="site-admin-pre">{{ overview.database.masked_dsn }}</pre>
+          <pre v-if="databaseConfig?.masked_dsn || overview?.database?.masked_dsn" class="site-admin-pre">{{ databaseConfig?.masked_dsn || overview.database.masked_dsn }}</pre>
+          <div class="site-admin-user-filter" style="margin-top: 16px;">
+            <textarea
+              v-model.trim="databaseConfigDraft"
+              class="post-textarea"
+              :placeholder="label('输入完整 DB_DSN，例如 host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable', 'Enter the full DB_DSN, for example host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable', '輸入完整 DB_DSN，例如 host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable')"
+              :disabled="databaseConfigLoading || databaseConfigSaving"
+            ></textarea>
+          </div>
+          <div class="site-admin-generated">
+            {{ label('配置文件', 'Config file', '設定檔') }}:
+            {{ databaseConfig?.source_path || '-' }}
+          </div>
+          <div class="site-admin-generated">
+            {{ label('说明：保存后需要重启 account/admin/space/message/learning 服务才能全部使用新的数据库连接。', 'Note: restart the account/admin/space/message/learning services after saving so every service picks up the new database connection.', '說明：儲存後需要重啟 account/admin/space/message/learning 服務，所有服務才會使用新的資料庫連線。') }}
+          </div>
+          <div class="service-card-actions" style="margin-top: 12px;">
+            <bilingual-action-button
+              variant="tonal"
+              compact
+              type="button"
+              :primary-label="label('重新读取配置', 'Reload config', '重新讀取設定')"
+              :secondary-label="'Reload config'"
+              :disabled="databaseConfigLoading || databaseConfigSaving"
+              @click="refreshDatabaseConfig"
+            ></bilingual-action-button>
+            <bilingual-action-button
+              variant="filled"
+              compact
+              type="button"
+              :primary-label="label('保存数据库连接', 'Save database DSN', '儲存資料庫連線')"
+              :secondary-label="'Save database DSN'"
+              :disabled="databaseConfigLoading || databaseConfigSaving"
+              @click="saveDatabaseConfig"
+            ></bilingual-action-button>
+          </div>
         </article>
 
         <article v-if="!loading" class="service-card site-admin-section">

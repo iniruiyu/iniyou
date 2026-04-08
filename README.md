@@ -44,6 +44,7 @@ cp .env.example .env
 - `TOKEN_TTL_MIN`: 登录态有效时间（分钟）
 - `SERVICE_PORT`: 可选；账号服务默认 `8080`，空间服务默认 `8082`，通讯服务默认 `8081`，学习服务默认 `8083`
 - `MARKDOWN_STORAGE_DIR`: 可选；学习服务 Markdown 课程文件落盘目录，默认 `D:/codeX/iniyou/uploads/learning-service/markdown-files`
+- `backend/.env.local`: 开发期本地覆盖配置文件；如存在，会在进程环境变量之后生效，当前可由网站总控直接写入 `DB_DSN`
 - `learning-service` 现支持在学习页内运行受限 `go`、`javascript`、`python` 代码块；运行环境要求服务所在机器可用对应运行时（Go/Node.js/Python），当前限制为 32 KB 代码、Go 8 秒超时、JavaScript/Python 5 秒超时、16 KB 输出上限，并对高风险模块与导入做基础拦截
 - Flutter 学习页会优先从 `learning-service /api/v1/markdown-files` 同步课程目录，并自动发现 `courses/{courseId}.{locale}.md` 形式的新课程文件
 - 课程内容维护当前已收敛到管理员权限，只有 `users.role = admin` 的账号才会看到双前端中的课程新建与保存入口，并可调用 `learning-service /api/v1/markdown-files/*path`
@@ -76,6 +77,12 @@ go run ./cmd/admin-tool --user-id your-user-id --role member --level vip
 
 - 成功时会输出用户 ID、邮箱、用户名、旧角色/新角色以及旧等级/新等级，便于确认修改是否命中正确账号。 On success, the tool prints the user ID, email, username, old/new role, and old/new level so you can verify the exact target account.
 - 修改完成后，需要让前端重新登录或刷新当前用户信息，管理员入口才会按新权限显示。 After the update, re-login or refresh the current user state in the frontend so administrator entries reflect the new permission.
+
+## 网站总控数据库配置 / Site Admin Database Config
+
+- 网站总控中的“数据库配置”区域现在支持直接读取和写入 `backend/.env.local` 里的 `DB_DSN`。 The database configuration section in the site admin panel can now read and write `DB_DSN` inside `backend/.env.local` directly.
+- 配置优先级为：进程环境变量 > `backend/.env.local` > 代码默认值。 The precedence is: process environment variables > `backend/.env.local` > in-code defaults.
+- 保存新 DSN 后不会热更新已经运行中的服务；开发期需要手动重启 `account-service`、`admin-service`、`space-service`、`message-service`、`learning-service`，让它们重新加载配置。 Saving a new DSN does not hot-reload already running services; in development you must restart `account-service`, `admin-service`, `space-service`, `message-service`, and `learning-service` so they reload the configuration.
 
 ## 本地启动
 

@@ -59,6 +59,8 @@ func main() {
 	admin := api.Group("")
 	admin.Use(middleware.RequireAdminMiddleware())
 	admin.GET("/overview", adminHandler.Overview)
+	admin.GET("/config/database", adminHandler.DatabaseConfig)
+	admin.PATCH("/config/database", adminHandler.UpdateDatabaseConfig)
 	admin.PATCH("/users/:id", adminHandler.UpdateUser)
 
 	if err := r.Run(":" + cfg.Port); err != nil {

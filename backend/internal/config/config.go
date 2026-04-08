@@ -81,5 +81,8 @@ func getenv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
+	if v, ok := readLocalOverrideValue(key); ok {
+		return v
+	}
 	return fallback
 }
