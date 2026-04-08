@@ -1533,6 +1533,11 @@ window.LearningService = {
     courseSeriesText(course) {
       return localizedLearningText(this.app, course?.seriesTitle);
     },
+    groupSeriesText(group) {
+      // Resolve one localized series title for grouped lesson cards.
+      // 为分组后的课程卡片解析系列标题。
+      return localizedLearningText(this.app, group?.seriesTitle);
+    },
     courseTags(course) {
       const tags = localizedLearningText(this.app, course?.tags);
       return Array.isArray(tags) ? tags : [];
@@ -2348,7 +2353,7 @@ window.LearningService = {
               class="learning-series-group"
             >
               <div class="learning-series-head">
-                <div class="learning-series-title">{{ localizedLearningText(app, group.seriesTitle) }}</div>
+                <div class="learning-series-title">{{ groupSeriesText(group) }}</div>
                 <div class="learning-series-count">{{ group.courses.length }} {{ learningText({
                   'zh-CN': '门课程',
                   'en-US': 'courses',

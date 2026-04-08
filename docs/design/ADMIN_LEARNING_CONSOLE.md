@@ -15,9 +15,10 @@
 
 ## 3. 后台职责 / Admin Console Responsibilities
 
-- 创建课程：输入 `courseId`、语言版本与 Markdown 正文，生成 `courses/{courseId}.{locale}.md`。 / Create lessons by providing `courseId`, locale, and Markdown content, producing `courses/{courseId}.{locale}.md`.
+- 创建课程：输入“课程系列 + 课程序号 + 课程名称”、语言版本与 Markdown 正文，生成 `courses/{series}-{order}-{title}.{locale}.md`。 / Create lessons by providing “course series + lesson order + lesson name”, locale, and Markdown content, producing `courses/{series}-{order}-{title}.{locale}.md`.
 - 编辑课程：修改当前语言版本正文并保存。 / Edit lessons by updating the active locale variant content and saving it.
 - 多语言管理：同一课程可维护 `zh-CN`、`en-US`、`zh-TW` 等多个版本。 / Locale management allows the same course to maintain multiple variants such as `zh-CN`, `en-US`, and `zh-TW`.
+- 课程排序：同一系列内按 `order` 升序排列，系列之间按系列键稳定排序。 / Lesson ordering sorts ascending by `order` within the same series, and series groups keep a stable series-key order.
 - 上架管理：后续应补课程元数据与状态管理，而不只依赖文件存在。 / Publishing management should later add lesson metadata and statuses instead of relying on file existence alone.
 
 ## 4. 课程状态建议 / Suggested Lesson Statuses
@@ -35,6 +36,8 @@
 
 - `id`
 - `course_id`
+- `series_key`
+- `lesson_order`
 - `locale`
 - `title`
 - `subtitle`
@@ -67,13 +70,14 @@
 ## 7. 前端职责 / Frontend Responsibilities
 
 - 普通学习页默认只展示 `published` 课程。 / The regular learning page should display only `published` lessons by default.
-- 管理员登录后显示“新建课程”“编辑 Markdown”“保存到服务”等后台动作。 / After an administrator signs in, show management actions such as “New lesson”, “Edit markdown”, and “Save to service”.
+- 管理员登录后在学习服务内部显示“新建课程”“编辑 Markdown”“保存到服务”等后台动作，而不是在主导航或服务导航暴露独立入口。 / After an administrator signs in, show management actions such as “New lesson”, “Edit markdown”, and “Save to service” inside the learning service itself instead of exposing a standalone entry in global navigation.
 - 课程后台应作为“网站管理面板”中的子工作区，由总控页统一承接服务状态、快捷入口与跨微服务跳转。 / The course console should become a child workspace inside the site admin panel, with the site-wide panel owning service status, quick actions, and cross-microservice routing.
 
 ## 8. 当前落地状态 / Current Applied State
 
 - 后端课程写入已切到管理员权限。 / Backend lesson writes now require administrator permission.
 - Flutter 与 Legacy Web 已根据用户等级隐藏课程管理入口。 / Flutter and Legacy Web now hide lesson management entry points based on user level.
-- 双前端已新增独立课程后台入口，并继续拆分为网站总管理面板下的专题管理区。 / Both frontends now expose a dedicated course console entry and continue splitting it into a focused workspace under the site-wide admin panel.
+- 课程后台入口现仅保留在学习服务内部，已从主导航、服务导航和网站总管理面板移除。 / The course console entry now remains only inside the learning service and has been removed from the main navigation, service navigation, and site-wide admin panel.
+- 双前端课程目录已支持按系列分组、按序号排序，新建课程表单也已改为结构化生成课程 ID。 / Both frontends now group the lesson catalog by series, sort by lesson order, and create new lessons through a structured course-id generator.
 - 当前“上架”仍等同于管理员直接写入课程文件。 / “Publishing” currently still equals an administrator writing lesson files directly.
 - 下一步应补课程状态表、审核动作与批量发布能力。 / The next step should add a lesson status table, review actions, and bulk publishing support.

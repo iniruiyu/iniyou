@@ -16,10 +16,10 @@
 
 ## 3. 当前任务列表
 
-- `01_FOUNDATION_SETUP.md`: 项目基础搭建与工程规范
-- `02_FRONTEND_ARCHITECTURE.md`: 前端架构与工程初始化
-- `03_BACKEND_ARCHITECTURE.md`: 后端架构与工程初始化
-- `04_DATA_MODEL_AND_DATABASE.md`: 数据模型与数据库设计
+- `01_FOUNDATION_SETUP.md`: 项目基础搭建与工程规范（已完成）
+- `02_FRONTEND_ARCHITECTURE.md`: 前端架构与工程初始化（已完成）
+- `03_BACKEND_ARCHITECTURE.md`: 后端架构与工程初始化（已完成）
+- `04_DATA_MODEL_AND_DATABASE.md`: 数据模型与数据库设计（已完成）
 - `04A_API_CONTRACT.md`: RESTful API 契约整理与维护
 - `05_ACCOUNT_AND_IDENTITY.md`: 用户、账号、登录注册体系
 - `06_WALLET_MEMBERSHIP_BENEFITS.md`: 钱包、会员、权益体系
@@ -37,6 +37,7 @@
 
 ## 5. 当前状态
 
+<<<<<<< ours
 - 状态：进行中
 - 更新时间：2026-03-20
 
@@ -48,3 +49,7 @@
 - 优先收口 `05_ACCOUNT_AND_IDENTITY.md`
 - 继续补完 `07_SOCIAL_CONTENT.md` 中的 `07C` 内容状态与审核预留
 - 完整实跑 `make smoke` 并回写 `RELEASE_CHECKLIST.md`
+=======
+- 状态：开发中（已完成 01~04）
+- 更新时间：2026-03-12
+>>>>>>> theirs
