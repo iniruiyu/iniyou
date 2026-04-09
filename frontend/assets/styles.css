@@ -179,11 +179,34 @@ body {
   position: fixed;
   inset: 0;
   z-index: 90;
+  animation: sidebar-overlay-in 0.22s ease-out;
   background:
     radial-gradient(circle at top right, rgba(110, 231, 255, 0.12), transparent 32%),
     rgba(5, 10, 18, 0.5);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+}
+
+@keyframes sidebar-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobile-sidebar-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(-18px, 0, 0) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
 .topnav-shell {
@@ -446,6 +469,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text);
@@ -510,6 +534,32 @@ body {
 .nav-item.active {
   background: rgba(110, 231, 255, 0.12);
   border-color: rgba(110, 231, 255, 0.4);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 3px;
+  height: 22px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, var(--primary), rgba(255, 184, 107, 0.92));
+  box-shadow: 0 0 16px rgba(110, 231, 255, 0.26);
+}
+
+.nav-item.active .nav-icon {
+  background:
+    linear-gradient(135deg, rgba(110, 231, 255, 0.34), rgba(255, 184, 107, 0.2)),
+    rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.2),
+    0 0 22px rgba(110, 231, 255, 0.18);
+}
+
+.nav-item.active .nav-label {
+  color: #ffffff;
 }
 
 .nav-item:disabled {
@@ -4820,6 +4870,8 @@ button:disabled {
     box-shadow:
       0 26px 64px rgba(4, 8, 14, 0.44),
       0 0 0 1px rgba(110, 231, 255, 0.08) inset;
+    animation: mobile-sidebar-enter 0.24s cubic-bezier(0.2, 0.82, 0.28, 1);
+    transform-origin: left top;
   }
 
   .identity-visibility-grid {
@@ -4844,7 +4896,7 @@ button:disabled {
   .nav {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
 
   .nav-item {
@@ -4857,13 +4909,31 @@ button:disabled {
     background: rgba(255, 255, 255, 0.028);
     border-color: rgba(110, 231, 255, 0.08);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    transition:
+      transform 0.18s ease,
+      border-color 0.18s ease,
+      background 0.18s ease,
+      box-shadow 0.18s ease;
   }
 
   .nav-item.active {
     background:
       linear-gradient(135deg, rgba(110, 231, 255, 0.14), rgba(255, 184, 107, 0.08)),
       rgba(255, 255, 255, 0.04);
-    border-color: rgba(110, 231, 255, 0.26);
+    border-color: rgba(110, 231, 255, 0.34);
+    box-shadow:
+      0 16px 30px rgba(5, 10, 18, 0.24),
+      0 0 0 1px rgba(110, 231, 255, 0.08) inset;
+  }
+
+  .nav-item.active::before {
+    left: 12px;
+    height: 26px;
+  }
+
+  .nav-item:hover:not(:disabled),
+  .nav-item:focus-visible {
+    transform: translateX(2px);
   }
 
   .nav-item .nav-label {
@@ -4891,6 +4961,12 @@ button:disabled {
     margin-top: auto;
     padding: 14px 16px;
     border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(110, 231, 255, 0.08), rgba(255, 255, 255, 0.03)),
+      rgba(10, 15, 22, 0.72);
+    box-shadow:
+      0 16px 34px rgba(0, 0, 0, 0.22),
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   }
 
   .sidebar-account-name {
