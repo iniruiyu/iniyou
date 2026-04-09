@@ -5073,9 +5073,10 @@ button:disabled {
   .nav-item {
     width: 100%;
     min-height: 52px;
+    gap: 10px;
     justify-content: flex-start;
     text-align: left;
-    padding: 12px 14px;
+    padding: 11px 12px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.028);
     border-color: rgba(110, 231, 255, 0.08);
@@ -5102,14 +5103,36 @@ button:disabled {
     height: 26px;
   }
 
+  .nav-item .nav-icon,
+  .nav-item .nav-icon-shell {
+    flex: 0 0 auto;
+  }
+
+  .nav-item .nav-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-item .nav-badge {
+    top: -5px;
+    right: -7px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+
   .nav-item:hover:not(:disabled),
   .nav-item:focus-visible {
     transform: translateX(2px);
   }
 
   .nav-item .nav-label {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.14px;
   }
 
   .settings-menu.nav-item-settings {
@@ -5121,7 +5144,7 @@ button:disabled {
     justify-content: space-between;
     min-height: 52px;
     border-radius: 16px;
-    padding: 12px 14px;
+    padding: 11px 12px;
   }
 
   .sidebar-account {
