@@ -4911,6 +4911,13 @@ button:disabled {
     display: block;
   }
 
+  .app.compact-sidebar-open .main {
+    transform: scale(0.982) translateY(6px);
+    transform-origin: top center;
+    filter: saturate(0.9) brightness(0.86);
+    opacity: 0.92;
+  }
+
   .sidebar {
     left: 12px;
     right: auto;
@@ -5185,6 +5192,10 @@ button:disabled {
 
   .main {
     padding: 76px 16px 18px;
+    transition:
+      transform 0.22s ease,
+      filter 0.22s ease,
+      opacity 0.22s ease;
   }
 
   .topnav-shell {

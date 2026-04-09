@@ -15,7 +15,7 @@
   <div
     id="app"
     class="app"
-    :class="{ 'sidebar-collapsed': sidebarCollapsed, 'space-shell-mode': isSpaceShell }"
+    :class="{ 'sidebar-collapsed': sidebarCollapsed, 'space-shell-mode': isSpaceShell, 'compact-sidebar-open': !sidebarCollapsed && isCompactViewport }"
   >
     <landing-page v-if="!isLoggedIn" :app="appContext"></landing-page>
 
