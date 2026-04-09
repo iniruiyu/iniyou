@@ -665,6 +665,11 @@ const app = createApp({
             collapse: '折叠导航',
             expand: '展开导航',
           },
+          navGroups: {
+            workspace: '工作区',
+            social: '社交',
+            you: '我的',
+          },
           ws: {
             unreadLabel: '未读消息',
           },
@@ -1185,6 +1190,11 @@ const app = createApp({
             chat: 'Live Chat',
             collapse: 'Collapse Nav',
             expand: 'Expand Nav',
+          },
+          navGroups: {
+            workspace: 'Workspace',
+            social: 'Social',
+            you: 'You',
           },
           ws: {
             unreadLabel: 'Unread',
@@ -3174,6 +3184,11 @@ const app = createApp({
               collapse: '收合導航',
               expand: '展開導航',
             },
+          navGroups: {
+            workspace: '工作區',
+            social: '社交',
+            you: '我的',
+          },
           services: {
             title: '服務導航',
             sub: '只展示目前在線的微服務入口，離線服務會自動隱藏。',
