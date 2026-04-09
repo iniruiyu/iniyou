@@ -43,46 +43,57 @@
 
       <nav class="nav">
         <!-- Navigation / 侧边导航 -->
-        <button class="nav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
-          <span class="nav-icon">SV</span>
-          <span class="nav-label">{{ t('nav.services') }}</span>
-        </button>
-        <button
-          v-if="isServiceOnline('admin') && isCurrentUserAdmin()"
-          class="nav-item"
-          data-icon="AD"
-          :class="{active: view === 'admin-panel'}"
-          :disabled="!isLoggedIn"
-          @click="openServiceSection('admin-panel')"
-        >
-          <span class="nav-icon">AD</span>
-          <span class="nav-label">{{ t('nav.admin-panel') }}</span>
-        </button>
-        <button v-if="isServiceOnline('space')" class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="openServiceSection('space')">
-          <span class="nav-icon">SP</span>
-          <span class="nav-label">{{ t('nav.space') }}</span>
-        </button>
-        <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="openServiceSection('friends')">
-          <span class="nav-icon-shell">
-            <span class="nav-icon">FR</span>
-            <span v-if="pendingFriendCount" class="nav-badge">{{ pendingFriendCount > 99 ? '99+' : pendingFriendCount }}</span>
-          </span>
-          <span class="nav-label">{{ t('nav.friends') }}</span>
-        </button>
-        <button v-if="isServiceOnline('message')" class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="openServiceSection('chat')">
-          <span class="nav-icon-shell">
-            <span class="nav-icon">CH</span>
-            <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-          </span>
-          <span class="nav-label">{{ t('nav.chat') }}</span>
-        </button>
-        <!-- Main-nav profile always opens the current user's own homepage / 主导航主页始终进入当前用户自己的主页。 -->
-        <button class="nav-item" data-icon="ME" :class="{active: view === 'profile' && profileUser.id === user.id}" :disabled="!isLoggedIn || !user.id" @click="openMyProfile()">
-          <span class="nav-icon">ME</span>
-          <span class="nav-label">{{ t('nav.profile') }}</span>
-        </button>
-        <!-- Settings action now lives in the main menu / 设置入口现在放到主菜单里。 -->
-        <settings-menu :app="appContext" class="nav-item-settings"></settings-menu>
+        <div class="nav-group">
+          <div class="nav-group-label">Workspace</div>
+          <button class="nav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
+            <span class="nav-icon">SV</span>
+            <span class="nav-label">{{ t('nav.services') }}</span>
+          </button>
+          <button
+            v-if="isServiceOnline('admin') && isCurrentUserAdmin()"
+            class="nav-item"
+            data-icon="AD"
+            :class="{active: view === 'admin-panel'}"
+            :disabled="!isLoggedIn"
+            @click="openServiceSection('admin-panel')"
+          >
+            <span class="nav-icon">AD</span>
+            <span class="nav-label">{{ t('nav.admin-panel') }}</span>
+          </button>
+          <button v-if="isServiceOnline('space')" class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="openServiceSection('space')">
+            <span class="nav-icon">SP</span>
+            <span class="nav-label">{{ t('nav.space') }}</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-group-label">Social</div>
+          <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="openServiceSection('friends')">
+            <span class="nav-icon-shell">
+              <span class="nav-icon">FR</span>
+              <span v-if="pendingFriendCount" class="nav-badge">{{ pendingFriendCount > 99 ? '99+' : pendingFriendCount }}</span>
+            </span>
+            <span class="nav-label">{{ t('nav.friends') }}</span>
+          </button>
+          <button v-if="isServiceOnline('message')" class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="openServiceSection('chat')">
+            <span class="nav-icon-shell">
+              <span class="nav-icon">CH</span>
+              <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+            </span>
+            <span class="nav-label">{{ t('nav.chat') }}</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-group-label">You</div>
+          <!-- Main-nav profile always opens the current user's own homepage / 主导航主页始终进入当前用户自己的主页。 -->
+          <button class="nav-item" data-icon="ME" :class="{active: view === 'profile' && profileUser.id === user.id}" :disabled="!isLoggedIn || !user.id" @click="openMyProfile()">
+            <span class="nav-icon">ME</span>
+            <span class="nav-label">{{ t('nav.profile') }}</span>
+          </button>
+          <!-- Settings action now lives in the main menu / 设置入口现在放到主菜单里。 -->
+          <settings-menu :app="appContext" class="nav-item-settings"></settings-menu>
+        </div>
       </nav>
 
       <!-- Account summary stays in the sidebar / 账号摘要保留在侧栏底部。 -->
