@@ -358,6 +358,29 @@ body {
     padding 0.2s ease;
 }
 
+@media (min-width: 981px) and (max-width: 1240px) {
+  .topnav-shell {
+    align-items: flex-start;
+  }
+
+  .topnav-strip {
+    flex: 1 1 auto;
+    max-width: min(100%, 720px);
+    gap: 7px;
+  }
+
+  .topnav-item {
+    flex: 1 1 calc(33.333% - 7px);
+    min-width: 0;
+    justify-content: flex-start;
+    padding: 8px 11px;
+  }
+
+  .topnav-item .nav-label {
+    font-size: 12px;
+  }
+}
+
 /* Sidebar / 侧边栏 */
 .sidebar {
   position: fixed;
