@@ -29,6 +29,11 @@
           <div class="brand-copy">
             <div class="brand-title">Account Space</div>
             <div class="brand-sub">{{ t('brandSub') }}</div>
+            <div class="brand-account">
+              <div class="brand-account-name">{{ user.name }}</div>
+              <div class="brand-account-meta">{{ user.domain ? `@${user.domain}` : (user.username ? `@${user.username}` : user.id) }}</div>
+              <div class="brand-account-meta">{{ localizedLevelName }}</div>
+            </div>
           </div>
         </div>
       </div>

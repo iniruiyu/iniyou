@@ -386,6 +386,22 @@ body {
   min-width: 0;
 }
 
+.brand-account {
+  display: none;
+}
+
+.brand-account-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f7fafc;
+}
+
+.brand-account-meta {
+  font-size: 11px;
+  color: rgba(242, 245, 248, 0.68);
+  line-height: 1.35;
+}
+
 .brand-mark {
   width: 46px;
   height: 46px;
@@ -4911,6 +4927,15 @@ button:disabled {
     gap: 2px;
   }
 
+  .brand-account {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
   .brand-title {
     font-size: 17px;
     line-height: 1.1;
@@ -5008,22 +5033,25 @@ button:disabled {
 
   .sidebar-account {
     margin-top: auto;
-    padding: 14px 16px;
-    border-radius: 18px;
-    background:
-      linear-gradient(180deg, rgba(110, 231, 255, 0.08), rgba(255, 255, 255, 0.03)),
-      rgba(10, 15, 22, 0.72);
-    box-shadow:
-      0 16px 34px rgba(0, 0, 0, 0.22),
-      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    padding: 10px 12px 0;
+    border-radius: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    box-shadow: none;
   }
 
   .sidebar-account-name {
-    font-size: 16px;
+    font-size: 13px;
+    color: rgba(242, 245, 248, 0.62);
   }
 
   .sidebar-account-meta {
-    font-size: 12px;
+    font-size: 11px;
+    color: rgba(242, 245, 248, 0.46);
+  }
+
+  .sidebar-account-copy {
+    gap: 2px;
   }
 
   .main {
