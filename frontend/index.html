@@ -20,6 +20,7 @@
     <landing-page v-if="!isLoggedIn" :app="appContext"></landing-page>
 
     <template v-else>
+    <div v-if="!sidebarCollapsed && isCompactViewport" class="sidebar-overlay" @click="toggleSidebar"></div>
     <!-- Main navigation shell / 主导航壳层：空间页也保留，折叠时再切换到顶部导航。 -->
     <aside v-if="!sidebarCollapsed" class="sidebar">
       <div class="brand">
@@ -38,7 +39,7 @@
           <span class="nav-icon">HD</span>
           <span class="nav-label">{{ t('nav.collapse') }}</span>
         </button>
-        <button class="nav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="view = 'services'">
+        <button class="nav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
           <span class="nav-icon">SV</span>
           <span class="nav-label">{{ t('nav.services') }}</span>
         </button>
@@ -53,18 +54,18 @@
           <span class="nav-icon">AD</span>
           <span class="nav-label">{{ t('nav.admin-panel') }}</span>
         </button>
-        <button v-if="isServiceOnline('space')" class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
+        <button v-if="isServiceOnline('space')" class="nav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="openServiceSection('space')">
           <span class="nav-icon">SP</span>
           <span class="nav-label">{{ t('nav.space') }}</span>
         </button>
-        <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
+        <button class="nav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="openServiceSection('friends')">
           <span class="nav-icon-shell">
             <span class="nav-icon">FR</span>
             <span v-if="pendingFriendCount" class="nav-badge">{{ pendingFriendCount > 99 ? '99+' : pendingFriendCount }}</span>
           </span>
           <span class="nav-label">{{ t('nav.friends') }}</span>
         </button>
-        <button v-if="isServiceOnline('message')" class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
+        <button v-if="isServiceOnline('message')" class="nav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="openServiceSection('chat')">
           <span class="nav-icon-shell">
             <span class="nav-icon">CH</span>
             <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
@@ -111,7 +112,7 @@
         </button>
         <nav v-if="showCollapsedTopnavItems" class="topnav-strip" aria-label="Primary navigation">
           <!-- Keep the current nav state when entering the space workspace from the compact top nav / 从折叠顶层导航进入空间工作台时保持当前导航状态。 -->
-          <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="view = 'services'">
+          <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
             <span class="nav-icon">SV</span>
             <span class="nav-label">{{ t('nav.services') }}</span>
           </button>
@@ -126,18 +127,18 @@
             <span class="nav-icon">AD</span>
             <span class="nav-label">{{ t('nav.admin-panel') }}</span>
           </button>
-          <button v-if="isServiceOnline('space')" class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="enterSpaceShell()">
+          <button v-if="isServiceOnline('space')" class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="openServiceSection('space')">
             <span class="nav-icon">SP</span>
             <span class="nav-label">{{ t('nav.space') }}</span>
           </button>
-          <button class="nav-item topnav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="view = 'friends'">
+          <button class="nav-item topnav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="openServiceSection('friends')">
             <span class="nav-icon-shell">
               <span class="nav-icon">FR</span>
               <span v-if="pendingFriendCount" class="nav-badge">{{ pendingFriendCount > 99 ? '99+' : pendingFriendCount }}</span>
             </span>
             <span class="nav-label">{{ t('nav.friends') }}</span>
           </button>
-          <button v-if="isServiceOnline('message')" class="nav-item topnav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="view = 'chat'">
+          <button v-if="isServiceOnline('message')" class="nav-item topnav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="openServiceSection('chat')">
             <span class="nav-icon-shell">
               <span class="nav-icon">CH</span>
               <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>

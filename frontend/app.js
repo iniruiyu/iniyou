@@ -1819,6 +1819,11 @@ const app = createApp({
       // 让运行时壳层尺寸与 CSS 使用的同一断点保持一致。
       return Number(this.viewportWidth || 0) > 980;
     },
+    isCompactViewport() {
+      // Treat tablet-width and smaller windows as compact navigation mode.
+      // 将平板宽度及以下窗口视为紧凑导航模式。
+      return !this.isDesktopViewport;
+    },
     showCollapsedTopnavItems() {
       // Keep the compact top navigation buttons only on desktop collapsed layouts.
       // 仅在桌面端折叠布局下保留紧凑顶部导航按钮带。
@@ -2333,6 +2338,11 @@ const app = createApp({
     async openServiceSection(serviceKey) {
       // Jump from the service directory into the corresponding live section.
       // 从服务目录跳转到对应的在线分区。
+      if (serviceKey === 'services') {
+        this.view = 'services';
+        this.closeSidebarForCompactViewport();
+        return;
+      }
       if (serviceKey === 'profile') {
         await this.openMyProfile();
         return;
@@ -2351,6 +2361,7 @@ const app = createApp({
       if (serviceKey === 'friends') {
         await this.loadFriends();
         this.view = 'friends';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'chat') {
@@ -2366,6 +2377,7 @@ const app = createApp({
           }
         }
         this.view = 'chat';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'learning') {
@@ -2375,6 +2387,7 @@ const app = createApp({
           return;
         }
         this.view = 'learning';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'learning-admin') {
@@ -2384,6 +2397,7 @@ const app = createApp({
           return;
         }
         this.view = 'learning-admin';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'account-admin') {
@@ -2392,6 +2406,7 @@ const app = createApp({
         }
         await this.syncAccountAdminOverview();
         this.view = 'account-admin';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'space-admin') {
@@ -2400,6 +2415,7 @@ const app = createApp({
         }
         await this.syncSpaceAdminOverview();
         this.view = 'space-admin';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'message-admin') {
@@ -2408,6 +2424,7 @@ const app = createApp({
         }
         await this.syncMessageAdminOverview();
         this.view = 'message-admin';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'admin-panel') {
@@ -2418,14 +2435,17 @@ const app = createApp({
         }
         await this.syncAdminOverview();
         this.view = 'admin-panel';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'levels') {
         this.view = 'levels';
+        this.closeSidebarForCompactViewport();
         return;
       }
       if (serviceKey === 'blockchain') {
         this.view = 'blockchain';
+        this.closeSidebarForCompactViewport();
       }
     },
     async readApiPayload(response) {
@@ -4604,6 +4624,13 @@ const app = createApp({
     closeSettingsMenu() {
       this.settingsOpen = false;
     },
+    closeSidebarForCompactViewport() {
+      // Auto-close the navigation drawer after compact-layout navigation.
+      // 在紧凑布局完成导航后自动收起导航抽屉。
+      if (this.isCompactViewport && !this.sidebarCollapsed) {
+        this.sidebarCollapsed = true;
+      }
+    },
     toggleSidebar() {
       // Toggle sidebar collapsed state.
       // 切换侧边栏折叠状态。
@@ -4633,6 +4660,7 @@ const app = createApp({
         this.activePublicSpaceId = targetSpace.id;
         this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, targetSpace.id);
         this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, targetSpace.id);
+        this.closeSidebarForCompactViewport();
         return;
       }
       this.currentSpace = null;
@@ -4642,6 +4670,7 @@ const app = createApp({
       this.activePublicSpaceId = '';
       this.persistActiveSpace(ACTIVE_PRIVATE_SPACE_KEY, '');
       this.persistActiveSpace(ACTIVE_PUBLIC_SPACE_KEY, '');
+      this.closeSidebarForCompactViewport();
     },
     leaveSpaceShell() {
       // Leave the current space view and return to the workspace-only page.
@@ -5049,6 +5078,7 @@ const app = createApp({
         return;
       }
       await this.openProfile(this.user.id, this.user.name);
+      this.closeSidebarForCompactViewport();
     },
     async openProfile(userID, fallbackName = '') {
       // Open a profile summary and load public spaces only.
