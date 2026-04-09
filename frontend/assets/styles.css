@@ -488,12 +488,33 @@ body {
 }
 
 .nav-group-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 0 14px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(242, 245, 248, 0.42);
+  color: rgba(242, 245, 248, 0.34);
+}
+
+.nav-group-label::before,
+.nav-group-label::after {
+  content: '';
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(110, 231, 255, 0.2));
+}
+
+.nav-group-label::before {
+  width: 14px;
+  flex: 0 0 auto;
+}
+
+.nav-group-label::after {
+  flex: 1 1 auto;
+  opacity: 0.7;
 }
 
 .settings-menu.nav-item-settings {
@@ -5034,10 +5055,19 @@ button:disabled {
   }
 
   .nav-group-label {
-    padding: 0 6px;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    color: rgba(242, 245, 248, 0.34);
+    gap: 8px;
+    padding: 0 2px;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: rgba(242, 245, 248, 0.28);
+  }
+
+  .nav-group-label::before {
+    width: 10px;
+  }
+
+  .nav-group-label::after {
+    opacity: 0.5;
   }
 
   .nav-item {
