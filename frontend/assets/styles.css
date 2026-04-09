@@ -5126,25 +5126,30 @@ button:disabled {
 
   .sidebar-account {
     margin-top: auto;
-    padding: 10px 12px 0;
+    padding: 8px 2px 0;
     border-radius: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
     background: transparent;
     box-shadow: none;
+    opacity: 0.88;
   }
 
   .sidebar-account-name {
-    font-size: 13px;
-    color: rgba(242, 245, 248, 0.62);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(242, 245, 248, 0.38);
   }
 
   .sidebar-account-meta {
-    font-size: 11px;
-    color: rgba(242, 245, 248, 0.46);
+    font-size: 10px;
+    line-height: 1.35;
+    color: rgba(242, 245, 248, 0.3);
   }
 
   .sidebar-account-copy {
-    gap: 2px;
+    gap: 1px;
   }
 
   .main {
