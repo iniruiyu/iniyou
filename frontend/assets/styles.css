@@ -4977,6 +4977,7 @@ button:disabled {
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
+    overscroll-behavior: none;
   }
 
   .app.compact-sidebar-open .main {
@@ -4985,6 +4986,7 @@ button:disabled {
     filter: saturate(0.9) brightness(0.86);
     opacity: 0.92;
     overflow: hidden;
+    touch-action: none;
   }
 
   .sidebar {
@@ -5013,6 +5015,8 @@ button:disabled {
       0 1px 0 rgba(255, 255, 255, 0.06) inset;
     animation: mobile-sidebar-enter 0.24s cubic-bezier(0.2, 0.82, 0.28, 1);
     transform-origin: left top;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .brand {
