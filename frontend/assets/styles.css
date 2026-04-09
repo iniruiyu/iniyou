@@ -5000,10 +5000,20 @@ button:disabled {
   .brand-account {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin-top: 8px;
-    padding-top: 8px;
+    gap: 1px;
+    margin-top: 6px;
+    padding-top: 7px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .brand-account-name {
+    font-size: 13px;
+    letter-spacing: 0.01em;
+  }
+
+  .brand-account-meta {
+    font-size: 10px;
+    color: rgba(242, 245, 248, 0.54);
   }
 
   .brand-title {
@@ -5012,9 +5022,7 @@ button:disabled {
   }
 
   .brand-sub {
-    font-size: 10px;
-    line-height: 1.3;
-    color: rgba(242, 245, 248, 0.68);
+    display: none;
   }
 
   .identity-visibility-grid {
