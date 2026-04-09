@@ -402,6 +402,10 @@ body {
   line-height: 1.35;
 }
 
+.brand-collapse {
+  display: none;
+}
+
 .brand-mark {
   width: 46px;
   height: 46px;
@@ -4912,6 +4916,8 @@ button:disabled {
   .brand-core {
     gap: 12px;
     align-items: center;
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
   .brand-mark {
@@ -4925,6 +4931,39 @@ button:disabled {
 
   .brand-copy {
     gap: 2px;
+  }
+
+  .brand-collapse {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    border: 1px solid rgba(110, 231, 255, 0.16);
+    background:
+      linear-gradient(135deg, rgba(110, 231, 255, 0.18), rgba(255, 184, 107, 0.1)),
+      rgba(255, 255, 255, 0.03);
+    color: #f2f5f8;
+    box-shadow:
+      0 10px 22px rgba(0, 0, 0, 0.18),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .brand-collapse-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #0a0f14;
+    background: linear-gradient(135deg, var(--primary), rgba(255, 184, 107, 0.92));
+    box-shadow: 0 8px 18px rgba(110, 231, 255, 0.18);
   }
 
   .brand-account {
@@ -5013,10 +5052,6 @@ button:disabled {
   .nav-item .nav-label {
     font-size: 15px;
     font-weight: 600;
-  }
-
-  .nav-item-control {
-    margin-bottom: 2px;
   }
 
   .settings-menu.nav-item-settings {

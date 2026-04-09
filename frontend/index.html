@@ -36,14 +36,13 @@
             </div>
           </div>
         </div>
+        <button class="brand-collapse" type="button" @click="toggleSidebar" :aria-label="t('nav.collapse')">
+          <span class="brand-collapse-icon">HD</span>
+        </button>
       </div>
 
       <nav class="nav">
         <!-- Navigation / 侧边导航 -->
-        <button class="nav-item nav-item-control" type="button" @click="toggleSidebar" :aria-label="t('nav.collapse')">
-          <span class="nav-icon">HD</span>
-          <span class="nav-label">{{ t('nav.collapse') }}</span>
-        </button>
         <button class="nav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
           <span class="nav-icon">SV</span>
           <span class="nav-label">{{ t('nav.services') }}</span>
