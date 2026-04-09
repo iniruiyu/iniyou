@@ -4794,13 +4794,20 @@ button:disabled {
 
   .sidebar {
     left: 12px;
-    right: 12px;
+    right: auto;
     top: 12px;
-    width: auto;
+    width: min(336px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
     height: calc(100vh - 24px);
     flex-direction: column;
     align-items: stretch;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    padding: 18px 14px 16px;
+    gap: 14px;
+    border-radius: 24px;
+    box-shadow:
+      0 26px 64px rgba(4, 8, 14, 0.44),
+      0 0 0 1px rgba(110, 231, 255, 0.08) inset;
   }
 
   .identity-visibility-grid {
@@ -4823,13 +4830,63 @@ button:disabled {
 
   /* Responsive nav stacking / 响应式导航堆叠 */
   .nav {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .nav-item {
-    text-align: center;
+    width: 100%;
+    min-height: 52px;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.028);
+    border-color: rgba(110, 231, 255, 0.08);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+  }
+
+  .nav-item.active {
+    background:
+      linear-gradient(135deg, rgba(110, 231, 255, 0.14), rgba(255, 184, 107, 0.08)),
+      rgba(255, 255, 255, 0.04);
+    border-color: rgba(110, 231, 255, 0.26);
+  }
+
+  .nav-item .nav-label {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .nav-item-control {
+    margin-bottom: 2px;
+  }
+
+  .settings-menu.nav-item-settings {
+    width: 100%;
+  }
+
+  .settings-menu.nav-item-settings .settings-trigger {
+    width: 100%;
+    justify-content: space-between;
+    min-height: 52px;
+    border-radius: 16px;
+    padding: 12px 14px;
+  }
+
+  .sidebar-account {
+    margin-top: auto;
+    padding: 14px 16px;
+    border-radius: 18px;
+  }
+
+  .sidebar-account-name {
+    font-size: 16px;
+  }
+
+  .sidebar-account-meta {
+    font-size: 12px;
   }
 
   .main {
