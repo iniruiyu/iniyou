@@ -35,11 +35,15 @@ class SiteAdminWorkspaceView extends StatefulWidget {
 
 class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
   AdminOverview? _overview;
+  AdminDatabaseConfig? _databaseConfig;
   bool _loading = true;
   bool _saving = false;
+  bool _databaseConfigSaving = false;
   String _error = '';
   String _flash = '';
   String _userFilter = '';
+  final TextEditingController _databaseConfigController =
+      TextEditingController();
   final Map<String, String> _roleDrafts = {};
   final Map<String, String> _levelDrafts = {};
   final Map<String, String> _statusDrafts = {};
@@ -48,6 +52,12 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
   void initState() {
     super.initState();
     unawaited(_loadOverview(refreshWorkspace: false));
+  }
+
+  @override
+  void dispose() {
+    _databaseConfigController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadOverview({required bool refreshWorkspace}) async {
@@ -62,11 +72,14 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
     }
     try {
       final overview = await widget.apiClient.fetchAdminOverview();
+      final databaseConfig = await widget.apiClient.fetchAdminDatabaseConfig();
       if (!mounted) {
         return;
       }
       setState(() {
         _overview = overview;
+        _databaseConfig = databaseConfig;
+        _databaseConfigController.text = databaseConfig.dsn;
         _loading = false;
         _error = '';
         _flash = '';
@@ -135,6 +148,59 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
         '已篩選停用使用者: ${user.displayName.isEmpty ? user.id : user.displayName}',
       );
     });
+  }
+
+  Future<void> _saveDatabaseConfig() async {
+    final nextDsn = _databaseConfigController.text.trim();
+    if (nextDsn.isEmpty) {
+      setState(() {
+        _error = localizedText(
+          widget.languageCode,
+          '数据库连接不能为空。',
+          'Database DSN is required.',
+          '資料庫連線不能為空。',
+        );
+      });
+      return;
+    }
+    setState(() {
+      _databaseConfigSaving = true;
+      _error = '';
+      _flash = '';
+    });
+    try {
+      final item = await widget.apiClient.updateAdminDatabaseConfig(nextDsn);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _databaseConfig = item;
+        _databaseConfigController.text = item.dsn;
+        _databaseConfigSaving = false;
+        _flash = localizedText(
+          widget.languageCode,
+          '数据库连接已写入本地配置文件，重启后端服务后生效。',
+          'Database DSN was saved to the local config file. Restart backend services to apply it.',
+          '資料庫連線已寫入本地設定檔，重啟後端服務後生效。',
+        );
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _databaseConfigSaving = false;
+        _error = error.message;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _databaseConfigSaving = false;
+        _error = '$error';
+      });
+    }
   }
 
   Future<void> _saveUser(AdminUserItem user) async {
@@ -582,27 +648,32 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
                     children: [
                       _AdminInfoChip(
                         label: 'Driver',
-                        value: overview.database.driver,
+                        value:
+                            _databaseConfig?.driver ?? overview.database.driver,
                       ),
                       _AdminInfoChip(
                         label: 'Host',
-                        value: overview.database.host,
+                        value: _databaseConfig?.host ?? overview.database.host,
                       ),
                       _AdminInfoChip(
                         label: 'Port',
-                        value: overview.database.port,
+                        value: _databaseConfig?.port ?? overview.database.port,
                       ),
                       _AdminInfoChip(
                         label: 'Database',
-                        value: overview.database.database,
+                        value:
+                            _databaseConfig?.database ??
+                            overview.database.database,
                       ),
                       _AdminInfoChip(
                         label: 'User',
-                        value: overview.database.user,
+                        value: _databaseConfig?.user ?? overview.database.user,
                       ),
                       _AdminInfoChip(
                         label: 'SSL',
-                        value: overview.database.sslMode,
+                        value:
+                            _databaseConfig?.sslMode ??
+                            overview.database.sslMode,
                       ),
                       _AdminInfoChip(
                         label: localizedText(
@@ -642,10 +713,83 @@ class _SiteAdminWorkspaceViewState extends State<SiteAdminWorkspaceView> {
                       ),
                     ],
                   ),
-                  if (overview.database.maskedDsn.isNotEmpty) ...[
+                  if ((_databaseConfig?.maskedDsn ??
+                          overview.database.maskedDsn)
+                      .isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    SelectableText(overview.database.maskedDsn),
+                    SelectableText(
+                      _databaseConfig?.maskedDsn ?? overview.database.maskedDsn,
+                    ),
                   ],
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _databaseConfigController,
+                    minLines: 3,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      labelText: localizedText(
+                        widget.languageCode,
+                        '数据库连接',
+                        'Database DSN',
+                        '資料庫連線',
+                      ),
+                      hintText: localizedText(
+                        widget.languageCode,
+                        '输入完整 DB_DSN，例如 host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable',
+                        'Enter the full DB_DSN, for example host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable',
+                        '輸入完整 DB_DSN，例如 host=localhost user=postgres password=postgres dbname=account_service port=5432 sslmode=disable',
+                      ),
+                    ),
+                  ),
+                  if ((_databaseConfig?.sourcePath ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    SelectableText(_databaseConfig!.sourcePath),
+                  ],
+                  const SizedBox(height: 12),
+                  Text(
+                    localizedText(
+                      widget.languageCode,
+                      '保存后需要重启 account/admin/space/message/learning 服务，新的数据库连接才会生效。',
+                      'Restart the account/admin/space/message/learning services after saving so the new database connection takes effect.',
+                      '儲存後需要重啟 account/admin/space/message/learning 服務，新的資料庫連線才會生效。',
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.tonal,
+                        compact: true,
+                        onPressed: _loading
+                            ? null
+                            : () => _loadOverview(refreshWorkspace: false),
+                        primaryLabel: localizedText(
+                          widget.languageCode,
+                          '重新读取配置',
+                          'Reload config',
+                          '重新讀取設定',
+                        ),
+                        secondaryLabel: 'Reload config',
+                      ),
+                      BilingualActionButton(
+                        variant: BilingualButtonVariant.filled,
+                        compact: true,
+                        onPressed: _databaseConfigSaving
+                            ? null
+                            : _saveDatabaseConfig,
+                        primaryLabel: localizedText(
+                          widget.languageCode,
+                          '保存数据库连接',
+                          'Save database DSN',
+                          '儲存資料庫連線',
+                        ),
+                        secondaryLabel: 'Save database DSN',
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

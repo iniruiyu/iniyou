@@ -94,6 +94,14 @@ class ApiClient {
   Future<AdminOverview> fetchAdminOverview() async =>
       AdminOverview.fromJson(await _get(adminBase, '/overview'));
 
+  Future<AdminDatabaseConfig> fetchAdminDatabaseConfig() async =>
+      AdminDatabaseConfig.fromJson(await _get(adminBase, '/config/database'));
+
+  Future<AdminDatabaseConfig> updateAdminDatabaseConfig(String dsn) async =>
+      AdminDatabaseConfig.fromJson(
+        await _patch(adminBase, '/config/database', {'dsn': dsn}),
+      );
+
   Future<AdminUserItem> updateAdminUser({
     required String userId,
     String role = '',

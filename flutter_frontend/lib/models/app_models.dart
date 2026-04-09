@@ -300,6 +300,47 @@ class AdminDatabaseSummary {
   }
 }
 
+class AdminDatabaseConfig {
+  AdminDatabaseConfig({
+    required this.sourcePath,
+    required this.dsn,
+    required this.maskedDsn,
+    required this.driver,
+    required this.host,
+    required this.port,
+    required this.database,
+    required this.user,
+    required this.sslMode,
+    required this.requiresRestart,
+  });
+
+  final String sourcePath;
+  final String dsn;
+  final String maskedDsn;
+  final String driver;
+  final String host;
+  final String port;
+  final String database;
+  final String user;
+  final String sslMode;
+  final bool requiresRestart;
+
+  factory AdminDatabaseConfig.fromJson(Map<String, dynamic> json) {
+    return AdminDatabaseConfig(
+      sourcePath: (json['source_path'] ?? '').toString(),
+      dsn: (json['dsn'] ?? '').toString(),
+      maskedDsn: (json['masked_dsn'] ?? '').toString(),
+      driver: (json['driver'] ?? '').toString(),
+      host: (json['host'] ?? '').toString(),
+      port: (json['port'] ?? '').toString(),
+      database: (json['database'] ?? '').toString(),
+      user: (json['user'] ?? '').toString(),
+      sslMode: (json['ssl_mode'] ?? '').toString(),
+      requiresRestart: json['requires_restart'] == true,
+    );
+  }
+}
+
 class AdminRuntimeSummary {
   AdminRuntimeSummary({
     required this.goVersion,
