@@ -1819,6 +1819,11 @@ const app = createApp({
       // 让运行时壳层尺寸与 CSS 使用的同一断点保持一致。
       return Number(this.viewportWidth || 0) > 980;
     },
+    showCollapsedTopnavItems() {
+      // Keep the compact top navigation buttons only on desktop collapsed layouts.
+      // 仅在桌面端折叠布局下保留紧凑顶部导航按钮带。
+      return this.sidebarCollapsed && this.isDesktopViewport;
+    },
     mainShellStyle() {
       // Apply explicit main-shell sizing so collapsed state always releases left-side space.
       // 显式应用主壳层尺寸，确保折叠态一定释放左侧空间。
@@ -4606,8 +4611,12 @@ const app = createApp({
     },
     handleWindowResize() {
       // Keep runtime shell styles synced with the current viewport width.
-      // 让运行时壳层样式与当前视口宽度保持同步。
-      this.viewportWidth = typeof window !== 'undefined' ? window.innerWidth : this.viewportWidth;
+      // 让运行时壳层样式与当前视口宽度保持同步，并在小窗口强制折叠导航。
+      const nextWidth = typeof window !== 'undefined' ? window.innerWidth : this.viewportWidth;
+      this.viewportWidth = nextWidth;
+      if (Number(nextWidth || 0) <= 980) {
+        this.sidebarCollapsed = true;
+      }
     },
     enterSpaceShell(space = null) {
       // Preserve the current navigation state for both the space workspace and the specific space view.

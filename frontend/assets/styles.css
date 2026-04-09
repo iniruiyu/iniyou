@@ -4849,6 +4849,7 @@ button:disabled {
   }
 
   .topnav-strip {
+    display: none;
     width: 100%;
   }
 

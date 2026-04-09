@@ -109,7 +109,7 @@
           </span>
           <span class="topnav-toggle-accent" aria-hidden="true"></span>
         </button>
-        <nav class="topnav-strip" aria-label="Primary navigation">
+        <nav v-if="showCollapsedTopnavItems" class="topnav-strip" aria-label="Primary navigation">
           <!-- Keep the current nav state when entering the space workspace from the compact top nav / 从折叠顶层导航进入空间工作台时保持当前导航状态。 -->
           <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="view = 'services'">
             <span class="nav-icon">SV</span>
