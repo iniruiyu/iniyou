@@ -379,6 +379,13 @@ body {
   gap: 14px;
 }
 
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 .brand-mark {
   width: 46px;
   height: 46px;
@@ -4874,6 +4881,47 @@ button:disabled {
     transform-origin: left top;
   }
 
+  .brand {
+    padding: 14px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(110, 231, 255, 0.12);
+    background:
+      radial-gradient(circle at top right, rgba(110, 231, 255, 0.1), transparent 48%),
+      linear-gradient(180deg, rgba(14, 22, 32, 0.96), rgba(9, 14, 22, 0.94));
+    box-shadow:
+      0 16px 34px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  }
+
+  .brand-core {
+    gap: 12px;
+    align-items: center;
+  }
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    box-shadow:
+      0 12px 24px rgba(110, 231, 255, 0.18),
+      0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  }
+
+  .brand-copy {
+    gap: 2px;
+  }
+
+  .brand-title {
+    font-size: 17px;
+    line-height: 1.1;
+  }
+
+  .brand-sub {
+    font-size: 11px;
+    line-height: 1.35;
+    color: rgba(242, 245, 248, 0.68);
+  }
+
   .identity-visibility-grid {
     grid-template-columns: 1fr;
   }
@@ -4897,6 +4945,7 @@ button:disabled {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding-top: 2px;
   }
 
   .nav-item {
