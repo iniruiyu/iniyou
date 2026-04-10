@@ -11,12 +11,12 @@ class AuthenticatedShellView extends StatelessWidget {
     required this.loading,
     required this.wide,
     required this.sidebarCollapsed,
-    required this.sidebar,
+    required this.sidebarBuilder,
     required this.body,
     required this.onToggleSidebar,
     required this.onCompactBack,
     required this.backgroundGradient,
-    required this.topNav,
+    required this.topNavBuilder,
     required this.showTopNav,
     required this.floatingNotice,
     required this.t,
@@ -30,7 +30,7 @@ class AuthenticatedShellView extends StatelessWidget {
   // Sidebar collapsed state.
   // 侧边栏折叠状态。
   final bool sidebarCollapsed;
-  final Widget sidebar;
+  final Widget Function(BuildContext context, bool inDrawer) sidebarBuilder;
   final Widget body;
   // Toggle sidebar collapsed/expanded.
   // 切换侧边栏折叠/展开。
@@ -41,9 +41,9 @@ class AuthenticatedShellView extends StatelessWidget {
   // Background gradient colors.
   // 背景渐变颜色。
   final List<Color> backgroundGradient;
-  // Top navigation widget.
-  // 顶部导航组件。
-  final PreferredSizeWidget topNav;
+  // Top navigation builder.
+  // 顶部导航构建器。
+  final Widget Function(BuildContext context) topNavBuilder;
   // Show top navigation buttons.
   // 是否显示顶部导航按钮。
   final bool showTopNav;
@@ -54,13 +54,13 @@ class AuthenticatedShellView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         titleSpacing: 20,
-        leadingWidth: compactMode ? 72 : (wide ? 72 : null),
-        // Keep nav buttons on the same row as the toggle button.
-        // 将导航按钮与折叠按钮放在同一行。
+        leadingWidth: compactMode ? 72 : null,
         title: compactMode
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,12 +72,14 @@ class AuthenticatedShellView extends StatelessWidget {
                       pageSubtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                 ],
               )
             : (showTopNav
-                  ? topNav
+                  ? Builder(builder: topNavBuilder)
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -92,7 +94,9 @@ class AuthenticatedShellView extends StatelessWidget {
                             pageSubtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
                       ],
                     )),
@@ -102,31 +106,21 @@ class AuthenticatedShellView extends StatelessWidget {
                 onPressed: onCompactBack,
                 icon: Icons.arrow_back_rounded,
               )
-            : wide
-            ? _ShellToolbarIconButton(
-                tooltip: t('shell.toggleSidebar'),
-                onPressed: onToggleSidebar,
-                icon: sidebarCollapsed
-                    ? Icons.menu_rounded
-                    : Icons.menu_open_rounded,
-                emphasized: sidebarCollapsed,
-              )
-            : Builder(
-                builder: (context) {
-                  return _ShellToolbarIconButton(
-                    tooltip: t('shell.toggleSidebar'),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                    icon: Icons.menu_rounded,
-                    emphasized: true,
-                  );
-                },
-              ),
+            : null,
         actions: const [],
         bottom: null,
       ),
       drawer: wide && !compactMode
           ? null
-          : (compactMode ? null : Drawer(child: SafeArea(child: sidebar))),
+          : (compactMode
+                ? null
+                : Drawer(
+                    child: SafeArea(
+                      child: Builder(
+                        builder: (context) => sidebarBuilder(context, true),
+                      ),
+                    ),
+                  )),
       body: compactMode
           ? Container(
               decoration: BoxDecoration(
@@ -149,7 +143,7 @@ class AuthenticatedShellView extends StatelessWidget {
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              Colors.white.withValues(alpha: 0.12),
+                              scheme.primary.withValues(alpha: 0.12),
                               Colors.transparent,
                             ],
                           ),
@@ -168,9 +162,7 @@ class AuthenticatedShellView extends StatelessWidget {
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.14),
+                              scheme.tertiary.withValues(alpha: 0.14),
                               Colors.transparent,
                             ],
                           ),
@@ -204,7 +196,12 @@ class AuthenticatedShellView extends StatelessWidget {
           : Row(
               children: [
                 if (wide && !sidebarCollapsed)
-                  SizedBox(width: 260, child: sidebar),
+                  SizedBox(
+                    width: 260,
+                    child: Builder(
+                      builder: (context) => sidebarBuilder(context, false),
+                    ),
+                  ),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -229,7 +226,7 @@ class AuthenticatedShellView extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    Colors.white.withValues(alpha: 0.12),
+                                    scheme.primary.withValues(alpha: 0.12),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -248,8 +245,7 @@ class AuthenticatedShellView extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    Theme.of(context).colorScheme.primary
-                                        .withValues(alpha: 0.14),
+                                    scheme.tertiary.withValues(alpha: 0.14),
                                     Colors.transparent,
                                   ],
                                 ),

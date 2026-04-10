@@ -6,6 +6,95 @@ import '../i18n/app_i18n.dart';
 import '../models/app_models.dart';
 import '../widgets/app_cards.dart';
 
+class IniyouLogoMark extends StatelessWidget {
+  const IniyouLogoMark({
+    super.key,
+    required this.scheme,
+    this.size = 46,
+    this.radius = 16,
+  });
+
+  final ColorScheme scheme;
+  final double size;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primary.withValues(alpha: 0.24),
+            scheme.tertiary.withValues(alpha: 0.18),
+            scheme.surfaceContainerHighest.withValues(alpha: 0.86),
+          ],
+        ),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: size * 0.43,
+            height: size * 0.43,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: scheme.onSurface.withValues(alpha: 0.82),
+                width: 1.8,
+              ),
+            ),
+          ),
+          Positioned(
+            top: size * 0.2,
+            right: size * 0.18,
+            child: _LogoDot(color: scheme.primary, size: size * 0.17),
+          ),
+          Positioned(
+            left: size * 0.18,
+            bottom: size * 0.2,
+            child: _LogoDot(color: scheme.tertiary, size: size * 0.17),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LogoDot extends StatelessWidget {
+  const _LogoDot({required this.color, required this.size});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.28), blurRadius: 10),
+        ],
+      ),
+    );
+  }
+}
+
 class ShellSidebarItem {
   const ShellSidebarItem({
     required this.viewKey,
@@ -87,6 +176,7 @@ class ShellSidebar extends StatelessWidget {
     required this.loading,
     required this.selectedViewKey,
     required this.items,
+    required this.onToggleNavigation,
     required this.onNavigate,
     required this.onRefresh,
     required this.onLogout,
@@ -104,6 +194,7 @@ class ShellSidebar extends StatelessWidget {
   final bool loading;
   final String selectedViewKey;
   final List<ShellSidebarItem> items;
+  final VoidCallback onToggleNavigation;
   final ValueChanged<String> onNavigate;
   final VoidCallback onRefresh;
   final VoidCallback onLogout;
@@ -117,23 +208,85 @@ class ShellSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Container(
-      color: theme.colorScheme.surface,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.lerp(scheme.surface, scheme.primary, 0.08) ?? scheme.surface,
+            Color.lerp(scheme.surface, scheme.surfaceContainerHighest, 0.16) ??
+                scheme.surface,
+            Color.lerp(scheme.surface, scheme.tertiary, 0.06) ?? scheme.surface,
+          ],
+        ),
+      ),
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         children: [
-          Text(
-            'iniyou',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            t('shell.brandTagline'),
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  scheme.surface.withValues(alpha: 0.92),
+                  scheme.surfaceContainerHighest.withValues(alpha: 0.76),
+                ],
+              ),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.22),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: scheme.shadow.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 14),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                IniyouLogoMark(scheme: scheme),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'iniyou',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.displayName.isEmpty ? user.id : user.displayName,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        user.domain.isNotEmpty
+                            ? '@${user.domain}'
+                            : (user.username.isNotEmpty
+                                  ? '@${user.username}'
+                                  : user.id),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 18),
           InfoCard(
@@ -148,8 +301,6 @@ class ShellSidebar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          // Keep account-level actions inside the sidebar instead of the app bar.
-          // 将账号级操作收进侧边栏，而不是放在应用栏中。
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -175,6 +326,14 @@ class ShellSidebar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
+          _SidebarGlassNavButton(
+            label: t('shell.toggleSidebar'),
+            icon: Icons.menu_open_rounded,
+            selected: false,
+            badgeCount: 0,
+            onPressed: onToggleNavigation,
+          ),
+          const SizedBox(height: 10),
           ...items.map((item) {
             final selected = selectedViewKey == item.viewKey;
             final unreadCount = item.viewKey == 'chat'
@@ -384,7 +543,9 @@ class SettingsMenuButton extends StatelessWidget {
             ? scheme.surface.withValues(alpha: 0.86)
             : scheme.surfaceContainerHighest.withValues(alpha: 0.72),
         foregroundColor: scheme.onSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(compact ? 14 : 18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(compact ? 14 : 18),
+        ),
         side: BorderSide(
           color: compact
               ? scheme.primary.withValues(alpha: 0.16)

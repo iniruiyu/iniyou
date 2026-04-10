@@ -68,9 +68,15 @@ class GuestLandingView extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color.lerp(scheme.surface, scheme.primary, 0.12) ?? scheme.surface,
-              Color.lerp(scheme.surface, scheme.tertiary, 0.08) ?? scheme.surface,
-              Color.lerp(scheme.surface, scheme.surfaceContainerHighest, 0.18) ??
+              Color.lerp(scheme.surface, scheme.primary, 0.12) ??
+                  scheme.surface,
+              Color.lerp(scheme.surface, scheme.tertiary, 0.08) ??
+                  scheme.surface,
+              Color.lerp(
+                    scheme.surface,
+                    scheme.surfaceContainerHighest,
+                    0.18,
+                  ) ??
                   scheme.surface,
             ],
           ),
@@ -111,13 +117,12 @@ class GuestLandingView extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _LandingLogoMark(scheme: scheme),
+                                IniyouLogoMark(scheme: scheme),
                                 const SizedBox(width: 12),
                                 Text(
                                   'iniyou',
-                                  style: theme.textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.w800),
                                 ),
                               ],
                             ),
@@ -196,7 +201,10 @@ class _AuthCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(t('auth.entry'), style: Theme.of(context).textTheme.labelLarge),
+            Text(
+              t('auth.entry'),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             const SizedBox(height: 10),
             Text(title, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
@@ -294,92 +302,6 @@ class _AuthCard extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _LandingLogoMark extends StatelessWidget {
-  const _LandingLogoMark({required this.scheme});
-
-  final ColorScheme scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            scheme.primary.withValues(alpha: 0.24),
-            scheme.tertiary.withValues(alpha: 0.18),
-            scheme.surfaceContainerHighest.withValues(alpha: 0.86),
-          ],
-        ),
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.16),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: scheme.onSurface.withValues(alpha: 0.82),
-                width: 1.8,
-              ),
-            ),
-          ),
-          Positioned(
-            top: 9,
-            right: 8,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: scheme.primary,
-                boxShadow: [
-                  BoxShadow(
-                    color: scheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 8,
-            bottom: 9,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: scheme.tertiary,
-                boxShadow: [
-                  BoxShadow(
-                    color: scheme.tertiary.withValues(alpha: 0.26),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -3281,11 +3281,12 @@ class _IniyouHomeState extends State<IniyouHome> {
             loading: _loading,
             wide: wide,
             sidebarCollapsed: _sidebarCollapsed,
-            sidebar: _buildSidebar(),
+            sidebarBuilder: (context, inDrawer) =>
+                _buildSidebar(context, inDrawer: inDrawer),
             onToggleSidebar: _toggleSidebar,
             onCompactBack: () => _navigateTo(AppView.profile),
             backgroundGradient: _backgroundGradientFor(_themeKeyValue),
-            topNav: _buildTopNavBar(),
+            topNavBuilder: (context) => _buildTopNavBar(context, wide: wide),
             // Keep the top navigation visible whenever the sidebar is collapsed.
             // 只要侧栏处于折叠状态，就保留顶部导航。
             showTopNav: !wide || _sidebarCollapsed,
@@ -3315,7 +3316,7 @@ class _IniyouHomeState extends State<IniyouHome> {
     );
   }
 
-  Widget _buildSidebar() {
+  Widget _buildSidebar(BuildContext context, {required bool inDrawer}) {
     final adminPanelVisible = _adminServiceOnline && _isAdmin;
     return ShellSidebar(
       user: _user!,
@@ -3331,6 +3332,9 @@ class _IniyouHomeState extends State<IniyouHome> {
         learningOnline: _learningServiceOnline,
         learningAdminVisible: adminPanelVisible && _learningServiceOnline,
       ),
+      onToggleNavigation: inDrawer
+          ? () => Navigator.of(context).maybePop()
+          : _toggleSidebar,
       onNavigate: (viewKey) => _navigateTo(appViewFromKey(viewKey)),
       onRefresh: () => _runBusy(_refreshAll),
       onLogout: _logout,
@@ -3343,68 +3347,20 @@ class _IniyouHomeState extends State<IniyouHome> {
     );
   }
 
-  PreferredSizeWidget _buildTopNavBar() {
+  Widget _buildTopNavBar(BuildContext navContext, {required bool wide}) {
     // Top navigation for quick switching.
     // 顶部导航用于快速切换视图。
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final adminPanelVisible = _adminServiceOnline && _isAdmin;
-    final items =
-        <
-          ({
-            AppView view,
-            String label,
-            IconData icon,
-            IconData activeIcon,
-            int badgeCount,
-          })
-        >[
-          (
-            view: AppView.services,
-            label: _t('sidebar.services'),
-            icon: Icons.api_outlined,
-            activeIcon: Icons.api,
-            badgeCount: 0,
-          ),
-          if (adminPanelVisible)
-            (
-              view: AppView.adminPanel,
-              label: _t('sidebar.adminPanel'),
-              icon: Icons.admin_panel_settings_outlined,
-              activeIcon: Icons.admin_panel_settings,
-              badgeCount: 0,
-            ),
-          if (_spaceServiceOnline)
-            (
-              view: AppView.space,
-              label: _t('sidebar.space'),
-              icon: Icons.dashboard_customize_outlined,
-              activeIcon: Icons.dashboard_customize,
-              badgeCount: 0,
-            ),
-          (
-            view: AppView.friends,
-            label: _t('sidebar.friends'),
-            icon: Icons.diversity_3_outlined,
-            activeIcon: Icons.diversity_3,
-            badgeCount: _pendingFriendCount,
-          ),
-          if (_messageServiceOnline)
-            (
-              view: AppView.chat,
-              label: _t('sidebar.chat'),
-              icon: Icons.forum_outlined,
-              activeIcon: Icons.forum,
-              badgeCount: _unreadMessageCount,
-            ),
-          (
-            view: AppView.profile,
-            label: _t('sidebar.profile'),
-            icon: Icons.account_circle_outlined,
-            activeIcon: Icons.account_circle,
-            badgeCount: 0,
-          ),
-        ];
+    final items = buildShellSidebarItems(
+      _t,
+      spaceOnline: _spaceServiceOnline,
+      messageOnline: _messageServiceOnline,
+      adminPanelVisible: adminPanelVisible,
+      learningOnline: _learningServiceOnline,
+      learningAdminVisible: adminPanelVisible && _learningServiceOnline,
+    );
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: Container(
@@ -3417,17 +3373,43 @@ class _IniyouHomeState extends State<IniyouHome> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _buildGlassTopNavChip(
+                  label: _t('shell.toggleSidebar'),
+                  icon: wide ? Icons.menu_rounded : Icons.menu_rounded,
+                  activeIcon: wide
+                      ? Icons.menu_open_rounded
+                      : Icons.menu_open_rounded,
+                  badgeCount: 0,
+                  scheme: scheme,
+                  textTheme: theme.textTheme,
+                  selected: false,
+                  onPressed: () {
+                    if (wide) {
+                      _toggleSidebar();
+                      return;
+                    }
+                    Scaffold.of(navContext).openDrawer();
+                  },
+                ),
+              ),
               for (final item in items)
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: _buildGlassTopNavChip(
-                    view: item.view,
                     label: item.label,
                     icon: item.icon,
                     activeIcon: item.activeIcon,
-                    badgeCount: item.badgeCount,
+                    badgeCount: item.viewKey == 'friends'
+                        ? _pendingFriendCount
+                        : item.viewKey == 'chat'
+                        ? _unreadMessageCount
+                        : 0,
                     scheme: scheme,
                     textTheme: theme.textTheme,
+                    selected: _view == appViewFromKey(item.viewKey),
+                    onPressed: () => _navigateTo(appViewFromKey(item.viewKey)),
                   ),
                 ),
             ],
@@ -3438,15 +3420,15 @@ class _IniyouHomeState extends State<IniyouHome> {
   }
 
   Widget _buildGlassTopNavChip({
-    required AppView view,
     required String label,
     required IconData icon,
     required IconData activeIcon,
     required int badgeCount,
     required ColorScheme scheme,
     required TextTheme textTheme,
+    required bool selected,
+    required VoidCallback onPressed,
   }) {
-    final selected = _view == view;
     final backgroundStart = selected
         ? scheme.primary.withValues(alpha: 0.18)
         : scheme.surface.withValues(alpha: 0.18);
@@ -3473,7 +3455,7 @@ class _IniyouHomeState extends State<IniyouHome> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => _navigateTo(view),
+              onTap: onPressed,
               borderRadius: BorderRadius.circular(24),
               child: Ink(
                 padding: const EdgeInsets.symmetric(
