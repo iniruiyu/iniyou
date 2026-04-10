@@ -559,6 +559,21 @@ class _IniyouHomeState extends State<IniyouHome> {
     });
   }
 
+  Future<void> _syncRememberedLoginDraft() async {
+    // Persist the current login draft immediately when remember-me stays enabled.
+    // 当“记住登录”启用时，立即持久化当前登录草稿。
+    if (!_rememberLoginCredentials) {
+      return;
+    }
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await SessionActions.persistRememberedCredentials(
+      prefs,
+      remember: true,
+      account: _loginAccountController.text.trim(),
+      password: _loginPasswordController.text,
+    );
+  }
+
   ThemeData _themeDataFor(String themeKey) {
     // Build theme data for the selected skin.
     // 构建所选皮肤的主题数据。
@@ -3215,6 +3230,7 @@ class _IniyouHomeState extends State<IniyouHome> {
         registerPasswordController: _registerPasswordController,
         onToggleMode: (value) => setState(() => _loginMode = value),
         onRememberLoginCredentialsChanged: _setRememberLoginCredentials,
+        onLoginDraftChanged: _syncRememberedLoginDraft,
         onLogin: _login,
         onRegister: _register,
         currentLanguageCode: _languageCode,

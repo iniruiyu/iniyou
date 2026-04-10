@@ -98,6 +98,7 @@ go run ./cmd/admin-tool --user-id your-user-id --role member --level vip
 - 导航壳层、空间页、服务导航和网站总控已改为跟随主题变量，不再固定绑在旧的深色侧边栏配色上。 The navigation shell, space pages, service navigation, and site admin surfaces now follow theme variables instead of staying tied to the old fixed dark-sidebar palette.
 - 自定义主题编辑器额外提供多套精选预设，可先一键套用再继续细调。 The custom theme editor now includes several curated presets so you can start from a polished palette before fine-tuning tokens.
 - 登录首页当前保持极简，只保留 `iniyou` Logo、标题、右上角设置按钮和原有登录/注册框；登录表单使用原生 `submit` 流程，按回车会直接触发登录，且在勾选“记住账号和密码”后会即时把账号与密码草稿同步到本地存储。 The guest landing page now stays minimal, keeping only the `iniyou` logo, title, top-right settings button, and the original login/register form; the login form uses native submit behavior so Enter triggers sign-in directly, and when `Remember account and password` is enabled the current account/password draft is synced to local storage immediately.
+- Flutter 未登录页已同步到同一套极简登录模型：顶部仅保留 `iniyou` Logo 与紧凑设置按钮，登录卡片内部显示模式说明，并支持密码回车提交与“记住账号和密码”即时持久化。 The Flutter guest entry now follows the same minimal login model: only the `iniyou` logo and a compact settings button remain in the top bar, the auth card keeps the mode-specific description inside, and password Enter-submit plus immediate remember-credentials persistence are both supported.
 
 ## 本地启动
 

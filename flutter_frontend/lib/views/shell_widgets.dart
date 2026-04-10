@@ -346,6 +346,7 @@ class SettingsMenuButton extends StatelessWidget {
     required this.onThemeChanged,
     required this.themeOptions,
     required this.t,
+    this.compact = false,
   });
 
   final String currentLanguageCode;
@@ -354,12 +355,42 @@ class SettingsMenuButton extends StatelessWidget {
   final ValueChanged<String> onThemeChanged;
   final List<ThemeOption> themeOptions;
   final String Function(String key) t;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return PopupMenuButton<SettingsAction>(
       tooltip: t('settings.title'),
-      icon: const Icon(Icons.settings_outlined),
+      icon: Icon(
+        Icons.settings_outlined,
+        size: compact ? 18 : 22,
+        color: compact ? scheme.onSurface : null,
+      ),
+      padding: EdgeInsets.zero,
+      color: scheme.surface,
+      elevation: 12,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.42)),
+      ),
+      style: IconButton.styleFrom(
+        minimumSize: Size(compact ? 40 : 48, compact ? 40 : 48),
+        maximumSize: Size(compact ? 40 : 48, compact ? 40 : 48),
+        padding: EdgeInsets.all(compact ? 8 : 10),
+        backgroundColor: compact
+            ? scheme.surface.withValues(alpha: 0.86)
+            : scheme.surfaceContainerHighest.withValues(alpha: 0.72),
+        foregroundColor: scheme.onSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(compact ? 14 : 18)),
+        side: BorderSide(
+          color: compact
+              ? scheme.primary.withValues(alpha: 0.16)
+              : scheme.outlineVariant.withValues(alpha: 0.36),
+        ),
+      ),
       onSelected: (action) {
         // Route settings menu selection to the right handler.
         // 将设置菜单动作路由到对应处理函数。
