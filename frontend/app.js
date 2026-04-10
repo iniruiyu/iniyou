@@ -433,6 +433,9 @@ const app = createApp({
       // Sidebar collapsed state.
       // 侧边栏折叠状态。
       sidebarCollapsed: true,
+      // Compact top navigation expansion state.
+      // 移动端顶部导航展开状态。
+      compactTopnavExpanded: false,
       // Track viewport width so runtime shell sizing can follow desktop/mobile breakpoints.
       // 跟踪视口宽度，让运行时壳层尺寸能够跟随桌面端/移动端断点切换。
       viewportWidth: typeof window !== 'undefined' ? window.innerWidth : 1440,
@@ -1990,9 +1993,15 @@ const app = createApp({
       return !this.isDesktopViewport;
     },
     showCollapsedTopnavItems() {
-      // Keep the compact top navigation buttons only on desktop collapsed layouts.
-      // 仅在桌面端折叠布局下保留紧凑顶部导航按钮带。
-      return this.sidebarCollapsed && this.isDesktopViewport;
+      // Desktop keeps the full collapsed strip, while compact view reveals it after the launcher expands.
+      // 桌面端始终保留折叠导航条，移动端则在启动按钮展开后再显示整条导航。
+      if (!this.sidebarCollapsed) {
+        return false;
+      }
+      if (this.isDesktopViewport) {
+        return true;
+      }
+      return this.compactTopnavExpanded;
     },
     mainShellStyle() {
       // Apply explicit main-shell sizing so collapsed state always releases left-side space.
@@ -4868,11 +4877,55 @@ const app = createApp({
       if (this.isCompactViewport && !this.sidebarCollapsed) {
         this.sidebarCollapsed = true;
       }
+      if (this.isCompactViewport) {
+        this.compactTopnavExpanded = false;
+      }
+    },
+    toggleCompactTopnav() {
+      // Toggle the compact top navigation launcher without opening the sidebar yet.
+      // 切换移动端顶部导航启动层，但此时还不直接展开侧边栏。
+      if (!this.isCompactViewport || !this.sidebarCollapsed) {
+        return;
+      }
+      this.compactTopnavExpanded = !this.compactTopnavExpanded;
+    },
+    closeCompactTopnav() {
+      // Collapse the compact top navigation strip back to its icon-only launcher.
+      // 将移动端顶部导航条收回为仅图标的启动按钮。
+      if (!this.isCompactViewport) {
+        return;
+      }
+      this.compactTopnavExpanded = false;
+    },
+    openSidebarFromTopnav() {
+      // Open the full sidebar from the compact top-navigation action.
+      // 通过移动端顶部导航动作展开完整侧边栏。
+      this.compactTopnavExpanded = false;
+      this.sidebarCollapsed = false;
+    },
+    openTopnavSection(section) {
+      // Route top-navigation actions through the same section opener and then dismiss the compact strip.
+      // 让顶部导航动作复用同一套入口逻辑，并在移动端收起顶部导航层。
+      this.openServiceSection(section);
+      if (this.isCompactViewport) {
+        this.compactTopnavExpanded = false;
+      }
+    },
+    openTopnavProfile() {
+      // Open the current profile from top navigation and dismiss the compact strip when needed.
+      // 从顶部导航打开当前个人主页，并在移动端同步收起顶部导航层。
+      this.openMyProfile();
+      if (this.isCompactViewport) {
+        this.compactTopnavExpanded = false;
+      }
     },
     toggleSidebar() {
       // Toggle sidebar collapsed state.
       // 切换侧边栏折叠状态。
       this.sidebarCollapsed = !this.sidebarCollapsed;
+      if (this.sidebarCollapsed) {
+        this.compactTopnavExpanded = false;
+      }
     },
     handleWindowResize() {
       // Keep runtime shell styles synced with the current viewport width.
@@ -4881,6 +4934,7 @@ const app = createApp({
       this.viewportWidth = nextWidth;
       if (Number(nextWidth || 0) <= 980) {
         this.sidebarCollapsed = true;
+        this.compactTopnavExpanded = false;
       }
     },
     enterSpaceShell(space = null) {

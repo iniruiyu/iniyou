@@ -25,25 +25,31 @@
     <aside v-if="!sidebarCollapsed" class="sidebar">
       <div class="brand">
         <div class="brand-core">
-          <div class="brand-mark">AS</div>
+          <div class="brand-mark" aria-hidden="true">
+            <span class="brand-mark-ring"></span>
+            <span class="brand-mark-dot brand-mark-dot-primary"></span>
+            <span class="brand-mark-dot brand-mark-dot-accent"></span>
+          </div>
           <div class="brand-copy">
-            <div class="brand-title">Account Space</div>
-            <div class="brand-sub">{{ t('brandSub') }}</div>
+            <div class="brand-title">iniyou</div>
             <div class="brand-account">
               <div class="brand-account-name">{{ user.name }}</div>
               <div class="brand-account-meta">{{ user.domain ? `@${user.domain}` : (user.username ? `@${user.username}` : user.id) }}</div>
             </div>
           </div>
         </div>
-        <button class="brand-collapse" type="button" @click="toggleSidebar" :aria-label="t('nav.collapse')">
-          <span class="brand-collapse-icon">HD</span>
-        </button>
       </div>
 
       <nav class="nav">
         <!-- Navigation / 侧边导航 -->
         <div class="nav-group">
           <div class="nav-group-label">{{ t('navGroups.workspace') }}</div>
+          <button class="nav-item nav-item-toggle" data-icon="HD" type="button" @click="toggleSidebar">
+            <span class="nav-icon nav-item-toggle-icon">
+              <span class="nav-toggle-icon"></span>
+            </span>
+            <span class="nav-label">{{ t('nav.collapse') }}</span>
+          </button>
           <button class="nav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
             <span class="nav-icon">SV</span>
             <span class="nav-label">{{ t('nav.services') }}</span>
@@ -114,16 +120,54 @@
       :style="mainShellStyle"
     >
       <!-- Collapsed top navigation / 折叠态顶层导航：空间页在收起侧栏时也保留，方便继续切换页面。 -->
-      <header v-if="sidebarCollapsed" class="topnav-shell">
-        <nav class="topnav-strip" aria-label="Primary navigation">
-          <button class="nav-item topnav-item topnav-toggle-item" data-icon="HD" type="button" @click="toggleSidebar">
-            <span class="nav-icon topnav-toggle-item-icon">
+      <header
+        v-if="sidebarCollapsed"
+        class="topnav-shell"
+        :class="{ 'topnav-shell-compact': isCompactViewport, 'topnav-shell-compact-open': isCompactViewport && compactTopnavExpanded }"
+      >
+        <button
+          v-if="isCompactViewport && !compactTopnavExpanded"
+          class="nav-item nav-item-toggle topnav-item topnav-toggle-item topnav-launcher"
+          data-icon="HD"
+          type="button"
+          :aria-label="t('nav.expand')"
+          @click="toggleCompactTopnav"
+        >
+          <span class="nav-icon nav-item-toggle-icon topnav-toggle-item-icon">
+            <span class="nav-toggle-icon"></span>
+          </span>
+        </button>
+        <nav
+          v-if="!isCompactViewport || compactTopnavExpanded"
+          class="topnav-strip"
+          :class="{ 'topnav-strip-compact-open': isCompactViewport && compactTopnavExpanded }"
+          aria-label="Primary navigation"
+        >
+          <button
+            class="nav-item nav-item-toggle topnav-item topnav-toggle-item"
+            data-icon="HD"
+            type="button"
+            @click="openSidebarFromTopnav"
+          >
+            <span class="nav-icon nav-item-toggle-icon topnav-toggle-item-icon">
               <span class="nav-toggle-icon"></span>
             </span>
             <span class="nav-label">{{ t('nav.expand') }}</span>
           </button>
+          <button
+            v-if="isCompactViewport"
+            class="nav-item nav-item-toggle topnav-item topnav-collapse-item"
+            data-icon="CL"
+            type="button"
+            @click="closeCompactTopnav"
+          >
+            <span class="nav-icon nav-item-toggle-icon">
+              <span class="nav-toggle-icon"></span>
+            </span>
+            <span class="nav-label">{{ t('nav.collapse') }}</span>
+          </button>
           <!-- Keep the current nav state when entering the space workspace from the compact top nav / 从折叠顶层导航进入空间工作台时保持当前导航状态。 -->
-          <button v-if="showCollapsedTopnavItems" class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
+          <button v-if="showCollapsedTopnavItems" class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openTopnavSection('services')">
             <span class="nav-icon">SV</span>
             <span class="nav-label">{{ t('nav.services') }}</span>
           </button>
@@ -133,30 +177,30 @@
             data-icon="AD"
             :class="{active: view === 'admin-panel'}"
             :disabled="!isLoggedIn"
-            @click="openServiceSection('admin-panel')"
+            @click="openTopnavSection('admin-panel')"
           >
             <span class="nav-icon">AD</span>
             <span class="nav-label">{{ t('nav.admin-panel') }}</span>
           </button>
-          <button v-if="isServiceOnline('space')" class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="openServiceSection('space')">
+          <button v-if="isServiceOnline('space')" class="nav-item topnav-item" data-icon="SP" :class="{active: view === 'space'}" :disabled="!isLoggedIn" @click="openTopnavSection('space')">
             <span class="nav-icon">SP</span>
             <span class="nav-label">{{ t('nav.space') }}</span>
           </button>
-          <button class="nav-item topnav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="openServiceSection('friends')">
+          <button class="nav-item topnav-item" data-icon="FR" :class="{active: view === 'friends'}" :disabled="!isLoggedIn" @click="openTopnavSection('friends')">
             <span class="nav-icon-shell">
               <span class="nav-icon">FR</span>
               <span v-if="pendingFriendCount" class="nav-badge">{{ pendingFriendCount > 99 ? '99+' : pendingFriendCount }}</span>
             </span>
             <span class="nav-label">{{ t('nav.friends') }}</span>
           </button>
-          <button v-if="isServiceOnline('message')" class="nav-item topnav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="openServiceSection('chat')">
+          <button v-if="isServiceOnline('message')" class="nav-item topnav-item" data-icon="CH" :class="{active: view === 'chat'}" :disabled="!isLoggedIn" @click="openTopnavSection('chat')">
             <span class="nav-icon-shell">
               <span class="nav-icon">CH</span>
               <span v-if="unreadCount" class="nav-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
             </span>
             <span class="nav-label">{{ t('nav.chat') }}</span>
           </button>
-          <button class="nav-item topnav-item" data-icon="ME" :class="{active: view === 'profile' && profileUser.id === user.id}" :disabled="!isLoggedIn || !user.id" @click="openMyProfile()">
+          <button class="nav-item topnav-item" data-icon="ME" :class="{active: view === 'profile' && profileUser.id === user.id}" :disabled="!isLoggedIn || !user.id" @click="openTopnavProfile">
             <span class="nav-icon">ME</span>
             <span class="nav-label">{{ t('nav.profile') }}</span>
           </button>
