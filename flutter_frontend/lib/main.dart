@@ -35,20 +35,25 @@ class IniyouApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF6EE7FF);
-    final scheme = ColorScheme.fromSeed(
-      seedColor: seed,
-      brightness: Brightness.dark,
-      surface: const Color(0xFF101925),
+    const palette = CustomThemePalette(
+      bg: Color(0xFF08111D),
+      surface: Color(0xFF101925),
+      surfaceSoft: Color(0xFF152131),
+      primary: Color(0xFF6EE7FF),
+      primaryStrong: Color(0xFF3DCFF5),
+      accent: Color(0xFFFFB86B),
+      text: Color(0xFFF3F7FB),
+      muted: Color(0xFF9CA8B8),
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'iniyou',
       theme: _buildAppTheme(
-        scheme: scheme,
-        scaffoldBackgroundColor: const Color(0xFF08111D),
-        cardColor: const Color(0xFF101925),
-        fillColor: const Color(0xFF152131),
+        scheme: _colorSchemeFromPalette(palette, brightness: Brightness.dark),
+        scaffoldBackgroundColor: palette.bg,
+        cardColor: palette.surface,
+        fillColor: palette.surfaceSoft,
+        palette: palette,
       ),
       home: const IniyouHome(),
     );
@@ -60,6 +65,7 @@ ThemeData _buildAppTheme({
   required Color scaffoldBackgroundColor,
   required Color cardColor,
   required Color fillColor,
+  required CustomThemePalette palette,
 }) {
   // Build a polished app theme with softer surfaces and stronger depth cues.
   // 构建更有层次感的应用主题，强化表面层级与视觉深度。
@@ -67,6 +73,10 @@ ThemeData _buildAppTheme({
     colorScheme: scheme,
     scaffoldBackgroundColor: scaffoldBackgroundColor,
     useMaterial3: true,
+    textTheme: Typography.material2021().white.apply(
+      bodyColor: palette.text,
+      displayColor: palette.text,
+    ),
     cardTheme: CardThemeData(
       color: cardColor,
       elevation: 0,
@@ -152,6 +162,71 @@ ThemeData _buildAppTheme({
   );
 }
 
+ColorScheme _colorSchemeFromPalette(
+  CustomThemePalette palette, {
+  required Brightness brightness,
+}) {
+  final base = ColorScheme.fromSeed(
+    seedColor: palette.primary,
+    brightness: brightness,
+    surface: palette.surface,
+  );
+  final primaryContainer =
+      Color.lerp(palette.primaryStrong, palette.surface, 0.78) ??
+      palette.primaryStrong;
+  final tertiaryContainer =
+      Color.lerp(palette.accent, palette.surface, 0.8) ?? palette.accent;
+  final surfaceContainerHigh =
+      Color.lerp(palette.surface, palette.surfaceSoft, 0.58) ??
+      palette.surfaceSoft;
+  final surfaceContainerHighest =
+      Color.lerp(palette.surface, palette.surfaceSoft, 0.88) ??
+      palette.surfaceSoft;
+  final outlineVariant =
+      Color.lerp(palette.surfaceSoft, palette.text, 0.2) ?? palette.muted;
+  final outline =
+      Color.lerp(palette.primary, palette.text, 0.34) ?? palette.primary;
+  final onPrimary = brightness == Brightness.dark
+      ? const Color(0xFF07131E)
+      : Colors.white;
+  final onTertiary = brightness == Brightness.dark
+      ? const Color(0xFF22170C)
+      : Colors.white;
+  return base.copyWith(
+    primary: palette.primary,
+    onPrimary: onPrimary,
+    primaryContainer: primaryContainer,
+    onPrimaryContainer: palette.text,
+    secondary: palette.primaryStrong,
+    onSecondary: onPrimary,
+    secondaryContainer:
+        Color.lerp(palette.primaryStrong, palette.surfaceSoft, 0.72) ??
+        palette.surfaceSoft,
+    onSecondaryContainer: palette.text,
+    tertiary: palette.accent,
+    onTertiary: onTertiary,
+    tertiaryContainer: tertiaryContainer,
+    onTertiaryContainer: palette.text,
+    surface: palette.surface,
+    onSurface: palette.text,
+    surfaceContainerHighest: surfaceContainerHighest,
+    surfaceContainerHigh: surfaceContainerHigh,
+    onSurfaceVariant: palette.muted,
+    outlineVariant: outlineVariant,
+    outline: outline,
+    shadow: Colors.black.withValues(
+      alpha: brightness == Brightness.dark ? 0.45 : 0.18,
+    ),
+    scrim: Colors.black.withValues(
+      alpha: brightness == Brightness.dark ? 0.54 : 0.28,
+    ),
+    error: base.error,
+    onError: base.onError,
+    errorContainer: base.errorContainer,
+    onErrorContainer: base.onErrorContainer,
+  );
+}
+
 enum AppView {
   dashboard,
   services,
@@ -184,6 +259,7 @@ class IniyouHome extends StatefulWidget {
 class _IniyouHomeState extends State<IniyouHome> {
   static const _languageKey = 'iniyou_language';
   static const _themeKey = 'iniyou_theme';
+  static const _customThemeKey = 'iniyou_custom_theme';
   static const _activePrivateSpaceKey = 'iniyou_active_private_space';
   static const _activePublicSpaceKey = 'iniyou_active_public_space';
   final ApiClient _api = ApiClient();
@@ -227,6 +303,9 @@ class _IniyouHomeState extends State<IniyouHome> {
   // Current theme key for skin switching.
   // 皮肤切换的当前主题键。
   String _themeKeyValue = 'midnight';
+  // Editable custom theme palette.
+  // 可编辑的自定义主题色板。
+  CustomThemePalette _customThemeValue = CustomThemePalette.defaults;
   // Sidebar collapsed state.
   // 侧边栏折叠状态。
   bool _sidebarCollapsed = true;
@@ -301,9 +380,85 @@ class _IniyouHomeState extends State<IniyouHome> {
   // Available theme options for the settings menu.
   // 设置菜单可选主题列表。
   static const List<ThemeOption> _themeOptions = [
-    ThemeOption(key: 'midnight', labelKey: 'theme.midnight'),
-    ThemeOption(key: 'dawn', labelKey: 'theme.dawn'),
-    ThemeOption(key: 'ocean', labelKey: 'theme.ocean'),
+    ThemeOption(
+      key: 'midnight',
+      labelKey: 'theme.midnight',
+      previewColors: [Color(0xFF6EE7FF), Color(0xFFFFB86B), Color(0xFF131A22)],
+    ),
+    ThemeOption(
+      key: 'dawn',
+      labelKey: 'theme.dawn',
+      previewColors: [Color(0xFF2F80ED), Color(0xFFFF8A4C), Color(0xFFFFFFFF)],
+    ),
+    ThemeOption(
+      key: 'ocean',
+      labelKey: 'theme.ocean',
+      previewColors: [Color(0xFF4DD6D3), Color(0xFF6EE7FF), Color(0xFF0B1E2D)],
+    ),
+    ThemeOption(
+      key: 'custom',
+      labelKey: 'theme.custom',
+      previewColors: [Color(0xFF7FE7FF), Color(0xFFFFB36B), Color(0xFF16202B)],
+    ),
+  ];
+
+  static const List<ThemePreset> _customThemePresets = [
+    ThemePreset(
+      key: 'aurora-glass',
+      labelKey: 'theme.preset.aurora',
+      palette: CustomThemePalette(
+        bg: Color(0xFF101824),
+        surface: Color(0xFF182434),
+        surfaceSoft: Color(0xFF213247),
+        primary: Color(0xFF7CECFF),
+        primaryStrong: Color(0xFF45D1FF),
+        accent: Color(0xFFFFB86F),
+        text: Color(0xFFF5F8FC),
+        muted: Color(0xFF9AB0C4),
+      ),
+    ),
+    ThemePreset(
+      key: 'sunset-paper',
+      labelKey: 'theme.preset.sunset',
+      palette: CustomThemePalette(
+        bg: Color(0xFFF7F1E8),
+        surface: Color(0xFFFFFAF2),
+        surfaceSoft: Color(0xFFF5EADB),
+        primary: Color(0xFFD46A3D),
+        primaryStrong: Color(0xFFBB4F22),
+        accent: Color(0xFFF0A04B),
+        text: Color(0xFF30211B),
+        muted: Color(0xFF7D665D),
+      ),
+    ),
+    ThemePreset(
+      key: 'forest-console',
+      labelKey: 'theme.preset.forest',
+      palette: CustomThemePalette(
+        bg: Color(0xFF0F1814),
+        surface: Color(0xFF16231D),
+        surfaceSoft: Color(0xFF21332A),
+        primary: Color(0xFF67E0A8),
+        primaryStrong: Color(0xFF2FBE7D),
+        accent: Color(0xFFD7B86F),
+        text: Color(0xFFEEF7F1),
+        muted: Color(0xFF97AEA2),
+      ),
+    ),
+    ThemePreset(
+      key: 'ink-rose',
+      labelKey: 'theme.preset.rose',
+      palette: CustomThemePalette(
+        bg: Color(0xFF17111B),
+        surface: Color(0xFF241B29),
+        surfaceSoft: Color(0xFF32243A),
+        primary: Color(0xFFF07DB1),
+        primaryStrong: Color(0xFFD6548E),
+        accent: Color(0xFFF5C06A),
+        text: Color(0xFFFAF4FB),
+        muted: Color(0xFFB7A5BF),
+      ),
+    ),
   ];
 
   @override
@@ -364,6 +519,15 @@ class _IniyouHomeState extends State<IniyouHome> {
     if (savedTheme != null &&
         _themeOptions.any((option) => option.key == savedTheme)) {
       _themeKeyValue = savedTheme;
+    }
+    final savedCustomTheme = _prefs?.getString(_customThemeKey);
+    if (savedCustomTheme != null && savedCustomTheme.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(savedCustomTheme);
+        if (decoded is Map<String, dynamic>) {
+          _customThemeValue = CustomThemePalette.fromJson(decoded);
+        }
+      } catch (_) {}
     }
     _activePrivateSpaceId = _prefs?.getString(_activePrivateSpaceKey);
     _activePublicSpaceId = _prefs?.getString(_activePublicSpaceKey);
@@ -546,6 +710,31 @@ class _IniyouHomeState extends State<IniyouHome> {
     setState(() => _themeKeyValue = themeKey);
   }
 
+  Future<void> _setCustomTheme(CustomThemePalette palette) async {
+    // Persist and apply custom palette tokens.
+    // 持久化并应用自定义主题令牌。
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await prefs.setString(_customThemeKey, jsonEncode(palette.toJson()));
+    if (!mounted) {
+      return;
+    }
+    setState(() => _customThemeValue = palette);
+  }
+
+  Future<void> _resetCustomTheme() async {
+    // Restore the editable custom palette to its default seed and switch to it.
+    // 将可编辑自定义主题恢复到默认种子，并切换到该主题。
+    await _setCustomTheme(CustomThemePalette.defaults);
+    await _setTheme('custom');
+  }
+
+  Future<void> _applyCustomThemePreset(CustomThemePalette palette) async {
+    // Apply one curated preset into the custom theme workspace and activate it.
+    // 将一套精选预设应用到自定义主题工作区并立即启用。
+    await _setCustomTheme(palette);
+    await _setTheme('custom');
+  }
+
   Future<void> _setRememberLoginCredentials(bool value) async {
     // Persist the remember-me switch and clear cached credentials when disabled.
     // 持久化“记住登录”开关，并在关闭时清理缓存凭据。
@@ -577,59 +766,78 @@ class _IniyouHomeState extends State<IniyouHome> {
   ThemeData _themeDataFor(String themeKey) {
     // Build theme data for the selected skin.
     // 构建所选皮肤的主题数据。
-    switch (themeKey) {
-      case 'dawn':
-        final scheme = ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2F80ED),
-          brightness: Brightness.light,
-        );
-        return _buildAppTheme(
-          scheme: scheme,
-          scaffoldBackgroundColor: const Color(0xFFF4F6FB),
-          cardColor: const Color(0xFFFFFEFF),
-          fillColor: const Color(0xFFEAF0F7),
-        );
-      case 'ocean':
-        final scheme = ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4DD6D3),
-          brightness: Brightness.dark,
-          surface: const Color(0xFF0B1E2D),
-        );
-        return _buildAppTheme(
-          scheme: scheme,
-          scaffoldBackgroundColor: const Color(0xFF06131F),
-          cardColor: const Color(0xFF0B1E2D),
-          fillColor: const Color(0xFF10283B),
-        );
-      case 'midnight':
-      default:
-        const seed = Color(0xFF6EE7FF);
-        final scheme = ColorScheme.fromSeed(
-          seedColor: seed,
-          brightness: Brightness.dark,
-          surface: const Color(0xFF101925),
-        );
-        return _buildAppTheme(
-          scheme: scheme,
-          scaffoldBackgroundColor: const Color(0xFF08111D),
-          cardColor: const Color(0xFF101925),
-          fillColor: const Color(0xFF152131),
-        );
-    }
+    final palette = _themePaletteFor(themeKey);
+    final brightness = _brightnessForTheme(themeKey, palette);
+    return _buildAppTheme(
+      scheme: _colorSchemeFromPalette(palette, brightness: brightness),
+      scaffoldBackgroundColor: palette.bg,
+      cardColor: palette.surface,
+      fillColor:
+          Color.lerp(palette.surface, palette.surfaceSoft, 0.74) ??
+          palette.surfaceSoft,
+      palette: palette,
+    );
   }
 
   List<Color> _backgroundGradientFor(String themeKey) {
     // Return background gradient colors per theme.
     // 返回各主题的背景渐变色。
+    final palette = _themePaletteFor(themeKey);
+    return [
+      palette.bg,
+      Color.lerp(palette.bg, palette.surface, 0.62) ?? palette.surface,
+      Color.lerp(palette.bg, palette.accent, 0.16) ?? palette.bg,
+    ];
+  }
+
+  CustomThemePalette _themePaletteFor(String themeKey) {
     switch (themeKey) {
       case 'dawn':
-        return const [Color(0xFFF4F6FB), Color(0xFFE8EDF8), Color(0xFFF8FAFD)];
+        return const CustomThemePalette(
+          bg: Color(0xFFF4F6FB),
+          surface: Color(0xFFFFFEFF),
+          surfaceSoft: Color(0xFFEAF0F7),
+          primary: Color(0xFF2F80ED),
+          primaryStrong: Color(0xFF1F6AD0),
+          accent: Color(0xFFFF8A4C),
+          text: Color(0xFF182230),
+          muted: Color(0xFF66778F),
+        );
       case 'ocean':
-        return const [Color(0xFF12334F), Color(0xFF0A1E2F), Color(0xFF06131F)];
+        return const CustomThemePalette(
+          bg: Color(0xFF06131F),
+          surface: Color(0xFF0B1E2D),
+          surfaceSoft: Color(0xFF10283B),
+          primary: Color(0xFF6EE7FF),
+          primaryStrong: Color(0xFF4DD6D3),
+          accent: Color(0xFF79AFFF),
+          text: Color(0xFFEAF5FF),
+          muted: Color(0xFF8DA3B8),
+        );
+      case 'custom':
+        return _customThemeValue;
       case 'midnight':
       default:
-        return const [Color(0xFF08111D), Color(0xFF0D1A2A), Color(0xFF111F35)];
+        return const CustomThemePalette(
+          bg: Color(0xFF08111D),
+          surface: Color(0xFF101925),
+          surfaceSoft: Color(0xFF152131),
+          primary: Color(0xFF6EE7FF),
+          primaryStrong: Color(0xFF3DCFF5),
+          accent: Color(0xFFFFB86B),
+          text: Color(0xFFF3F7FB),
+          muted: Color(0xFF9CA8B8),
+        );
     }
+  }
+
+  Brightness _brightnessForTheme(String themeKey, CustomThemePalette palette) {
+    if (themeKey == 'custom') {
+      return palette.bg.computeLuminance() > 0.55
+          ? Brightness.light
+          : Brightness.dark;
+    }
+    return themeKey == 'dawn' ? Brightness.light : Brightness.dark;
   }
 
   SpaceItem? _selectedSpaceForVisibility(String visibility) {
@@ -3238,6 +3446,11 @@ class _IniyouHomeState extends State<IniyouHome> {
         currentThemeKey: _themeKeyValue,
         onThemeChanged: _setTheme,
         themeOptions: _themeOptions,
+        currentCustomTheme: _customThemeValue,
+        customThemePresets: _customThemePresets,
+        onCustomThemeChanged: _setCustomTheme,
+        onResetCustomTheme: _resetCustomTheme,
+        onApplyCustomThemePreset: _applyCustomThemePreset,
         t: _t,
         peerT: _peerT,
       );
@@ -3343,6 +3556,11 @@ class _IniyouHomeState extends State<IniyouHome> {
       currentThemeKey: _themeKeyValue,
       onThemeChanged: _setTheme,
       themeOptions: _themeOptions,
+      currentCustomTheme: _customThemeValue,
+      customThemePresets: _customThemePresets,
+      onCustomThemeChanged: _setCustomTheme,
+      onResetCustomTheme: _resetCustomTheme,
+      onApplyCustomThemePreset: _applyCustomThemePreset,
       t: _t,
     );
   }

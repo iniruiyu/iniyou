@@ -25,6 +25,11 @@ class GuestLandingView extends StatelessWidget {
     required this.currentThemeKey,
     required this.onThemeChanged,
     required this.themeOptions,
+    required this.currentCustomTheme,
+    required this.customThemePresets,
+    required this.onCustomThemeChanged,
+    required this.onResetCustomTheme,
+    required this.onApplyCustomThemePreset,
     required this.t,
     required this.peerT,
   });
@@ -54,6 +59,11 @@ class GuestLandingView extends StatelessWidget {
   // Available theme options.
   // 可选主题列表。
   final List<ThemeOption> themeOptions;
+  final CustomThemePalette currentCustomTheme;
+  final List<ThemePreset> customThemePresets;
+  final ValueChanged<CustomThemePalette> onCustomThemeChanged;
+  final VoidCallback onResetCustomTheme;
+  final ValueChanged<CustomThemePalette> onApplyCustomThemePreset;
   final String Function(String key) t;
   final String Function(String key) peerT;
 
@@ -132,6 +142,12 @@ class GuestLandingView extends StatelessWidget {
                               currentThemeKey: currentThemeKey,
                               onThemeChanged: onThemeChanged,
                               themeOptions: themeOptions,
+                              currentCustomTheme: currentCustomTheme,
+                              customThemePresets: customThemePresets,
+                              onCustomThemeChanged: onCustomThemeChanged,
+                              onResetCustomTheme: onResetCustomTheme,
+                              onApplyCustomThemePreset:
+                                  onApplyCustomThemePreset,
                               t: t,
                               compact: true,
                             ),

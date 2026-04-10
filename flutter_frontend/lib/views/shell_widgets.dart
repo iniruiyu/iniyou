@@ -185,6 +185,11 @@ class ShellSidebar extends StatelessWidget {
     required this.currentThemeKey,
     required this.onThemeChanged,
     required this.themeOptions,
+    required this.currentCustomTheme,
+    required this.customThemePresets,
+    required this.onCustomThemeChanged,
+    required this.onResetCustomTheme,
+    required this.onApplyCustomThemePreset,
     required this.t,
   });
 
@@ -203,6 +208,11 @@ class ShellSidebar extends StatelessWidget {
   final String currentThemeKey;
   final ValueChanged<String> onThemeChanged;
   final List<ThemeOption> themeOptions;
+  final CustomThemePalette currentCustomTheme;
+  final List<ThemePreset> customThemePresets;
+  final ValueChanged<CustomThemePalette> onCustomThemeChanged;
+  final VoidCallback onResetCustomTheme;
+  final ValueChanged<CustomThemePalette> onApplyCustomThemePreset;
   final String Function(String key) t;
 
   @override
@@ -316,6 +326,11 @@ class ShellSidebar extends StatelessWidget {
                 currentThemeKey: currentThemeKey,
                 onThemeChanged: onThemeChanged,
                 themeOptions: themeOptions,
+                currentCustomTheme: currentCustomTheme,
+                customThemePresets: customThemePresets,
+                onCustomThemeChanged: onCustomThemeChanged,
+                onResetCustomTheme: onResetCustomTheme,
+                onApplyCustomThemePreset: onApplyCustomThemePreset,
                 t: t,
               ),
               IconButton(
@@ -504,6 +519,11 @@ class SettingsMenuButton extends StatelessWidget {
     required this.currentThemeKey,
     required this.onThemeChanged,
     required this.themeOptions,
+    required this.currentCustomTheme,
+    required this.customThemePresets,
+    required this.onCustomThemeChanged,
+    required this.onResetCustomTheme,
+    required this.onApplyCustomThemePreset,
     required this.t,
     this.compact = false,
   });
@@ -513,6 +533,11 @@ class SettingsMenuButton extends StatelessWidget {
   final String currentThemeKey;
   final ValueChanged<String> onThemeChanged;
   final List<ThemeOption> themeOptions;
+  final CustomThemePalette currentCustomTheme;
+  final List<ThemePreset> customThemePresets;
+  final ValueChanged<CustomThemePalette> onCustomThemeChanged;
+  final VoidCallback onResetCustomTheme;
+  final ValueChanged<CustomThemePalette> onApplyCustomThemePreset;
   final String Function(String key) t;
   final bool compact;
 
@@ -520,7 +545,7 @@ class SettingsMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return PopupMenuButton<SettingsAction>(
+    return IconButton(
       tooltip: t('settings.title'),
       icon: Icon(
         Icons.settings_outlined,
@@ -528,13 +553,6 @@ class SettingsMenuButton extends StatelessWidget {
         color: compact ? scheme.onSurface : null,
       ),
       padding: EdgeInsets.zero,
-      color: scheme.surface,
-      elevation: 12,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.42)),
-      ),
       style: IconButton.styleFrom(
         minimumSize: Size(compact ? 40 : 48, compact ? 40 : 48),
         maximumSize: Size(compact ? 40 : 48, compact ? 40 : 48),
@@ -552,65 +570,25 @@ class SettingsMenuButton extends StatelessWidget {
               : scheme.outlineVariant.withValues(alpha: 0.36),
         ),
       ),
-      onSelected: (action) {
-        // Route settings menu selection to the right handler.
-        // 将设置菜单动作路由到对应处理函数。
-        if (action.type == SettingsActionType.language) {
-          onLanguageChanged(action.value);
-        } else if (action.type == SettingsActionType.theme) {
-          onThemeChanged(action.value);
-        }
-      },
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem<SettingsAction>(
-            enabled: false,
-            child: Text(
-              t('settings.language'),
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-          for (final code in AppI18n.supportedLanguageCodes)
-            PopupMenuItem<SettingsAction>(
-              value: SettingsAction(SettingsActionType.language, code),
-              child: Row(
-                children: [
-                  Icon(
-                    code == currentLanguageCode
-                        ? Icons.check_circle
-                        : Icons.circle_outlined,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(AppI18n.languageLabel(code)),
-                ],
-              ),
-            ),
-          const PopupMenuDivider(),
-          PopupMenuItem<SettingsAction>(
-            enabled: false,
-            child: Text(
-              t('theme.title'),
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-          for (final option in themeOptions)
-            PopupMenuItem<SettingsAction>(
-              value: SettingsAction(SettingsActionType.theme, option.key),
-              child: Row(
-                children: [
-                  Icon(
-                    option.key == currentThemeKey
-                        ? Icons.check_circle
-                        : Icons.circle_outlined,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(t(option.labelKey)),
-                ],
-              ),
-            ),
-        ];
+      onPressed: () {
+        showDialog<void>(
+          context: context,
+          builder: (dialogContext) {
+            return _SettingsWorkbenchDialog(
+              currentLanguageCode: currentLanguageCode,
+              onLanguageChanged: onLanguageChanged,
+              currentThemeKey: currentThemeKey,
+              onThemeChanged: onThemeChanged,
+              themeOptions: themeOptions,
+              currentCustomTheme: currentCustomTheme,
+              customThemePresets: customThemePresets,
+              onCustomThemeChanged: onCustomThemeChanged,
+              onResetCustomTheme: onResetCustomTheme,
+              onApplyCustomThemePreset: onApplyCustomThemePreset,
+              t: t,
+            );
+          },
+        );
       },
     );
   }
@@ -619,19 +597,585 @@ class SettingsMenuButton extends StatelessWidget {
 class ThemeOption {
   // Theme option metadata.
   // 主题选项元数据。
-  const ThemeOption({required this.key, required this.labelKey});
+  const ThemeOption({
+    required this.key,
+    required this.labelKey,
+    required this.previewColors,
+  });
 
   final String key;
   final String labelKey;
+  final List<Color> previewColors;
 }
 
-enum SettingsActionType { language, theme }
+class ThemePreset {
+  // Curated custom theme preset metadata.
+  // 精选自定义主题预设元数据。
+  const ThemePreset({
+    required this.key,
+    required this.labelKey,
+    required this.palette,
+  });
 
-class SettingsAction {
-  const SettingsAction(this.type, this.value);
+  final String key;
+  final String labelKey;
+  final CustomThemePalette palette;
+}
 
-  final SettingsActionType type;
+class CustomThemePalette {
+  // Editable theme palette tokens aligned with the Vue frontend.
+  // 与 Vue 前端对齐的可编辑主题令牌。
+  const CustomThemePalette({
+    required this.bg,
+    required this.surface,
+    required this.surfaceSoft,
+    required this.primary,
+    required this.primaryStrong,
+    required this.accent,
+    required this.text,
+    required this.muted,
+  });
+
+  static const defaults = CustomThemePalette(
+    bg: Color(0xFF10141B),
+    surface: Color(0xFF16202B),
+    surfaceSoft: Color(0xFF203041),
+    primary: Color(0xFF7FE7FF),
+    primaryStrong: Color(0xFF3DCFF5),
+    accent: Color(0xFFFFB36B),
+    text: Color(0xFFF3F7FB),
+    muted: Color(0xFF9CA8B8),
+  );
+
+  final Color bg;
+  final Color surface;
+  final Color surfaceSoft;
+  final Color primary;
+  final Color primaryStrong;
+  final Color accent;
+  final Color text;
+  final Color muted;
+
+  static CustomThemePalette fromJson(Map<String, dynamic> json) {
+    return CustomThemePalette(
+      bg: _parseHexColor(json['bg'], defaults.bg),
+      surface: _parseHexColor(json['surface'], defaults.surface),
+      surfaceSoft: _parseHexColor(json['surfaceSoft'], defaults.surfaceSoft),
+      primary: _parseHexColor(json['primary'], defaults.primary),
+      primaryStrong: _parseHexColor(
+        json['primaryStrong'],
+        defaults.primaryStrong,
+      ),
+      accent: _parseHexColor(json['accent'], defaults.accent),
+      text: _parseHexColor(json['text'], defaults.text),
+      muted: _parseHexColor(json['muted'], defaults.muted),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'bg': toHex(bg),
+      'surface': toHex(surface),
+      'surfaceSoft': toHex(surfaceSoft),
+      'primary': toHex(primary),
+      'primaryStrong': toHex(primaryStrong),
+      'accent': toHex(accent),
+      'text': toHex(text),
+      'muted': toHex(muted),
+    };
+  }
+
+  CustomThemePalette copyWith({
+    Color? bg,
+    Color? surface,
+    Color? surfaceSoft,
+    Color? primary,
+    Color? primaryStrong,
+    Color? accent,
+    Color? text,
+    Color? muted,
+  }) {
+    return CustomThemePalette(
+      bg: bg ?? this.bg,
+      surface: surface ?? this.surface,
+      surfaceSoft: surfaceSoft ?? this.surfaceSoft,
+      primary: primary ?? this.primary,
+      primaryStrong: primaryStrong ?? this.primaryStrong,
+      accent: accent ?? this.accent,
+      text: text ?? this.text,
+      muted: muted ?? this.muted,
+    );
+  }
+
+  CustomThemePalette withField(String field, String value) {
+    final normalized = _parseHexColor(value, _colorForField(field));
+    switch (field) {
+      case 'bg':
+        return copyWith(bg: normalized);
+      case 'surface':
+        return copyWith(surface: normalized);
+      case 'surfaceSoft':
+        return copyWith(surfaceSoft: normalized);
+      case 'primary':
+        return copyWith(primary: normalized);
+      case 'primaryStrong':
+        return copyWith(primaryStrong: normalized);
+      case 'accent':
+        return copyWith(accent: normalized);
+      case 'text':
+        return copyWith(text: normalized);
+      case 'muted':
+        return copyWith(muted: normalized);
+      default:
+        return this;
+    }
+  }
+
+  Color _colorForField(String field) {
+    switch (field) {
+      case 'bg':
+        return bg;
+      case 'surface':
+        return surface;
+      case 'surfaceSoft':
+        return surfaceSoft;
+      case 'primary':
+        return primary;
+      case 'primaryStrong':
+        return primaryStrong;
+      case 'accent':
+        return accent;
+      case 'text':
+        return text;
+      case 'muted':
+        return muted;
+      default:
+        return defaults.bg;
+    }
+  }
+
+  String fieldValue(String field) => toHex(_colorForField(field));
+
+  static String toHex(Color color) {
+    final value = color.toARGB32() & 0xFFFFFF;
+    return '#${value.toRadixString(16).padLeft(6, '0')}';
+  }
+
+  static Color _parseHexColor(Object? value, Color fallback) {
+    final raw = value?.toString().trim() ?? '';
+    final compact = raw.startsWith('#') ? raw.substring(1) : raw;
+    if (RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(compact)) {
+      return Color(int.parse('FF$compact', radix: 16));
+    }
+    if (RegExp(r'^[0-9a-fA-F]{3}$').hasMatch(compact)) {
+      final expanded = compact.split('').map((item) => '$item$item').join();
+      return Color(int.parse('FF$expanded', radix: 16));
+    }
+    return fallback;
+  }
+}
+
+class _SettingsWorkbenchDialog extends StatefulWidget {
+  const _SettingsWorkbenchDialog({
+    required this.currentLanguageCode,
+    required this.onLanguageChanged,
+    required this.currentThemeKey,
+    required this.onThemeChanged,
+    required this.themeOptions,
+    required this.currentCustomTheme,
+    required this.customThemePresets,
+    required this.onCustomThemeChanged,
+    required this.onResetCustomTheme,
+    required this.onApplyCustomThemePreset,
+    required this.t,
+  });
+
+  final String currentLanguageCode;
+  final ValueChanged<String> onLanguageChanged;
+  final String currentThemeKey;
+  final ValueChanged<String> onThemeChanged;
+  final List<ThemeOption> themeOptions;
+  final CustomThemePalette currentCustomTheme;
+  final List<ThemePreset> customThemePresets;
+  final ValueChanged<CustomThemePalette> onCustomThemeChanged;
+  final VoidCallback onResetCustomTheme;
+  final ValueChanged<CustomThemePalette> onApplyCustomThemePreset;
+  final String Function(String key) t;
+
+  @override
+  State<_SettingsWorkbenchDialog> createState() =>
+      _SettingsWorkbenchDialogState();
+}
+
+class _SettingsWorkbenchDialogState extends State<_SettingsWorkbenchDialog> {
+  static const _themeFields = <String>[
+    'bg',
+    'surface',
+    'surfaceSoft',
+    'primary',
+    'primaryStrong',
+    'accent',
+    'text',
+    'muted',
+  ];
+
+  late CustomThemePalette _palette;
+
+  @override
+  void initState() {
+    super.initState();
+    _palette = widget.currentCustomTheme;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      backgroundColor: scheme.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.38)),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 780, maxHeight: 760),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.t('theme.workbench'),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SettingsSectionTitle(
+                        title: widget.t('settings.language'),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          for (final code in AppI18n.supportedLanguageCodes)
+                            ChoiceChip(
+                              label: Text(AppI18n.languageLabel(code)),
+                              selected: widget.currentLanguageCode == code,
+                              onSelected: (_) => widget.onLanguageChanged(code),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _SettingsSectionTitle(title: widget.t('theme.title')),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          for (final option in widget.themeOptions)
+                            _ThemeOptionCard(
+                              label: widget.t(option.labelKey),
+                              selected: widget.currentThemeKey == option.key,
+                              previewColors: option.previewColors,
+                              onTap: () => widget.onThemeChanged(option.key),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _SettingsSectionTitle(title: widget.t('theme.presets')),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          for (final preset in widget.customThemePresets)
+                            _ThemeOptionCard(
+                              label: widget.t(preset.labelKey),
+                              selected: false,
+                              previewColors: [
+                                preset.palette.primary,
+                                preset.palette.accent,
+                                preset.palette.surface,
+                              ],
+                              onTap: () {
+                                setState(() => _palette = preset.palette);
+                                widget.onApplyCustomThemePreset(preset.palette);
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SettingsSectionTitle(
+                              title: widget.t('theme.customTitle'),
+                              subtitle: widget.t('theme.customHint'),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _palette = CustomThemePalette.defaults;
+                              });
+                              widget.onResetCustomTheme();
+                            },
+                            child: Text(widget.t('theme.resetCustom')),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final wide = constraints.maxWidth >= 640;
+                          final itemWidth = wide
+                              ? (constraints.maxWidth - 12) / 2
+                              : constraints.maxWidth;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              for (final field in _themeFields)
+                                SizedBox(
+                                  width: itemWidth,
+                                  child: _ThemeColorField(
+                                    key: ValueKey(
+                                      '$field-${_palette.fieldValue(field)}',
+                                    ),
+                                    label: widget.t('theme.field.$field'),
+                                    value: _palette.fieldValue(field),
+                                    previewColor:
+                                        CustomThemePalette._parseHexColor(
+                                          _palette.fieldValue(field),
+                                          CustomThemePalette.defaults.bg,
+                                        ),
+                                    onChanged: (value) {
+                                      final next = _palette.withField(
+                                        field,
+                                        value,
+                                      );
+                                      setState(() => _palette = next);
+                                      widget.onCustomThemeChanged(next);
+                                    },
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSectionTitle extends StatelessWidget {
+  const _SettingsSectionTitle({required this.title, this.subtitle});
+
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            subtitle!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ThemeOptionCard extends StatelessWidget {
+  const _ThemeOptionCard({
+    required this.label,
+    required this.selected,
+    required this.previewColors,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final List<Color> previewColors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Ink(
+        width: 170,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              selected
+                  ? scheme.primary.withValues(alpha: 0.16)
+                  : scheme.surfaceContainerHighest.withValues(alpha: 0.92),
+              selected
+                  ? scheme.primaryContainer.withValues(alpha: 0.14)
+                  : scheme.surface.withValues(alpha: 0.88),
+            ],
+          ),
+          border: Border.all(
+            color: selected
+                ? scheme.primary.withValues(alpha: 0.36)
+                : scheme.outlineVariant.withValues(alpha: 0.34),
+          ),
+        ),
+        child: Row(
+          children: [
+            _ThemePreviewDots(colors: previewColors),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (selected)
+              Icon(Icons.check_circle_rounded, size: 18, color: scheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemePreviewDots extends StatelessWidget {
+  const _ThemePreviewDots({required this.colors});
+
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 46,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          for (final entry in colors.take(3).indexed)
+            Positioned(
+              left: entry.$1 * 12,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: entry.$2,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.35),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeColorField extends StatelessWidget {
+  const _ThemeColorField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.previewColor,
+    required this.onChanged,
+  });
+
+  final String label;
   final String value;
+  final Color previewColor;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.78,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.34),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: previewColor,
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.42),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              initialValue: value,
+              onChanged: onChanged,
+              decoration: InputDecoration(labelText: label, isDense: true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class BannerCard extends StatelessWidget {
