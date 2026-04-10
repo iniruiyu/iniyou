@@ -90,6 +90,12 @@ go run ./cmd/admin-tool --user-id your-user-id --role member --level vip
 - 微服务列表默认折叠，避免总控首页被单个服务的大量配置淹没。点击展开后显示服务清单，再点击某个服务会打开站内设置弹层。 The microservice list is collapsed by default so the landing view is not dominated by per-service detail. Expand the group to see the service list, then open a service-specific settings modal from any row.
 - 站点级直接操作项保留在主页面内，包括待处理提醒、数据库连接配置、用户权限与状态管理。 Site-level direct controls stay on the main page, including the attention queue, database connection management, and user role/status management.
 
+## Legacy Web 设置菜单与主题 / Legacy Web Settings Menu and Themes
+
+- Legacy Web 的侧边栏设置菜单现在始终通过 Teleport 渲染到 `body`，在小窗口和折叠导航模式下会以顶层浮板显示，避免被侧边栏、遮罩或滚动容器盖住。 The Legacy Web settings menu is now always teleported to `body`, and in compact navigation mode it appears as a top-level floating sheet so it is never obscured by the sidebar, overlay, or scrolling containers.
+- 主题区域默认折叠为“主题工作台 / Theme workbench”，先显示当前主题摘要，再按需展开预设主题和自定义主题编辑器。 The theme area is collapsed into a `Theme workbench` by default, showing only the active-theme summary until the user expands preset themes or the custom-theme editor.
+- 自定义主题保存在浏览器本地存储中，当前支持背景、主面板、次级面板、主色、强化主色、强调色、正文文字和次级文字八个核心变量。 The custom theme is stored in browser local storage and currently exposes eight core tokens: background, panel, soft panel, primary, strong primary, accent, body text, and muted text.
+
 ## 本地启动
 
 1. 启动 PostgreSQL，并确认 `DB_DSN` 可用。

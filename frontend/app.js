@@ -10,6 +10,55 @@ const ACTIVE_PUBLIC_SPACE_KEY = 'iniyou_active_public_space';
 const AUTH_REMEMBER_KEY = 'iniyou_auth_remember';
 const AUTH_ACCOUNT_KEY = 'iniyou_auth_account';
 const AUTH_PASSWORD_KEY = 'iniyou_auth_password';
+const CUSTOM_THEME_STORAGE_KEY = 'iniyou_custom_theme';
+
+function createDefaultCustomTheme() {
+  // Seed a balanced custom palette so the editor starts from a usable theme.
+  // 提供一套平衡的自定义默认配色，让主题编辑器打开时就处于可用状态。
+  return {
+    bg: '#10141b',
+    surface: '#16202b',
+    surfaceSoft: '#203041',
+    primary: '#7fe7ff',
+    primaryStrong: '#3dcff5',
+    accent: '#ffb36b',
+    text: '#f3f7fb',
+    muted: '#9ca8b8',
+  };
+}
+
+function sanitizeHexColor(value, fallback) {
+  // Normalize color input into a stable six-digit hex token.
+  // 将颜色输入标准化为稳定的六位十六进制值。
+  const source = String(value || '').trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(source)) {
+    return source.toLowerCase();
+  }
+  if (/^#[0-9a-fA-F]{3}$/.test(source)) {
+    const [, r, g, b] = source;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  return fallback;
+}
+
+function hexToRgb(hex) {
+  // Convert one hex color into rgb channels for derived alpha tokens.
+  // 将单个十六进制颜色转换为 rgb 通道，便于生成带透明度的衍生变量。
+  const normalized = sanitizeHexColor(hex, '#000000').slice(1);
+  return {
+    r: Number.parseInt(normalized.slice(0, 2), 16),
+    g: Number.parseInt(normalized.slice(2, 4), 16),
+    b: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function rgbaFromHex(hex, alpha) {
+  // Build an rgba token from a hex color and opacity.
+  // 根据十六进制颜色和透明度生成 rgba 令牌。
+  const rgb = hexToRgb(hex);
+  const safeAlpha = Math.max(0, Math.min(1, Number(alpha ?? 0)));
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${safeAlpha})`;
+}
 
 // Quick chat presets for emoji/sticker insertion.
 // 聊天快捷预设，便于插入表情与贴纸。
@@ -446,7 +495,15 @@ const app = createApp({
           labelKey: 'theme.options.ocean',
           preview: ['#4dd6d3', '#6ee7ff', '#0b1e2d'],
         },
+        {
+          value: 'custom',
+          labelKey: 'theme.options.custom',
+          preview: ['#7fe7ff', '#ffb36b', '#16202b'],
+        },
       ],
+      // User-defined theme palette.
+      // 用户自定义主题色板。
+      customTheme: createDefaultCustomTheme(),
       // i18n dictionaries. New languages can be appended at runtime.
       // 国际化字典，可在运行时追加新语言。
       translations: {
@@ -634,12 +691,30 @@ const app = createApp({
           theme: {
             title: '外观皮肤',
             label: '选择皮肤',
-            hint: '点击卡片即可即时切换。',
+            hint: '主题库默认折叠，展开后可切换预设或编辑自定义主题。',
             active: '当前',
+            presets: '预设主题',
+            presetsHint: '先从稳定预设里选，再按需进入自定义。',
+            manage: '主题工作台',
+            collapsedHint: '点击展开主题选择和自定义编辑。',
+            customTitle: '自定义主题',
+            customHint: '颜色调整会立即保存；当前使用自定义主题时会实时生效。',
+            reset: '恢复默认自定义主题',
+            fields: {
+              bg: '背景',
+              surface: '面板',
+              surfaceSoft: '次级面板',
+              primary: '主色',
+              primaryStrong: '主色强化',
+              accent: '强调色',
+              text: '正文文字',
+              muted: '次级文字',
+            },
             options: {
               midnight: '深空黑',
               dawn: '晨光白',
               ocean: '深海蓝',
+              custom: '自定义',
             },
           },
           common: {
@@ -1158,12 +1233,30 @@ const app = createApp({
           theme: {
             title: 'Theme',
             label: 'Choose skin',
-            hint: 'Click a card to switch instantly.',
+            hint: 'Keep the theme library folded by default, then open it to choose presets or edit a custom palette.',
             active: 'Current',
+            presets: 'Preset themes',
+            presetsHint: 'Start from a stable preset, then refine with a custom palette when needed.',
+            manage: 'Theme workbench',
+            collapsedHint: 'Open the theme workbench to switch presets or edit a custom palette.',
+            customTitle: 'Custom theme',
+            customHint: 'Color changes save immediately and apply live when the custom theme is active.',
+            reset: 'Reset custom theme',
+            fields: {
+              bg: 'Background',
+              surface: 'Panel',
+              surfaceSoft: 'Soft panel',
+              primary: 'Primary',
+              primaryStrong: 'Primary strong',
+              accent: 'Accent',
+              text: 'Text',
+              muted: 'Muted text',
+            },
             options: {
               midnight: 'Midnight',
               dawn: 'Dawn',
               ocean: 'Ocean',
+              custom: 'Custom',
             },
           },
           common: {
@@ -4639,6 +4732,64 @@ const app = createApp({
     closeSettingsMenu() {
       this.settingsOpen = false;
     },
+    normalizeCustomTheme(theme) {
+      // Merge and sanitize a possibly partial custom theme payload.
+      // 合并并清洗可能不完整的自定义主题载荷。
+      const defaults = createDefaultCustomTheme();
+      const source = theme && typeof theme === 'object' ? theme : {};
+      return {
+        bg: sanitizeHexColor(source.bg, defaults.bg),
+        surface: sanitizeHexColor(source.surface, defaults.surface),
+        surfaceSoft: sanitizeHexColor(source.surfaceSoft, defaults.surfaceSoft),
+        primary: sanitizeHexColor(source.primary, defaults.primary),
+        primaryStrong: sanitizeHexColor(source.primaryStrong, defaults.primaryStrong),
+        accent: sanitizeHexColor(source.accent, defaults.accent),
+        text: sanitizeHexColor(source.text, defaults.text),
+        muted: sanitizeHexColor(source.muted, defaults.muted),
+      };
+    },
+    themePreviewColors(themeValue) {
+      // Resolve preview colors for both preset and custom themes.
+      // 为预设主题和自定义主题统一解析预览配色。
+      if (themeValue === 'custom') {
+        return [
+          this.customTheme.primary,
+          this.customTheme.accent,
+          this.customTheme.surface,
+        ];
+      }
+      const option = this.themeOptions.find((item) => item.value === themeValue);
+      return Array.isArray(option?.preview) ? option.preview : this.themeOptions[0]?.preview || ['#6ee7ff', '#ffb86b', '#131a22'];
+    },
+    persistCustomTheme() {
+      // Save the sanitized custom theme so it survives reloads.
+      // 保存清洗后的自定义主题，确保刷新页面后继续生效。
+      this.customTheme = this.normalizeCustomTheme(this.customTheme);
+      localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(this.customTheme));
+    },
+    updateCustomThemeField(field, value) {
+      // Update one custom-theme token and live-apply it when custom mode is active.
+      // 更新单个自定义主题变量，并在使用自定义主题时实时应用。
+      const normalized = this.normalizeCustomTheme({
+        ...this.customTheme,
+        [field]: value,
+      });
+      this.customTheme = normalized;
+      this.persistCustomTheme();
+      if (this.theme === 'custom') {
+        this.applyTheme();
+      }
+    },
+    resetCustomTheme() {
+      // Restore the editable custom palette to its default seed.
+      // 将可编辑的自定义主题恢复为默认种子配色。
+      this.customTheme = createDefaultCustomTheme();
+      this.persistCustomTheme();
+      if (this.theme !== 'custom') {
+        this.theme = 'custom';
+      }
+      this.applyTheme();
+    },
     closeSidebarForCompactViewport() {
       // Auto-close the navigation drawer after compact-layout navigation.
       // 在紧凑布局完成导航后自动收起导航抽屉。
@@ -4785,7 +4936,52 @@ const app = createApp({
       if (!this.theme) {
         return;
       }
+      const root = document.documentElement;
       document.documentElement.dataset.theme = this.theme;
+      if (this.theme === 'custom') {
+        const palette = this.normalizeCustomTheme(this.customTheme);
+        this.customTheme = palette;
+        root.style.setProperty('--custom-bg', palette.bg);
+        root.style.setProperty('--custom-surface', palette.surface);
+        root.style.setProperty('--custom-surface-soft', palette.surfaceSoft);
+        root.style.setProperty('--custom-primary', palette.primary);
+        root.style.setProperty('--custom-primary-strong', palette.primaryStrong);
+        root.style.setProperty('--custom-accent', palette.accent);
+        root.style.setProperty('--custom-text', palette.text);
+        root.style.setProperty('--custom-muted', palette.muted);
+        root.style.setProperty('--custom-border', rgbaFromHex(palette.primary, 0.18));
+        root.style.setProperty('--custom-btn-secondary-bg', rgbaFromHex(palette.text, 0.05));
+        root.style.setProperty('--custom-btn-secondary-border', rgbaFromHex(palette.primary, 0.16));
+        root.style.setProperty('--custom-btn-secondary-hover', rgbaFromHex(palette.primary, 0.1));
+        root.style.setProperty('--custom-btn-tertiary-bg', `linear-gradient(180deg, ${rgbaFromHex(palette.primary, 0.18)}, ${rgbaFromHex(palette.primaryStrong, 0.08)})`);
+        root.style.setProperty('--custom-btn-tertiary-border', rgbaFromHex(palette.primary, 0.24));
+        root.style.setProperty('--custom-btn-danger-bg', `linear-gradient(180deg, ${rgbaFromHex(palette.accent, 0.18)}, ${rgbaFromHex(palette.accent, 0.08)})`);
+        root.style.setProperty('--custom-btn-danger-border', rgbaFromHex(palette.accent, 0.24));
+        root.style.setProperty('--custom-shadow', `0 30px 60px ${rgbaFromHex(palette.bg, 0.38)}`);
+        root.style.setProperty('--custom-bg-gradient', `radial-gradient(circle at top right, ${rgbaFromHex(palette.primary, 0.22)} 0%, ${palette.bg} 52%, ${rgbaFromHex(palette.accent, 0.14)} 100%)`);
+        this.persistCustomTheme();
+      } else {
+        [
+          '--custom-bg',
+          '--custom-surface',
+          '--custom-surface-soft',
+          '--custom-primary',
+          '--custom-primary-strong',
+          '--custom-accent',
+          '--custom-text',
+          '--custom-muted',
+          '--custom-border',
+          '--custom-btn-secondary-bg',
+          '--custom-btn-secondary-border',
+          '--custom-btn-secondary-hover',
+          '--custom-btn-tertiary-bg',
+          '--custom-btn-tertiary-border',
+          '--custom-btn-danger-bg',
+          '--custom-btn-danger-border',
+          '--custom-shadow',
+          '--custom-bg-gradient',
+        ].forEach((token) => root.style.removeProperty(token));
+      }
       localStorage.setItem('theme', this.theme);
     },
     handleDocumentClick(event) {
@@ -6344,6 +6540,14 @@ const app = createApp({
 
     // Restore theme from local storage.
     // 从本地存储恢复皮肤主题。
+    const savedCustomTheme = localStorage.getItem(CUSTOM_THEME_STORAGE_KEY);
+    if (savedCustomTheme) {
+      try {
+        this.customTheme = this.normalizeCustomTheme(JSON.parse(savedCustomTheme));
+      } catch (_error) {
+        this.customTheme = createDefaultCustomTheme();
+      }
+    }
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme && this.themeOptions.find((option) => option.value === savedTheme)) {
       this.theme = savedTheme;

@@ -21,6 +21,8 @@ window.SettingsMenu = {
       // 记录面板滚动进度，便于显示更明确的进度条反馈。
       panelScrollProgress: 0,
       viewportListenersBound: false,
+      themeWorkbenchOpen: false,
+      customThemeOpen: false,
     };
   },
   created() {
@@ -55,6 +57,10 @@ window.SettingsMenu = {
   watch: {
     'app.settingsOpen'(open) {
       if (open) {
+        if (this.app.theme === 'custom') {
+          this.themeWorkbenchOpen = true;
+          this.customThemeOpen = true;
+        }
         this.$nextTick(() => {
           if (!this.app.settingsOpen) {
             return;
@@ -75,6 +81,8 @@ window.SettingsMenu = {
       };
       this.dropdownPlacement = 'down';
       this.panelScrollProgress = 0;
+      this.themeWorkbenchOpen = false;
+      this.customThemeOpen = false;
     },
     'app.locale'() {
       if (this.app.settingsOpen) {
@@ -87,6 +95,10 @@ window.SettingsMenu = {
       }
     },
     'app.theme'() {
+      if (this.app.theme === 'custom') {
+        this.themeWorkbenchOpen = true;
+        this.customThemeOpen = true;
+      }
       if (this.app.settingsOpen) {
         this.$nextTick(() => {
           if (this.app.settingsOpen) {
@@ -111,6 +123,7 @@ window.SettingsMenu = {
       // 构建带双语名称和预览色块的主题卡列表。
       return this.app.themeOptions.map((theme) => ({
         ...theme,
+        previewColors: this.app.themePreviewColors(theme.value),
         primaryLabel: this.app.t(theme.labelKey),
         secondaryLabel: this.app.peerLocaleText(theme.labelKey),
       }));
@@ -123,7 +136,11 @@ window.SettingsMenu = {
     themePreviewStyle(theme) {
       // Convert theme preview colors into a compact gradient swatch.
       // 将主题预览色转换为紧凑渐变色块。
-      const preview = Array.isArray(theme?.preview) ? theme.preview : [];
+      const preview = Array.isArray(theme?.previewColors)
+        ? theme.previewColors
+        : Array.isArray(theme?.preview)
+          ? theme.preview
+          : [];
       const primary = preview[0] || 'var(--primary)';
       const accent = preview[1] || 'var(--accent)';
       const surface = preview[2] || 'var(--surface)';
@@ -148,6 +165,52 @@ window.SettingsMenu = {
     toggleSettingsMenu() {
       this.app.toggleSettingsMenu();
     },
+    toggleThemeWorkbench() {
+      this.themeWorkbenchOpen = !this.themeWorkbenchOpen;
+      if (!this.themeWorkbenchOpen) {
+        this.customThemeOpen = false;
+      }
+      this.$nextTick(() => {
+        if (this.app.settingsOpen) {
+          this.positionDropdown();
+          this.updatePanelScrollProgress();
+        }
+      });
+    },
+    toggleCustomThemeWorkbench() {
+      if (!this.themeWorkbenchOpen) {
+        this.themeWorkbenchOpen = true;
+      }
+      this.customThemeOpen = !this.customThemeOpen;
+      this.$nextTick(() => {
+        if (this.app.settingsOpen) {
+          this.positionDropdown();
+          this.updatePanelScrollProgress();
+        }
+      });
+    },
+    customThemeFields() {
+      // Split custom-theme tokens into a stable edit list for the workbench.
+      // 将自定义主题变量拆成稳定的编辑列表，供主题工作台使用。
+      return [
+        { key: 'bg', labelKey: 'theme.fields.bg' },
+        { key: 'surface', labelKey: 'theme.fields.surface' },
+        { key: 'surfaceSoft', labelKey: 'theme.fields.surfaceSoft' },
+        { key: 'primary', labelKey: 'theme.fields.primary' },
+        { key: 'primaryStrong', labelKey: 'theme.fields.primaryStrong' },
+        { key: 'accent', labelKey: 'theme.fields.accent' },
+        { key: 'text', labelKey: 'theme.fields.text' },
+        { key: 'muted', labelKey: 'theme.fields.muted' },
+      ];
+    },
+    updateCustomThemeField(field, value) {
+      this.app.updateCustomThemeField(field, value);
+      this.$nextTick(() => {
+        if (this.app.settingsOpen) {
+          this.updatePanelScrollProgress();
+        }
+      });
+    },
     selectTheme(themeValue) {
       // Update the active theme through an explicit card click.
       // 通过明确的卡片点击切换当前主题。
@@ -155,8 +218,13 @@ window.SettingsMenu = {
         this.app.theme = themeValue;
         this.app.applyTheme();
       }
+      if (themeValue === 'custom') {
+        this.themeWorkbenchOpen = true;
+        this.customThemeOpen = true;
+      }
       this.$nextTick(() => {
         if (this.app.settingsOpen) {
+          this.positionDropdown();
           this.updatePanelScrollProgress();
         }
       });
@@ -210,6 +278,28 @@ window.SettingsMenu = {
       const panelHeight = panel.scrollHeight || panel.offsetHeight || 0;
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      if (this.app.isCompactViewport) {
+        const width = Math.min(440, Math.max(0, viewportWidth - viewportPadding * 2));
+        const left = Math.max(viewportPadding, Math.round((viewportWidth - width) / 2));
+        const maxHeight = Math.max(0, viewportHeight - viewportPadding * 2);
+        this.dropdownPlacement = 'down';
+        this.dropdownStyle = {
+          position: 'fixed',
+          top: `${viewportPadding}px`,
+          left: `${left}px`,
+          right: 'auto',
+          bottom: 'auto',
+          width: `${Math.round(width)}px`,
+          maxHeight: `${Math.round(maxHeight)}px`,
+          visibility: 'visible',
+        };
+        this.$nextTick(() => {
+          if (this.app.settingsOpen) {
+            this.updatePanelScrollProgress();
+          }
+        });
+        return;
+      }
       const widthLimit = Math.max(0, viewportWidth - viewportPadding * 2);
       const width = Math.min(400, widthLimit);
       const maxLeft = Math.max(viewportPadding, viewportWidth - width - viewportPadding);
@@ -267,13 +357,22 @@ window.SettingsMenu = {
         </span>
       </button>
       <teleport to="body">
+        <div
+          v-if="app.settingsOpen"
+          class="settings-backdrop"
+          :class="{ 'settings-backdrop--compact': app.isCompactViewport }"
+          @click="app.closeSettingsMenu()"
+        ></div>
         <!-- Render the panel outside the sidebar so overflow cannot clip it. -->
         <!-- 将面板渲染到侧栏外部，避免被 overflow 裁切。 -->
         <div
           v-if="app.settingsOpen"
           ref="dropdownPanel"
           class="settings-dropdown settings-dropdown--floating"
-          :class="{ 'settings-dropdown--up': dropdownPlacement === 'up' }"
+          :class="{
+            'settings-dropdown--up': dropdownPlacement === 'up',
+            'settings-dropdown--compact': app.isCompactViewport,
+          }"
           :style="dropdownStyle"
           @click.stop
           @scroll.passive="updatePanelScrollProgress"
@@ -312,38 +411,99 @@ window.SettingsMenu = {
             ></bilingual-select-field>
           </section>
           <section class="settings-section settings-section-theme">
-            <!-- Theme cards / 主题卡片：用可视化预览替代纯下拉选择。 -->
-            <div class="settings-section-head settings-section-head--theme">
-              <div>
-                <div class="settings-section-title">{{ app.t('theme.title') }}</div>
-                <div class="settings-section-note">{{ app.t('theme.hint') }}</div>
+            <button
+              class="settings-theme-summary"
+              type="button"
+              :aria-expanded="themeWorkbenchOpen ? 'true' : 'false'"
+              @click="toggleThemeWorkbench"
+            >
+              <div class="settings-theme-summary-copy">
+                <div class="settings-section-title">{{ app.t('theme.manage') }}</div>
+                <div class="settings-section-note">{{ themeWorkbenchOpen ? app.t('theme.hint') : app.t('theme.collapsedHint') }}</div>
               </div>
-              <div class="settings-theme-current" :style="themePreviewStyle(currentThemeCard())">
-                <span class="settings-theme-current-dot"></span>
-                <span>{{ app.t('theme.active') }}</span>
+              <div class="settings-theme-summary-side">
+                <div class="settings-theme-current" :style="themePreviewStyle(currentThemeCard())">
+                  <span class="settings-theme-current-dot"></span>
+                  <span>{{ app.t('theme.options.' + app.theme) }}</span>
+                </div>
+                <span class="settings-section-toggle" :class="{ 'settings-section-toggle-open': themeWorkbenchOpen }" aria-hidden="true">+</span>
               </div>
-            </div>
-            <div class="settings-theme-grid">
-              <button
-                v-for="theme in themeCards()"
-                :key="theme.value"
-                class="settings-theme-card"
-                :class="{ active: app.theme === theme.value }"
-                type="button"
-                :aria-pressed="app.theme === theme.value ? 'true' : 'false'"
-                @click="selectTheme(theme.value)"
-              >
-                <div class="settings-theme-preview" :style="themePreviewStyle(theme)">
-                  <span class="settings-theme-preview-chip settings-theme-preview-chip--primary"></span>
-                  <span class="settings-theme-preview-chip settings-theme-preview-chip--accent"></span>
-                  <span class="settings-theme-preview-chip settings-theme-preview-chip--surface"></span>
+            </button>
+            <div v-if="themeWorkbenchOpen" class="settings-theme-workbench">
+              <div class="settings-section-head settings-section-head--theme">
+                <div>
+                  <div class="settings-section-title">{{ app.t('theme.presets') }}</div>
+                  <div class="settings-section-note">{{ app.t('theme.presetsHint') }}</div>
                 </div>
-                <div class="settings-theme-copy">
-                  <div class="settings-theme-title">{{ theme.primaryLabel }}</div>
-                  <div class="settings-theme-sub">{{ theme.secondaryLabel }}</div>
+                <div class="settings-theme-current" :style="themePreviewStyle(currentThemeCard())">
+                  <span class="settings-theme-current-dot"></span>
+                  <span>{{ app.t('theme.active') }}</span>
                 </div>
-                <div v-if="app.theme === theme.value" class="settings-theme-active">{{ app.t('theme.active') }}</div>
-              </button>
+              </div>
+              <div class="settings-theme-grid">
+                <button
+                  v-for="theme in themeCards()"
+                  :key="theme.value"
+                  class="settings-theme-card"
+                  :class="{ active: app.theme === theme.value }"
+                  type="button"
+                  :aria-pressed="app.theme === theme.value ? 'true' : 'false'"
+                  @click="selectTheme(theme.value)"
+                >
+                  <div class="settings-theme-preview" :style="themePreviewStyle(theme)">
+                    <span class="settings-theme-preview-chip settings-theme-preview-chip--primary"></span>
+                    <span class="settings-theme-preview-chip settings-theme-preview-chip--accent"></span>
+                    <span class="settings-theme-preview-chip settings-theme-preview-chip--surface"></span>
+                  </div>
+                  <div class="settings-theme-copy">
+                    <div class="settings-theme-title">{{ theme.primaryLabel }}</div>
+                    <div class="settings-theme-sub">{{ theme.secondaryLabel }}</div>
+                  </div>
+                  <div v-if="app.theme === theme.value" class="settings-theme-active">{{ app.t('theme.active') }}</div>
+                </button>
+              </div>
+              <div class="settings-theme-custom">
+                <button
+                  class="settings-theme-custom-head"
+                  type="button"
+                  :aria-expanded="customThemeOpen ? 'true' : 'false'"
+                  @click="toggleCustomThemeWorkbench"
+                >
+                  <div class="settings-theme-custom-copy">
+                    <div class="settings-section-title">{{ app.t('theme.customTitle') }}</div>
+                    <div class="settings-section-note">{{ app.t('theme.customHint') }}</div>
+                  </div>
+                  <span class="settings-section-toggle" :class="{ 'settings-section-toggle-open': customThemeOpen }" aria-hidden="true">+</span>
+                </button>
+                <div v-if="customThemeOpen" class="settings-theme-custom-body">
+                  <div class="settings-theme-token-grid">
+                    <label
+                      v-for="field in customThemeFields()"
+                      :key="field.key"
+                      class="settings-theme-token"
+                    >
+                      <span class="settings-theme-token-copy">
+                        <span class="settings-theme-token-label">{{ app.t(field.labelKey) }}</span>
+                        <span class="settings-theme-token-value">{{ app.customTheme[field.key] }}</span>
+                      </span>
+                      <input
+                        class="settings-theme-token-input"
+                        type="color"
+                        :value="app.customTheme[field.key]"
+                        @input="updateCustomThemeField(field.key, $event.target.value)"
+                      />
+                    </label>
+                  </div>
+                  <div class="settings-theme-custom-actions">
+                    <button class="settings-theme-action settings-theme-action--primary" type="button" @click="selectTheme('custom')">
+                      {{ app.t('theme.options.custom') }}
+                    </button>
+                    <button class="settings-theme-action" type="button" @click="app.resetCustomTheme()">
+                      {{ app.t('theme.reset') }}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
           <!-- Keep the language creation form collapsed by default so the panel stays compact. -->

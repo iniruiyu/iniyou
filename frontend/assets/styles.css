@@ -66,6 +66,28 @@ html[data-theme='ocean'] {
   --bg-gradient: radial-gradient(circle at top right, #12334f 0%, #06131f 55%, #04101b 100%);
 }
 
+/* Theme: Custom / 主题：自定义 */
+html[data-theme='custom'] {
+  --bg: var(--custom-bg, #10141b);
+  --surface: var(--custom-surface, #16202b);
+  --surface-soft: var(--custom-surface-soft, #203041);
+  --primary: var(--custom-primary, #7fe7ff);
+  --primary-strong: var(--custom-primary-strong, #3dcff5);
+  --accent: var(--custom-accent, #ffb36b);
+  --text: var(--custom-text, #f3f7fb);
+  --muted: var(--custom-muted, #9ca8b8);
+  --border: var(--custom-border, rgba(127, 231, 255, 0.18));
+  --btn-secondary-bg: var(--custom-btn-secondary-bg, rgba(255, 255, 255, 0.04));
+  --btn-secondary-border: var(--custom-btn-secondary-border, rgba(127, 231, 255, 0.16));
+  --btn-secondary-hover: var(--custom-btn-secondary-hover, rgba(127, 231, 255, 0.1));
+  --btn-tertiary-bg: var(--custom-btn-tertiary-bg, linear-gradient(180deg, rgba(127, 231, 255, 0.18), rgba(61, 207, 245, 0.08)));
+  --btn-tertiary-border: var(--custom-btn-tertiary-border, rgba(127, 231, 255, 0.24));
+  --btn-danger-bg: var(--custom-btn-danger-bg, linear-gradient(180deg, rgba(255, 179, 107, 0.18), rgba(255, 179, 107, 0.08)));
+  --btn-danger-border: var(--custom-btn-danger-border, rgba(255, 179, 107, 0.24));
+  --shadow: var(--custom-shadow, 0 30px 60px rgba(16, 20, 27, 0.38));
+  --bg-gradient: var(--custom-bg-gradient, radial-gradient(circle at top right, rgba(127, 231, 255, 0.22) 0%, #10141b 52%, rgba(255, 179, 107, 0.14) 100%));
+}
+
 /* CSS reset / 样式重置 */
 * {
   box-sizing: border-box;
@@ -4330,6 +4352,23 @@ body {
   width: 100%;
 }
 
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 145;
+  background:
+    radial-gradient(circle at top right, rgba(110, 231, 255, 0.1), transparent 26%),
+    rgba(4, 10, 18, 0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.settings-backdrop--compact {
+  background:
+    radial-gradient(circle at top center, rgba(110, 231, 255, 0.14), transparent 26%),
+    rgba(4, 10, 18, 0.54);
+}
+
 
 .settings-trigger {
   width: 100%;
@@ -4451,7 +4490,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  z-index: 90;
+  z-index: 160;
 }
 
 /* Settings dropdown scrollbar / 设置面板滚动条：让长面板的滚动反馈更清晰。 */
@@ -4614,6 +4653,39 @@ body {
   align-items: center;
 }
 
+.settings-theme-summary,
+.settings-theme-custom-head {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.settings-theme-summary-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.settings-theme-summary-copy,
+.settings-theme-custom-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-section-toggle-open {
+  transform: rotate(45deg);
+}
+
 .settings-theme-current {
   display: inline-flex;
   align-items: center;
@@ -4654,6 +4726,14 @@ body {
 .settings-form-grid {
   display: grid;
   gap: 10px;
+}
+
+.settings-theme-workbench {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Theme preview cards / 主题预览卡片：用色块展示当前皮肤。 */
@@ -4758,6 +4838,101 @@ body {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+.settings-theme-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(110, 231, 255, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    var(--surface-soft);
+}
+
+.settings-theme-custom-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-theme-token-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-theme-token {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 14, 22, 0.24);
+}
+
+.settings-theme-token-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.settings-theme-token-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settings-theme-token-value {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-theme-token-input {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.settings-theme-token-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.settings-theme-token-input::-webkit-color-swatch {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+
+.settings-theme-custom-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-theme-action {
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.settings-theme-action--primary {
+  background: linear-gradient(135deg, rgba(110, 231, 255, 0.18), rgba(255, 184, 107, 0.14));
+  border-color: rgba(110, 231, 255, 0.2);
 }
 
 .settings-dropdown .lang-input,
@@ -5578,6 +5753,38 @@ button:disabled {
   .topnav-item {
     flex: 1 1 140px;
     justify-content: flex-start;
+  }
+
+  .settings-dropdown--compact {
+    border-radius: 24px;
+    padding: 16px;
+    box-shadow:
+      0 30px 70px rgba(4, 10, 18, 0.44),
+      0 0 0 1px rgba(110, 231, 255, 0.08) inset;
+  }
+
+  .settings-theme-summary,
+  .settings-theme-custom-head,
+  .settings-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .settings-theme-summary-side {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .settings-theme-token-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-theme-custom-actions {
+    flex-direction: column;
+  }
+
+  .settings-theme-action {
+    width: 100%;
   }
 
   .chat {
