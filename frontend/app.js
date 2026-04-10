@@ -504,6 +504,64 @@ const app = createApp({
       // User-defined theme palette.
       // 用户自定义主题色板。
       customTheme: createDefaultCustomTheme(),
+      customThemePresets: [
+        {
+          key: 'aurora-glass',
+          labels: { zh: '极光玻璃', en: 'Aurora Glass', tw: '極光玻璃' },
+          palette: {
+            bg: '#0f1722',
+            surface: '#182434',
+            surfaceSoft: '#213247',
+            primary: '#7cecff',
+            primaryStrong: '#45d1ff',
+            accent: '#ffb86f',
+            text: '#f5f8fc',
+            muted: '#9ab0c4',
+          },
+        },
+        {
+          key: 'sunset-paper',
+          labels: { zh: '落日纸面', en: 'Sunset Paper', tw: '落日紙面' },
+          palette: {
+            bg: '#fbf4ea',
+            surface: '#fffaf2',
+            surfaceSoft: '#f5eadb',
+            primary: '#d46a3d',
+            primaryStrong: '#bb4f22',
+            accent: '#f0a04b',
+            text: '#30211b',
+            muted: '#7d665d',
+          },
+        },
+        {
+          key: 'forest-console',
+          labels: { zh: '森林控制台', en: 'Forest Console', tw: '森林控制台' },
+          palette: {
+            bg: '#0d1713',
+            surface: '#16231d',
+            surfaceSoft: '#21332a',
+            primary: '#67e0a8',
+            primaryStrong: '#2fbe7d',
+            accent: '#d7b86f',
+            text: '#eef7f1',
+            muted: '#97aea2',
+          },
+        },
+        {
+          key: 'ink-rose',
+          labels: { zh: '墨玫瑰', en: 'Ink Rose', tw: '墨玫瑰' },
+          palette: {
+            bg: '#17121b',
+            surface: '#241b29',
+            surfaceSoft: '#32243a',
+            primary: '#f07db1',
+            primaryStrong: '#d6548e',
+            accent: '#f5c06a',
+            text: '#faf4fb',
+            muted: '#b7a5bf',
+          },
+        },
+      ],
       // i18n dictionaries. New languages can be appended at runtime.
       // 国际化字典，可在运行时追加新语言。
       translations: {
@@ -699,6 +757,8 @@ const app = createApp({
             collapsedHint: '点击展开主题选择和自定义编辑。',
             customTitle: '自定义主题',
             customHint: '颜色调整会立即保存；当前使用自定义主题时会实时生效。',
+            presetTitle: '自定义预设',
+            presetHint: '先套一套顺眼的方案，再细调颜色。',
             reset: '恢复默认自定义主题',
             fields: {
               bg: '背景',
@@ -1241,6 +1301,8 @@ const app = createApp({
             collapsedHint: 'Open the theme workbench to switch presets or edit a custom palette.',
             customTitle: 'Custom theme',
             customHint: 'Color changes save immediately and apply live when the custom theme is active.',
+            presetTitle: 'Custom presets',
+            presetHint: 'Start from a polished palette, then fine-tune the tokens.',
             reset: 'Reset custom theme',
             fields: {
               bg: 'Background',
@@ -4784,6 +4846,16 @@ const app = createApp({
       // Restore the editable custom palette to its default seed.
       // 将可编辑的自定义主题恢复为默认种子配色。
       this.customTheme = createDefaultCustomTheme();
+      this.persistCustomTheme();
+      if (this.theme !== 'custom') {
+        this.theme = 'custom';
+      }
+      this.applyTheme();
+    },
+    applyCustomThemePreset(palette) {
+      // Apply one curated preset into the editable custom theme workspace.
+      // 将一套精选预设应用到可编辑的自定义主题工作区。
+      this.customTheme = this.normalizeCustomTheme(palette);
       this.persistCustomTheme();
       if (this.theme !== 'custom') {
         this.theme = 'custom';

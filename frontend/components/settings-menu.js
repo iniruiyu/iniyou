@@ -203,10 +203,39 @@ window.SettingsMenu = {
         { key: 'muted', labelKey: 'theme.fields.muted' },
       ];
     },
+    customThemePresets() {
+      return (Array.isArray(this.app.customThemePresets) ? this.app.customThemePresets : []).map((preset) => ({
+        ...preset,
+        previewColors: [
+          preset.palette?.primary || '#7fe7ff',
+          preset.palette?.accent || '#ffb36b',
+          preset.palette?.surface || '#16202b',
+        ],
+        label: this.app.locale === 'en-US'
+          ? preset.labels?.en || preset.key
+          : this.app.locale === 'zh-TW'
+            ? preset.labels?.tw || preset.labels?.zh || preset.key
+            : preset.labels?.zh || preset.key,
+        secondaryLabel: this.app.locale === 'en-US'
+          ? preset.labels?.zh || preset.key
+          : preset.labels?.en || preset.key,
+      }));
+    },
     updateCustomThemeField(field, value) {
       this.app.updateCustomThemeField(field, value);
       this.$nextTick(() => {
         if (this.app.settingsOpen) {
+          this.updatePanelScrollProgress();
+        }
+      });
+    },
+    applyCustomPreset(preset) {
+      this.app.applyCustomThemePreset(preset?.palette || {});
+      this.themeWorkbenchOpen = true;
+      this.customThemeOpen = true;
+      this.$nextTick(() => {
+        if (this.app.settingsOpen) {
+          this.positionDropdown();
           this.updatePanelScrollProgress();
         }
       });
@@ -476,6 +505,31 @@ window.SettingsMenu = {
                   <span class="settings-section-toggle" :class="{ 'settings-section-toggle-open': customThemeOpen }" aria-hidden="true">+</span>
                 </button>
                 <div v-if="customThemeOpen" class="settings-theme-custom-body">
+                  <div class="settings-theme-preset-strip">
+                    <div class="settings-theme-preset-head">
+                      <div class="settings-section-title">{{ app.t('theme.presetTitle') }}</div>
+                      <div class="settings-section-note">{{ app.t('theme.presetHint') }}</div>
+                    </div>
+                    <div class="settings-theme-preset-grid">
+                      <button
+                        v-for="preset in customThemePresets()"
+                        :key="preset.key"
+                        class="settings-theme-preset-card"
+                        type="button"
+                        @click="applyCustomPreset(preset)"
+                      >
+                        <div class="settings-theme-preview settings-theme-preview--preset" :style="themePreviewStyle(preset)">
+                          <span class="settings-theme-preview-chip settings-theme-preview-chip--primary"></span>
+                          <span class="settings-theme-preview-chip settings-theme-preview-chip--accent"></span>
+                          <span class="settings-theme-preview-chip settings-theme-preview-chip--surface"></span>
+                        </div>
+                        <div class="settings-theme-copy">
+                          <div class="settings-theme-title">{{ preset.label }}</div>
+                          <div class="settings-theme-sub">{{ preset.secondaryLabel }}</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
                   <div class="settings-theme-token-grid">
                     <label
                       v-for="field in customThemeFields()"

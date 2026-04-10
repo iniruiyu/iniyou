@@ -95,6 +95,8 @@ go run ./cmd/admin-tool --user-id your-user-id --role member --level vip
 - Legacy Web 的侧边栏设置菜单现在始终通过 Teleport 渲染到 `body`，在小窗口和折叠导航模式下会以顶层浮板显示，避免被侧边栏、遮罩或滚动容器盖住。 The Legacy Web settings menu is now always teleported to `body`, and in compact navigation mode it appears as a top-level floating sheet so it is never obscured by the sidebar, overlay, or scrolling containers.
 - 主题区域默认折叠为“主题工作台 / Theme workbench”，先显示当前主题摘要，再按需展开预设主题和自定义主题编辑器。 The theme area is collapsed into a `Theme workbench` by default, showing only the active-theme summary until the user expands preset themes or the custom-theme editor.
 - 自定义主题保存在浏览器本地存储中，当前支持背景、主面板、次级面板、主色、强化主色、强调色、正文文字和次级文字八个核心变量。 The custom theme is stored in browser local storage and currently exposes eight core tokens: background, panel, soft panel, primary, strong primary, accent, body text, and muted text.
+- 导航壳层、空间页、服务导航和网站总控已改为跟随主题变量，不再固定绑在旧的深色侧边栏配色上。 The navigation shell, space pages, service navigation, and site admin surfaces now follow theme variables instead of staying tied to the old fixed dark-sidebar palette.
+- 自定义主题编辑器额外提供多套精选预设，可先一键套用再继续细调。 The custom theme editor now includes several curated presets so you can start from a polished palette before fine-tuning tokens.
 
 ## 本地启动
 

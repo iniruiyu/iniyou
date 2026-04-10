@@ -251,9 +251,9 @@ body {
   padding: 8px 10px;
   border-radius: 20px;
   background:
-    linear-gradient(135deg, rgba(110, 231, 255, 0.18), rgba(255, 184, 107, 0.12)),
-    linear-gradient(180deg, rgba(16, 25, 37, 0.96), rgba(10, 15, 24, 0.94));
-  border: 1px solid rgba(110, 231, 255, 0.22);
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg) 8%), color-mix(in srgb, var(--bg) 94%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
   box-shadow:
     0 16px 34px rgba(0, 0, 0, 0.26),
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
@@ -262,11 +262,11 @@ body {
 }
 
 .topnav-toggle:hover:not(:disabled) {
-  border-color: rgba(110, 231, 255, 0.34);
+  border-color: color-mix(in srgb, var(--primary) 34%, transparent);
   box-shadow:
     0 18px 38px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(110, 231, 255, 0.12) inset,
-    0 0 18px rgba(110, 231, 255, 0.12);
+    0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent) inset,
+    0 0 18px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .topnav-toggle-core {
@@ -286,9 +286,9 @@ body {
   justify-content: center;
   flex: 0 0 auto;
   background:
-    linear-gradient(135deg, rgba(110, 231, 255, 0.2), rgba(255, 184, 107, 0.12)),
-    rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(110, 231, 255, 0.18);
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 20%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)),
+    color-mix(in srgb, var(--text) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
@@ -304,7 +304,7 @@ body {
   border-radius: 999px;
   flex: 0 0 auto;
   background: linear-gradient(135deg, var(--primary), var(--accent));
-  box-shadow: 0 0 16px rgba(110, 231, 255, 0.34);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 34%, transparent);
 }
 
 .topnav-strip {
@@ -315,12 +315,12 @@ body {
   padding: 7px;
   border-radius: 20px;
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 34%),
-    linear-gradient(180deg, rgba(14, 22, 32, 0.88), rgba(9, 14, 22, 0.82));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--text) 6%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, var(--bg) 14%), color-mix(in srgb, var(--bg) 82%, transparent));
+  border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
   box-shadow:
     0 18px 34px rgba(5, 10, 18, 0.2),
-    0 0 0 1px rgba(110, 231, 255, 0.06) inset;
+    0 0 0 1px color-mix(in srgb, var(--primary) 6%, transparent) inset;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -330,22 +330,22 @@ body {
   padding: 9px 12px;
   border-radius: 15px;
   background:
-    linear-gradient(180deg, rgba(18, 28, 40, 0.84), rgba(11, 16, 25, 0.8));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 84%, var(--bg) 16%), color-mix(in srgb, var(--bg) 80%, transparent));
+  border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
   box-shadow:
     0 10px 22px rgba(0, 0, 0, 0.16),
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 }
 
 .topnav-item:hover {
-  border-color: rgba(110, 231, 255, 0.28);
+  border-color: color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
 .topnav-item.active {
   background:
-    linear-gradient(135deg, rgba(110, 231, 255, 0.16), rgba(255, 184, 107, 0.08)),
-    rgba(16, 25, 37, 0.82);
-  border-color: rgba(110, 231, 255, 0.42);
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--accent) 8%, transparent)),
+    color-mix(in srgb, var(--surface) 82%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
 }
 
 .topnav-item .nav-icon {
@@ -413,8 +413,9 @@ body {
   max-width: calc(100vw - 32px);
   height: calc(100vh - 32px);
   background:
-    radial-gradient(circle at top right, rgba(110, 231, 255, 0.08), transparent 34%),
-    linear-gradient(180deg, #121821 0%, #0b0f14 100%);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 10%, transparent), transparent 34%),
+    radial-gradient(circle at bottom left, color-mix(in srgb, var(--accent) 8%, transparent), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, var(--bg) 6%) 0%, var(--bg) 100%);
   padding: 28px;
   display: flex;
   flex-direction: column;
@@ -427,26 +428,6 @@ body {
   backdrop-filter: blur(18px);
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-/* Light-theme sidebar contrast / 浅色主题侧栏对比度：深色侧栏始终保持浅色文字。 */
-.sidebar,
-.sidebar .nav-item,
-.sidebar .nav-icon,
-.sidebar .brand-title {
-  color: #f2f5f8;
-}
-
-.sidebar .brand-sub,
-.sidebar .lang-label,
-.sidebar .nav-item-control .nav-label,
-.sidebar .status,
-.sidebar-fab-label {
-  color: rgba(242, 245, 248, 0.72);
-}
-
-.sidebar .nav-item:disabled {
-  color: rgba(242, 245, 248, 0.42);
 }
 
 .brand {
@@ -477,12 +458,12 @@ body {
 .brand-account-name {
   font-size: 14px;
   font-weight: 600;
-  color: #f7fafc;
+  color: var(--text);
 }
 
 .brand-account-meta {
   font-size: 11px;
-  color: rgba(242, 245, 248, 0.68);
+  color: color-mix(in srgb, var(--text) 68%, transparent);
   line-height: 1.35;
 }
 
@@ -588,7 +569,7 @@ body {
   content: '';
   height: 1px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(110, 231, 255, 0.2));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--text) 4%, transparent), color-mix(in srgb, var(--primary) 20%, transparent));
 }
 
 .nav-group-label::before {
@@ -670,12 +651,12 @@ body {
 
 .nav-item:hover {
   border-color: var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
 }
 
 .nav-item.active {
-  background: rgba(110, 231, 255, 0.12);
-  border-color: rgba(110, 231, 255, 0.4);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
 }
 
 .nav-item.active::before {
@@ -693,15 +674,15 @@ body {
 
 .nav-item.active .nav-icon {
   background:
-    linear-gradient(135deg, rgba(110, 231, 255, 0.34), rgba(255, 184, 107, 0.2)),
-    rgba(255, 255, 255, 0.05);
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 34%, transparent), color-mix(in srgb, var(--accent) 20%, transparent)),
+    color-mix(in srgb, var(--text) 5%, transparent);
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.2),
-    0 0 22px rgba(110, 231, 255, 0.18);
+    0 0 22px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 .nav-item.active .nav-label {
-  color: #ffffff;
+  color: var(--text);
 }
 
 .nav-item:disabled {
@@ -1583,8 +1564,10 @@ body {
   gap: 18px;
   padding: 18px 20px;
   border-radius: 22px;
-  border: 1px solid rgba(110, 231, 255, 0.12);
-  background: linear-gradient(135deg, rgba(18, 26, 37, 0.95), rgba(11, 16, 24, 0.9));
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 10%, transparent), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, var(--bg) 6%), color-mix(in srgb, var(--bg) 90%, transparent));
 }
 
 .services-page-hero {
@@ -1604,8 +1587,10 @@ body {
   gap: 14px;
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(110, 231, 255, 0.12);
-  background: linear-gradient(180deg, rgba(20, 28, 40, 0.92), rgba(12, 17, 25, 0.96));
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, transparent);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 8%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg) 8%), color-mix(in srgb, var(--bg) 96%, transparent));
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
 }
 
@@ -1636,14 +1621,14 @@ body {
   font-size: 12px;
   font-weight: 700;
   color: var(--primary);
-  background: rgba(110, 231, 255, 0.12);
-  border: 1px solid rgba(110, 231, 255, 0.22);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 .service-status-badge-offline {
-  color: #ffb86b;
-  background: rgba(255, 184, 107, 0.12);
-  border-color: rgba(255, 184, 107, 0.22);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .service-chip-list {
@@ -1657,8 +1642,8 @@ body {
   border-radius: 999px;
   font-size: 12px;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
 }
 
 .service-card-actions {
@@ -1683,8 +1668,10 @@ body {
 .site-admin-stat {
   padding: 18px;
   border-radius: 20px;
-  border: 1px solid rgba(110, 231, 255, 0.12);
-  background: linear-gradient(180deg, rgba(20, 28, 40, 0.92), rgba(12, 17, 25, 0.96));
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, transparent);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 8%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg) 8%), color-mix(in srgb, var(--bg) 96%, transparent));
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.14);
 }
 
@@ -1746,10 +1733,10 @@ body {
   gap: 14px;
   padding: 16px;
   border-radius: 20px;
-  border: 1px solid rgba(110, 231, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
   background:
-    radial-gradient(circle at top right, rgba(110, 231, 255, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(16, 24, 35, 0.9), rgba(10, 15, 23, 0.94));
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 8%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, var(--bg) 10%), color-mix(in srgb, var(--bg) 94%, transparent));
 }
 
 .site-admin-subsection .service-card-actions {
@@ -1765,7 +1752,7 @@ body {
 
 .site-admin-kicker {
   margin-bottom: 6px;
-  color: rgba(110, 231, 255, 0.72);
+  color: color-mix(in srgb, var(--primary) 72%, transparent);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1785,10 +1772,10 @@ body {
   width: 100%;
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(110, 231, 255, 0.14);
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 32%),
-    linear-gradient(180deg, rgba(18, 28, 40, 0.88), rgba(10, 15, 24, 0.92));
+    radial-gradient(circle at top left, color-mix(in srgb, var(--text) 5%, transparent), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, var(--bg) 12%), color-mix(in srgb, var(--bg) 92%, transparent));
   color: inherit;
   cursor: pointer;
   text-align: left;
@@ -1820,8 +1807,8 @@ body {
   gap: 8px;
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(110, 231, 255, 0.14);
-  background: rgba(12, 17, 25, 0.86);
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
   color: var(--muted);
   font-size: 12px;
 }
@@ -1839,8 +1826,8 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  border: 1px solid rgba(110, 231, 255, 0.18);
-  background: rgba(110, 231, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   color: var(--text);
   font-size: 22px;
   line-height: 1;
@@ -1855,8 +1842,8 @@ body {
   margin-bottom: 12px;
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1px solid rgba(110, 231, 255, 0.18);
-  background: rgba(110, 231, 255, 0.08);
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .site-admin-banner-error {
@@ -1900,7 +1887,7 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   padding-bottom: 18px;
-  border-bottom: 1px solid rgba(110, 231, 255, 0.08);
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .site-admin-service-row:last-child,
@@ -1934,7 +1921,7 @@ body {
 }
 
 .site-admin-service-open {
-  color: rgba(110, 231, 255, 0.76);
+  color: color-mix(in srgb, var(--primary) 76%, transparent);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1956,8 +1943,8 @@ body {
 .site-admin-meta-card {
   padding: 14px;
   border-radius: 16px;
-  background: rgba(20, 28, 40, 0.72);
-  border: 1px solid rgba(110, 231, 255, 0.1);
+  background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .site-admin-meta-label {
@@ -1975,7 +1962,7 @@ body {
   margin-top: 14px;
   padding: 14px;
   border-radius: 16px;
-  background: rgba(10, 14, 20, 0.82);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1998,8 +1985,8 @@ body {
   width: 100%;
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1px solid rgba(110, 231, 255, 0.16);
-  background: rgba(12, 17, 25, 0.92);
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   color: var(--text);
 }
 
@@ -2021,8 +2008,8 @@ body {
   min-width: 190px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(110, 231, 255, 0.16);
-  background: rgba(12, 17, 25, 0.92);
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   color: var(--text);
 }
 
@@ -2036,8 +2023,8 @@ body {
 .site-admin-action-chips button {
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(110, 231, 255, 0.16);
-  background: rgba(12, 17, 25, 0.92);
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   color: var(--text);
   cursor: pointer;
 }
@@ -2046,8 +2033,8 @@ body {
   min-width: 132px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(110, 231, 255, 0.16);
-  background: rgba(12, 17, 25, 0.92);
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   color: var(--text);
 }
 
@@ -2067,8 +2054,8 @@ body {
   margin-bottom: 16px;
   padding: 14px 16px;
   border-radius: 18px;
-  border: 1px solid rgba(110, 231, 255, 0.12);
-  background: rgba(12, 17, 25, 0.86);
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, transparent);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
 }
 
 @keyframes site-admin-loading {
@@ -3662,8 +3649,10 @@ body {
   width: min(360px, calc(100vw - 48px));
   padding: 16px;
   border-radius: 22px;
-  border: 1px solid rgba(110, 231, 255, 0.2);
-  background: linear-gradient(135deg, rgba(12, 20, 33, 0.94), rgba(21, 35, 51, 0.9));
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 10%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, var(--bg) 6%), color-mix(in srgb, var(--surface-soft) 82%, var(--bg) 18%));
   backdrop-filter: blur(18px);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   z-index: 30;
@@ -3697,7 +3686,7 @@ body {
   height: 30px;
   padding: 0 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(110, 231, 255, 0.26), rgba(255, 184, 107, 0.22));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 26%, transparent), color-mix(in srgb, var(--accent) 22%, transparent));
   color: var(--primary);
   font-weight: 700;
   display: inline-flex;
@@ -4859,6 +4848,42 @@ body {
   gap: 12px;
 }
 
+.settings-theme-preset-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-theme-preset-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-theme-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.settings-theme-preset-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--text) 4%, transparent), color-mix(in srgb, var(--text) 2%, transparent)),
+    var(--surface-soft);
+  text-align: left;
+}
+
+.settings-theme-preview--preset {
+  min-height: 64px;
+}
+
 .settings-theme-token-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5452,7 +5477,7 @@ button:disabled {
     height: 40px;
     border-radius: 12px;
     box-shadow:
-      0 12px 24px rgba(110, 231, 255, 0.18),
+      0 12px 24px color-mix(in srgb, var(--primary) 18%, transparent),
       0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   }
 
@@ -5499,7 +5524,7 @@ button:disabled {
     gap: 1px;
     margin-top: 6px;
     padding-top: 7px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
   }
 
   .brand-account-name {
@@ -5509,7 +5534,7 @@ button:disabled {
 
   .brand-account-meta {
     font-size: 10px;
-    color: rgba(242, 245, 248, 0.54);
+    color: color-mix(in srgb, var(--text) 54%, transparent);
   }
 
   .brand-title {
@@ -5655,7 +5680,7 @@ button:disabled {
     margin-top: auto;
     padding: 8px 2px 0;
     border-radius: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid color-mix(in srgb, var(--text) 5%, transparent);
     background: transparent;
     box-shadow: none;
     opacity: 0.88;
@@ -5666,13 +5691,13 @@ button:disabled {
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: rgba(242, 245, 248, 0.38);
+    color: color-mix(in srgb, var(--text) 38%, transparent);
   }
 
   .sidebar-account-meta {
     font-size: 10px;
     line-height: 1.35;
-    color: rgba(242, 245, 248, 0.3);
+    color: color-mix(in srgb, var(--text) 30%, transparent);
   }
 
   .sidebar-account-copy {
@@ -5709,13 +5734,13 @@ button:disabled {
     border-radius: 16px;
     align-self: auto;
     pointer-events: auto;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
     background:
-      radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(16, 24, 35, 0.96), rgba(10, 15, 24, 0.94));
+      radial-gradient(circle at top left, color-mix(in srgb, var(--text) 8%, transparent), transparent 30%),
+      linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, var(--bg) 4%), color-mix(in srgb, var(--bg) 94%, transparent));
     box-shadow:
       0 18px 40px rgba(5, 10, 18, 0.34),
-      0 0 0 1px rgba(110, 231, 255, 0.08) inset,
+      0 0 0 1px color-mix(in srgb, var(--primary) 8%, transparent) inset,
       0 1px 0 rgba(255, 255, 255, 0.05) inset;
   }
 
@@ -5734,9 +5759,9 @@ button:disabled {
     height: 40px;
     border-radius: 12px;
     background:
-      linear-gradient(135deg, rgba(110, 231, 255, 0.18), rgba(255, 184, 107, 0.1)),
-      rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(110, 231, 255, 0.16);
+      linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--accent) 10%, transparent)),
+      color-mix(in srgb, var(--text) 3%, transparent);
+    border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
     box-shadow:
       0 10px 22px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(255, 255, 255, 0.04) inset;
