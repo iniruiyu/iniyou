@@ -234,77 +234,10 @@ body {
 .topnav-shell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
   padding: 12px 16px 0;
   width: 100%;
   min-width: 0;
-}
-
-/* Refined compact-nav trigger / 精修紧凑导航按钮：改为纯图标胶囊入口，减少顶部导航的文字占位。 */
-.topnav-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 68px;
-  min-height: 56px;
-  padding: 8px 10px;
-  border-radius: 20px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg) 8%), color-mix(in srgb, var(--bg) 94%, transparent));
-  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
-  box-shadow:
-    0 16px 34px rgba(0, 0, 0, 0.26),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.topnav-toggle:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--primary) 34%, transparent);
-  box-shadow:
-    0 18px 38px rgba(0, 0, 0, 0.3),
-    0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent) inset,
-    0 0 18px color-mix(in srgb, var(--primary) 12%, transparent);
-}
-
-.topnav-toggle-core {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  min-width: 0;
-}
-
-.topnav-toggle-icon-shell {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--primary) 20%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)),
-    color-mix(in srgb, var(--text) 3%, transparent);
-  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.24),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-}
-
-.topnav-toggle .nav-toggle-icon {
-  color: var(--text);
-}
-
-.topnav-toggle-accent {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  flex: 0 0 auto;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 34%, transparent);
 }
 
 .topnav-strip {
@@ -323,6 +256,7 @@ body {
     0 0 0 1px color-mix(in srgb, var(--primary) 6%, transparent) inset;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  pointer-events: auto;
 }
 
 .topnav-item {
@@ -368,6 +302,27 @@ body {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.16px;
+}
+
+.topnav-toggle-item {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--accent) 10%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, var(--bg) 12%), color-mix(in srgb, var(--bg) 82%, transparent));
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.topnav-toggle-item-icon {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 22%, transparent), color-mix(in srgb, var(--accent) 14%, transparent)),
+    color-mix(in srgb, var(--text) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.topnav-toggle-item .nav-toggle-icon {
+  color: var(--text);
 }
 
 .sidebar,
@@ -5731,61 +5686,21 @@ button:disabled {
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
-    pointer-events: none;
-  }
-
-  .topnav-toggle {
-    width: 52px;
-    min-width: 52px;
-    min-height: 52px;
-    padding: 0;
-    border-radius: 16px;
-    align-self: auto;
-    pointer-events: auto;
-    border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
-    background:
-      radial-gradient(circle at top left, color-mix(in srgb, var(--text) 8%, transparent), transparent 30%),
-      linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, var(--bg) 4%), color-mix(in srgb, var(--bg) 94%, transparent));
-    box-shadow:
-      0 18px 40px rgba(5, 10, 18, 0.34),
-      0 0 0 1px color-mix(in srgb, var(--primary) 8%, transparent) inset,
-      0 1px 0 rgba(255, 255, 255, 0.05) inset;
   }
 
   .topnav-strip {
-    display: none;
-    width: 100%;
-  }
-
-  .topnav-toggle-core {
-    width: 100%;
-    height: 100%;
-  }
-
-  .topnav-toggle-icon-shell {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--accent) 10%, transparent)),
-      color-mix(in srgb, var(--text) 3%, transparent);
-    border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
-    box-shadow:
-      0 10px 22px rgba(0, 0, 0, 0.18),
-      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  }
-
-  .topnav-toggle-accent {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 7px;
-    height: 7px;
+    width: auto;
+    max-width: calc(100vw - 28px);
+    padding: 6px;
   }
 
   .topnav-item {
-    flex: 1 1 140px;
+    flex: 0 0 auto;
     justify-content: flex-start;
+  }
+
+  .topnav-strip .topnav-item:not(.topnav-toggle-item) {
+    display: none;
   }
 
   .settings-dropdown--compact {

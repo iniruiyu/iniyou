@@ -115,18 +115,15 @@
     >
       <!-- Collapsed top navigation / 折叠态顶层导航：空间页在收起侧栏时也保留，方便继续切换页面。 -->
       <header v-if="sidebarCollapsed" class="topnav-shell">
-        <!-- Refined nav trigger / 精修导航触发器：改为纯图标入口，让折叠态顶部导航更紧凑。 -->
-        <button class="topnav-toggle ghost" type="button" @click="toggleSidebar" :aria-label="t('nav.expand')">
-          <span class="topnav-toggle-core" aria-hidden="true">
-            <span class="topnav-toggle-icon-shell">
+        <nav class="topnav-strip" aria-label="Primary navigation">
+          <button class="nav-item topnav-item topnav-toggle-item" data-icon="HD" type="button" @click="toggleSidebar">
+            <span class="nav-icon topnav-toggle-item-icon">
               <span class="nav-toggle-icon"></span>
             </span>
-          </span>
-          <span class="topnav-toggle-accent" aria-hidden="true"></span>
-        </button>
-        <nav v-if="showCollapsedTopnavItems" class="topnav-strip" aria-label="Primary navigation">
+            <span class="nav-label">{{ t('nav.expand') }}</span>
+          </button>
           <!-- Keep the current nav state when entering the space workspace from the compact top nav / 从折叠顶层导航进入空间工作台时保持当前导航状态。 -->
-          <button class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
+          <button v-if="showCollapsedTopnavItems" class="nav-item topnav-item" data-icon="SV" :class="{active: view === 'services' || view === 'learning'}" :disabled="!isLoggedIn" @click="openServiceSection('services')">
             <span class="nav-icon">SV</span>
             <span class="nav-label">{{ t('nav.services') }}</span>
           </button>
