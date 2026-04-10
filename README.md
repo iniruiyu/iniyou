@@ -84,6 +84,12 @@ go run ./cmd/admin-tool --user-id your-user-id --role member --level vip
 - 配置优先级为：进程环境变量 > `backend/.env.local` > 代码默认值。 The precedence is: process environment variables > `backend/.env.local` > in-code defaults.
 - 保存新 DSN 后不会热更新已经运行中的服务；开发期需要手动重启 `account-service`、`admin-service`、`space-service`、`message-service`、`learning-service`，让它们重新加载配置。 Saving a new DSN does not hot-reload already running services; in development you must restart `account-service`, `admin-service`, `space-service`, `message-service`, and `learning-service` so they reload the configuration.
 
+## 网站总控信息架构 / Site Admin Information Architecture
+
+- 网站总控页面按功能分为三组：`站点控制 / Site controls`、`微服务工作台 / Microservice workbench`、`运行观察 / Operations and runtime`。 The site admin page is organized into three functional groups: `Site controls`, `Microservice workbench`, and `Operations and runtime`.
+- 微服务列表默认折叠，避免总控首页被单个服务的大量配置淹没。点击展开后显示服务清单，再点击某个服务会打开站内设置弹层。 The microservice list is collapsed by default so the landing view is not dominated by per-service detail. Expand the group to see the service list, then open a service-specific settings modal from any row.
+- 站点级直接操作项保留在主页面内，包括待处理提醒、数据库连接配置、用户权限与状态管理。 Site-level direct controls stay on the main page, including the attention queue, database connection management, and user role/status management.
+
 ## 本地启动
 
 1. 启动 PostgreSQL，并确认 `DB_DSN` 可用。
