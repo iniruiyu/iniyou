@@ -1730,6 +1730,10 @@ body {
     linear-gradient(180deg, rgba(16, 24, 35, 0.9), rgba(10, 15, 23, 0.94));
 }
 
+.site-admin-subsection .service-card-actions {
+  justify-content: flex-start;
+}
+
 .site-admin-subsection-head {
   display: flex;
   justify-content: space-between;
@@ -2004,6 +2008,10 @@ body {
 
 .site-admin-service-modal {
   width: min(860px, 100%);
+}
+
+.site-admin-service-modal .site-admin-user-list {
+  margin-top: 18px;
 }
 
 .site-admin-service-modal-summary {
