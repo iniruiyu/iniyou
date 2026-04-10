@@ -1981,6 +1981,29 @@ body {
   color: var(--text);
 }
 
+.site-admin-refresh-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.site-admin-refresh-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.site-admin-refresh-select {
+  min-width: 190px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(110, 231, 255, 0.16);
+  background: rgba(12, 17, 25, 0.92);
+  color: var(--text);
+}
+
 .site-admin-action-chips {
   display: flex;
   flex-wrap: wrap;
@@ -2066,6 +2089,15 @@ body {
 
   .site-admin-user-controls {
     justify-content: flex-start;
+  }
+
+  .site-admin-refresh-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .site-admin-refresh-select {
+    width: 100%;
   }
 }
 

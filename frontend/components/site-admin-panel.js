@@ -1,4 +1,7 @@
 window.SiteAdminPanel = {
+  // Persist the site-admin auto refresh interval across visits.
+  // 持久化网站总控自动刷新间隔，避免每次进入都要重新设置。
+  autoRefreshStorageKey: 'iniyou_site_admin_auto_refresh_sec',
   props: {
     app: {
       type: Object,
@@ -25,6 +28,8 @@ window.SiteAdminPanel = {
       activeServiceKey: '',
       databaseSettingsOpen: false,
       userSettingsOpen: false,
+      autoRefreshSeconds: 0,
+      autoRefreshTimerId: 0,
     };
   },
   computed: {
@@ -210,6 +215,14 @@ window.SiteAdminPanel = {
         return haystack.includes(query);
       });
     },
+    autoRefreshOptions() {
+      return [
+        { value: 0, label: this.label('关闭自动刷新', 'Auto refresh off', '關閉自動重新整理') },
+        { value: 5, label: this.label('每 5 秒', 'Every 5 seconds', '每 5 秒') },
+        { value: 10, label: this.label('每 10 秒', 'Every 10 seconds', '每 10 秒') },
+        { value: 30, label: this.label('每 30 秒', 'Every 30 seconds', '每 30 秒') },
+      ];
+    },
   },
   methods: {
     label(zh, en, tw) {
@@ -382,6 +395,48 @@ window.SiteAdminPanel = {
     closeUserSettings() {
       this.userSettingsOpen = false;
     },
+    loadAutoRefreshPreference() {
+      const raw = window.localStorage.getItem(this.$options.autoRefreshStorageKey);
+      const parsed = Number(raw || 0);
+      this.autoRefreshSeconds = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+    },
+    persistAutoRefreshPreference() {
+      window.localStorage.setItem(this.$options.autoRefreshStorageKey, String(this.autoRefreshSeconds || 0));
+    },
+    stopAutoRefresh() {
+      if (this.autoRefreshTimerId) {
+        window.clearInterval(this.autoRefreshTimerId);
+        this.autoRefreshTimerId = 0;
+      }
+    },
+    startAutoRefresh() {
+      this.stopAutoRefresh();
+      if (!this.autoRefreshSeconds) {
+        return;
+      }
+      this.autoRefreshTimerId = window.setInterval(() => {
+        if (!this.loading && this.isAdmin) {
+          this.refreshOverview(false);
+        }
+      }, this.autoRefreshSeconds * 1000);
+    },
+    applyAutoRefreshSetting(value) {
+      const nextValue = Number(value || 0);
+      this.autoRefreshSeconds = Number.isFinite(nextValue) && nextValue >= 0 ? nextValue : 0;
+      this.persistAutoRefreshPreference();
+      this.startAutoRefresh();
+      this.flashMessage = this.autoRefreshSeconds
+        ? this.label(
+            `当前快照将每 ${this.autoRefreshSeconds} 秒自动刷新。`,
+            `Current snapshot will refresh every ${this.autoRefreshSeconds} seconds.`,
+            `目前快照將每 ${this.autoRefreshSeconds} 秒自動重新整理。`,
+          )
+        : this.label(
+            '当前快照自动刷新已关闭。',
+            'Current snapshot auto refresh is off.',
+            '目前快照自動重新整理已關閉。',
+          );
+    },
     async readPayload(response) {
       const payload = await this.app.readApiPayload(response);
       if (!response.ok) {
@@ -523,7 +578,12 @@ window.SiteAdminPanel = {
     },
   },
   async mounted() {
+    this.loadAutoRefreshPreference();
+    this.startAutoRefresh();
     await this.refreshOverview(false);
+  },
+  beforeUnmount() {
+    this.stopAutoRefresh();
   },
   template: `
     <section class="panel services-page site-admin-page">
@@ -629,6 +689,17 @@ window.SiteAdminPanel = {
                 <div class="site-admin-generated">
                   {{ label('在线服务摘要', 'Online service summary', '線上服務摘要') }}:
                   {{ onlineServices.length ? onlineServices.map((service) => service.title).join(' · ') : label('当前没有在线服务。', 'No online services right now.', '目前沒有線上服務。') }}
+                </div>
+                <div class="site-admin-refresh-row">
+                  <label class="site-admin-refresh-label" for="site-admin-auto-refresh">{{ label('自动刷新间隔', 'Auto refresh interval', '自動重新整理間隔') }}</label>
+                  <select
+                    id="site-admin-auto-refresh"
+                    class="site-admin-refresh-select"
+                    :value="String(autoRefreshSeconds)"
+                    @change="applyAutoRefreshSetting($event.target.value)"
+                  >
+                    <option v-for="option in autoRefreshOptions" :key="'refresh-' + option.value" :value="String(option.value)">{{ option.label }}</option>
+                  </select>
                 </div>
                 <div class="site-admin-meta-grid">
                   <div v-for="item in runtimeCards" :key="item.key" class="site-admin-meta-card">
