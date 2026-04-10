@@ -416,7 +416,7 @@ window.SiteAdminPanel = {
       }
       this.autoRefreshTimerId = window.setInterval(() => {
         if (!this.loading && this.isAdmin) {
-          this.refreshOverview(false);
+          this.refreshOverview(false, true);
         }
       }, this.autoRefreshSeconds * 1000);
     },
@@ -444,13 +444,18 @@ window.SiteAdminPanel = {
       }
       return payload;
     },
-    async refreshOverview(refreshWorkspace = false) {
+    async refreshOverview(refreshWorkspace = false, silent = false) {
       if (!this.isAdmin) {
         return;
       }
-      this.loading = true;
+      // Only use the blocking loader on first paint; later refreshes should update in place.
+      // 只有首屏加载使用阻塞式加载，后续刷新直接就地更新，避免整页闪动。
+      const useBlockingLoading = !this.overview && !silent;
+      this.loading = useBlockingLoading;
       this.errorMessage = '';
-      this.flashMessage = '';
+      if (!silent) {
+        this.flashMessage = '';
+      }
       if (refreshWorkspace) {
         await this.app.refreshServiceStatus();
       }
@@ -469,7 +474,9 @@ window.SiteAdminPanel = {
       } catch (error) {
         this.errorMessage = String(error?.message || error || '');
       } finally {
-        this.loading = false;
+        if (useBlockingLoading) {
+          this.loading = false;
+        }
       }
     },
     async refreshDatabaseConfig() {
