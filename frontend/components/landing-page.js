@@ -11,25 +11,35 @@ window.LandingPage = {
     <div class="landing-shell auth-shell">
       <div class="landing-backdrop landing-backdrop-one"></div>
       <div class="landing-backdrop landing-backdrop-two"></div>
+      <div class="landing-backdrop landing-backdrop-three"></div>
 
       <header class="landing-topbar auth-topbar">
         <div class="brand landing-brand">
-          <div class="brand-mark">AS</div>
-          <div>
-            <div class="brand-title">Account Space</div>
-            <div class="brand-sub">{{ app.t('brandSub') }}</div>
+          <div class="brand-mark" aria-hidden="true">
+            <span class="brand-mark-ring"></span>
+            <span class="brand-mark-dot brand-mark-dot-primary"></span>
+            <span class="brand-mark-dot brand-mark-dot-accent"></span>
+          </div>
+          <div class="landing-brand-copy">
+            <div class="brand-title">iniyou</div>
           </div>
         </div>
-        <settings-menu :app="app"></settings-menu>
+        <settings-menu :app="app" class="landing-settings-menu"></settings-menu>
       </header>
 
       <main class="landing-main auth-main">
-        <div class="landing-auth-column landing-auth-only">
+        <aside class="landing-auth-column">
           <div v-if="app.flashMessage" class="banner banner-success">{{ app.flashMessage }}</div>
           <div v-if="app.errorMessage" class="banner banner-error">{{ app.errorMessage }}</div>
-          <auth-panel :app="app"></auth-panel>
-          <p class="landing-auth-note">Auth Flow 已保留。首页暂时仅提供登录与注册入口，其他主页展示内容后续补充。</p>
-        </div>
+          <div class="landing-auth-stack">
+            <div class="landing-auth-panel-head">
+              <div class="landing-auth-kicker">{{ app.t('landing.authEyebrow') }}</div>
+              <div class="landing-auth-title">{{ app.authMode === 'login' ? app.t('auth.welcomeTitle') : app.t('auth.createTitle') }}</div>
+              <div class="landing-auth-summary">{{ app.authMode === 'login' ? app.t('auth.welcomeSub') : app.t('auth.createSub') }}</div>
+            </div>
+            <auth-panel :app="app"></auth-panel>
+          </div>
+        </aside>
       </main>
     </div>
   `,

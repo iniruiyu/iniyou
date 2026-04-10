@@ -4538,7 +4538,9 @@ body {
   top: 0;
   z-index: 1;
   padding: 10px 0 12px;
-  background: linear-gradient(180deg, rgba(18, 26, 37, 0.98), rgba(18, 26, 37, 0.94));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 98%, var(--bg) 2%), color-mix(in srgb, var(--surface) 92%, var(--bg) 8%));
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--bg) 18%, transparent);
   backdrop-filter: blur(14px);
 }
 
@@ -4566,16 +4568,22 @@ body {
 .settings-progress-track {
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--surface-soft) 92%, var(--bg) 8%), color-mix(in srgb, var(--bg) 88%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
   overflow: hidden;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--text) 3%, transparent) inset,
+    0 10px 20px color-mix(in srgb, var(--bg) 24%, transparent);
 }
 
 .settings-progress-fill {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--primary), var(--accent));
-  box-shadow: 0 0 14px rgba(110, 231, 255, 0.2);
+  box-shadow:
+    0 0 16px color-mix(in srgb, var(--primary) 24%, transparent),
+    0 0 24px color-mix(in srgb, var(--accent) 14%, transparent);
   transition: width 0.18s ease;
 }
 
@@ -4998,9 +5006,9 @@ body {
   overflow-y: auto;
   padding: 28px 32px 40px;
   background:
-    radial-gradient(circle at top left, rgba(110, 231, 255, 0.16), transparent 30%),
-    radial-gradient(circle at 80% 20%, rgba(255, 184, 107, 0.18), transparent 24%),
-    linear-gradient(180deg, #071018 0%, #0c141c 45%, #0a1016 100%);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 18%, transparent), transparent 30%),
+    radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 24%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 92%, var(--surface) 8%) 0%, color-mix(in srgb, var(--surface) 78%, var(--bg) 22%) 45%, color-mix(in srgb, var(--bg) 96%, transparent) 100%);
 }
 
 /* Auth-only layout width / 仅认证页布局宽度 */
@@ -5030,7 +5038,7 @@ body {
   height: 420px;
   top: -140px;
   right: -80px;
-  background: rgba(110, 231, 255, 0.1);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .landing-backdrop-two {
@@ -5038,7 +5046,15 @@ body {
   height: 380px;
   left: -120px;
   bottom: -180px;
-  background: rgba(255, 184, 107, 0.12);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.landing-backdrop-three {
+  width: 320px;
+  height: 320px;
+  top: 22%;
+  left: 46%;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .landing-topbar,
@@ -5055,31 +5071,67 @@ body {
   margin-bottom: 36px;
 }
 
+.landing-settings-menu {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.landing-settings-menu .settings-trigger {
+  width: auto;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px;
+  border-radius: 14px;
+  gap: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg) 8%), color-mix(in srgb, var(--bg) 90%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+  box-shadow:
+    0 12px 24px color-mix(in srgb, var(--bg) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--text) 4%, transparent) inset;
+}
+
+.landing-settings-menu .settings-trigger-text,
+.landing-settings-menu .settings-trigger-badges {
+  display: none;
+}
+
+.landing-settings-menu .settings-trigger-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
 .landing-brand .brand-mark {
   width: 54px;
   height: 54px;
 }
 
+.landing-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .landing-main {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 420px);
-  gap: 28px;
+  grid-template-columns: minmax(0, 420px);
+  gap: 20px;
   align-items: start;
+  justify-content: center;
 }
 
 .auth-main {
-  display: flex;
-  justify-content: center;
+  display: grid;
 }
 
 .landing-auth-column {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.landing-auth-only {
-  width: min(460px, 100%);
+  gap: 16px;
 }
 
 .landing-auth-note {
@@ -5088,6 +5140,46 @@ body {
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
+}
+
+.landing-auth-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 10%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 97%, var(--bg) 3%), color-mix(in srgb, var(--bg) 96%, transparent));
+  border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.landing-auth-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.landing-auth-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.landing-auth-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.landing-auth-summary {
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .landing-hero {
@@ -5259,6 +5351,17 @@ body {
   padding: 28px;
 }
 
+.landing-auth-stack .auth-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.landing-auth-stack .auth-card-head {
+  display: none;
+}
+
 .auth-card-head h2 {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 30px;
@@ -5368,6 +5471,46 @@ body {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
+}
+
+html {
+  scrollbar-color: color-mix(in srgb, var(--primary) 56%, transparent) color-mix(in srgb, var(--surface-soft) 84%, transparent);
+}
+
+body::-webkit-scrollbar,
+.landing-shell::-webkit-scrollbar,
+.main::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.settings-dropdown::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+body::-webkit-scrollbar-track,
+.landing-shell::-webkit-scrollbar-track,
+.main::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track,
+.settings-dropdown::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--surface-soft) 78%, var(--bg) 22%);
+}
+
+body::-webkit-scrollbar-thumb,
+.landing-shell::-webkit-scrollbar-thumb,
+.main::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb,
+.settings-dropdown::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--surface-soft) 74%, var(--bg) 26%);
+  background: linear-gradient(180deg, var(--primary), var(--accent));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+body::-webkit-scrollbar-corner,
+.landing-shell::-webkit-scrollbar-corner,
+.main::-webkit-scrollbar-corner,
+.sidebar::-webkit-scrollbar-corner,
+.settings-dropdown::-webkit-scrollbar-corner {
+  background: color-mix(in srgb, var(--surface-soft) 78%, var(--bg) 22%);
 }
 
 html[dir='rtl'] .sidebar {
@@ -5929,7 +6072,8 @@ button:disabled {
     align-items: flex-start;
   }
 
-  .landing-copy {
+  .landing-copy,
+  .landing-auth-stack {
     padding: 28px 22px;
   }
 

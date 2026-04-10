@@ -4786,6 +4786,16 @@ const app = createApp({
       localStorage.removeItem(AUTH_ACCOUNT_KEY);
       localStorage.removeItem(AUTH_PASSWORD_KEY);
     },
+    handleRememberedAuthInput() {
+      // Persist login credentials as they are edited when remember-me is enabled.
+      // 当启用记住密码时，在编辑过程中即时同步登录凭据。
+      if (!this.auth.rememberCredentials) {
+        return;
+      }
+      localStorage.setItem(AUTH_REMEMBER_KEY, 'true');
+      localStorage.setItem(AUTH_ACCOUNT_KEY, this.auth.account.trim());
+      localStorage.setItem(AUTH_PASSWORD_KEY, this.auth.password);
+    },
     persistRememberedAuthDraft() {
       // Store the successful login draft only when remember-me is enabled.
       // 仅在勾选记住登录时保存成功登录草稿。

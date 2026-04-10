@@ -32,9 +32,9 @@ window.AuthPanel = {
         </button>
       </div>
 
-      <form v-if="app.authMode === 'login'" class="form auth-form">
-        <input type="text" :placeholder="app.t('auth.accountPlaceholder')" v-model="app.auth.account" />
-        <input type="password" :placeholder="app.t('auth.passwordPlaceholder')" v-model="app.auth.password" />
+      <form v-if="app.authMode === 'login'" class="form auth-form" @submit.prevent="app.login()">
+        <input type="text" :placeholder="app.t('auth.accountPlaceholder')" v-model="app.auth.account" @input="app.handleRememberedAuthInput()" />
+        <input type="password" :placeholder="app.t('auth.passwordPlaceholder')" v-model="app.auth.password" @input="app.handleRememberedAuthInput()" />
         <label class="auth-remember">
           <input
             type="checkbox"
@@ -45,23 +45,21 @@ window.AuthPanel = {
         </label>
         <bilingual-action-button
           variant="primary"
-          type="button"
+          type="submit"
           :primary-label="app.t('auth.login')"
           :secondary-label="app.peerLocaleText('auth.login')"
-          @click="app.login()"
         ></bilingual-action-button>
       </form>
 
-      <form v-else class="form auth-form">
+      <form v-else class="form auth-form" @submit.prevent="app.register()">
         <input type="text" :placeholder="app.t('auth.emailPlaceholder')" v-model="app.auth.email" />
         <input type="text" :placeholder="app.t('auth.phonePlaceholder')" v-model="app.auth.phone" />
         <input type="password" :placeholder="app.t('auth.passwordPlaceholder')" v-model="app.auth.password" />
         <bilingual-action-button
           variant="primary"
-          type="button"
+          type="submit"
           :primary-label="app.t('auth.register')"
           :secondary-label="app.peerLocaleText('auth.register')"
-          @click="app.register()"
         ></bilingual-action-button>
       </form>
 
